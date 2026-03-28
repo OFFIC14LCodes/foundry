@@ -1,8 +1,10 @@
 {
-    "rewrites": [
-        {
-            "source": "/api/:path*",
-            "destination": "/api/:path*"
-        }
-    ]
+  "functions": {
+    "api/forge.cjs": {
+      "runtime": "nodejs20.x"
+    }
+  },
+  "rewrites": [
+    { "source": "/api/forge", "destination": "/api/forge.cjs" }
+  ]
 }
