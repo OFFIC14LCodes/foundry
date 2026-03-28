@@ -954,7 +954,7 @@ function GlossaryModal({ term, entry, profile, activeStage, onClose, onMarkLearn
           <div style={{ fontSize: 10, color: "#E8622A", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>Why it matters for you right now</div>
           {loadingContext ? (
             <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
-              {[0,1,2].map(i => <div key={i} style={{ width: 5, height: 5, borderRadius: "50%", background: "#E8622A", animation: "forgePulse 1.4s infinite ease-in-out", animationDelay: `${i * 0.2}s` }} />)}
+              {[0, 1, 2].map(i => <div key={i} style={{ width: 5, height: 5, borderRadius: "50%", background: "#E8622A", animation: "forgePulse 1.4s infinite ease-in-out", animationDelay: `${i * 0.2}s` }} />)}
             </div>
           ) : (
             <div style={{ fontSize: 13, fontFamily: "'Lora', Georgia, serif", color: "#D8D4CE", lineHeight: 1.7, fontStyle: "italic" }}>
@@ -1315,8 +1315,8 @@ Then transition naturally into asking about their starting budget — frame it a
     setCardSelection(cardId);
     const label =
       currentStep.id === "experience" ? EXPERIENCE_CARDS.find(c => c.id === cardId)?.label || cardId
-      : currentStep.id === "budget" ? BUDGET_CARDS.find(c => c.id === cardId)?.label || cardId
-      : STRATEGY_CARDS.find(c => c.id === cardId)?.label || cardId;
+        : currentStep.id === "budget" ? BUDGET_CARDS.find(c => c.id === cardId)?.label || cardId
+          : STRATEGY_CARDS.find(c => c.id === cardId)?.label || cardId;
     setTimeout(() => { setCardSelection(null); processInput(label, cardId); }, 350);
   };
 
@@ -1333,7 +1333,7 @@ Then transition naturally into asking about their starting budget — frame it a
         </div>
         {stepIndex > 0 && (
           <div style={{ display: "flex", gap: 6 }}>
-            {[0,1,2,3,4].map(i => (
+            {[0, 1, 2, 3, 4].map(i => (
               <div key={i} style={{ width: i < stepIndex ? 20 : 6, height: 6, borderRadius: 3, background: i < stepIndex ? "linear-gradient(90deg, #E8622A, #F5A843)" : "rgba(255,255,255,0.12)", transition: "all 0.4s ease" }} />
             ))}
           </div>
@@ -2057,37 +2057,37 @@ function ForgeScreen({ profile, onBack, onUpdateProfile, completedByStage, onMil
         {activeTab === "chat" && !showBriefing && (
           <div ref={scrollRef} style={{ position: "absolute", inset: 0, overflowY: "auto", WebkitOverflowScrolling: "touch", padding: "16px", display: "flex", flexDirection: "column", gap: 14, maxWidth: 720, width: "100%", margin: "0 auto" }}>
             {stageRefModal !== null && (
-          <StageRefModal
-            stageId={stageRefModal}
-            messages={messagesByStage[stageRefModal] || []}
-            profile={profile}
-            onClose={() => setStageRefModal(null)}
-          />
-        )}
-        {glossaryModal && (
-          <GlossaryModal
-            term={glossaryModal.term}
-            entry={glossaryModal.entry}
-            profile={profile}
-            activeStage={activeStage}
-            onClose={() => setGlossaryModal(null)}
-            onMarkLearned={(term, stageNum) => {
-              const learned = profile.glossaryLearned || [];
-              if (!learned.find(l => l.term === term)) {
-                onUpdateProfile({ glossaryLearned: [...learned, { term, stage: stageNum, date: new Date().toLocaleDateString() }] });
-              }
-            }}
-            alreadyLearned={(profile.glossaryLearned || []).some(l => l.term === glossaryModal.term)}
-          />
-        )}
-        {messages.map((msg, i) => (
-          <MessageBubble
-            key={msg.id || i}
-            msg={msg}
-            onStageRef={id => setStageRefModal(id)}
-            onGlossaryTap={(term, entry) => setGlossaryModal({ term, entry })}
-          />
-        ))}
+              <StageRefModal
+                stageId={stageRefModal}
+                messages={messagesByStage[stageRefModal] || []}
+                profile={profile}
+                onClose={() => setStageRefModal(null)}
+              />
+            )}
+            {glossaryModal && (
+              <GlossaryModal
+                term={glossaryModal.term}
+                entry={glossaryModal.entry}
+                profile={profile}
+                activeStage={activeStage}
+                onClose={() => setGlossaryModal(null)}
+                onMarkLearned={(term, stageNum) => {
+                  const learned = profile.glossaryLearned || [];
+                  if (!learned.find(l => l.term === term)) {
+                    onUpdateProfile({ glossaryLearned: [...learned, { term, stage: stageNum, date: new Date().toLocaleDateString() }] });
+                  }
+                }}
+                alreadyLearned={(profile.glossaryLearned || []).some(l => l.term === glossaryModal.term)}
+              />
+            )}
+            {messages.map((msg, i) => (
+              <MessageBubble
+                key={msg.id || i}
+                msg={msg}
+                onStageRef={id => setStageRefModal(id)}
+                onGlossaryTap={(term, entry) => setGlossaryModal({ term, entry })}
+              />
+            ))}
             {loading && (
               <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                 <ForgeAvatar size={30} />
@@ -2216,11 +2216,11 @@ export default function FoundryApp() {
   const handleMilestoneComplete = (milestoneId) => {
     const stageNum =
       milestoneId.startsWith("idea") ? 1
-      : milestoneId.startsWith("plan") ? 2
-      : milestoneId.startsWith("legal") ? 3
-      : milestoneId.startsWith("finance") ? 4
-      : milestoneId.startsWith("launch") ? 5
-      : 6;
+        : milestoneId.startsWith("plan") ? 2
+          : milestoneId.startsWith("legal") ? 3
+            : milestoneId.startsWith("finance") ? 4
+              : milestoneId.startsWith("launch") ? 5
+                : 6;
     setCompletedByStage(prev => ({
       ...prev,
       [stageNum]: [...new Set([...prev[stageNum], milestoneId])],
