@@ -164,3 +164,31 @@ export async function deleteJournalEntry(userId: string, entryId: string) {
 
     if (error) console.error("deleteJournalEntry error:", error.message);
 }
+// ── BRIEFINGS ─────────────────────────────────────────────────
+
+export async function loadBriefings(userId: string) {
+    const { data, error } = await supabase
+        .from("briefings")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+
+    if (error || !data) return [];
+    return data.map(row => ({
+        id: row.id,
+        content: row.content,
+        stageId: row.stage_id,
+        createdAt: row.created_at,
+    }));
+}
+
+export async function saveBriefing(userId: string, content: string, stageId: number) {
+    const { data, error } = await supabase
+        .from("briefings")
+        .insert({ user_id: userId, content, stage_id: stageId })
+        .select()
+        .single();
+
+    if (error) { console.error("saveBriefing error:", error.message); return null; }
+    return { id: data.id, content: data.content, stageId: data.stage_id, createdAt: data.created_at };
+}

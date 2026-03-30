@@ -2,11 +2,13 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "./supabase";
 import AuthScreen from "./AuthScreen";
 import JournalScreen from "./JournalScreen";
+import BriefingsScreen from "./BriefingsScreen";
 import {
   loadProfile, saveProfile,
   loadAllStageProgress, saveStageProgress,
   loadAllMessages, saveMessages,
-  loadJournalEntries, saveJournalEntry, deleteJournalEntry
+  loadJournalEntries, saveJournalEntry, deleteJournalEntry,
+  loadBriefings, saveBriefing
 } from "./db";
 
 // ─────────────────────────────────────────────────────────────
@@ -1547,7 +1549,7 @@ function HubPanel({ profile, currentStage, completedByStage, open, onClose }) {
 // ─────────────────────────────────────────────────────────────
 // HUB SCREEN
 // ─────────────────────────────────────────────────────────────
-function HubScreen({ profile, onUpdateProfile, onEnterStage, onOpenForge, completedByStage, onReset, onOpenJournal }) {
+function HubScreen({ profile, onUpdateProfile, onEnterStage, onOpenForge, completedByStage, onReset, onOpenJournal, onOpenBriefings }) {
   const [showDecisionModal, setShowDecisionModal] = useState(false);
   const [showExpenseModal, setShowExpenseModal] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -1580,7 +1582,7 @@ function HubScreen({ profile, onUpdateProfile, onEnterStage, onOpenForge, comple
 
   const NAV_ITEMS = [
     { icon: "📓", label: "Founder's Journal", sub: "Private writing space", action: () => { setSidebarOpen(false); onOpenJournal(); }, available: true },
-    { icon: "📅", label: "Monday Briefings", sub: "Weekly Forge updates", action: null, available: false },
+    { icon: "📅", label: "Monday Briefings", sub: "Weekly Forge updates", action: () => { setSidebarOpen(false); onOpenBriefings(); }, available: true },
     { icon: "🎤", label: "Pitch Practice", sub: "Simulate investor meetings", action: null, available: false },
     { icon: "📄", label: "Business Plan Export", sub: "Professional documents", action: null, available: false },
     { icon: "📊", label: "Market Intelligence", sub: "Live market data", action: null, available: false },
@@ -2213,6 +2215,8 @@ export default function FoundryApp() {
   const [initialStage, setInitialStage] = useState(null);
   const [journalEntries, setJournalEntries] = useState([]);
   const [showJournal, setShowJournal] = useState(false);
+  const [briefings, setBriefings] = useState([]);
+  const [showBriefings, setShowBriefings] = useState(false);
 
   // ── Auth listener ──
   useEffect(() => {
@@ -2240,6 +2244,7 @@ export default function FoundryApp() {
         loadAllStageProgress(user.id),
         loadAllMessages(user.id),
         loadJournalEntries(user.id),
+        loadBriefings(user.id),
       ]);
 
       if (cancelled) return;
@@ -2249,6 +2254,7 @@ export default function FoundryApp() {
         setCompletedByStage(dbProgress);
         setMessagesByStage(dbMessages);
         setJournalEntries(dbJournal);
+        setBriefings(dbBriefings);
         setScreen("hub");
       } else {
         setScreen("intro");
@@ -2390,6 +2396,7 @@ export default function FoundryApp() {
             completedByStage={completedByStage}
             onReset={handleReset}
             onOpenJournal={() => setShowJournal(true)}
+            onOpenBriefings={() => setShowBriefings(true)}
           />
         )}
         {screen === "forge" && profile && (
@@ -2415,6 +2422,16 @@ export default function FoundryApp() {
           onEntriesChange={setJournalEntries}
           onBack={() => setShowJournal(false)}
           profile={profile}
+        />
+      )}
+      {showBriefings && user && (
+        <BriefingsScreen
+          userId={user.id}
+          profile={profile}
+          briefings={briefings}
+          onBriefingsChange={setBriefings}
+          onBack={() => setShowBriefings(false)}
+          completedByStage={completedByStage}
         />
       )}
     </>
