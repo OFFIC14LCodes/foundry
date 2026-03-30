@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from "react";
+import { supabase } from "./supabase";
+import AuthScreen from "./AuthScreen";
 
 // ─────────────────────────────────────────────────────────────
 // FORGE MASTER SYSTEM PROMPT v3.1
@@ -2140,23 +2142,89 @@ function usePersistedState(key, fallback) {
 // ROOT APP
 // ─────────────────────────────────────────────────────────────
 export default function FoundryApp() {
-  const [profile, setProfile] = usePersistedState(STORAGE_KEYS.profile, null);
-  const [completedByStage, setCompletedByStage] = usePersistedState(STORAGE_KEYS.completedByStage, { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] });
-  const [messagesByStage, setMessagesByStage] = usePersistedState(STORAGE_KEYS.messagesByStage, { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] });
+  const [profile, setProfile] = useState(null);
+  const [completedByStage, setCompletedByStage] = useState({ 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] });
+  const [messagesByStage, setMessagesByStage] = useState({ 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] });
 
-  const [screen, setScreen] = useState(() => {
-    const saved = loadFromStorage(STORAGE_KEYS.screen, null);
-    const hasProfile = !!loadFromStorage(STORAGE_KEYS.profile, null);
-    if (hasProfile) return saved === "forge" ? "hub" : (saved || "hub");
-    return "intro";
-  });
+  const [user, setUser] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
+  const [screen, setScreen] = useState("loading");
   const [isFirstVisit, setIsFirstVisit] = useState(false);
   const [initialStage, setInitialStage] = useState(null);
 
+  // ── Auth listener ──
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setAuthChecked(true);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // ── Load all data from Supabase when user logs in ──
+  useEffect(() => {
+    if (!user) { setDataLoaded(false); return; }
+
+    let cancelled = false;
+
+    const loadData = async () => {
+      const [dbProfile, dbProgress, dbMessages] = await Promise.all([
+        loadProfile(user.id),
+        loadAllStageProgress(user.id),
+        loadAllMessages(user.id),
+      ]);
+
+      if (cancelled) return;
+
+      if (dbProfile) {
+        setProfile(dbProfile);
+        setCompletedByStage(dbProgress);
+        setMessagesByStage(dbMessages);
+        setScreen("hub");
+      } else {
+        setScreen("intro");
+        setIsFirstVisit(true);
+      }
+      setDataLoaded(true);
+    };
+
+    loadData();
+
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
+  // ── Save profile to Supabase whenever it changes ──
+  useEffect(() => {
+    if (!user || !profile || !dataLoaded) return;
+    saveProfile(user.id, profile);
+  }, [profile]);
+
+  // ── Save stage progress to Supabase whenever it changes ──
+  useEffect(() => {
+    if (!user || !dataLoaded) return;
+    Object.entries(completedByStage).forEach(([stageId, milestones]) => {
+      saveStageProgress(user.id, parseInt(stageId), milestones as string[]);
+    });
+  }, [completedByStage]);
+
+  // ── Save messages to Supabase whenever they change ──
+  useEffect(() => {
+    if (!user || !dataLoaded) return;
+    Object.entries(messagesByStage).forEach(([stageId, messages]) => {
+      saveMessages(user.id, parseInt(stageId), messages as any[]);
+    });
+  }, [messagesByStage]);
+
   const setScreenPersisted = (s) => {
     setScreen(s);
-    if (s === "hub" || s === "forge") saveToStorage(STORAGE_KEYS.screen, s);
+    saveToStorage(STORAGE_KEYS.screen, s);
   };
 
   const updateProfile = (updates) => setProfile(p => ({ ...p, ...updates }));
@@ -2169,7 +2237,10 @@ export default function FoundryApp() {
             : milestoneId.startsWith("finance") ? 4
               : milestoneId.startsWith("launch") ? 5
                 : 6;
-    setCompletedByStage(prev => ({ ...prev, [stageNum]: [...new Set([...prev[stageNum], milestoneId])] }));
+    setCompletedByStage(prev => ({
+      ...prev,
+      [stageNum]: [...new Set([...prev[stageNum], milestoneId])]
+    }));
   };
 
   const handleUpdateMessages = (stageId, updater) => {
@@ -2190,12 +2261,51 @@ export default function FoundryApp() {
     setScreenPersisted("forge");
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
+    // Clear Supabase data for this user
+    if (user) {
+      await Promise.all([
+        supabase.from("profiles").delete().eq("id", user.id),
+        supabase.from("stage_progress").delete().eq("user_id", user.id),
+        supabase.from("messages").delete().eq("user_id", user.id),
+      ]);
+    }
+    // Clear localStorage
     Object.values(STORAGE_KEYS).forEach(k => localStorage.removeItem(k));
     localStorage.removeItem("foundry_last_seen");
     window.location.reload();
   };
 
+  // ── Auth not yet checked ──
+  if (!authChecked) {
+    return (
+      <div style={{ background: "#080809", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ fontSize: 32 }}>🔥</div>
+      </div>
+    );
+  }
+
+  // ── Not logged in ──
+  if (!user) {
+    return (
+      <>
+        <style>{GLOBAL_STYLES}</style>
+        <AuthScreen onAuth={() => { }} />
+      </>
+    );
+  }
+
+  // ── Logged in but data still loading ──
+  if (!dataLoaded) {
+    return (
+      <div style={{ background: "#080809", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
+        <div style={{ fontSize: 32 }}>🔥</div>
+        <div style={{ fontSize: 12, color: "#444", fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.1em" }}>Loading your workspace...</div>
+      </div>
+    );
+  }
+
+  // ── Logged in and data ready ──
   return (
     <>
       <style>{GLOBAL_STYLES}</style>
@@ -2238,3 +2348,5 @@ export default function FoundryApp() {
     </>
   );
 }
+
+import { loadProfile, saveProfile, loadAllStageProgress, saveStageProgress, loadAllMessages, saveMessages } from "./db";
