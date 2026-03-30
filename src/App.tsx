@@ -2239,7 +2239,7 @@ export default function FoundryApp() {
     let cancelled = false;
 
     const loadData = async () => {
-      const [dbProfile, dbProgress, dbMessages, dbJournal] = await Promise.all([
+      const [dbProfile, dbProgress, dbMessages, dbJournal, dbBriefings] = await Promise.all([
         loadProfile(user.id),
         loadAllStageProgress(user.id),
         loadAllMessages(user.id),
