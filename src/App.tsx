@@ -1,6 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "./supabase";
 import AuthScreen from "./AuthScreen";
+import JournalScreen from "./JournalScreen";
+import {
+  loadProfile, saveProfile,
+  loadAllStageProgress, saveStageProgress,
+  loadAllMessages, saveMessages,
+  loadJournalEntries, saveJournalEntry, deleteJournalEntry
+} from "./db";
 
 // ─────────────────────────────────────────────────────────────
 // FORGE MASTER SYSTEM PROMPT v3.1
@@ -1540,9 +1547,10 @@ function HubPanel({ profile, currentStage, completedByStage, open, onClose }) {
 // ─────────────────────────────────────────────────────────────
 // HUB SCREEN
 // ─────────────────────────────────────────────────────────────
-function HubScreen({ profile, onUpdateProfile, onEnterStage, onOpenForge, completedByStage, onReset }) {
+function HubScreen({ profile, onUpdateProfile, onEnterStage, onOpenForge, completedByStage, onReset, onOpenJournal }) {
   const [showDecisionModal, setShowDecisionModal] = useState(false);
   const [showExpenseModal, setShowExpenseModal] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [decisionText, setDecisionText] = useState("");
   const [decisionTag, setDecisionTag] = useState("Strategy");
@@ -1570,21 +1578,81 @@ function HubScreen({ profile, onUpdateProfile, onEnterStage, onOpenForge, comple
   const currentStage = profile.currentStage || 1;
   const spentPct = profile.budget?.total ? Math.min((profile.budget.spent / profile.budget.total) * 100, 100) : 0;
 
+  const NAV_ITEMS = [
+    { icon: "📓", label: "Founder's Journal", sub: "Private writing space", action: () => { setSidebarOpen(false); onOpenJournal(); }, available: true },
+    { icon: "📅", label: "Monday Briefings", sub: "Weekly Forge updates", action: null, available: false },
+    { icon: "🎤", label: "Pitch Practice", sub: "Simulate investor meetings", action: null, available: false },
+    { icon: "📄", label: "Business Plan Export", sub: "Professional documents", action: null, available: false },
+    { icon: "📊", label: "Market Intelligence", sub: "Live market data", action: null, available: false },
+    { icon: "🔊", label: "Voice Mode", sub: "Talk to Forge out loud", action: null, available: false },
+    { icon: "👥", label: "Co-Founder Mode", sub: "Shared workspace", action: null, available: false },
+  ];
+
   return (
     <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'DM Sans', sans-serif", color: "#F0EDE8" }}>
+
+      {/* Sidebar overlay */}
+      {sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 40, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", animation: "fadeIn 0.2s ease" }} />
+      )}
+
+      {/* Sidebar */}
+      <div style={{ position: "fixed", top: 0, left: 0, bottom: 0, width: 280, zIndex: 50, background: "#0C0C0E", borderRight: "1px solid rgba(255,255,255,0.08)", transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)", transition: "transform 0.35s cubic-bezier(0.16,1,0.3,1)", display: "flex", flexDirection: "column", overflowY: "auto" }}>
+
+        {/* Sidebar header */}
+        <div style={{ padding: "max(20px, calc(14px + env(safe-area-inset-top))) 16px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 18 }}>🔥</span>
+              <span style={{ fontSize: 15, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>Foundry</span>
+            </div>
+            <button onClick={() => setSidebarOpen(false)} style={{ background: "rgba(255,255,255,0.05)", border: "none", borderRadius: 6, padding: "5px 10px", color: "#555", fontSize: 12, cursor: "pointer" }}>✕</button>
+          </div>
+          <div style={{ fontSize: 13, fontFamily: "'Lora', Georgia, serif", color: "#C8C4BE", fontWeight: 500 }}>{profile.name}</div>
+          <div style={{ fontSize: 11, color: "#555", marginTop: 2, fontStyle: "italic" }}>{profile.businessName || profile.idea?.slice(0, 40) || "Your business"}</div>
+        </div>
+
+        {/* Nav items */}
+        <div style={{ padding: "12px 10px", flex: 1 }}>
+          <div style={{ fontSize: 9, color: "#444", letterSpacing: "0.12em", textTransform: "uppercase", padding: "4px 8px 10px" }}>Features</div>
+          {NAV_ITEMS.map((item, i) => (
+            <button key={i} onClick={item.available && item.action ? item.action : undefined}
+              style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "10px 10px", borderRadius: 10, border: "none", background: "transparent", cursor: item.available ? "pointer" : "default", opacity: item.available ? 1 : 0.35, transition: "background 0.15s", marginBottom: 2, textAlign: "left" }}
+              onMouseEnter={e => { if (item.available) (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+            >
+              <div style={{ width: 36, height: 36, borderRadius: 9, background: item.available ? "rgba(232,98,42,0.12)" : "rgba(255,255,255,0.04)", border: item.available ? "1px solid rgba(232,98,42,0.2)" : "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>{item.icon}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, color: item.available ? "#F0EDE8" : "#666", fontWeight: 500, lineHeight: 1.2, marginBottom: 2 }}>{item.label}</div>
+                <div style={{ fontSize: 10, color: "#444" }}>{item.available ? item.sub : "Coming soon"}</div>
+              </div>
+              {item.available && <span style={{ fontSize: 10, color: "#555" }}>→</span>}
+            </button>
+          ))}
+        </div>
+
+        {/* Sidebar footer */}
+        <div style={{ padding: "12px 10px 24px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+          <button onClick={onReset} style={{ width: "100%", padding: "9px", background: "transparent", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8, color: "#444", fontSize: 11, cursor: "pointer" }}>Reset Account</button>
+        </div>
+      </div>
+
       {/* Header */}
       <div style={{ padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)", zIndex: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: 20 }}>🔥</span>
+          <button onClick={() => setSidebarOpen(true)} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "6px 10px", color: "#888", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>☰</button>
           <div>
             <div style={{ fontSize: 16, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>Foundry</div>
             <div style={{ fontSize: 10, color: "#555" }}>Hub · {profile.name}</div>
           </div>
         </div>
-        <button onClick={onReset} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 8, padding: "5px 12px", color: "#555", fontSize: 11, cursor: "pointer" }}>Reset</button>
+        <button onClick={onOpenForge} style={{ background: "linear-gradient(135deg, #E8622A, #c9521e)", border: "none", borderRadius: 10, padding: "8px 16px", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "'DM Sans', sans-serif" }}>
+          🔥 Talk to Forge
+        </button>
       </div>
 
-      <div style={{ padding: "16px", maxWidth: 680, margin: "0 auto", paddingBottom: 100 }}>
+      <div style={{ padding: "16px", maxWidth: 680, margin: "0 auto", paddingBottom: 60 }}>
+
         {/* Welcome */}
         <div style={{ marginBottom: 16, opacity: mounted ? 1 : 0, transform: mounted ? "translateY(0)" : "translateY(8px)", transition: "all 0.5s ease" }}>
           <div style={{ fontSize: 22, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, color: "#F0EDE8", lineHeight: 1.2, marginBottom: 4 }}>Welcome back, {profile.name}</div>
@@ -1704,26 +1772,20 @@ function HubScreen({ profile, onUpdateProfile, onEnterStage, onOpenForge, comple
         </div>
       </div>
 
-      {/* Forge FAB */}
-      <button onClick={onOpenForge} style={{ position: "fixed", bottom: "max(28px, calc(16px + env(safe-area-inset-bottom)))", right: 20, zIndex: 20, width: 56, height: 56, borderRadius: "50%", background: "linear-gradient(135deg, #E8622A, #c9521e)", border: "none", fontSize: 22, boxShadow: "0 8px 32px rgba(232,98,42,0.45)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}
-        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "scale(1.08)"; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = "scale(1)"; }}
-      >🔥</button>
-
       {/* Decision modal */}
       {showDecisionModal && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 50, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, animation: "fadeIn 0.2s ease" }} onClick={() => setShowDecisionModal(false)}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, animation: "fadeIn 0.2s ease" }} onClick={() => setShowDecisionModal(false)}>
           <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: "#0E0E10", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 22, animation: "fadeSlideUp 0.3s ease" }}>
             <div style={{ fontSize: 17, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 16 }}>Log a Decision</div>
             <textarea value={decisionText} onChange={e => setDecisionText(e.target.value)} placeholder="What did you decide and why?" rows={3} autoFocus style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'DM Sans', sans-serif", lineHeight: 1.6, boxSizing: "border-box" }} />
             <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
               {Object.keys(TAG_COLORS).map(t => (
-                <button key={t} onClick={() => setDecisionTag(t)} style={{ padding: "4px 12px", borderRadius: 20, border: decisionTag === t ? "1px solid rgba(232,98,42,0.6)" : "1px solid rgba(255,255,255,0.1)", background: decisionTag === t ? "rgba(232,98,42,0.12)" : "transparent", color: decisionTag === t ? "#E8622A" : "#666", fontSize: 11, cursor: "pointer" }}>{t}</button>
+                <button key={t} onClick={() => setDecisionTag(t)} style={{ padding: "4px 12px", borderRadius: 20, border: "none", background: decisionTag === t ? TAG_COLORS[t].bg : "rgba(255,255,255,0.04)", color: decisionTag === t ? TAG_COLORS[t].text : "#555", fontSize: 11, cursor: "pointer" }}>{t}</button>
               ))}
             </div>
-            <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
-              <button onClick={() => setShowDecisionModal(false)} style={{ flex: 1, padding: "10px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#888", fontSize: 12, cursor: "pointer" }}>Cancel</button>
-              <button onClick={addDecision} disabled={!decisionText.trim()} style={{ flex: 2, padding: "10px", background: decisionText.trim() ? "linear-gradient(135deg, #E8622A, #c9521e)" : "rgba(255,255,255,0.04)", border: "none", borderRadius: 10, color: decisionText.trim() ? "#fff" : "#555", fontSize: 12, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, cursor: decisionText.trim() ? "pointer" : "default" }}>Log Decision</button>
+            <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+              <button onClick={() => setShowDecisionModal(false)} style={{ flex: 1, padding: "10px", background: "transparent", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#555", fontSize: 12, cursor: "pointer" }}>Cancel</button>
+              <button onClick={addDecision} style={{ flex: 2, padding: "10px", background: "linear-gradient(135deg, #E8622A, #c9521e)", border: "none", borderRadius: 10, color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}>Save Decision</button>
             </div>
           </div>
         </div>
@@ -1731,17 +1793,14 @@ function HubScreen({ profile, onUpdateProfile, onEnterStage, onOpenForge, comple
 
       {/* Expense modal */}
       {showExpenseModal && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 50, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, animation: "fadeIn 0.2s ease" }} onClick={() => setShowExpenseModal(false)}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 380, background: "#0E0E10", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 22, animation: "fadeSlideUp 0.3s ease" }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, animation: "fadeIn 0.2s ease" }} onClick={() => setShowExpenseModal(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: "#0E0E10", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 22, animation: "fadeSlideUp 0.3s ease" }}>
             <div style={{ fontSize: 17, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 16 }}>Log an Expense</div>
-            <input value={expenseLabel} onChange={e => setExpenseLabel(e.target.value)} placeholder="What was it for?" autoFocus style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'DM Sans', sans-serif", marginBottom: 10, boxSizing: "border-box" }} />
-            <div style={{ position: "relative" }}>
-              <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#666", fontSize: 13 }}>$</span>
-              <input value={expenseAmount} onChange={e => setExpenseAmount(e.target.value.replace(/[^0-9.]/g, ""))} placeholder="0.00" type="number" style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px 10px 26px", color: "#F0EDE8", fontSize: 13, fontFamily: "'DM Sans', sans-serif", boxSizing: "border-box" }} />
-            </div>
-            <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
-              <button onClick={() => setShowExpenseModal(false)} style={{ flex: 1, padding: "10px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#888", fontSize: 12, cursor: "pointer" }}>Cancel</button>
-              <button onClick={addExpense} disabled={!expenseLabel.trim() || !expenseAmount} style={{ flex: 2, padding: "10px", background: expenseLabel.trim() && expenseAmount ? "linear-gradient(135deg, #E8622A, #c9521e)" : "rgba(255,255,255,0.04)", border: "none", borderRadius: 10, color: expenseLabel.trim() && expenseAmount ? "#fff" : "#555", fontSize: 12, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, cursor: expenseLabel.trim() && expenseAmount ? "pointer" : "default" }}>Add Expense</button>
+            <input value={expenseLabel} onChange={e => setExpenseLabel(e.target.value)} placeholder="What was it for?" style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'DM Sans', sans-serif", marginBottom: 10, boxSizing: "border-box" }} />
+            <input value={expenseAmount} onChange={e => setExpenseAmount(e.target.value)} placeholder="Amount ($)" type="number" style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'DM Sans', sans-serif", marginBottom: 16, boxSizing: "border-box" }} />
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => setShowExpenseModal(false)} style={{ flex: 1, padding: "10px", background: "transparent", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#555", fontSize: 12, cursor: "pointer" }}>Cancel</button>
+              <button onClick={addExpense} style={{ flex: 2, padding: "10px", background: "linear-gradient(135deg, #E8622A, #c9521e)", border: "none", borderRadius: 10, color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}>Save Expense</button>
             </div>
           </div>
         </div>
@@ -1749,7 +1808,6 @@ function HubScreen({ profile, onUpdateProfile, onEnterStage, onOpenForge, comple
     </div>
   );
 }
-
 // ─────────────────────────────────────────────────────────────
 // MILESTONES PANEL
 // ─────────────────────────────────────────────────────────────
@@ -1881,7 +1939,7 @@ function ForgeScreen({ profile, onBack, onUpdateProfile, completedByStage, onMil
   // Greeting — fires only when no messages exist for the active stage
   useEffect(() => {
     const stageMessages = messagesByStage[activeStage] || [];
-    if (stageMessages.length > 0) return;
+    if (stageMessages.length > 0 || loading) return;
 
     const stageData = STAGES_DATA[activeStage - 1];
     const lastSeenRaw = localStorage.getItem("foundry_last_seen");
@@ -1919,7 +1977,7 @@ Open with a warm, direct, personal greeting — reference something specific abo
     };
 
     setTimeout(runGreeting, 400);
-  }, [activeStage]);
+  }, [activeStage, !!messagesByStage[activeStage]?.length]);
 
   const send = async () => {
     if (!input.trim() || loading) return;
@@ -2153,6 +2211,8 @@ export default function FoundryApp() {
   const [screen, setScreen] = useState("loading");
   const [isFirstVisit, setIsFirstVisit] = useState(false);
   const [initialStage, setInitialStage] = useState(null);
+  const [journalEntries, setJournalEntries] = useState([]);
+  const [showJournal, setShowJournal] = useState(false);
 
   // ── Auth listener ──
   useEffect(() => {
@@ -2175,10 +2235,11 @@ export default function FoundryApp() {
     let cancelled = false;
 
     const loadData = async () => {
-      const [dbProfile, dbProgress, dbMessages] = await Promise.all([
+      const [dbProfile, dbProgress, dbMessages, dbJournal] = await Promise.all([
         loadProfile(user.id),
         loadAllStageProgress(user.id),
         loadAllMessages(user.id),
+        loadJournalEntries(user.id),
       ]);
 
       if (cancelled) return;
@@ -2187,6 +2248,7 @@ export default function FoundryApp() {
         setProfile(dbProfile);
         setCompletedByStage(dbProgress);
         setMessagesByStage(dbMessages);
+        setJournalEntries(dbJournal);
         setScreen("hub");
       } else {
         setScreen("intro");
@@ -2327,6 +2389,7 @@ export default function FoundryApp() {
             onOpenForge={() => openForge(null)}
             completedByStage={completedByStage}
             onReset={handleReset}
+            onOpenJournal={() => setShowJournal(true)}
           />
         )}
         {screen === "forge" && profile && (
@@ -2345,8 +2408,15 @@ export default function FoundryApp() {
           />
         )}
       </div>
+      {showJournal && user && (
+        <JournalScreen
+          userId={user.id}
+          entries={journalEntries}
+          onEntriesChange={setJournalEntries}
+          onBack={() => setShowJournal(false)}
+          profile={profile}
+        />
+      )}
     </>
   );
 }
-
-import { loadProfile, saveProfile, loadAllStageProgress, saveStageProgress, loadAllMessages, saveMessages } from "./db";

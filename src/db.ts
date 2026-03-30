@@ -126,3 +126,41 @@ export async function saveMessages(userId: string, stageId: number, messages: an
     const { error } = await supabase.from("messages").insert(rows);
     if (error) console.error("saveMessages error:", error.message);
 }
+
+// ── JOURNAL ───────────────────────────────────────────────────
+
+export async function loadJournalEntries(userId: string) {
+    const { data, error } = await supabase
+        .from("journal_entries")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+
+    if (error || !data) return [];
+    return data.map(row => ({
+        id: row.id,
+        content: row.content,
+        createdAt: row.created_at,
+    }));
+}
+
+export async function saveJournalEntry(userId: string, content: string) {
+    const { data, error } = await supabase
+        .from("journal_entries")
+        .insert({ user_id: userId, content })
+        .select()
+        .single();
+
+    if (error) { console.error("saveJournalEntry error:", error.message); return null; }
+    return { id: data.id, content: data.content, createdAt: data.created_at };
+}
+
+export async function deleteJournalEntry(userId: string, entryId: string) {
+    const { error } = await supabase
+        .from("journal_entries")
+        .delete()
+        .eq("id", entryId)
+        .eq("user_id", userId);
+
+    if (error) console.error("deleteJournalEntry error:", error.message);
+}
