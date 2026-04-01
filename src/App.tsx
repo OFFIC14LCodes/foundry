@@ -27,69 +27,10 @@ import MilestonesPanel from "./components/MilestonesPanel";
 import StageBriefing from "./components/StageBriefing";
 import HubScreen from "./components/HubScreen";
 import { Icons } from "./icons";
+import PitchPracticeScreen from "./components/PitchPracticeScreen";
+import { callForgeAPI, streamForgeAPI } from "./lib/forgeApi";
 
-// API HELPERS
-// ─────────────────────────────────────────────────────────────
-async function callForgeAPI(messages, systemPrompt) {
-  const res = await fetch("/api/forge", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 1000,
-      system: systemPrompt,
-      messages,
-    }),
-  });
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`API ${res.status}: ${errText.slice(0, 200)}`);
-  }
-  const data = await res.json();
-  return data.content?.map((b) => b.text || "").join("") || "Something went wrong.";
-}
-
-async function streamForgeAPI(messages, systemPrompt, onChunk) {
-  const res = await fetch("/api/forge", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 1000,
-      stream: true,
-      system: systemPrompt,
-      messages,
-    }),
-  });
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`API ${res.status}: ${errText.slice(0, 200)}`);
-  }
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder();
-  let fullText = "";
-  let buffer = "";
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split("\n");
-    buffer = lines.pop() || "";
-    for (const line of lines) {
-      if (!line.startsWith("data: ")) continue;
-      const data = line.slice(6).trim();
-      if (data === "[DONE]") continue;
-      try {
-        const parsed = JSON.parse(data);
-        if (parsed.type === "content_block_delta" && parsed.delta?.type === "text_delta") {
-          fullText += parsed.delta.text;
-          onChunk(fullText);
-        }
-      } catch { /* skip */ }
-    }
-  }
-  return fullText || "Something went wrong.";
-}
+// callForgeAPI and streamForgeAPI are imported from ./lib/forgeApi
 
 // ─────────────────────────────────────────────────────────────
 // MEMORY + CONTEXT BUILDERS
@@ -1051,6 +992,7 @@ export default function FoundryApp() {
   const [showJournal, setShowJournal] = useState(false);
   const [briefings, setBriefings] = useState([]);
   const [showBriefings, setShowBriefings] = useState(false);
+  const [showPitchPractice, setShowPitchPractice] = useState(false);
 
   // ── Auth listener ──
   useEffect(() => {
@@ -1214,16 +1156,16 @@ export default function FoundryApp() {
       <div style={{ background: "#080809", minHeight: "100vh", minHeight: "-webkit-fill-available" }}>
         {screen === "intro" && <CinematicIntro onComplete={() => setScreen("onboarding")} />}
         {screen === "onboarding" && (
-          <OnboardingScreen onComplete={p => {
-            onComplete = { handleCompleteOnboarding };
-            callForgeAPI = { callForgeAPI };
-            renderWithBold = { renderWithBold };
-            setProfile(p);
-            setIsFirstVisit(true);
-            setInitialStage(1);
-            setScreenPersisted("forge");
-
-          }} />
+          <OnboardingScreen
+            onComplete={(p: any) => {
+              setProfile(p);
+              setIsFirstVisit(true);
+              setInitialStage(1 as any);
+              setScreenPersisted("forge");
+            }}
+            callForgeAPI={callForgeAPI}
+            renderWithBold={renderWithBold}
+          />
         )}
         {screen === "hub" && profile && (
           <HubScreen
@@ -1235,6 +1177,7 @@ export default function FoundryApp() {
             onReset={handleReset}
             onOpenJournal={() => setShowJournal(true)}
             onOpenBriefings={() => setShowBriefings(true)}
+            onOpenPitchPractice={() => setShowPitchPractice(true)}
           />
         )}
         {screen === "forge" && profile && (
@@ -1253,6 +1196,14 @@ export default function FoundryApp() {
           />
         )}
       </div>
+      {showPitchPractice && profile && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "#080809", overflowY: "auto" }}>
+          <PitchPracticeScreen
+            profile={profile}
+            onBack={() => setShowPitchPractice(false)}
+          />
+        </div>
+      )}
       {showJournal && user && (
         <JournalScreen
           userId={user.id}

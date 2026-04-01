@@ -100,31 +100,45 @@ export async function loadAllMessages(userId: string) {
     if (error || !data) return result;
     data.forEach(row => {
         if (!result[row.stage_id]) result[row.stage_id] = [];
-        result[row.stage_id].push({ role: row.role, text: row.content });
+        // Deduplicate: skip if an identical (role, content) pair was already added
+        // consecutively — guards against duplicate rows created by a prior race condition.
+        const stage = result[row.stage_id];
+        const prev = stage[stage.length - 1];
+        if (prev && prev.role === row.role && prev.text === row.content) return;
+        stage.push({ role: row.role, text: row.content });
     });
     return result;
 }
 
-export async function saveMessages(userId: string, stageId: number, messages: any[]) {
-    // Delete existing messages for this stage then re-insert
-    // This keeps things simple and consistent
-    await supabase
-        .from("messages")
-        .delete()
-        .eq("user_id", userId)
-        .eq("stage_id", stageId);
+// Per-stage debounce state — coalesces rapid calls (e.g. during streaming) so
+// DELETE + INSERT never races with itself for the same stage.
+const _saveTimers: Record<string, ReturnType<typeof setTimeout>> = {};
 
-    if (messages.length === 0) return;
+export function saveMessages(userId: string, stageId: number, messages: any[]) {
+    const key = `${userId}:${stageId}`;
+    clearTimeout(_saveTimers[key]);
+    // Capture the latest messages snapshot; the timer runs after rapid updates settle.
+    const snapshot = messages.slice();
+    _saveTimers[key] = setTimeout(async () => {
+        delete _saveTimers[key];
+        await supabase
+            .from("messages")
+            .delete()
+            .eq("user_id", userId)
+            .eq("stage_id", stageId);
 
-    const rows = messages.map(m => ({
-        user_id: userId,
-        stage_id: stageId,
-        role: m.role,
-        content: m.text || "",
-    }));
+        if (snapshot.length === 0) return;
 
-    const { error } = await supabase.from("messages").insert(rows);
-    if (error) console.error("saveMessages error:", error.message);
+        const rows = snapshot.map(m => ({
+            user_id: userId,
+            stage_id: stageId,
+            role: m.role,
+            content: m.text || "",
+        }));
+
+        const { error } = await supabase.from("messages").insert(rows);
+        if (error) console.error("saveMessages error:", error.message);
+    }, 500);
 }
 
 // ── JOURNAL ───────────────────────────────────────────────────

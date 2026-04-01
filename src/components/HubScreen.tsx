@@ -12,6 +12,7 @@ export default function HubScreen({
     onReset,
     onOpenJournal,
     onOpenBriefings,
+    onOpenPitchPractice,
 }) {
     const [showDecisionModal, setShowDecisionModal] = useState(false);
     const [showExpenseModal, setShowExpenseModal] = useState(false);
@@ -98,8 +99,11 @@ export default function HubScreen({
             icon: Icons.sidebar.pitchPractice,
             label: "Pitch Practice",
             sub: "Simulate investor meetings",
-            action: null,
-            available: false,
+            action: () => {
+                setSidebarOpen(false);
+                onOpenPitchPractice();
+            },
+            available: true,
         },
         {
             icon: Icons.sidebar.export,
