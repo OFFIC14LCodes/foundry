@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Logo from "./Logo";
 
 // ─────────────────────────────────────────────────────────────
 // CINEMATIC INTRO
@@ -18,7 +19,18 @@ export default function CinematicIntro({ onComplete }) {
     return (
         <div style={{ position: "fixed", inset: 0, background: "#080809", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
             <div style={{ position: "absolute", width: 400, height: 400, borderRadius: "50%", background: "radial-gradient(circle, rgba(232,98,42,0.12) 0%, transparent 70%)", opacity: phase >= 1 ? 1 : 0, transition: "opacity 2s ease", pointerEvents: "none" }} />
-            <div style={{ fontSize: "clamp(48px, 15vw, 64px)", marginBottom: 24, opacity: phase >= 1 ? 1 : 0, transform: phase >= 1 ? "scale(1) translateY(0)" : "scale(0.6) translateY(20px)", transition: "all 1.2s cubic-bezier(0.16, 1, 0.3, 1)", filter: phase >= 2 ? "drop-shadow(0 0 30px rgba(232,98,42,0.6))" : "none" }}>🔥</div>
+            <Logo
+                variant="full"
+                style={{
+                    width: "min(320px, 78vw)",
+                    height: "auto",
+                    marginBottom: 24,
+                    opacity: phase >= 1 ? 1 : 0,
+                    transform: phase >= 1 ? "scale(1) translateY(0)" : "scale(0.6) translateY(20px)",
+                    transition: "all 1.2s cubic-bezier(0.16, 1, 0.3, 1)",
+                    filter: phase >= 2 ? "drop-shadow(0 0 30px rgba(232,98,42,0.6))" : "none",
+                }}
+            />
             <div style={{ opacity: phase >= 2 ? 1 : 0, transform: phase >= 2 ? "translateY(0)" : "translateY(12px)", transition: "all 0.9s cubic-bezier(0.16, 1, 0.3, 1)", textAlign: "center", marginBottom: 40 }}>
                 <div style={{ fontSize: "clamp(36px, 11vw, 52px)", fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, color: "#F0EDE8", letterSpacing: "-1px", lineHeight: 1 }}>Foundry</div>
                 <div style={{ fontSize: 11, fontFamily: "'DM Sans', sans-serif", color: "#E8622A", letterSpacing: "0.25em", textTransform: "uppercase", marginTop: 8 }}>Build Something Real</div>

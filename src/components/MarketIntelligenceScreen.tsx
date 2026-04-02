@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { streamForgeAPI } from "../lib/forgeApi";
 import { buildMarketReportPrompt, MARKET_REPORT_SYSTEM } from "../constants/marketPrompt";
-import { saveMarketReport } from "../db";
+import { loadLatestMarketReport, saveMarketReport } from "../db";
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -16,10 +16,22 @@ interface MarketReport {
 // ─────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────
-const todayStr = () => new Date().toISOString().slice(0, 10);
+const todayStr = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+};
 
 function isToday(date: string): boolean {
     return date === todayStr();
+}
+
+function hasUsableContent(report: MarketReport | null | undefined): boolean {
+    if (!report?.content) return false;
+    const content = report.content.trim();
+    return content.length > 0 && content !== "Something went wrong.";
 }
 
 function formatReportDate(date: string): string {
@@ -107,22 +119,44 @@ export default function MarketIntelligenceScreen({
     profile: any;
     userId: string;
     report: MarketReport | null;
-    onReportChange: (r: MarketReport) => void;
+    onReportChange: (r: MarketReport | null) => void;
     onBack: () => void;
 }) {
     const [generating, setGenerating] = useState(false);
     const [streamedContent, setStreamedContent] = useState("");
     const [mounted, setMounted] = useState(false);
+    const [currentReport, setCurrentReport] = useState<MarketReport | null>(report);
 
     useEffect(() => { setTimeout(() => setMounted(true), 80); }, []);
 
-    const isCurrentReport = report && isToday(report.date);
-    const hasOutdatedReport = report && !isToday(report.date);
+    useEffect(() => {
+        setCurrentReport(report);
+    }, [report]);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const loadReport = async () => {
+            const latest = await loadLatestMarketReport(userId);
+            if (cancelled) return;
+
+            setCurrentReport(latest);
+            onReportChange(latest);
+        };
+
+        loadReport();
+
+        return () => { cancelled = true; };
+    }, [userId]);
+
+    const hasSavedReport = hasUsableContent(currentReport);
+    const isCurrentReport = hasSavedReport && !!currentReport && isToday(currentReport.date);
+    const hasOutdatedReport = hasSavedReport && !!currentReport && !isToday(currentReport.date);
 
     const industry = profile.industry || profile.idea?.slice(0, 40) || "your market";
 
     const generate = async () => {
-        if (generating) return;
+        if (generating || isCurrentReport) return;
         setGenerating(true);
         setStreamedContent("");
 
@@ -137,6 +171,7 @@ export default function MarketIntelligenceScreen({
 
             const saved = await saveMarketReport(userId, final, profile.industry || industry);
             if (saved) {
+                setCurrentReport(saved);
                 onReportChange(saved);
             }
             setStreamedContent("");
@@ -148,8 +183,10 @@ export default function MarketIntelligenceScreen({
         setGenerating(false);
     };
 
-    const displayContent = generating ? streamedContent : report?.content || "";
-    const displayDate = report?.date;
+    const displayContent = generating
+        ? streamedContent || currentReport?.content || ""
+        : currentReport?.content || "";
+    const displayDate = hasSavedReport ? currentReport?.date : undefined;
 
     return (
         <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'DM Sans', sans-serif", color: "#F0EDE8", display: "flex", flexDirection: "column" }}>
@@ -183,7 +220,7 @@ export default function MarketIntelligenceScreen({
             <div style={{ flex: 1, overflowY: "auto", padding: "20px 16px 60px", maxWidth: 680, width: "100%", margin: "0 auto" }}>
 
                 {/* Empty state — no report at all */}
-                {!report && !generating && (
+                {!hasSavedReport && !generating && (
                     <div style={{ opacity: mounted ? 1 : 0, transition: "opacity 0.4s ease" }}>
                         <div style={{ marginBottom: 28, animation: "fadeSlideUp 0.4s ease both" }}>
                             <div style={{ fontSize: 22, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, marginBottom: 6, lineHeight: 1.25 }}>
@@ -220,10 +257,10 @@ export default function MarketIntelligenceScreen({
                 )}
 
                 {/* Outdated banner + regenerate */}
-                {hasOutdatedReport && !generating && (
+                {hasOutdatedReport && !generating && currentReport && (
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 14px", background: "rgba(245,168,67,0.05)", border: "1px solid rgba(245,168,67,0.15)", borderRadius: 10, marginBottom: 18, animation: "fadeSlideUp 0.3s ease both" }}>
                         <div>
-                            <div style={{ fontSize: 11, color: "#F5A843", fontWeight: 600, marginBottom: 2 }}>Report from {formatReportDate(report!.date)}</div>
+                            <div style={{ fontSize: 11, color: "#F5A843", fontWeight: 600, marginBottom: 2 }}>Report from {formatReportDate(currentReport.date)}</div>
                             <div style={{ fontSize: 10, color: "#555" }}>Generate a fresh report for today</div>
                         </div>
                         <button

@@ -5,6 +5,13 @@ import { supabase } from "./supabase";
 // All Supabase reads and writes go through here.
 // ─────────────────────────────────────────────────────────────
 
+function getLocalDateKey(date = new Date()) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+}
+
 // ── PROFILE ──────────────────────────────────────────────────
 
 export async function loadProfile(userId: string) {
@@ -34,6 +41,10 @@ export async function loadProfile(userId: string) {
         },
         glossaryLearned: data.glossary_learned ?? [],
         decisions: data.decisions ?? [],
+        // Admin / access fields
+        isAdmin: data.is_admin ?? false,
+        email: data.email ?? null,
+        lastActiveAt: data.last_active_at ?? null,
     };
 }
 
@@ -181,7 +192,7 @@ export async function deleteJournalEntry(userId: string, entryId: string) {
 // ── MARKET INTELLIGENCE ───────────────────────────────────────
 
 export async function loadTodayMarketReport(userId: string) {
-    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const today = getLocalDateKey();
     const { data, error } = await supabase
         .from("market_reports")
         .select("*")
@@ -205,7 +216,7 @@ export async function loadLatestMarketReport(userId: string) {
 }
 
 export async function saveMarketReport(userId: string, content: string, industry: string) {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getLocalDateKey();
     const { data, error } = await supabase
         .from("market_reports")
         .upsert(
@@ -245,4 +256,43 @@ export async function saveBriefing(userId: string, content: string, stageId: num
 
     if (error) { console.error("saveBriefing error:", error.message); return null; }
     return { id: data.id, content: data.content, stageId: data.stage_id, createdAt: data.created_at };
+}
+
+// ── ACCOUNT ACCESS ────────────────────────────────────────────
+
+export async function loadAccountAccess(userId: string) {
+    const { data } = await supabase
+        .from("account_access")
+        .select("*")
+        .eq("user_id", userId)
+        .maybeSingle();
+    return data ?? null;
+}
+
+// Creates a default access record if one doesn't exist yet.
+// Safe to call on every login — is a no-op if record exists.
+export async function ensureAccountAccess(userId: string) {
+    const existing = await loadAccountAccess(userId);
+    if (existing) return existing;
+    const { data } = await supabase
+        .from("account_access")
+        .insert({
+            user_id: userId,
+            access_status: "active",
+            plan_type: "free",
+            subscription_status: "trial",
+            is_family_comp: false,
+        })
+        .select()
+        .single();
+    return data ?? null;
+}
+
+// Updates last_active_at and syncs email so admin dashboard has it.
+export async function updateUserActivity(userId: string, email?: string) {
+    const updates: Record<string, string> = {
+        last_active_at: new Date().toISOString(),
+    };
+    if (email) updates.email = email;
+    await supabase.from("profiles").update(updates).eq("id", userId);
 }

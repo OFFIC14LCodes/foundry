@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { saveBriefing } from "./db";
+import Logo from "./components/Logo";
 
 const FORGE_BRIEFING_PROMPT = (profile: any, stageLabel: string, completedCount: number, totalCount: number) => `
 You are Forge. Generate a Monday morning briefing for ${profile.name}, who is building "${profile.businessName || profile.idea}".
@@ -104,8 +105,9 @@ export default function BriefingsScreen({ userId, profile, briefings, onBriefing
                 <button onClick={onBack} style={{
                     background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
                     borderRadius: 8, padding: "5px 12px", color: "#F0EDE8",
-                    fontSize: 12, fontWeight: 500, cursor: "pointer"
-                }}>🔥 Hub</button>
+                    fontSize: 12, fontWeight: 500, cursor: "pointer",
+                    display: "flex", alignItems: "center", gap: 6
+                }}><Logo variant="flame" style={{ width: 14, height: 14, objectFit: "contain" }} />Hub</button>
 
                 <div style={{ textAlign: "center" }}>
                     <div style={{

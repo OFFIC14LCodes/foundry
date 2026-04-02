@@ -1,4 +1,23 @@
+import { useLayoutEffect, useRef } from "react";
+
 export default function ChatInput({ value, onChange, onSend, onKeyDown, loading, placeholder }) {
+    const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+    useLayoutEffect(() => {
+        const textarea = textareaRef.current;
+        if (!textarea) return;
+
+        textarea.style.height = "auto";
+
+        const computed = window.getComputedStyle(textarea);
+        const lineHeight = parseFloat(computed.lineHeight) || 20;
+        const maxHeight = lineHeight * 10;
+        const nextHeight = Math.min(textarea.scrollHeight, maxHeight);
+
+        textarea.style.height = `${nextHeight}px`;
+        textarea.style.overflowY = textarea.scrollHeight > maxHeight ? "auto" : "hidden";
+    }, [value]);
+
     return (
         <div
             style={{
@@ -12,6 +31,7 @@ export default function ChatInput({ value, onChange, onSend, onKeyDown, loading,
             }}
         >
             <textarea
+                ref={textareaRef}
                 value={value}
                 onChange={onChange}
                 onKeyDown={onKeyDown}
@@ -25,7 +45,11 @@ export default function ChatInput({ value, onChange, onSend, onKeyDown, loading,
                     fontSize: 13,
                     fontFamily: "'DM Sans', sans-serif",
                     lineHeight: 1.5,
-                    maxHeight: 120,
+                    height: "auto",
+                    minHeight: 20,
+                    maxHeight: 195,
+                    overflowY: "hidden",
+                    boxSizing: "border-box",
                 }}
             />
             <button

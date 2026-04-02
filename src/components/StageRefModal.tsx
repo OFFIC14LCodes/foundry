@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { STAGES_DATA } from "../constants/stages";
+import ForgeAvatar from "./ForgeAvatar";
 
 // ─────────────────────────────────────────────────────────────
 // STAGE REFERENCE MODAL
@@ -146,21 +147,7 @@ export default function StageRefModal({ stageId, messages, profile, onClose }) {
                                     }}
                                 >
                                     {isForge && (
-                                        <div
-                                            style={{
-                                                width: 28,
-                                                height: 28,
-                                                borderRadius: "50%",
-                                                flexShrink: 0,
-                                                background: "linear-gradient(135deg, #E8622A, #c9521e)",
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                fontSize: 13,
-                                            }}
-                                        >
-                                            🔥
-                                        </div>
+                                        <ForgeAvatar size={28} />
                                     )}
 
                                     <div

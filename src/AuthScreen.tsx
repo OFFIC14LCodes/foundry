@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "./supabase";
+import Logo from "./components/Logo";
 
 // ─────────────────────────────────────────────────────────────
 // AUTH SCREEN — Foundry Login / Signup
@@ -78,11 +79,14 @@ export default function AuthScreen({ onAuth }: { onAuth: () => void }) {
 
             {/* Logo */}
             <div style={{ textAlign: "center", marginBottom: 40, animation: "fadeSlideUp 0.6s ease" }}>
-                <div style={{ fontSize: 44, marginBottom: 12 }}>🔥</div>
-                <div style={{
-                    fontSize: 36, fontFamily: "'Cormorant Garamond', Georgia, serif",
-                    fontWeight: 700, color: "#F0EDE8", letterSpacing: "-1px", lineHeight: 1
-                }}>Foundry</div>
+                <Logo
+                    variant="full"
+                    style={{
+                        width: "min(280px, 72vw)",
+                        height: "auto",
+                        marginBottom: 12,
+                    }}
+                />
                 <div style={{
                     fontSize: 11, color: "#E8622A", letterSpacing: "0.25em",
                     textTransform: "uppercase", marginTop: 8

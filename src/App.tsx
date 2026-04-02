@@ -31,8 +31,17 @@ import { Icons } from "./icons";
 import PitchPracticeScreen from "./components/PitchPracticeScreen";
 import DocumentProductionScreen from "./components/DocumentProductionScreen";
 import MarketIntelligenceScreen from "./components/MarketIntelligenceScreen";
+import CofounderModeScreen from "./components/CofounderModeScreen";
+import AdminDashboard from "./components/AdminDashboard";
+import Logo from "./components/Logo";
+import PaywallScreen from "./components/paywall/PaywallScreen";
 import { buildMarketIntelContext } from "./constants/marketPrompt";
 import { callForgeAPI, streamForgeAPI } from "./lib/forgeApi";
+import { getTeamForUser, getRecentCofounderContext } from "./lib/cofounderDb";
+import { ensureAccountAccess, updateUserActivity } from "./db";
+import { canAccessApp, getAccessBlockReason } from "./lib/accessGate";
+import type { AccountAccess } from "./lib/accessGate";
+import { canAccessStage, getAccessSummary } from "./lib/foundryAccess";
 
 // callForgeAPI and streamForgeAPI are imported from ./lib/forgeApi
 
@@ -64,7 +73,7 @@ async function generateStageSummary(stageId, messages, profile) {
   }
 }
 
-async function buildRichContext(profile, activeStage, completedByStage, messagesByStage) {
+async function buildRichContext(profile, activeStage, completedByStage, messagesByStage, cofoundersContext?: string | null) {
   const stageData = STAGES_DATA[activeStage - 1];
   const completedMilestones = completedByStage[activeStage] || [];
 
@@ -112,6 +121,15 @@ This is your coaching depth for this stage. You carry it as fluency — not a cu
 
 ${methodContent}` : "";
 
+  const cofounderSection = cofoundersContext ? `
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+COFOUNDER TEAM CONTEXT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+This founder is part of a team. The following is from their shared team chat. Use it naturally when relevant — it represents knowledge the founder should not have to repeat. Reference it when it directly bears on the current conversation.
+
+${cofoundersContext}` : "";
+
   return `
 Current date & time: ${dateStr}, ${timeStr}
 Founder: ${profile.name} | Business: ${profile.businessName || profile.idea || "Idea stage"} (${profile.industry || "Early Stage"})
@@ -135,7 +153,7 @@ ${expenses}
 ${memorySections.length > 0 ? `CROSS-STAGE MEMORY (prior stage work):
 ${memorySections.join("\n\n")}` : ""}
 
-STAGE REFERENCES: When referencing work from another stage, wrap it like [STAGE_REF:N]text[/STAGE_REF]. Use naturally when prior work is relevant — not on every mention.${methodSection}
+STAGE REFERENCES: When referencing work from another stage, wrap it like [STAGE_REF:N]text[/STAGE_REF]. Use naturally when prior work is relevant — not on every mention.${cofounderSection}${methodSection}
   `.trim();
 }
 
@@ -212,10 +230,10 @@ function renderWithBold(text, onStageRef, onGlossaryTap) {
     });
   }
 
-  const renderTextWithBold = (segment, keyPrefix) => {
+  const renderInlineContent = (segment: string, keyPrefix: string) => {
     const boldParts = segment.split(/(\*\*.*?\*\*)/g);
 
-    return boldParts.map((part, i) => {
+    return boldParts.map((part: string, i: number) => {
       const key = `${keyPrefix}-${i}`;
 
       if (part.startsWith("**") && part.endsWith("**")) {
@@ -227,12 +245,25 @@ function renderWithBold(text, onStageRef, onGlossaryTap) {
         );
       }
 
-      return (
-        <span key={key}>
-          {applyGlossaryHighlights(part, onGlossaryTap)}
+      // Handle single newlines as <br>
+      const lines = part.split("\n");
+      return lines.map((line: string, j: number) => (
+        <span key={`${key}-l${j}`}>
+          {j > 0 && <br />}
+          {applyGlossaryHighlights(line, onGlossaryTap)}
         </span>
-      );
+      ));
     });
+  };
+
+  const renderTextWithBold = (segment: string, keyPrefix: string) => {
+    // Split on double newlines to create paragraph breaks
+    const paragraphs = segment.split(/\n\n+/);
+    return paragraphs.map((para: string, pIdx: number) => (
+      <p key={`${keyPrefix}-p${pIdx}`} style={{ margin: pIdx === 0 ? 0 : "10px 0 0 0" }}>
+        {renderInlineContent(para, `${keyPrefix}-p${pIdx}`)}
+      </p>
+    ));
   };
 
   return parts.map((part, i) => {
@@ -282,6 +313,7 @@ function ForgeScreen({
   marketReport = null,
   isFirstVisit = false,
   initialStage = null,
+  teamId = null as string | null,
 }) {
   const [activeStage, setActiveStage] = useState(initialStage || profile.currentStage);
   const [activeTab, setActiveTab] = useState("chat");
@@ -292,6 +324,14 @@ function ForgeScreen({
   const [showStageSelector, setShowStageSelector] = useState(false);
   const [stageRefModal, setStageRefModal] = useState(null);
   const [glossaryModal, setGlossaryModal] = useState(null);
+  const [briefingDismissed, setBriefingDismissed] = useState(false);
+  const [cofoundersContext, setCofoundersContext] = useState<string | null>(null);
+
+  // Load shared team context for Forge injection
+  useEffect(() => {
+    if (!teamId) { setCofoundersContext(null); return; }
+    getRecentCofounderContext(teamId, 20).then(ctx => setCofoundersContext(ctx || null));
+  }, [teamId]);
 
   const stage = STAGES_DATA[activeStage - 1];
   const StageIcon = stage.icon;
@@ -315,11 +355,12 @@ function ForgeScreen({
   useEffect(() => {
     setActiveTab("chat");
     setAdvanceReady(false);
+    setBriefingDismissed(false);
   }, [activeStage]);
 
   useEffect(() => {
     const stageMessages = messagesByStage[activeStage] || [];
-    if (stageMessages.length > 0 || loading) return;
+    if (stageMessages.length > 0 || loading || !briefingDismissed) return;
 
     const stageData = STAGES_DATA[activeStage - 1];
     const lastSeenRaw = localStorage.getItem("foundry_last_seen");
@@ -334,7 +375,8 @@ function ForgeScreen({
         profile,
         activeStage,
         completedByStage,
-        messagesByStage
+        messagesByStage,
+        cofoundersContext
       ), marketReport);
 
       let greetingPrompt = "";
@@ -408,7 +450,8 @@ Where do you want to start?`;
         profile,
         activeStage,
         completedByStage,
-        messagesByStage
+        messagesByStage,
+        cofoundersContext
       ), marketReport);
 
       const raw = await streamForgeAPI(
@@ -442,13 +485,14 @@ Where do you want to start?`;
     setLoading(false);
   };
 
-  const handleAdvance = (newStage) => {
-    onAdvance(newStage);
+  const handleAdvance = async (newStage) => {
+    const allowed = await onAdvance(newStage);
+    if (allowed === false) return;
     setActiveStage(newStage);
     setAdvanceReady(false);
   };
 
-  const showBriefing = messages.length === 0 && !loading;
+  const showBriefing = messages.length === 0 && !loading && !briefingDismissed;
 
   return (
     <div
@@ -752,13 +796,7 @@ Where do you want to start?`;
             stage={stage}
             stageId={activeStage}
             onStart={() => {
-              setLoading(true);
-              setTimeout(() => {
-                setLoading(false);
-                onUpdateMessages(activeStage, [
-                  { role: "forge", text: stage.forgeOpener(profile.name) },
-                ]);
-              }, 1200);
+              setBriefingDismissed(true);
             }}
           />
         )}
@@ -1007,7 +1045,12 @@ export default function FoundryApp() {
   const [showPitchPractice, setShowPitchPractice] = useState(false);
   const [showDocuments, setShowDocuments] = useState(false);
   const [showMarketIntel, setShowMarketIntel] = useState(false);
+  const [showCofounder, setShowCofounder] = useState(false);
+  const [showAdmin, setShowAdmin] = useState(false);
+  const [userTeamId, setUserTeamId] = useState<string | null>(null);
+  const [accountAccess, setAccountAccess] = useState<AccountAccess | null>(null);
   const [marketReport, setMarketReport] = useState<any>(null);
+  const [paywallStage, setPaywallStage] = useState<number | null>(null);
 
   // ── Auth listener ──
   useEffect(() => {
@@ -1048,7 +1091,14 @@ export default function FoundryApp() {
         setMessagesByStage(dbMessages);
         setJournalEntries(dbJournal);
         setBriefings(dbBriefings);
-        if (dbMarket) setMarketReport(dbMarket);
+        setMarketReport(dbMarket ?? null);
+        // Load team membership for cofounder context
+        getTeamForUser(uid).then(t => setUserTeamId(t?.id ?? null));
+        // Load and ensure account access record
+        const access = await ensureAccountAccess(uid);
+        setAccountAccess(access);
+        // Update activity + sync email for admin dashboard
+        updateUserActivity(uid, (user as any).email);
         setScreen("hub");
       } else {
         setScreen("intro");
@@ -1067,6 +1117,13 @@ export default function FoundryApp() {
     if (!user || !profile || !dataLoaded) return;
     saveProfile(user.id, profile);
   }, [profile]);
+
+  useEffect(() => {
+    if (!user || !profile || accountAccess) return;
+    ensureAccountAccess(user.id).then((access) => {
+      if (access) setAccountAccess(access);
+    });
+  }, [user?.id, !!profile, accountAccess?.id]);
 
   // ── Save stage progress to Supabase whenever it changes ──
   useEffect(() => {
@@ -1115,12 +1172,31 @@ export default function FoundryApp() {
   const handleAdvance = (newStage) => {
     updateProfile({ currentStage: newStage });
     setInitialStage(newStage);
+    return true;
+  };
+
+  const requestUpgrade = (targetStage = 2) => {
+    setPaywallStage(targetStage);
+    return false;
+  };
+
+  const attemptStageAccess = (targetStage) => {
+    if (canAccessStage(targetStage, accountAccess)) return true;
+    return requestUpgrade(targetStage);
+  };
+
+  const attemptAdvance = async (newStage) => {
+    if (!attemptStageAccess(newStage)) return false;
+    return handleAdvance(newStage);
   };
 
   const openForge = (stageId = null) => {
-    setInitialStage(stageId);
+    const targetStage = stageId || profile?.currentStage || 1;
+    if (!attemptStageAccess(targetStage)) return false;
+    setInitialStage(stageId ?? targetStage);
     setIsFirstVisit(false);
     setScreenPersisted("forge");
+    return true;
   };
 
   const handleReset = async () => {
@@ -1138,11 +1214,13 @@ export default function FoundryApp() {
     window.location.reload();
   };
 
+  const accessSummary = getAccessSummary(accountAccess);
+
   // ── Auth not yet checked ──
   if (!authChecked) {
     return (
       <div style={{ background: "#080809", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ fontSize: 32 }}>🔥</div>
+        <Logo variant="flame" style={{ width: 32, height: 32, objectFit: "contain" }} />
       </div>
     );
   }
@@ -1161,9 +1239,41 @@ export default function FoundryApp() {
   if (!dataLoaded) {
     return (
       <div style={{ background: "#080809", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
-        <div style={{ fontSize: 32 }}>🔥</div>
+        <Logo variant="flame" style={{ width: 32, height: 32, objectFit: "contain" }} />
         <div style={{ fontSize: 12, color: "#444", fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.1em" }}>Loading your workspace...</div>
       </div>
+    );
+  }
+
+  // ── Access gate — suspended or revoked accounts ──
+  if (dataLoaded && accountAccess && !canAccessApp(accountAccess)) {
+    return (
+      <>
+        <style>{GLOBAL_STYLES}</style>
+        <div style={{
+          background: "#080809", minHeight: "100vh", display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center", gap: 20, padding: 32,
+          fontFamily: "'DM Sans', sans-serif", color: "#F0EDE8", textAlign: "center",
+        }}>
+          <Logo variant="flame" style={{ width: 36, height: 36, objectFit: "contain", opacity: 0.4 }} />
+          <div style={{ fontSize: 18, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>
+            Access Restricted
+          </div>
+          <div style={{ fontSize: 13, color: "#666", maxWidth: 380, lineHeight: 1.7, fontStyle: "italic" }}>
+            {getAccessBlockReason(accountAccess)}
+          </div>
+          <button
+            onClick={() => supabase.auth.signOut()}
+            style={{
+              marginTop: 8, padding: "10px 24px", background: "transparent",
+              border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10,
+              color: "#555", fontSize: 12, cursor: "pointer",
+            }}
+          >
+            Sign Out
+          </button>
+        </div>
+      </>
     );
   }
 
@@ -1198,6 +1308,11 @@ export default function FoundryApp() {
             onOpenPitchPractice={() => setShowPitchPractice(true)}
             onOpenDocuments={() => setShowDocuments(true)}
             onOpenMarketIntel={() => setShowMarketIntel(true)}
+            onOpenCofounder={() => setShowCofounder(true)}
+            isAdmin={profile?.isAdmin ?? false}
+            onOpenAdmin={() => setShowAdmin(true)}
+            accessSummary={accessSummary}
+            onOpenUpgrade={() => requestUpgrade(Math.max(2, profile.currentStage || 2))}
           />
         )}
         {screen === "forge" && profile && (
@@ -1208,12 +1323,13 @@ export default function FoundryApp() {
             onUpdateProfile={updateProfile}
             completedByStage={completedByStage}
             onMilestoneComplete={handleMilestoneComplete}
-            onAdvance={handleAdvance}
+            onAdvance={attemptAdvance}
             messagesByStage={messagesByStage}
             onUpdateMessages={handleUpdateMessages}
             marketReport={marketReport}
             isFirstVisit={isFirstVisit}
             initialStage={initialStage}
+            teamId={userTeamId}
           />
         )}
       </div>
@@ -1263,6 +1379,28 @@ export default function FoundryApp() {
           completedByStage={completedByStage}
         />
       )}
+      {showCofounder && user && profile && (
+        <CofounderModeScreen
+          userId={(user as any).id}
+          profile={profile}
+          onBack={() => setShowCofounder(false)}
+          onTeamChanged={(id) => setUserTeamId(id)}
+        />
+      )}
+      {showAdmin && user && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "#080809", overflowY: "auto" }}>
+          <AdminDashboard
+            userId={(user as any).id}
+            onBack={() => setShowAdmin(false)}
+          />
+        </div>
+      )}
+      <PaywallScreen
+        open={paywallStage !== null}
+        targetStage={paywallStage ?? 2}
+        access={accountAccess}
+        onClose={() => setPaywallStage(null)}
+      />
     </>
   );
 }

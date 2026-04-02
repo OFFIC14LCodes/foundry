@@ -1,3 +1,5 @@
+import Logo from "./Logo";
+
 export default function ForgeAvatar({ size = 32 }) {
     return (
         <div
@@ -14,7 +16,14 @@ export default function ForgeAvatar({ size = 32 }) {
                 boxShadow: "0 0 16px rgba(232,98,42,0.25)",
             }}
         >
-            🔥
+            <Logo
+                variant="forge"
+                style={{
+                    width: size * 0.62,
+                    height: size * 0.62,
+                    objectFit: "contain",
+                }}
+            />
         </div>
     );
 }

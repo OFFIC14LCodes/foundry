@@ -4,6 +4,8 @@ import { useSpeech } from "../hooks/useSpeech";
 import { streamForgeAPI, callForgeAPI } from "../lib/forgeApi";
 import { buildPitchSystemPrompt, buildFeedbackSystemPrompt } from "../constants/pitchPrompt";
 import TypingDots from "./TypingDots";
+import ForgeAvatar from "./ForgeAvatar";
+import Logo from "./Logo";
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -364,7 +366,7 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
                 <div style={{ maxWidth: 560, margin: "0 auto", padding: "28px 16px 60px" }}>
                     {loading ? (
                         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16, padding: "80px 0", color: "#555" }}>
-                            <div style={{ fontSize: 32 }}>🔥</div>
+                            <Logo variant="flame" style={{ width: 32, height: 32, objectFit: "contain" }} />
                             <div style={{ fontSize: 14, fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", color: "#666" }}>
                                 Forge is reviewing your pitch...
                             </div>
@@ -411,7 +413,7 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
             {/* Session Header */}
             <div style={{ padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 12px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(232,98,42,0.15)", border: "1px solid rgba(232,98,42,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>🔥</div>
+                    <Logo variant="flame" style={{ width: 32, height: 32, objectFit: "contain" }} />
                     <div>
                         <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "'Cormorant Garamond', Georgia, serif" }}>{scenarioLabel}</div>
                         <div style={{ fontSize: 10, color: "#555" }}>{formatTime(sessionTime)} · {mode === "voice" ? "Voice" : "Text"}</div>
@@ -439,8 +441,8 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
                         }}
                     >
                         {msg.role === "forge" && (
-                            <div style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(232,98,42,0.15)", border: "1px solid rgba(232,98,42,0.25)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, marginRight: 8, flexShrink: 0, marginTop: 1 }}>
-                                🔥
+                            <div style={{ marginRight: 8, flexShrink: 0, marginTop: 1 }}>
+                                <ForgeAvatar size={28} />
                             </div>
                         )}
                         <div
@@ -466,7 +468,7 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
                 {/* Standalone typing indicator when Forge hasn't appeared yet */}
                 {loading && !messages.some(m => m.id) && (
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                        <div style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(232,98,42,0.15)", border: "1px solid rgba(232,98,42,0.25)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>🔥</div>
+                        <ForgeAvatar size={28} />
                         <div style={{ padding: "10px 14px", borderRadius: "4px 16px 16px 16px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
                             <TypingDots />
                         </div>

@@ -3,21 +3,29 @@ import { STAGES_DATA } from "../constants/stages";
 import { STAGE_COLORS } from "../constants/glossary";
 import { TAG_COLORS } from "../constants/styles";
 import { Icons } from "../icons";
+import Logo from "./Logo";
 
 export default function HubScreen({
     profile,
     onUpdateProfile,
     onEnterStage,
     onOpenForge,
+    onOpenUpgrade,
     onReset,
     onOpenJournal,
     onOpenBriefings,
     onOpenPitchPractice,
     onOpenDocuments,
     onOpenMarketIntel,
+    onOpenCofounder,
+    isAdmin = false,
+    onOpenAdmin,
+    completedByStage,
+    accessSummary,
 }) {
     const [showDecisionModal, setShowDecisionModal] = useState(false);
     const [showExpenseModal, setShowExpenseModal] = useState(false);
+    const [showResetModal, setShowResetModal] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
     const [decisionText, setDecisionText] = useState("");
@@ -137,10 +145,23 @@ export default function HubScreen({
         {
             icon: Icons.sidebar.cofounder,
             label: "Co-Founder Mode",
-            sub: "Shared workspace",
-            action: null,
-            available: false,
+            sub: "Shared team workspace",
+            action: () => {
+                setSidebarOpen(false);
+                onOpenCofounder();
+            },
+            available: true,
         },
+        ...(isAdmin ? [{
+            icon: Icons.sidebar.admin,
+            label: "Admin Dashboard",
+            sub: "User & subscription management",
+            action: () => {
+                setSidebarOpen(false);
+                onOpenAdmin?.();
+            },
+            available: true,
+        }] : []),
     ];
 
 
@@ -192,7 +213,7 @@ export default function HubScreen({
                         }}
                     >
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <span style={{ fontSize: 18 }}>🔥</span>
+                            <Logo variant="flame" style={{ width: 18, height: 18, objectFit: "contain" }} />
                             <span
                                 style={{
                                     fontSize: 15,
@@ -243,6 +264,33 @@ export default function HubScreen({
                 </div>
 
                 <div style={{ padding: "12px 10px", flex: 1 }}>
+                    {accessSummary && (
+                        <div style={{ padding: "0 8px 14px" }}>
+                            <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "12px 12px 10px" }}>
+                                <div style={{ fontSize: 9, color: "#444", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>
+                                    Access
+                                </div>
+                                <div style={{ fontSize: 13, color: "#F0EDE8", fontWeight: 600, marginBottom: 4 }}>
+                                    {accessSummary.planName} · {accessSummary.statusLabel}
+                                </div>
+                                <div style={{ fontSize: 10, color: "#666", lineHeight: 1.6 }}>
+                                    {accessSummary.note}
+                                </div>
+                                {!accessSummary.canAccessPaidStages && (
+                                    <button
+                                        onClick={() => {
+                                            setSidebarOpen(false);
+                                            onOpenUpgrade?.();
+                                        }}
+                                        style={{ marginTop: 10, width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid rgba(232,98,42,0.22)", background: "rgba(232,98,42,0.1)", color: "#E8622A", fontSize: 11, cursor: "pointer", fontWeight: 600 }}
+                                    >
+                                        Unlock Stage 2
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     <div
                         style={{
                             fontSize: 9,
@@ -330,7 +378,7 @@ export default function HubScreen({
 
                     <div style={{ padding: "12px 10px 24px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
                         <button
-                            onClick={onReset}
+                            onClick={() => setShowResetModal(true)}
                             style={{
                                 width: "100%",
                                 padding: "9px",
@@ -562,6 +610,30 @@ export default function HubScreen({
                         </div>
                     </div>
                 </div>
+
+                {accessSummary && (
+                    <div style={{ background: "linear-gradient(180deg, rgba(232,98,42,0.08), rgba(255,255,255,0.02))", border: "1px solid rgba(232,98,42,0.16)", borderRadius: 16, padding: "14px 16px", marginBottom: 14, animation: "fadeSlideUp 0.5s ease 0.18s both" }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 8 }}>
+                            <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>
+                                Access
+                            </div>
+                            <div style={{ fontSize: 11, color: accessSummary.canAccessPaidStages ? "#4CAF8A" : "#E8622A" }}>
+                                {accessSummary.planName} · {accessSummary.statusLabel}
+                            </div>
+                        </div>
+                        <div style={{ fontSize: 12, color: "#A8A4A0", lineHeight: 1.7 }}>
+                            {accessSummary.note}
+                        </div>
+                        {!accessSummary.canAccessPaidStages && (
+                            <button
+                                onClick={() => onOpenUpgrade?.()}
+                                style={{ marginTop: 12, padding: "9px 14px", background: "linear-gradient(135deg, #E8622A, #c9521e)", border: "none", borderRadius: 10, color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                            >
+                                Unlock the execution phase
+                            </button>
+                        )}
+                    </div>
+                )}
                 {/* Budget */}
                 <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "14px 16px", marginBottom: 14, animation: "fadeSlideUp 0.5s ease 0.25s both" }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
@@ -678,6 +750,43 @@ export default function HubScreen({
                         <div style={{ display: "flex", gap: 8 }}>
                             <button onClick={() => setShowExpenseModal(false)} style={{ flex: 1, padding: "10px", background: "transparent", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#555", fontSize: 12, cursor: "pointer" }}>Cancel</button>
                             <button onClick={addExpense} style={{ flex: 2, padding: "10px", background: "linear-gradient(135deg, #E8622A, #c9521e)", border: "none", borderRadius: 10, color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}>Save Expense</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showResetModal && (
+                <div
+                    style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, animation: "fadeIn 0.2s ease" }}
+                    onClick={() => setShowResetModal(false)}
+                >
+                    <div
+                        onClick={e => e.stopPropagation()}
+                        style={{ width: "100%", maxWidth: 440, background: "#0E0E10", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 22, animation: "fadeSlideUp 0.3s ease" }}
+                    >
+                        <div style={{ fontSize: 17, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 10 }}>
+                            Reset account?
+                        </div>
+                        <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.6, marginBottom: 16 }}>
+                            Resetting your account will make Foundry and Forge both completely restart and forget any progress you&apos;ve made. This cannot be undone.
+                        </div>
+                        <div style={{ display: "flex", gap: 8 }}>
+                            <button
+                                onClick={() => setShowResetModal(false)}
+                                style={{ flex: 1, padding: "10px", background: "transparent", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#555", fontSize: 12, cursor: "pointer" }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setShowResetModal(false);
+                                    setSidebarOpen(false);
+                                    onReset();
+                                }}
+                                style={{ flex: 2, padding: "10px", background: "linear-gradient(135deg, #A63B24, #842B1A)", border: "none", borderRadius: 10, color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}
+                            >
+                                Yes, reset everything
+                            </button>
                         </div>
                     </div>
                 </div>

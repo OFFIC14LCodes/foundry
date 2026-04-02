@@ -29,6 +29,7 @@ import {
     Turtle,
     Flame,
     ArrowRight,
+    ShieldCheck,
 } from "lucide-react";
 
 import {
@@ -40,7 +41,17 @@ import {
     UserSound,
 } from "@phosphor-icons/react";
 
+import foundryFlame from "./assets/logos/foundry-flame.svg";
+import foundryAndForge from "./assets/logos/foundry-and-forge.svg";
+import forge from "./assets/logos/forge.svg";
+
 export const Icons = {
+    logos: {
+        foundryFlame,
+        foundryAndForge,
+        forge,
+    },
+
     stages: {
         idea: Lightbulb,
         plan: ClipboardList,
@@ -60,6 +71,7 @@ export const Icons = {
         export: FileSymlink,
         marketIntel: CandlestickChart,
         cofounder: Users,
+        admin: ShieldCheck,
     },
 
     hub: {

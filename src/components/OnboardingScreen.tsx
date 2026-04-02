@@ -13,6 +13,7 @@ import MessageBubble from "./MessageBubble";
 import ForgeAvatar from "./ForgeAvatar";
 import TypingDots from "./TypingDots";
 import ChatInput from "./ChatInput";
+import Logo from "./Logo";
 
 
 
@@ -188,7 +189,7 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
         <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'DM Sans', sans-serif", color: "#F0EDE8", display: "flex", flexDirection: "column" }}>
             <div style={{ padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span style={{ fontSize: 20 }}>🔥</span>
+                    <Logo variant="flame" style={{ width: 20, height: 20, objectFit: "contain" }} />
                     <span style={{ fontSize: 18, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700 }}>Foundry</span>
                 </div>
                 {stepIndex > 0 && (
