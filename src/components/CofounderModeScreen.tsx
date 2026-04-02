@@ -4,10 +4,12 @@ import { FORGE_SYSTEM_PROMPT } from '../constants/prompts';
 import { streamForgeAPI } from '../lib/forgeApi';
 import { Icons } from '../icons';
 import ForgeAvatar from './ForgeAvatar';
-import {
+import type {
     CofounderTeam,
     CofounderMember,
     CofounderMessage,
+} from '../lib/cofounderDb';
+import {
     getTeamForUser,
     createTeam,
     getTeamMembers,

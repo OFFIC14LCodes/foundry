@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { OWNER_EMAIL, hasAdminAccess, isOwnerRole, normalizeEmail, normalizeUserRole } from "./lib/roles";
 
 // ─────────────────────────────────────────────────────────────
 // FOUNDRY DATABASE LAYER
@@ -22,6 +23,13 @@ export async function loadProfile(userId: string) {
         .single();
     if (error || !data) return null;
 
+    const role = normalizeUserRole(data.role);
+    const setupCompleted = data.setup_completed ?? Boolean(
+        data.idea ||
+        data.business_name ||
+        (data.current_stage ?? 1) > 1
+    );
+
     // Reshape from DB columns back into the profile shape the app expects
     return {
         name: data.name,
@@ -41,8 +49,10 @@ export async function loadProfile(userId: string) {
         },
         glossaryLearned: data.glossary_learned ?? [],
         decisions: data.decisions ?? [],
-        // Admin / access fields
-        isAdmin: data.is_admin ?? false,
+        setupCompleted,
+        role,
+        isAdmin: hasAdminAccess(role),
+        isOwner: isOwnerRole(role),
         email: data.email ?? null,
         lastActiveAt: data.last_active_at ?? null,
     };
@@ -70,6 +80,21 @@ export async function saveProfile(userId: string, profile: any) {
         updated_at: new Date().toISOString(),
     });
     if (error) console.error("saveProfile error:", error.message);
+}
+
+export async function ensureUserProfile(userId: string, user?: { email?: string | null; user_metadata?: Record<string, any> | null }) {
+    const { error } = await supabase
+        .from("profiles")
+        .insert({
+            id: userId,
+            email: user?.email ?? null,
+            updated_at: new Date().toISOString(),
+        });
+
+    if (error && error.code !== "23505") {
+        console.error("ensureUserProfile error:", error.message);
+    }
+    return !error;
 }
 
 // ── STAGE PROGRESS ────────────────────────────────────────────
@@ -295,4 +320,24 @@ export async function updateUserActivity(userId: string, email?: string) {
     };
     if (email) updates.email = email;
     await supabase.from("profiles").update(updates).eq("id", userId);
+}
+
+export async function ensureOwnerProfileRole(userId: string, email?: string | null) {
+    if (normalizeEmail(email) !== OWNER_EMAIL) return false;
+
+    const { error } = await supabase
+        .from("profiles")
+        .update({
+            role: "owner",
+            email: email ?? OWNER_EMAIL,
+            updated_at: new Date().toISOString(),
+        })
+        .eq("id", userId);
+
+    if (error) {
+        console.warn("ensureOwnerProfileRole warning:", error.message);
+        return false;
+    }
+
+    return true;
 }

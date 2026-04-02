@@ -10,6 +10,7 @@ export default function HubScreen({
     onUpdateProfile,
     onEnterStage,
     onOpenForge,
+    onLogout,
     onOpenUpgrade,
     onReset,
     onOpenJournal,
@@ -18,6 +19,7 @@ export default function HubScreen({
     onOpenDocuments,
     onOpenMarketIntel,
     onOpenCofounder,
+    onOpenAdminHub,
     isAdmin = false,
     onOpenAdmin,
     completedByStage,
@@ -25,6 +27,7 @@ export default function HubScreen({
 }) {
     const [showDecisionModal, setShowDecisionModal] = useState(false);
     const [showExpenseModal, setShowExpenseModal] = useState(false);
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [showResetModal, setShowResetModal] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
@@ -37,6 +40,17 @@ export default function HubScreen({
         const timer = setTimeout(() => setMounted(true), 100);
         return () => clearTimeout(timer);
     }, []);
+
+    useEffect(() => {
+        console.debug("[AdminHub] HubScreen props", {
+            authUserEmail: null,
+            profileEmail: profile?.email ?? null,
+            profileRole: profile?.role ?? null,
+            hasAdminHubAccess: isAdmin,
+            hubScreenIsAdminProp: isAdmin,
+            willRenderAdminTab: isAdmin,
+        });
+    }, [profile?.email, profile?.role, isAdmin]);
 
     const addDecision = () => {
         if (!decisionText.trim()) return;
@@ -154,8 +168,17 @@ export default function HubScreen({
         },
         ...(isAdmin ? [{
             icon: Icons.sidebar.admin,
+            label: "Admin Hub",
+            sub: "Internal control panel",
+            action: () => {
+                setSidebarOpen(false);
+                onOpenAdminHub?.();
+            },
+            available: true,
+        }, {
+            icon: Icons.sidebar.admin,
             label: "Admin Dashboard",
-            sub: "User & subscription management",
+            sub: "Detailed user operations",
             action: () => {
                 setSidebarOpen(false);
                 onOpenAdmin?.();
@@ -377,6 +400,22 @@ export default function HubScreen({
                     })}
 
                     <div style={{ padding: "12px 10px 24px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                        <button
+                            onClick={() => setShowLogoutModal(true)}
+                            style={{
+                                width: "100%",
+                                padding: "9px",
+                                background: "rgba(255,255,255,0.03)",
+                                border: "1px solid rgba(255,255,255,0.08)",
+                                borderRadius: 8,
+                                color: "#888",
+                                fontSize: 11,
+                                cursor: "pointer",
+                                marginBottom: 8,
+                            }}
+                        >
+                            Log Out
+                        </button>
                         <button
                             onClick={() => setShowResetModal(true)}
                             style={{
@@ -750,6 +789,43 @@ export default function HubScreen({
                         <div style={{ display: "flex", gap: 8 }}>
                             <button onClick={() => setShowExpenseModal(false)} style={{ flex: 1, padding: "10px", background: "transparent", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#555", fontSize: 12, cursor: "pointer" }}>Cancel</button>
                             <button onClick={addExpense} style={{ flex: 2, padding: "10px", background: "linear-gradient(135deg, #E8622A, #c9521e)", border: "none", borderRadius: 10, color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}>Save Expense</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showLogoutModal && (
+                <div
+                    style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, animation: "fadeIn 0.2s ease" }}
+                    onClick={() => setShowLogoutModal(false)}
+                >
+                    <div
+                        onClick={e => e.stopPropagation()}
+                        style={{ width: "100%", maxWidth: 420, background: "#0E0E10", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 22, animation: "fadeSlideUp 0.3s ease" }}
+                    >
+                        <div style={{ fontSize: 17, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 10 }}>
+                            Log out?
+                        </div>
+                        <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.6, marginBottom: 16 }}>
+                            Are you sure you want to log out? Your local session will be cleared and you&apos;ll return to sign in.
+                        </div>
+                        <div style={{ display: "flex", gap: 8 }}>
+                            <button
+                                onClick={() => setShowLogoutModal(false)}
+                                style={{ flex: 1, padding: "10px", background: "transparent", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#555", fontSize: 12, cursor: "pointer" }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setShowLogoutModal(false);
+                                    setSidebarOpen(false);
+                                    onLogout?.();
+                                }}
+                                style={{ flex: 2, padding: "10px", background: "linear-gradient(135deg, #F0EDE8, #D9D2C7)", border: "none", borderRadius: 10, color: "#111", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}
+                            >
+                                Yes, log out
+                            </button>
                         </div>
                     </div>
                 </div>

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { BILLING_PLANS, FOUNDING_PRICING, TEAM_SEAT_ADDON, formatUsd, getPlanPriceCents, getTeamSeatPriceCents } from "../../config/pricing";
 import { beginCheckout } from "../../lib/billing";
-import { AccountAccess } from "../../lib/accessGate";
+import type { AccountAccess } from "../../lib/accessGate";
 import { getAccessSummary, getEffectivePricingMode, getPaidStageBlockNote, getPaywallEntryMessage, hasLockedFoundingPricing } from "../../lib/foundryAccess";
 import { Icons } from "../../icons";
 

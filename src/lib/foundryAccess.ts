@@ -1,5 +1,7 @@
-import { FREE_STAGE_LIMIT, PricingMode, isFoundingWindowActive } from "../config/pricing";
-import { AccountAccess, canAccessApp, isComped, planLabel, subscriptionLabel } from "./accessGate";
+import { FREE_STAGE_LIMIT, isFoundingWindowActive } from "../config/pricing";
+import type { PricingMode } from "../config/pricing";
+import type { AccountAccess } from "./accessGate";
+import { canAccessApp, isComped, planLabel, subscriptionLabel } from "./accessGate";
 
 export type PaidStageAccessState =
     | "eligible"

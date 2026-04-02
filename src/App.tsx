@@ -10,6 +10,8 @@ import {
   loadJournalEntries, saveJournalEntry, deleteJournalEntry,
   loadBriefings, saveBriefing,
   loadLatestMarketReport,
+  ensureUserProfile,
+  ensureOwnerProfileRole,
 } from "./db";
 import { GLOBAL_STYLES } from "./constants/styles";
 import { FORGE_SYSTEM_PROMPT, FOUNDRY_METHOD } from "./constants/prompts";
@@ -33,6 +35,7 @@ import DocumentProductionScreen from "./components/DocumentProductionScreen";
 import MarketIntelligenceScreen from "./components/MarketIntelligenceScreen";
 import CofounderModeScreen from "./components/CofounderModeScreen";
 import AdminDashboard from "./components/AdminDashboard";
+import AdminHubScreen from "./components/AdminHubScreen";
 import Logo from "./components/Logo";
 import PaywallScreen from "./components/paywall/PaywallScreen";
 import { buildMarketIntelContext } from "./constants/marketPrompt";
@@ -42,6 +45,8 @@ import { ensureAccountAccess, updateUserActivity } from "./db";
 import { canAccessApp, getAccessBlockReason } from "./lib/accessGate";
 import type { AccountAccess } from "./lib/accessGate";
 import { canAccessStage, getAccessSummary } from "./lib/foundryAccess";
+import { hasAdminHubAccess, isOwnerEmail } from "./lib/roles";
+import { STORAGE_KEYS, clearFoundryClientStorage, createEmptyMessagesByStage, createEmptyStageProgress } from "./lib/session";
 
 // callForgeAPI and streamForgeAPI are imported from ./lib/forgeApi
 
@@ -985,16 +990,6 @@ Where do you want to start?`;
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// PERSISTENCE LAYER
-// ─────────────────────────────────────────────────────────────
-const STORAGE_KEYS = {
-  profile: "foundry_profile",
-  completedByStage: "foundry_completed",
-  messagesByStage: "foundry_messages",
-  screen: "foundry_screen",
-};
-
 function loadFromStorage(key, fallback) {
   try {
     const raw = localStorage.getItem(key);
@@ -1028,8 +1023,8 @@ function usePersistedState(key, fallback) {
 // ─────────────────────────────────────────────────────────────
 export default function FoundryApp() {
   const [profile, setProfile] = useState(null);
-  const [completedByStage, setCompletedByStage] = useState({ 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] });
-  const [messagesByStage, setMessagesByStage] = useState({ 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] });
+  const [completedByStage, setCompletedByStage] = useState(createEmptyStageProgress());
+  const [messagesByStage, setMessagesByStage] = useState(createEmptyMessagesByStage());
 
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
@@ -1046,11 +1041,37 @@ export default function FoundryApp() {
   const [showDocuments, setShowDocuments] = useState(false);
   const [showMarketIntel, setShowMarketIntel] = useState(false);
   const [showCofounder, setShowCofounder] = useState(false);
+  const [showAdminHub, setShowAdminHub] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [userTeamId, setUserTeamId] = useState<string | null>(null);
   const [accountAccess, setAccountAccess] = useState<AccountAccess | null>(null);
   const [marketReport, setMarketReport] = useState<any>(null);
   const [paywallStage, setPaywallStage] = useState<number | null>(null);
+
+  const resetClientSessionState = () => {
+    setProfile(null);
+    setCompletedByStage(createEmptyStageProgress());
+    setMessagesByStage(createEmptyMessagesByStage());
+    setScreen("loading");
+    setIsFirstVisit(false);
+    setInitialStage(null);
+    setJournalEntries([]);
+    setShowJournal(false);
+    setBriefings([]);
+    setShowBriefings(false);
+    setShowPitchPractice(false);
+    setShowDocuments(false);
+    setShowMarketIntel(false);
+    setShowCofounder(false);
+    setShowAdminHub(false);
+    setShowAdmin(false);
+    setUserTeamId(null);
+    setAccountAccess(null);
+    setMarketReport(null);
+    setPaywallStage(null);
+    setDataLoaded(false);
+    clearFoundryClientStorage();
+  };
 
   // ── Auth listener ──
   useEffect(() => {
@@ -1060,7 +1081,11 @@ export default function FoundryApp() {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+      const nextUser = session?.user ?? null;
+      setUser(nextUser);
+      if (!nextUser) {
+        resetClientSessionState();
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -1074,6 +1099,9 @@ export default function FoundryApp() {
 
     const loadData = async () => {
       const uid = (user as any).id as string;
+      const authEmail = ((user as any).email ?? null) as string | null;
+      await ensureUserProfile(uid, user as any);
+      await ensureOwnerProfileRole(uid, authEmail);
       const [dbProfile, dbProgress, dbMessages, dbJournal, dbBriefings, dbMarket] = await Promise.all([
         loadProfile(uid),
         loadAllStageProgress(uid),
@@ -1085,8 +1113,24 @@ export default function FoundryApp() {
 
       if (cancelled) return;
 
-      if (dbProfile) {
-        setProfile(dbProfile);
+      if (dbProfile?.setupCompleted) {
+        const ownerFallback = isOwnerEmail(authEmail);
+        const resolvedProfile = {
+          ...dbProfile,
+          email: dbProfile.email ?? authEmail,
+          role: ownerFallback ? "owner" : dbProfile.role,
+          isAdmin: ownerFallback ? true : dbProfile.isAdmin,
+          isOwner: ownerFallback ? true : dbProfile.isOwner,
+        };
+
+        console.debug("[AdminHub] loadData resolved profile", {
+          authUserEmail: authEmail,
+          profileEmail: resolvedProfile.email ?? null,
+          profileRole: resolvedProfile.role ?? null,
+          ownerFallback,
+        });
+
+        setProfile(resolvedProfile);
         setCompletedByStage(dbProgress);
         setMessagesByStage(dbMessages);
         setJournalEntries(dbJournal);
@@ -1098,9 +1142,26 @@ export default function FoundryApp() {
         const access = await ensureAccountAccess(uid);
         setAccountAccess(access);
         // Update activity + sync email for admin dashboard
-        updateUserActivity(uid, (user as any).email);
+        updateUserActivity(uid, authEmail ?? undefined);
         setScreen("hub");
       } else {
+        if (dbProfile) {
+          const ownerFallback = isOwnerEmail(authEmail);
+          const resolvedProfile = {
+            ...dbProfile,
+            email: dbProfile.email ?? authEmail,
+            role: ownerFallback ? "owner" : dbProfile.role,
+            isAdmin: ownerFallback ? true : dbProfile.isAdmin,
+            isOwner: ownerFallback ? true : dbProfile.isOwner,
+          };
+          console.debug("[AdminHub] loadData unresolved setup profile", {
+            authUserEmail: authEmail,
+            profileEmail: resolvedProfile.email ?? null,
+            profileRole: resolvedProfile.role ?? null,
+            ownerFallback,
+          });
+          setProfile(resolvedProfile);
+        }
         setScreen("intro");
         setIsFirstVisit(true);
       }
@@ -1209,12 +1270,37 @@ export default function FoundryApp() {
       ]);
     }
     // Clear localStorage
-    Object.values(STORAGE_KEYS).forEach(k => localStorage.removeItem(k));
-    localStorage.removeItem("foundry_last_seen");
+    clearFoundryClientStorage();
     window.location.reload();
   };
 
+  const handleLogout = async () => {
+    resetClientSessionState();
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error("logout error:", error.message);
+    }
+  };
+
   const accessSummary = getAccessSummary(accountAccess);
+  const authUserEmail = ((user as any)?.email ?? null) as string | null;
+  const canOpenAdminHub = hasAdminHubAccess({
+    role: profile?.role,
+    profileEmail: profile?.email,
+    authEmail: authUserEmail,
+  });
+
+  useEffect(() => {
+    console.debug("[AdminHub] visibility check", {
+      authUserEmail,
+      profileEmail: profile?.email ?? null,
+      profileRole: profile?.role ?? null,
+      hasAdminHubAccess: canOpenAdminHub,
+      hubScreenIsAdminProp: canOpenAdminHub,
+      showAdminHub,
+      canOpenAdminScreen: canOpenAdminHub,
+    });
+  }, [authUserEmail, profile?.email, profile?.role, canOpenAdminHub, showAdminHub]);
 
   // ── Auth not yet checked ──
   if (!authChecked) {
@@ -1263,7 +1349,7 @@ export default function FoundryApp() {
             {getAccessBlockReason(accountAccess)}
           </div>
           <button
-            onClick={() => supabase.auth.signOut()}
+            onClick={handleLogout}
             style={{
               marginTop: 8, padding: "10px 24px", background: "transparent",
               border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10,
@@ -1286,7 +1372,7 @@ export default function FoundryApp() {
         {screen === "onboarding" && (
           <OnboardingScreen
             onComplete={(p: any) => {
-              setProfile(p);
+              setProfile({ ...p, setupCompleted: true });
               setIsFirstVisit(true);
               setInitialStage(1 as any);
               setScreenPersisted("forge");
@@ -1301,6 +1387,7 @@ export default function FoundryApp() {
             onUpdateProfile={updateProfile}
             onEnterStage={id => openForge(id)}
             onOpenForge={() => openForge(null)}
+            onLogout={handleLogout}
             completedByStage={completedByStage}
             onReset={handleReset}
             onOpenJournal={() => setShowJournal(true)}
@@ -1309,7 +1396,8 @@ export default function FoundryApp() {
             onOpenDocuments={() => setShowDocuments(true)}
             onOpenMarketIntel={() => setShowMarketIntel(true)}
             onOpenCofounder={() => setShowCofounder(true)}
-            isAdmin={profile?.isAdmin ?? false}
+            onOpenAdminHub={() => setShowAdminHub(true)}
+            isAdmin={canOpenAdminHub}
             onOpenAdmin={() => setShowAdmin(true)}
             accessSummary={accessSummary}
             onOpenUpgrade={() => requestUpgrade(Math.max(2, profile.currentStage || 2))}
@@ -1387,7 +1475,16 @@ export default function FoundryApp() {
           onTeamChanged={(id) => setUserTeamId(id)}
         />
       )}
-      {showAdmin && user && (
+      {showAdminHub && user && canOpenAdminHub && (
+        <AdminHubScreen
+          onBack={() => setShowAdminHub(false)}
+          onOpenUserManagement={() => {
+            setShowAdminHub(false);
+            setShowAdmin(true);
+          }}
+        />
+      )}
+      {showAdmin && user && canOpenAdminHub && (
         <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "#080809", overflowY: "auto" }}>
           <AdminDashboard
             userId={(user as any).id}

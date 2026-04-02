@@ -1,8 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Icons } from '../icons';
-import {
+import type {
     AdminUser,
     AdminNote,
+} from '../lib/adminDb';
+import {
     loadAdminUsers,
     loadAdminUser,
     loadAdminNotes,
@@ -14,6 +16,7 @@ import {
     addAdminNote,
 } from '../lib/adminDb';
 import { subscriptionLabel, planLabel } from '../lib/accessGate';
+import { hasAdminAccess, isOwnerRole, roleLabel } from '../lib/roles';
 
 // ─────────────────────────────────────────────────────────────
 // STATUS COLOURS
@@ -149,7 +152,7 @@ function UserRow({ user, onClick }: { user: AdminUser; onClick: () => void }) {
             {/* Identity */}
             <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, color: '#F0EDE8', fontWeight: 500, marginBottom: 2 }}>
-                    {user.name ?? '—'}{user.is_admin && <span style={{ fontSize: 9, color: '#F5A843', marginLeft: 6, background: 'rgba(245,168,67,0.15)', padding: '1px 5px', borderRadius: 10 }}>ADMIN</span>}
+                    {user.name ?? '—'}{hasAdminAccess(user.role) && <span style={{ fontSize: 9, color: isOwnerRole(user.role) ? '#E8622A' : '#F5A843', marginLeft: 6, background: isOwnerRole(user.role) ? 'rgba(232,98,42,0.15)' : 'rgba(245,168,67,0.15)', padding: '1px 5px', borderRadius: 10 }}>{roleLabel(user.role).toUpperCase()}</span>}
                 </div>
                 <div style={{ fontSize: 11, color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {user.email ?? '—'}

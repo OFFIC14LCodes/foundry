@@ -1,4 +1,5 @@
-import { BILLING_PLANS, BillingPlanId, PricingMode, getPlanPriceCents, getTeamSeatPriceCents } from "../config/pricing";
+import { BILLING_PLANS, getPlanPriceCents, getTeamSeatPriceCents } from "../config/pricing";
+import type { BillingPlanId, PricingMode } from "../config/pricing";
 
 export interface CheckoutIntent {
     planId: Exclude<BillingPlanId, "free">;

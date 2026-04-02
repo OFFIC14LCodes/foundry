@@ -1,5 +1,6 @@
 import { supabase } from '../supabase';
-import { AccountAccess, AccessStatus, PlanType, SubscriptionStatus } from './accessGate';
+import type { AccountAccess, AccessStatus, PlanType, SubscriptionStatus } from './accessGate';
+import type { UserRole } from './roles';
 
 // ─────────────────────────────────────────────────────────────
 // ADMIN DATABASE LAYER
@@ -13,7 +14,8 @@ import { AccountAccess, AccessStatus, PlanType, SubscriptionStatus } from './acc
 //
 // -- 1. Extend profiles table
 // ALTER TABLE public.profiles
-//   ADD COLUMN IF NOT EXISTS is_admin    boolean DEFAULT false,
+//   ADD COLUMN IF NOT EXISTS role        text NOT NULL DEFAULT 'user',
+//   ADD COLUMN IF NOT EXISTS setup_completed boolean NOT NULL DEFAULT false,
 //   ADD COLUMN IF NOT EXISTS email       text,
 //   ADD COLUMN IF NOT EXISTS last_active_at timestamptz;
 //
@@ -65,35 +67,40 @@ import { AccountAccess, AccessStatus, PlanType, SubscriptionStatus } from './acc
 //   created_at              timestamptz DEFAULT now()
 // );
 //
-// -- 5. is_admin() helper (SECURITY DEFINER bypasses RLS for the check itself)
-// CREATE OR REPLACE FUNCTION public.is_admin()
-// RETURNS boolean LANGUAGE sql SECURITY DEFINER STABLE AS $$
+// -- 5. Admin/owner role helpers (SECURITY DEFINER bypasses RLS for the check itself)
+// CREATE OR REPLACE FUNCTION public.current_user_role()
+// RETURNS text LANGUAGE sql SECURITY DEFINER STABLE AS $$
 //   SELECT COALESCE(
-//     (SELECT is_admin FROM public.profiles WHERE id = auth.uid()),
-//     false
+//     (SELECT role FROM public.profiles WHERE id = auth.uid()),
+//     'user'
 //   )
+// $$;
+//
+// CREATE OR REPLACE FUNCTION public.is_admin_or_owner()
+// RETURNS boolean LANGUAGE sql SECURITY DEFINER STABLE AS $$
+//   SELECT public.current_user_role() IN ('admin', 'owner')
 // $$;
 //
 // -- 6. RLS: account_access
 // ALTER TABLE public.account_access ENABLE ROW LEVEL SECURITY;
 // CREATE POLICY "own_read"   ON public.account_access FOR SELECT USING (user_id = auth.uid());
-// CREATE POLICY "admin_all"  ON public.account_access FOR ALL   USING (public.is_admin());
+// CREATE POLICY "admin_all"  ON public.account_access FOR ALL   USING (public.is_admin_or_owner());
 // CREATE POLICY "own_insert" ON public.account_access FOR INSERT WITH CHECK (user_id = auth.uid());
 //
 // -- 7. RLS: billing_subscriptions
 // ALTER TABLE public.billing_subscriptions ENABLE ROW LEVEL SECURITY;
 // CREATE POLICY "own_read"  ON public.billing_subscriptions FOR SELECT USING (user_id = auth.uid());
-// CREATE POLICY "admin_all" ON public.billing_subscriptions FOR ALL   USING (public.is_admin());
+// CREATE POLICY "admin_all" ON public.billing_subscriptions FOR ALL   USING (public.is_admin_or_owner());
 //
 // -- 8. RLS: admin_notes
 // ALTER TABLE public.admin_notes ENABLE ROW LEVEL SECURITY;
-// CREATE POLICY "admin_all" ON public.admin_notes FOR ALL USING (public.is_admin());
+// CREATE POLICY "admin_all" ON public.admin_notes FOR ALL USING (public.is_admin_or_owner());
 //
 // -- 9. RLS: profiles — admins can read all
 // -- (Add to existing profiles RLS, or enable it if not yet enabled)
 // ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 // CREATE POLICY "own_all"   ON public.profiles FOR ALL   USING (id = auth.uid());
-// CREATE POLICY "admin_read" ON public.profiles FOR SELECT USING (public.is_admin());
+// CREATE POLICY "admin_read" ON public.profiles FOR SELECT USING (public.is_admin_or_owner());
 //
 // -- 10. Trigger to auto-create account_access on profile insert (optional)
 // CREATE OR REPLACE FUNCTION public.create_default_access()
@@ -109,8 +116,7 @@ import { AccountAccess, AccessStatus, PlanType, SubscriptionStatus } from './acc
 //   AFTER INSERT ON public.profiles
 //   FOR EACH ROW EXECUTE FUNCTION public.create_default_access();
 //
-// -- MAKE YOURSELF ADMIN (run once with your user ID):
-// UPDATE public.profiles SET is_admin = true WHERE id = 'YOUR_USER_ID_HERE';
+// -- OWNER ROLE SHOULD BE ASSIGNED IN THE AUTH/PROFILE TRIGGER FLOW.
 // ─────────────────────────────────────────────────────────────
 
 // ── Types ─────────────────────────────────────────────────────
@@ -123,7 +129,7 @@ export interface AdminUser {
     business_name: string | null;
     created_at: string;
     last_active_at: string | null;
-    is_admin: boolean;
+    role: UserRole;
     // Access
     access: {
         access_status: AccessStatus;
@@ -163,7 +169,7 @@ export interface AdminNote {
 
 export async function loadAdminUsers(): Promise<AdminUser[]> {
     const [profilesRes, accessRes, billingRes] = await Promise.all([
-        supabase.from('profiles').select('id, name, email, business_name, created_at, last_active_at, is_admin').order('created_at', { ascending: false }),
+        supabase.from('profiles').select('id, name, email, business_name, created_at, last_active_at, role').order('created_at', { ascending: false }),
         supabase.from('account_access').select('user_id, access_status, plan_type, subscription_status, is_family_comp, comp_reason, canceled_at, suspended_at, suspension_reason, ends_at'),
         supabase.from('billing_subscriptions').select('user_id, stripe_customer_id, stripe_subscription_id, stripe_status, current_period_end, cancel_at_period_end'),
     ]);
@@ -179,7 +185,7 @@ export async function loadAdminUsers(): Promise<AdminUser[]> {
         business_name: p.business_name ?? null,
         created_at: p.created_at,
         last_active_at: p.last_active_at ?? null,
-        is_admin: p.is_admin ?? false,
+        role: (p.role ?? 'user') as UserRole,
         access: accessMap.get(p.id) ?? null,
         billing: billingMap.get(p.id) ?? null,
     }));
@@ -189,7 +195,7 @@ export async function loadAdminUsers(): Promise<AdminUser[]> {
 
 export async function loadAdminUser(userId: string): Promise<AdminUser | null> {
     const [pRes, aRes, bRes] = await Promise.all([
-        supabase.from('profiles').select('id, name, email, business_name, created_at, last_active_at, is_admin').eq('id', userId).single(),
+        supabase.from('profiles').select('id, name, email, business_name, created_at, last_active_at, role').eq('id', userId).single(),
         supabase.from('account_access').select('*').eq('user_id', userId).maybeSingle(),
         supabase.from('billing_subscriptions').select('*').eq('user_id', userId).maybeSingle(),
     ]);
@@ -202,7 +208,7 @@ export async function loadAdminUser(userId: string): Promise<AdminUser | null> {
         business_name: p.business_name ?? null,
         created_at: p.created_at,
         last_active_at: p.last_active_at ?? null,
-        is_admin: p.is_admin ?? false,
+        role: (p.role ?? 'user') as UserRole,
         access: aRes.data ?? null,
         billing: bRes.data ?? null,
     };
