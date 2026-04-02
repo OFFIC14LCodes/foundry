@@ -178,6 +178,46 @@ export async function deleteJournalEntry(userId: string, entryId: string) {
 
     if (error) console.error("deleteJournalEntry error:", error.message);
 }
+// ── MARKET INTELLIGENCE ───────────────────────────────────────
+
+export async function loadTodayMarketReport(userId: string) {
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const { data, error } = await supabase
+        .from("market_reports")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("date", today)
+        .single();
+    if (error || !data) return null;
+    return { content: data.content, industry: data.industry, date: data.date, createdAt: data.created_at };
+}
+
+export async function loadLatestMarketReport(userId: string) {
+    const { data, error } = await supabase
+        .from("market_reports")
+        .select("*")
+        .eq("user_id", userId)
+        .order("date", { ascending: false })
+        .limit(1)
+        .single();
+    if (error || !data) return null;
+    return { content: data.content, industry: data.industry, date: data.date, createdAt: data.created_at };
+}
+
+export async function saveMarketReport(userId: string, content: string, industry: string) {
+    const today = new Date().toISOString().slice(0, 10);
+    const { data, error } = await supabase
+        .from("market_reports")
+        .upsert(
+            { user_id: userId, date: today, content, industry, created_at: new Date().toISOString() },
+            { onConflict: "user_id,date" }
+        )
+        .select()
+        .single();
+    if (error) { console.error("saveMarketReport error:", error.message); return null; }
+    return { content: data.content, industry: data.industry, date: data.date, createdAt: data.created_at };
+}
+
 // ── BRIEFINGS ─────────────────────────────────────────────────
 
 export async function loadBriefings(userId: string) {

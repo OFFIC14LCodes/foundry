@@ -13,6 +13,8 @@ export default function HubScreen({
     onOpenJournal,
     onOpenBriefings,
     onOpenPitchPractice,
+    onOpenDocuments,
+    onOpenMarketIntel,
 }) {
     const [showDecisionModal, setShowDecisionModal] = useState(false);
     const [showExpenseModal, setShowExpenseModal] = useState(false);
@@ -106,18 +108,24 @@ export default function HubScreen({
             available: true,
         },
         {
-            icon: Icons.sidebar.export,
-            label: "Business Plan Export",
+            icon: Icons.sidebar.documents,
+            label: "Document Production",
             sub: "Professional documents",
-            action: null,
-            available: false,
+            action: () => {
+                setSidebarOpen(false);
+                onOpenDocuments();
+            },
+            available: true,
         },
         {
             icon: Icons.sidebar.marketIntel,
             label: "Market Intelligence",
-            sub: "Live market data",
-            action: null,
-            available: false,
+            sub: "Daily industry briefing",
+            action: () => {
+                setSidebarOpen(false);
+                onOpenMarketIntel();
+            },
+            available: true,
         },
         {
             icon: Icons.sidebar.voice,

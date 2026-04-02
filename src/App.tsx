@@ -8,7 +8,8 @@ import {
   loadAllStageProgress, saveStageProgress,
   loadAllMessages, saveMessages,
   loadJournalEntries, saveJournalEntry, deleteJournalEntry,
-  loadBriefings, saveBriefing
+  loadBriefings, saveBriefing,
+  loadLatestMarketReport,
 } from "./db";
 import { GLOBAL_STYLES } from "./constants/styles";
 import { FORGE_SYSTEM_PROMPT, FOUNDRY_METHOD } from "./constants/prompts";
@@ -28,6 +29,9 @@ import StageBriefing from "./components/StageBriefing";
 import HubScreen from "./components/HubScreen";
 import { Icons } from "./icons";
 import PitchPracticeScreen from "./components/PitchPracticeScreen";
+import DocumentProductionScreen from "./components/DocumentProductionScreen";
+import MarketIntelligenceScreen from "./components/MarketIntelligenceScreen";
+import { buildMarketIntelContext } from "./constants/marketPrompt";
 import { callForgeAPI, streamForgeAPI } from "./lib/forgeApi";
 
 // callForgeAPI and streamForgeAPI are imported from ./lib/forgeApi
@@ -133,6 +137,13 @@ ${memorySections.join("\n\n")}` : ""}
 
 STAGE REFERENCES: When referencing work from another stage, wrap it like [STAGE_REF:N]text[/STAGE_REF]. Use naturally when prior work is relevant — not on every mention.${methodSection}
   `.trim();
+}
+
+// Market intel is injected at call-sites rather than inside buildRichContext
+// so the function signature stays clean and the report is optional.
+function appendMarketContext(ctx: string, marketReport: any): string {
+  if (!marketReport?.content) return ctx;
+  return ctx + buildMarketIntelContext(marketReport);
 }
 
 function buildContext(profile, stage = null, completedMilestones = []) {
@@ -268,6 +279,7 @@ function ForgeScreen({
   onAdvance,
   messagesByStage,
   onUpdateMessages,
+  marketReport = null,
   isFirstVisit = false,
   initialStage = null,
 }) {
@@ -318,12 +330,12 @@ function ForgeScreen({
     localStorage.setItem("foundry_last_seen", Date.now().toString());
 
     const runGreeting = async () => {
-      const ctx = await buildRichContext(
+      const ctx = appendMarketContext(await buildRichContext(
         profile,
         activeStage,
         completedByStage,
         messagesByStage
-      );
+      ), marketReport);
 
       let greetingPrompt = "";
 
@@ -392,12 +404,12 @@ Where do you want to start?`;
         content: m.text,
       }));
 
-      const ctx = await buildRichContext(
+      const ctx = appendMarketContext(await buildRichContext(
         profile,
         activeStage,
         completedByStage,
         messagesByStage
-      );
+      ), marketReport);
 
       const raw = await streamForgeAPI(
         apiMsgs,
@@ -993,6 +1005,9 @@ export default function FoundryApp() {
   const [briefings, setBriefings] = useState([]);
   const [showBriefings, setShowBriefings] = useState(false);
   const [showPitchPractice, setShowPitchPractice] = useState(false);
+  const [showDocuments, setShowDocuments] = useState(false);
+  const [showMarketIntel, setShowMarketIntel] = useState(false);
+  const [marketReport, setMarketReport] = useState<any>(null);
 
   // ── Auth listener ──
   useEffect(() => {
@@ -1015,12 +1030,14 @@ export default function FoundryApp() {
     let cancelled = false;
 
     const loadData = async () => {
-      const [dbProfile, dbProgress, dbMessages, dbJournal, dbBriefings] = await Promise.all([
-        loadProfile(user.id),
-        loadAllStageProgress(user.id),
-        loadAllMessages(user.id),
-        loadJournalEntries(user.id),
-        loadBriefings(user.id),
+      const uid = (user as any).id as string;
+      const [dbProfile, dbProgress, dbMessages, dbJournal, dbBriefings, dbMarket] = await Promise.all([
+        loadProfile(uid),
+        loadAllStageProgress(uid),
+        loadAllMessages(uid),
+        loadJournalEntries(uid),
+        loadBriefings(uid),
+        loadLatestMarketReport(uid),
       ]);
 
       if (cancelled) return;
@@ -1031,6 +1048,7 @@ export default function FoundryApp() {
         setMessagesByStage(dbMessages);
         setJournalEntries(dbJournal);
         setBriefings(dbBriefings);
+        if (dbMarket) setMarketReport(dbMarket);
         setScreen("hub");
       } else {
         setScreen("intro");
@@ -1178,6 +1196,8 @@ export default function FoundryApp() {
             onOpenJournal={() => setShowJournal(true)}
             onOpenBriefings={() => setShowBriefings(true)}
             onOpenPitchPractice={() => setShowPitchPractice(true)}
+            onOpenDocuments={() => setShowDocuments(true)}
+            onOpenMarketIntel={() => setShowMarketIntel(true)}
           />
         )}
         {screen === "forge" && profile && (
@@ -1191,11 +1211,31 @@ export default function FoundryApp() {
             onAdvance={handleAdvance}
             messagesByStage={messagesByStage}
             onUpdateMessages={handleUpdateMessages}
+            marketReport={marketReport}
             isFirstVisit={isFirstVisit}
             initialStage={initialStage}
           />
         )}
       </div>
+      {showMarketIntel && profile && user && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "#080809", overflowY: "auto" }}>
+          <MarketIntelligenceScreen
+            profile={profile}
+            userId={(user as any).id}
+            report={marketReport}
+            onReportChange={setMarketReport}
+            onBack={() => setShowMarketIntel(false)}
+          />
+        </div>
+      )}
+      {showDocuments && profile && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "#080809", overflowY: "auto" }}>
+          <DocumentProductionScreen
+            profile={profile}
+            onBack={() => setShowDocuments(false)}
+          />
+        </div>
+      )}
       {showPitchPractice && profile && (
         <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "#080809", overflowY: "auto" }}>
           <PitchPracticeScreen
