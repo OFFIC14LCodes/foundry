@@ -12,6 +12,14 @@ import {
   loadLatestMarketReport,
   ensureUserProfile,
   ensureOwnerProfileRole,
+  loadNotifications,
+  loadNotificationPreferences,
+  saveNotificationPreferences,
+  loadAdminNotificationSettings,
+  saveAdminNotificationSettings,
+  markNotificationRead,
+  recordMeaningfulActivity,
+  loadBillingSubscription,
 } from "./db";
 import { GLOBAL_STYLES } from "./constants/styles";
 import { FORGE_SYSTEM_PROMPT, FOUNDRY_METHOD } from "./constants/prompts";
@@ -34,18 +42,31 @@ import PitchPracticeScreen from "./components/PitchPracticeScreen";
 import DocumentProductionScreen from "./components/DocumentProductionScreen";
 import MarketIntelligenceScreen from "./components/MarketIntelligenceScreen";
 import CofounderModeScreen from "./components/CofounderModeScreen";
-import AdminDashboard from "./components/AdminDashboard";
 import AdminHubScreen from "./components/AdminHubScreen";
+import SettingsScreen from "./components/settings/SettingsScreen";
+import TermsOfServiceScreen from "./components/settings/TermsOfServiceScreen";
+import PrivacyPolicyScreen from "./components/settings/PrivacyPolicyScreen";
 import Logo from "./components/Logo";
+import LoadingForgeAnimation from "./components/LoadingForgeAnimation";
 import PaywallScreen from "./components/paywall/PaywallScreen";
+import BillingReturnScreen from "./components/BillingReturnScreen";
 import { buildMarketIntelContext } from "./constants/marketPrompt";
 import { callForgeAPI, streamForgeAPI } from "./lib/forgeApi";
 import { getTeamForUser, getRecentCofounderContext } from "./lib/cofounderDb";
 import { ensureAccountAccess, updateUserActivity } from "./db";
 import { canAccessApp, getAccessBlockReason } from "./lib/accessGate";
-import type { AccountAccess } from "./lib/accessGate";
+import type { AccountAccess, BillingSubscription } from "./lib/accessGate";
 import { canAccessStage, getAccessSummary } from "./lib/foundryAccess";
 import { hasAdminHubAccess, isOwnerEmail } from "./lib/roles";
+import { openCustomerPortal } from "./lib/billing";
+import { clearBillingRoute, getBillingRouteState } from "./lib/billingRoute";
+import {
+  DEFAULT_ADMIN_NOTIFICATION_SETTINGS,
+  DEFAULT_USER_NOTIFICATION_PREFERENCES,
+  type AdminNotificationSettings,
+  type AppNotification,
+  type UserNotificationPreferences,
+} from "./lib/notifications";
 import { STORAGE_KEYS, clearFoundryClientStorage, createEmptyMessagesByStage, createEmptyStageProgress } from "./lib/session";
 
 // callForgeAPI and streamForgeAPI are imported from ./lib/forgeApi
@@ -319,6 +340,7 @@ function ForgeScreen({
   isFirstVisit = false,
   initialStage = null,
   teamId = null as string | null,
+  onMeaningfulActivity,
 }) {
   const [activeStage, setActiveStage] = useState(initialStage || profile.currentStage);
   const [activeTab, setActiveTab] = useState("chat");
@@ -430,6 +452,7 @@ Where do you want to start?`;
 
   const send = async () => {
     if (!input.trim() || loading) return;
+    onMeaningfulActivity?.();
 
     const text = input.trim();
     setInput("");
@@ -868,6 +891,7 @@ Where do you want to start?`;
                 onStageRef={(id) => setStageRefModal(id)}
                 onGlossaryTap={(term, entry) => setGlossaryModal({ term, entry })}
                 renderWithBold={renderWithBold}
+                userName={profile?.name || "You"}
               />
             ))}
 
@@ -1041,10 +1065,18 @@ export default function FoundryApp() {
   const [showDocuments, setShowDocuments] = useState(false);
   const [showMarketIntel, setShowMarketIntel] = useState(false);
   const [showCofounder, setShowCofounder] = useState(false);
+  const [settingsView, setSettingsView] = useState<null | "settings" | "terms" | "privacy">(null);
   const [showAdminHub, setShowAdminHub] = useState(false);
-  const [showAdmin, setShowAdmin] = useState(false);
   const [userTeamId, setUserTeamId] = useState<string | null>(null);
   const [accountAccess, setAccountAccess] = useState<AccountAccess | null>(null);
+  const [billingSubscription, setBillingSubscription] = useState<BillingSubscription | null>(null);
+  const [billingRoute, setBillingRoute] = useState(() => getBillingRouteState());
+  const [billingMessage, setBillingMessage] = useState<string | null>(null);
+  const [billingPortalLoading, setBillingPortalLoading] = useState(false);
+  const [billingSyncing, setBillingSyncing] = useState(false);
+  const [notificationPreferences, setNotificationPreferences] = useState<UserNotificationPreferences>(DEFAULT_USER_NOTIFICATION_PREFERENCES);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [adminNotificationSettings, setAdminNotificationSettings] = useState<AdminNotificationSettings>(DEFAULT_ADMIN_NOTIFICATION_SETTINGS);
   const [marketReport, setMarketReport] = useState<any>(null);
   const [paywallStage, setPaywallStage] = useState<number | null>(null);
 
@@ -1063,10 +1095,18 @@ export default function FoundryApp() {
     setShowDocuments(false);
     setShowMarketIntel(false);
     setShowCofounder(false);
+    setSettingsView(null);
     setShowAdminHub(false);
-    setShowAdmin(false);
     setUserTeamId(null);
     setAccountAccess(null);
+    setBillingSubscription(null);
+    setBillingRoute(getBillingRouteState());
+    setBillingMessage(null);
+    setBillingPortalLoading(false);
+    setBillingSyncing(false);
+    setNotificationPreferences(DEFAULT_USER_NOTIFICATION_PREFERENCES);
+    setNotifications([]);
+    setAdminNotificationSettings(DEFAULT_ADMIN_NOTIFICATION_SETTINGS);
     setMarketReport(null);
     setPaywallStage(null);
     setDataLoaded(false);
@@ -1102,13 +1142,16 @@ export default function FoundryApp() {
       const authEmail = ((user as any).email ?? null) as string | null;
       await ensureUserProfile(uid, user as any);
       await ensureOwnerProfileRole(uid, authEmail);
-      const [dbProfile, dbProgress, dbMessages, dbJournal, dbBriefings, dbMarket] = await Promise.all([
+      const [dbProfile, dbProgress, dbMessages, dbJournal, dbBriefings, dbMarket, dbNotificationPreferences, dbNotifications, dbBillingSubscription] = await Promise.all([
         loadProfile(uid),
         loadAllStageProgress(uid),
         loadAllMessages(uid),
         loadJournalEntries(uid),
         loadBriefings(uid),
         loadLatestMarketReport(uid),
+        loadNotificationPreferences(uid),
+        loadNotifications(uid),
+        loadBillingSubscription(uid),
       ]);
 
       if (cancelled) return;
@@ -1135,12 +1178,15 @@ export default function FoundryApp() {
         setMessagesByStage(dbMessages);
         setJournalEntries(dbJournal);
         setBriefings(dbBriefings);
+        setNotificationPreferences(dbNotificationPreferences);
+        setNotifications(dbNotifications);
         setMarketReport(dbMarket ?? null);
         // Load team membership for cofounder context
         getTeamForUser(uid).then(t => setUserTeamId(t?.id ?? null));
         // Load and ensure account access record
         const access = await ensureAccountAccess(uid);
         setAccountAccess(access);
+        setBillingSubscription(dbBillingSubscription);
         // Update activity + sync email for admin dashboard
         updateUserActivity(uid, authEmail ?? undefined);
         setScreen("hub");
@@ -1162,6 +1208,9 @@ export default function FoundryApp() {
           });
           setProfile(resolvedProfile);
         }
+        setNotificationPreferences(dbNotificationPreferences);
+        setNotifications(dbNotifications);
+        setBillingSubscription(dbBillingSubscription);
         setScreen("intro");
         setIsFirstVisit(true);
       }
@@ -1185,6 +1234,18 @@ export default function FoundryApp() {
       if (access) setAccountAccess(access);
     });
   }, [user?.id, !!profile, accountAccess?.id]);
+
+  const refreshBillingState = async () => {
+    if (!user?.id) return;
+    setBillingSyncing(true);
+    const [access, subscription] = await Promise.all([
+      ensureAccountAccess(user.id),
+      loadBillingSubscription(user.id),
+    ]);
+    setAccountAccess(access);
+    setBillingSubscription(subscription);
+    setBillingSyncing(false);
+  };
 
   // ── Save stage progress to Supabase whenever it changes ──
   useEffect(() => {
@@ -1210,6 +1271,7 @@ export default function FoundryApp() {
   const updateProfile = (updates) => setProfile(p => ({ ...p, ...updates }));
 
   const handleMilestoneComplete = (milestoneId) => {
+    markMeaningfulActivity(true);
     const stageNum =
       milestoneId.startsWith("idea") ? 1
         : milestoneId.startsWith("plan") ? 2
@@ -1230,7 +1292,15 @@ export default function FoundryApp() {
     }));
   };
 
+  const markMeaningfulActivity = (force = false) => {
+    if (!user?.id) return;
+    const nowIso = new Date().toISOString();
+    setProfile((prev) => prev ? { ...prev, lastActiveAt: nowIso } : prev);
+    recordMeaningfulActivity(user.id, authUserEmail ?? undefined, { force });
+  };
+
   const handleAdvance = (newStage) => {
+    markMeaningfulActivity(true);
     updateProfile({ currentStage: newStage });
     setInitialStage(newStage);
     return true;
@@ -1302,12 +1372,149 @@ export default function FoundryApp() {
     });
   }, [authUserEmail, profile?.email, profile?.role, canOpenAdminHub, showAdminHub]);
 
+  const handleNotificationPreferencesChange = async (next: UserNotificationPreferences) => {
+    if (!user?.id) return;
+    setNotificationPreferences(next);
+    await saveNotificationPreferences(user.id, next);
+    markMeaningfulActivity(true);
+  };
+
+  useEffect(() => {
+    if (!canOpenAdminHub) return;
+    loadAdminNotificationSettings().then((settings) => {
+      setAdminNotificationSettings(settings);
+    });
+  }, [canOpenAdminHub]);
+
+  const handleAdminNotificationSettingsChange = async (next: AdminNotificationSettings) => {
+    setAdminNotificationSettings(next);
+    await saveAdminNotificationSettings(next);
+  };
+
+  const handleMarkNotificationRead = async (notificationId: string) => {
+    const updated = await markNotificationRead(notificationId);
+    if (!updated) return;
+    setNotifications((prev) => prev.map((notification) => (
+      notification.id === notificationId
+        ? { ...notification, readAt: notification.readAt ?? new Date().toISOString() }
+        : notification
+    )));
+  };
+
+  const openJournal = () => {
+    markMeaningfulActivity();
+    setShowJournal(true);
+  };
+
+  const openBriefings = () => {
+    markMeaningfulActivity();
+    setShowBriefings(true);
+  };
+
+  const openPitchPractice = () => {
+    markMeaningfulActivity();
+    setShowPitchPractice(true);
+  };
+
+  const openDocuments = () => {
+    markMeaningfulActivity();
+    setShowDocuments(true);
+  };
+
+  const openMarketIntel = () => {
+    markMeaningfulActivity();
+    setShowMarketIntel(true);
+  };
+
+  const openCofounder = () => {
+    markMeaningfulActivity();
+    setShowCofounder(true);
+  };
+
+  const openSettings = () => {
+    markMeaningfulActivity();
+    setSettingsView("settings");
+  };
+
+  const handleOpenManageSubscription = async () => {
+    setBillingMessage(null);
+    setBillingPortalLoading(true);
+    const result = await openCustomerPortal();
+    setBillingPortalLoading(false);
+    if (!result.ok) {
+      setBillingMessage(result.message);
+      setSettingsView("settings");
+    }
+  };
+
+  useEffect(() => {
+    if (!user?.id || !dataLoaded) return;
+    if (!billingRoute) return;
+
+    if (billingRoute.type === "cancelled") {
+      setBillingMessage("Checkout was canceled. No billing changes were made.");
+      setPaywallStage(Math.max(2, profile?.currentStage || 2));
+      setSettingsView(null);
+      return;
+    }
+
+    if (billingRoute.type === "success") {
+      let attempts = 0;
+      const interval = window.setInterval(async () => {
+        attempts += 1;
+        await refreshBillingState();
+        if (attempts >= 8) {
+          window.clearInterval(interval);
+        }
+      }, 2500);
+
+      refreshBillingState();
+      return () => window.clearInterval(interval);
+    }
+  }, [billingRoute?.type, user?.id, dataLoaded]);
+
+  useEffect(() => {
+    if (!user?.id || !dataLoaded || billingRoute) return;
+
+    const path = window.location.pathname.replace(/\/+$/, "") || "/";
+
+    if (path === "/settings") {
+      refreshBillingState();
+      setSettingsView("settings");
+      clearBillingRoute("/");
+      return;
+    }
+
+    if (path === "/pricing") {
+      setPaywallStage(Math.max(2, profile?.currentStage || 2));
+      clearBillingRoute("/");
+    }
+  }, [user?.id, dataLoaded, billingRoute?.type, profile?.currentStage]);
+
+  const handleBillingReturnContinue = () => {
+    if (billingRoute?.type === "cancelled") {
+      clearBillingRoute("/");
+      setBillingRoute(null);
+      setPaywallStage(Math.max(2, profile?.currentStage || 2));
+      return;
+    }
+
+    clearBillingRoute("/");
+    setBillingRoute(null);
+    setPaywallStage(null);
+    setSettingsView("settings");
+  };
+
   // ── Auth not yet checked ──
   if (!authChecked) {
     return (
-      <div style={{ background: "#080809", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <Logo variant="flame" style={{ width: 32, height: 32, objectFit: "contain" }} />
-      </div>
+      <>
+        <style>{GLOBAL_STYLES}</style>
+        <div style={{ background: "#080809", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10 }}>
+          <Logo variant="flame" style={{ width: 52, height: 52, objectFit: "contain", opacity: 0.88 }} />
+          <LoadingForgeAnimation size={62} />
+        </div>
+      </>
     );
   }
 
@@ -1324,10 +1531,14 @@ export default function FoundryApp() {
   // ── Logged in but data still loading ──
   if (!dataLoaded) {
     return (
-      <div style={{ background: "#080809", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
-        <Logo variant="flame" style={{ width: 32, height: 32, objectFit: "contain" }} />
-        <div style={{ fontSize: 12, color: "#444", fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.1em" }}>Loading your workspace...</div>
-      </div>
+      <>
+        <style>{GLOBAL_STYLES}</style>
+        <div style={{ background: "#080809", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
+          <Logo variant="flame" style={{ width: 56, height: 56, objectFit: "contain", opacity: 0.9 }} />
+          <LoadingForgeAnimation size={68} />
+          <div style={{ fontSize: 12, color: "#5B5650", fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.1em" }}>Loading your workspace...</div>
+        </div>
+      </>
     );
   }
 
@@ -1364,6 +1575,24 @@ export default function FoundryApp() {
   }
 
   // ── Logged in and data ready ──
+  if (billingRoute) {
+    const paidReady = accessSummary.canAccessPaidStages;
+
+    return (
+      <>
+        <style>{GLOBAL_STYLES}</style>
+        <BillingReturnScreen
+          mode={billingRoute.type}
+          isProvisioning={billingSyncing}
+          accessReady={paidReady}
+          message={billingMessage}
+          onContinue={handleBillingReturnContinue}
+          onRefresh={refreshBillingState}
+        />
+      </>
+    );
+  }
+
   return (
     <>
       <style>{GLOBAL_STYLES}</style>
@@ -1390,15 +1619,15 @@ export default function FoundryApp() {
             onLogout={handleLogout}
             completedByStage={completedByStage}
             onReset={handleReset}
-            onOpenJournal={() => setShowJournal(true)}
-            onOpenBriefings={() => setShowBriefings(true)}
-            onOpenPitchPractice={() => setShowPitchPractice(true)}
-            onOpenDocuments={() => setShowDocuments(true)}
-            onOpenMarketIntel={() => setShowMarketIntel(true)}
-            onOpenCofounder={() => setShowCofounder(true)}
+            onOpenJournal={openJournal}
+            onOpenBriefings={openBriefings}
+            onOpenPitchPractice={openPitchPractice}
+            onOpenDocuments={openDocuments}
+            onOpenMarketIntel={openMarketIntel}
+            onOpenCofounder={openCofounder}
+            onOpenSettings={openSettings}
             onOpenAdminHub={() => setShowAdminHub(true)}
             isAdmin={canOpenAdminHub}
-            onOpenAdmin={() => setShowAdmin(true)}
             accessSummary={accessSummary}
             onOpenUpgrade={() => requestUpgrade(Math.max(2, profile.currentStage || 2))}
           />
@@ -1418,6 +1647,7 @@ export default function FoundryApp() {
             isFirstVisit={isFirstVisit}
             initialStage={initialStage}
             teamId={userTeamId}
+            onMeaningfulActivity={() => markMeaningfulActivity(true)}
           />
         )}
       </div>
@@ -1475,27 +1705,50 @@ export default function FoundryApp() {
           onTeamChanged={(id) => setUserTeamId(id)}
         />
       )}
+      {settingsView === "settings" && profile && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 120, background: "#080809", overflowY: "auto" }}>
+          <SettingsScreen
+            profile={profile}
+            authEmail={authUserEmail}
+            accessSummary={accessSummary}
+            billingSubscription={billingSubscription}
+            onBack={() => setSettingsView(null)}
+            onOpenTerms={() => setSettingsView("terms")}
+            onOpenPrivacy={() => setSettingsView("privacy")}
+            notificationPreferences={notificationPreferences}
+            onNotificationPreferencesChange={handleNotificationPreferencesChange}
+            notifications={notifications}
+            onMarkNotificationRead={handleMarkNotificationRead}
+            onOpenManageSubscription={handleOpenManageSubscription}
+            billingActionMessage={billingMessage}
+            billingPortalLoading={billingPortalLoading}
+            onLogout={handleLogout}
+          />
+        </div>
+      )}
+      {settingsView === "terms" && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 121, background: "#080809", overflowY: "auto" }}>
+          <TermsOfServiceScreen onBack={() => setSettingsView("settings")} />
+        </div>
+      )}
+      {settingsView === "privacy" && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 121, background: "#080809", overflowY: "auto" }}>
+          <PrivacyPolicyScreen onBack={() => setSettingsView("settings")} />
+        </div>
+      )}
       {showAdminHub && user && canOpenAdminHub && (
         <AdminHubScreen
           onBack={() => setShowAdminHub(false)}
-          onOpenUserManagement={() => {
-            setShowAdminHub(false);
-            setShowAdmin(true);
-          }}
+          notificationSettings={adminNotificationSettings}
+          onNotificationSettingsChange={handleAdminNotificationSettingsChange}
         />
-      )}
-      {showAdmin && user && canOpenAdminHub && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "#080809", overflowY: "auto" }}>
-          <AdminDashboard
-            userId={(user as any).id}
-            onBack={() => setShowAdmin(false)}
-          />
-        </div>
       )}
       <PaywallScreen
         open={paywallStage !== null}
         targetStage={paywallStage ?? 2}
         access={accountAccess}
+        onManageSubscription={handleOpenManageSubscription}
+        billingMessage={billingMessage}
         onClose={() => setPaywallStage(null)}
       />
     </>

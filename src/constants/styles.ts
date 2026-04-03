@@ -13,6 +13,7 @@ export const GLOBAL_STYLES = `
   @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
   @keyframes forgePulse { 0%, 80%, 100% { transform: scale(0.7); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
+  @keyframes loadingFlameOrbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 `;
 
 export const TAG_COLORS = {

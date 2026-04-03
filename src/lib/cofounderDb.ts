@@ -1,4 +1,5 @@
 import { supabase } from '../supabase';
+import { recordMeaningfulActivity } from '../db';
 
 // ─────────────────────────────────────────────────────────────
 // COFOUNDER MODE — Database Layer
@@ -249,6 +250,9 @@ export async function sendCofounderMessage(
         .single();
 
     if (error) console.error('sendCofounderMessage error:', error.message);
+    if (data && userId && role === 'member') {
+        await recordMeaningfulActivity(userId, undefined, { force: true });
+    }
     return (data as CofounderMessage) ?? null;
 }
 

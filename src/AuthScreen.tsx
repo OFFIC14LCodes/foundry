@@ -82,11 +82,19 @@ export default function AuthScreen({ onAuth }: { onAuth: () => void }) {
                 <Logo
                     variant="full"
                     style={{
-                        width: "min(280px, 72vw)",
+                        width: "min(220px, 62vw)",
                         height: "auto",
-                        marginBottom: 12,
+                        marginBottom: 14,
                     }}
                 />
+                <div style={{
+                    fontSize: "clamp(26px, 7vw, 34px)",
+                    color: "#F0EDE8",
+                    fontFamily: "'Cormorant Garamond', Georgia, serif",
+                    fontWeight: 700,
+                    letterSpacing: "0.02em",
+                    lineHeight: 1,
+                }}>Foundry</div>
                 <div style={{
                     fontSize: 11, color: "#E8622A", letterSpacing: "0.25em",
                     textTransform: "uppercase", marginTop: 8

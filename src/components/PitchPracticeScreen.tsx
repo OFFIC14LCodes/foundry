@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Icons } from "../icons";
 import { useSpeech } from "../hooks/useSpeech";
+import { useConversationalTts } from "../hooks/useConversationalTts";
 import { streamForgeAPI, callForgeAPI } from "../lib/forgeApi";
 import { buildPitchSystemPrompt, buildFeedbackSystemPrompt } from "../constants/pitchPrompt";
 import TypingDots from "./TypingDots";
@@ -91,7 +92,15 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
 
-    const { supported: speechSupported, listening, speaking, startListening, stopListening, speak, cancelSpeech } = useSpeech();
+    const { supported: speechSupported, listening, startListening, stopListening } = useSpeech();
+    const {
+        speaking,
+        cancel: cancelSpeech,
+        beginStream: beginVoiceStream,
+        ingestStreamText,
+        finalizeStream,
+        speakText,
+    } = useConversationalTts(mode === "voice" && forgeVoiceOn);
 
     // Auto-scroll to bottom
     useEffect(() => {
@@ -124,17 +133,21 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
 
         const systemPrompt = buildPitchSystemPrompt(profile, scenario);
         try {
+            if (mode === "voice" && forgeVoiceOn) beginVoiceStream();
             const finalText = await streamForgeAPI(
                 [{ role: "user", content: "Begin the session. Introduce yourself in one sentence as the audience, then invite me to pitch you. Keep it brief and natural." }],
                 systemPrompt,
                 (chunk) => {
                     setMessages(prev => prev.map(m => m.id === openerId ? { ...m, text: chunk } : m));
+                    if (mode === "voice" && forgeVoiceOn) ingestStreamText(chunk);
                 }
             );
             setMessages(prev => prev.map(m => m.id === openerId ? { ...m, text: finalText, id: undefined } : m));
-            if (mode === "voice" && forgeVoiceOn) speak(finalText);
+            if (mode === "voice" && forgeVoiceOn) await finalizeStream(finalText);
         } catch {
-            setMessages([{ role: "forge", text: "Ready when you are. Go ahead — pitch me." }]);
+            const fallback = "Ready when you are. Go ahead and pitch me.";
+            setMessages([{ role: "forge", text: fallback }]);
+            if (mode === "voice" && forgeVoiceOn) await speakText(fallback);
         }
         setLoading(false);
     };
@@ -169,13 +182,17 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
 
         const systemPrompt = buildPitchSystemPrompt(profile, scenario);
         try {
+            if (mode === "voice" && forgeVoiceOn) beginVoiceStream();
             const finalText = await streamForgeAPI(apiMessages, systemPrompt, (chunk) => {
                 setMessages(prev => prev.map(m => m.id === forgeId ? { ...m, text: chunk } : m));
+                if (mode === "voice" && forgeVoiceOn) ingestStreamText(chunk);
             });
             setMessages(prev => prev.map(m => m.id === forgeId ? { ...m, text: finalText, id: undefined } : m));
-            if (mode === "voice" && forgeVoiceOn) speak(finalText);
+            if (mode === "voice" && forgeVoiceOn) await finalizeStream(finalText);
         } catch {
-            setMessages(prev => prev.map(m => m.id === forgeId ? { ...m, text: "Something went wrong. Try again." } : m));
+            const fallback = "Something went wrong. Try again.";
+            setMessages(prev => prev.map(m => m.id === forgeId ? { ...m, text: fallback } : m));
+            if (mode === "voice" && forgeVoiceOn) await speakText(fallback);
         }
         setLoading(false);
     };

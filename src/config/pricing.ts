@@ -1,5 +1,12 @@
 export type BillingPlanId = "free" | "starter" | "pro";
+export type PaidPlanId = Exclude<BillingPlanId, "free">;
 export type PricingMode = "standard" | "founding";
+export type BillingInterval = "monthly" | "yearly";
+
+export interface BillingPlanPriceSet {
+    standard: Record<BillingInterval, number>;
+    founding: Partial<Record<BillingInterval, number>>;
+}
 
 export interface BillingPlanConfig {
     id: BillingPlanId;
@@ -8,20 +15,15 @@ export interface BillingPlanConfig {
     stageAccess: "stage_1_only" | "full_journey";
     tagline: string;
     headline: string;
-    standardMonthlyCents: number;
-    foundingMonthlyCents: number | null;
+    prices: BillingPlanPriceSet;
     featureHighlights: string[];
     comparisonPoints: string[];
-    checkoutLinks: {
-        standard: string | null;
-        founding: string | null;
-    };
 }
 
 export interface TeamSeatAddonConfig {
     name: string;
-    standardMonthlyCents: number | null;
-    foundingMonthlyCents: number | null;
+    standardMonthlyCents: number;
+    foundingMonthlyCents: number;
     description: string;
 }
 
@@ -29,16 +31,23 @@ export const FREE_STAGE_LIMIT = 1;
 
 export const FOUNDING_PRICING = {
     enabled: import.meta.env.VITE_FOUNDING_PRICING_ENABLED !== "false",
-    endsAt: import.meta.env.VITE_FOUNDING_PRICING_ENDS_AT || null,
+    endsAt: import.meta.env.VITE_FOUNDING_WEEK_END_AT || import.meta.env.VITE_FOUNDING_PRICING_ENDS_AT || null,
     badge: "Founding pricing",
     lockedBadge: "Founding pricing locked in",
 };
 
+export const REFUND_POLICY = {
+    windowDays: 7,
+    summary: "Full refund within 7 days of first checkout.",
+};
+
+export const SUPPORT_EMAIL = "foundryandforge.app@gmail.com";
+
 export const TEAM_SEAT_ADDON: TeamSeatAddonConfig = {
-    name: "Extra team seat",
+    name: "Cofounder add-on",
     standardMonthlyCents: 1000,
     foundingMonthlyCents: 1000,
-    description: "Add a cofounder or team member seat without changing the core plan structure.",
+    description: "Add a cofounder or teammate as a recurring quantity-based subscription item.",
 };
 
 export const BILLING_PLANS: Record<BillingPlanId, BillingPlanConfig> = {
@@ -49,8 +58,13 @@ export const BILLING_PLANS: Record<BillingPlanId, BillingPlanConfig> = {
         stageAccess: "stage_1_only",
         tagline: "Settle in and prove the problem is real.",
         headline: "Stage 1 only",
-        standardMonthlyCents: 0,
-        foundingMonthlyCents: null,
+        prices: {
+            standard: {
+                monthly: 0,
+                yearly: 0,
+            },
+            founding: {},
+        },
         featureHighlights: [
             "Account creation and onboarding",
             "Full access to Stage 1",
@@ -61,10 +75,6 @@ export const BILLING_PLANS: Record<BillingPlanId, BillingPlanConfig> = {
             "Foundry onboarding",
             "Problem validation with Forge",
         ],
-        checkoutLinks: {
-            standard: null,
-            founding: null,
-        },
     },
     starter: {
         id: "starter",
@@ -73,8 +83,16 @@ export const BILLING_PLANS: Record<BillingPlanId, BillingPlanConfig> = {
         stageAccess: "full_journey",
         tagline: "Continue the real build with the full stage journey.",
         headline: "Core Foundry build path",
-        standardMonthlyCents: 2999,
-        foundingMonthlyCents: 2299,
+        prices: {
+            standard: {
+                monthly: 2999,
+                yearly: 29900,
+            },
+            founding: {
+                monthly: 2299,
+                yearly: 22900,
+            },
+        },
         featureHighlights: [
             "Unlock Stages 2 through 6",
             "Core Foundry journey and milestone flow",
@@ -86,10 +104,6 @@ export const BILLING_PLANS: Record<BillingPlanId, BillingPlanConfig> = {
             "Core Foundry experience",
             "Execution-ready founder workflow",
         ],
-        checkoutLinks: {
-            standard: import.meta.env.VITE_CHECKOUT_STARTER_STANDARD || null,
-            founding: import.meta.env.VITE_CHECKOUT_STARTER_FOUNDING || null,
-        },
     },
     pro: {
         id: "pro",
@@ -98,8 +112,16 @@ export const BILLING_PLANS: Record<BillingPlanId, BillingPlanConfig> = {
         stageAccess: "full_journey",
         tagline: "The premium Foundry experience for founders building with range.",
         headline: "Unlimited / premium positioning",
-        standardMonthlyCents: 4999,
-        foundingMonthlyCents: 3599,
+        prices: {
+            standard: {
+                monthly: 4999,
+                yearly: 49900,
+            },
+            founding: {
+                monthly: 3599,
+                yearly: 34900,
+            },
+        },
         featureHighlights: [
             "Everything in Starter",
             "Premium tools and advanced workflows",
@@ -111,10 +133,6 @@ export const BILLING_PLANS: Record<BillingPlanId, BillingPlanConfig> = {
             "Advanced founder workflows",
             "Best for committed execution",
         ],
-        checkoutLinks: {
-            standard: import.meta.env.VITE_CHECKOUT_PRO_STANDARD || null,
-            founding: import.meta.env.VITE_CHECKOUT_PRO_FOUNDING || null,
-        },
     },
 };
 
@@ -135,18 +153,29 @@ export function formatUsd(cents: number): string {
     return `$${(cents / 100).toFixed(2)}`;
 }
 
-export function getPlanPriceCents(planId: BillingPlanId, mode: PricingMode): number {
+export function formatAnnualSavings(monthlyCents: number, yearlyCents: number): string {
+    const annualizedMonthly = monthlyCents * 12;
+    const savings = annualizedMonthly - yearlyCents;
+    return savings > 0 ? `Save ${formatUsd(savings)}/yr` : "Annual billing";
+}
+
+export function getPlanPriceCents(
+    planId: BillingPlanId,
+    mode: PricingMode,
+    interval: BillingInterval,
+): number {
     const plan = BILLING_PLANS[planId];
     if (!plan) return 0;
-    if (mode === "founding" && plan.foundingMonthlyCents !== null) {
-        return plan.foundingMonthlyCents;
+
+    if (mode === "founding") {
+        const foundingPrice = plan.prices.founding[interval];
+        if (typeof foundingPrice === "number") return foundingPrice;
     }
-    return plan.standardMonthlyCents;
+
+    return plan.prices.standard[interval];
 }
 
 export function getTeamSeatPriceCents(mode: PricingMode): number {
-    if (mode === "founding" && TEAM_SEAT_ADDON.foundingMonthlyCents !== null) {
-        return TEAM_SEAT_ADDON.foundingMonthlyCents;
-    }
-    return TEAM_SEAT_ADDON.standardMonthlyCents ?? TEAM_SEAT_ADDON.foundingMonthlyCents ?? 0;
+    if (mode === "founding") return TEAM_SEAT_ADDON.foundingMonthlyCents;
+    return TEAM_SEAT_ADDON.standardMonthlyCents;
 }

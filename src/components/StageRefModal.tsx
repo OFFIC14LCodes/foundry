@@ -135,6 +135,7 @@ export default function StageRefModal({ stageId, messages, profile, onClose }) {
                     ) : (
                         messages.map((msg, i) => {
                             const isForge = msg.role === "forge" || msg.role === "assistant";
+                            const senderName = isForge ? "Forge" : (profile?.name || "You");
 
                             return (
                                 <div
@@ -153,28 +154,48 @@ export default function StageRefModal({ stageId, messages, profile, onClose }) {
                                     <div
                                         style={{
                                             maxWidth: "78%",
-                                            padding: isForge ? "12px 16px" : "9px 14px",
-                                            borderRadius: isForge
-                                                ? "4px 14px 14px 14px"
-                                                : "14px 14px 4px 14px",
-                                            background: isForge
-                                                ? "rgba(255,255,255,0.04)"
-                                                : "linear-gradient(135deg, #E8622A, #c9521e)",
-                                            border: isForge
-                                                ? "1px solid rgba(255,255,255,0.06)"
-                                                : "none",
-                                            fontSize: isForge ? 13 : 12,
-                                            fontFamily: isForge
-                                                ? "'Lora', Georgia, serif"
-                                                : "'DM Sans', sans-serif",
-                                            lineHeight: 1.7,
-                                            color: isForge ? "#C8C4BE" : "#fff",
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            alignItems: isForge ? "flex-start" : "flex-end",
                                         }}
                                     >
-                                        <div style={{ whiteSpace: "pre-wrap" }}>
-                                            {(msg.text || "")
-                                                .replace(/\[STAGE_REF:\d+\]/g, "")
-                                                .replace(/\[\/STAGE_REF\]/g, "")}
+                                        <div
+                                            style={{
+                                                fontSize: 10,
+                                                lineHeight: 1.2,
+                                                marginBottom: 6,
+                                                color: isForge ? "#8E867D" : "rgba(240,237,232,0.72)",
+                                                letterSpacing: "0.04em",
+                                                fontFamily: "'DM Sans', sans-serif",
+                                            }}
+                                        >
+                                            {senderName}
+                                        </div>
+                                        <div
+                                            style={{
+                                                padding: isForge ? "12px 16px" : "9px 14px",
+                                                borderRadius: isForge
+                                                    ? "4px 14px 14px 14px"
+                                                    : "14px 14px 4px 14px",
+                                                background: isForge
+                                                    ? "rgba(255,255,255,0.04)"
+                                                    : "linear-gradient(135deg, #E8622A, #c9521e)",
+                                                border: isForge
+                                                    ? "1px solid rgba(255,255,255,0.06)"
+                                                    : "none",
+                                                fontSize: isForge ? 13 : 12,
+                                                fontFamily: isForge
+                                                    ? "'Lora', Georgia, serif"
+                                                    : "'DM Sans', sans-serif",
+                                                lineHeight: 1.7,
+                                                color: isForge ? "#C8C4BE" : "#fff",
+                                            }}
+                                        >
+                                            <div style={{ whiteSpace: "pre-wrap" }}>
+                                                {(msg.text || "")
+                                                    .replace(/\[STAGE_REF:\d+\]/g, "")
+                                                    .replace(/\[\/STAGE_REF\]/g, "")}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

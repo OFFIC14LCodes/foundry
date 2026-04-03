@@ -19,6 +19,7 @@ export type PlanType =
 export type SubscriptionStatus =
     | 'trial'
     | 'active'
+    | 'trialing'
     | 'past_due'
     | 'canceled'
     | 'incomplete'
@@ -45,6 +46,8 @@ export interface AccountAccess {
     founding_member_label?: string | null;
     team_seat_count?: number | null;
     team_seat_price_cents?: number | null;
+    billing_interval?: 'monthly' | 'yearly' | null;
+    stripe_price_id?: string | null;
     updated_at: string;
 }
 
@@ -55,10 +58,17 @@ export interface BillingSubscription {
     stripe_subscription_id: string | null;
     stripe_price_id: string | null;
     stripe_status: string | null;
+    plan_key?: 'starter' | 'pro' | null;
+    billing_interval?: 'monthly' | 'yearly' | null;
     current_period_start: string | null;
     current_period_end: string | null;
     cancel_at_period_end: boolean;
+    canceled_at?: string | null;
     trial_end: string | null;
+    cofounder_quantity?: number | null;
+    founding_price_locked?: boolean | null;
+    stripe_checkout_session_id?: string | null;
+    latest_invoice_id?: string | null;
     created_at: string;
     updated_at: string;
 }
@@ -115,6 +125,7 @@ export function subscriptionLabel(status: SubscriptionStatus | string | null | u
     const map: Record<string, string> = {
         trial: 'Trial',
         active: 'Active',
+        trialing: 'Trialing',
         past_due: 'Past Due',
         canceled: 'Canceled',
         incomplete: 'Incomplete',

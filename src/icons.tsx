@@ -30,6 +30,7 @@ import {
     Flame,
     ArrowRight,
     ShieldCheck,
+    Settings,
 } from "lucide-react";
 
 import {
@@ -41,15 +42,13 @@ import {
     UserSound,
 } from "@phosphor-icons/react";
 
-import foundryFlame from "./assets/logos/foundry-flame.svg";
-import foundryAndForge from "./assets/logos/foundry-and-forge.svg";
-import forge from "./assets/logos/forge.svg";
+import currentFoundryLogo from "./assets/logos/Foundry_Logo.svg";
 
 export const Icons = {
     logos: {
-        foundryFlame,
-        foundryAndForge,
-        forge,
+        foundryFlame: currentFoundryLogo,
+        foundryAndForge: currentFoundryLogo,
+        forge: currentFoundryLogo,
     },
 
     stages: {
@@ -72,6 +71,7 @@ export const Icons = {
         marketIntel: CandlestickChart,
         cofounder: Users,
         admin: ShieldCheck,
+        settings: Settings,
     },
 
     hub: {

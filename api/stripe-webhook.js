@@ -203,51 +203,9 @@ async function handleInvoicePaymentSucceeded(invoice) {
 // ── Main handler ────────────────────────────────────────────────
 
 module.exports = async function handler(req, res) {
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
-    }
-
-    const sig = req.headers['stripe-signature'];
-    let event;
-
-    try {
-        // req.body must be the raw buffer — ensure bodyParser is disabled for this route
-        event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
-    } catch (err) {
-        console.error('Webhook signature verification failed:', err.message);
-        return res.status(400).json({ error: `Webhook error: ${err.message}` });
-    }
-
-    try {
-        switch (event.type) {
-            case 'checkout.session.completed':
-                await handleCheckoutCompleted(event.data.object);
-                break;
-            case 'customer.subscription.created':
-                await handleSubscriptionCreated(event.data.object);
-                break;
-            case 'customer.subscription.updated':
-                await handleSubscriptionUpdated(event.data.object);
-                break;
-            case 'customer.subscription.deleted':
-                await handleSubscriptionDeleted(event.data.object);
-                break;
-            case 'invoice.payment_failed':
-                await handleInvoicePaymentFailed(event.data.object);
-                break;
-            case 'invoice.payment_succeeded':
-                await handleInvoicePaymentSucceeded(event.data.object);
-                break;
-            default:
-                // Unhandled event type — silently ignore
-                break;
-        }
-    } catch (err) {
-        console.error(`Error handling ${event.type}:`, err);
-        return res.status(500).json({ error: 'Internal handler error' });
-    }
-
-    res.status(200).json({ received: true });
+    return res.status(410).json({
+        error: 'Deprecated endpoint. Stripe webhooks are now handled by the Supabase Edge Function `stripe-webhook`.',
+    });
 };
 
 // ── Vercel config — disable body parsing so we get the raw buffer ──

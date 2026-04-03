@@ -1,5 +1,13 @@
 import { supabase } from "./supabase";
 import { OWNER_EMAIL, hasAdminAccess, isOwnerRole, normalizeEmail, normalizeUserRole } from "./lib/roles";
+import {
+    MEANINGFUL_ACTIVITY_THROTTLE_MS,
+    DEFAULT_ADMIN_NOTIFICATION_SETTINGS,
+    DEFAULT_USER_NOTIFICATION_PREFERENCES,
+    type AdminNotificationSettings,
+    type AppNotification,
+    type UserNotificationPreferences,
+} from "./lib/notifications";
 
 // ─────────────────────────────────────────────────────────────
 // FOUNDRY DATABASE LAYER
@@ -41,12 +49,15 @@ export async function loadProfile(userId: string) {
         experience: data.experience,
         currentStage: data.current_stage ?? 1,
         budget: {
-            total: data.budget_total ?? 0,
+            total: data.exact_budget_amount ?? data.budget_total ?? 0,
             spent: data.budget_spent ?? 0,
-            remaining: data.budget_remaining ?? 0,
+            remaining: data.budget_remaining ?? (data.exact_budget_amount ?? data.budget_total ?? 0),
             runway: data.budget_runway ?? "TBD",
             expenses: data.expenses ?? [],
         },
+        budgetRange: data.budget_range ?? null,
+        exactBudgetAmount: data.exact_budget_amount ?? data.budget_total ?? 0,
+        budgetIsEstimated: data.budget_is_estimated ?? false,
         glossaryLearned: data.glossary_learned ?? [],
         decisions: data.decisions ?? [],
         setupCompleted,
@@ -57,6 +68,8 @@ export async function loadProfile(userId: string) {
         lastActiveAt: data.last_active_at ?? null,
     };
 }
+
+const _activityTouchCache = new Map<string, number>();
 
 export async function saveProfile(userId: string, profile: any) {
     if (!profile) return;
@@ -74,6 +87,9 @@ export async function saveProfile(userId: string, profile: any) {
         budget_spent: profile.budget?.spent ?? 0,
         budget_remaining: profile.budget?.remaining ?? 0,
         budget_runway: profile.budget?.runway ?? "TBD",
+        budget_range: profile.budgetRange ?? null,
+        exact_budget_amount: profile.exactBudgetAmount ?? profile.budget?.total ?? 0,
+        budget_is_estimated: profile.budgetIsEstimated ?? false,
         expenses: profile.budget?.expenses ?? [],
         glossary_learned: profile.glossaryLearned ?? [],
         decisions: profile.decisions ?? [],
@@ -202,6 +218,7 @@ export async function saveJournalEntry(userId: string, content: string) {
         .single();
 
     if (error) { console.error("saveJournalEntry error:", error.message); return null; }
+    await recordMeaningfulActivity(userId, undefined, { force: true });
     return { id: data.id, content: data.content, createdAt: data.created_at };
 }
 
@@ -251,6 +268,7 @@ export async function saveMarketReport(userId: string, content: string, industry
         .select()
         .single();
     if (error) { console.error("saveMarketReport error:", error.message); return null; }
+    await recordMeaningfulActivity(userId, undefined, { force: true });
     return { content: data.content, industry: data.industry, date: data.date, createdAt: data.created_at };
 }
 
@@ -280,7 +298,182 @@ export async function saveBriefing(userId: string, content: string, stageId: num
         .single();
 
     if (error) { console.error("saveBriefing error:", error.message); return null; }
+    await recordMeaningfulActivity(userId, undefined, { force: true });
     return { id: data.id, content: data.content, stageId: data.stage_id, createdAt: data.created_at };
+}
+
+// ── NOTIFICATION PREFERENCES ─────────────────────────────────
+
+export async function ensureNotificationPreferences(userId: string) {
+    const { data, error } = await supabase
+        .from("user_notification_preferences")
+        .upsert({
+            user_id: userId,
+            reengagement_enabled: DEFAULT_USER_NOTIFICATION_PREFERENCES.reengagementEnabled,
+            product_updates_enabled: DEFAULT_USER_NOTIFICATION_PREFERENCES.productUpdatesEnabled,
+            email_notifications_enabled: DEFAULT_USER_NOTIFICATION_PREFERENCES.emailNotificationsEnabled,
+            in_app_notifications_enabled: DEFAULT_USER_NOTIFICATION_PREFERENCES.inAppNotificationsEnabled,
+            updated_at: new Date().toISOString(),
+        }, { onConflict: "user_id", ignoreDuplicates: true })
+        .select()
+        .maybeSingle();
+
+    if (error && error.code !== "23505") {
+        console.error("ensureNotificationPreferences error:", error.message);
+    }
+
+    return data ?? null;
+}
+
+export async function loadNotificationPreferences(userId: string): Promise<UserNotificationPreferences> {
+    const { data, error } = await supabase
+        .from("user_notification_preferences")
+        .select("*")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+    if (error) {
+        console.error("loadNotificationPreferences error:", error.message);
+        return DEFAULT_USER_NOTIFICATION_PREFERENCES;
+    }
+
+    if (!data) {
+        await ensureNotificationPreferences(userId);
+        return DEFAULT_USER_NOTIFICATION_PREFERENCES;
+    }
+
+    return {
+        reengagementEnabled: data.reengagement_enabled ?? DEFAULT_USER_NOTIFICATION_PREFERENCES.reengagementEnabled,
+        productUpdatesEnabled: data.product_updates_enabled ?? DEFAULT_USER_NOTIFICATION_PREFERENCES.productUpdatesEnabled,
+        emailNotificationsEnabled: data.email_notifications_enabled ?? DEFAULT_USER_NOTIFICATION_PREFERENCES.emailNotificationsEnabled,
+        inAppNotificationsEnabled: data.in_app_notifications_enabled ?? DEFAULT_USER_NOTIFICATION_PREFERENCES.inAppNotificationsEnabled,
+    };
+}
+
+export async function saveNotificationPreferences(userId: string, preferences: UserNotificationPreferences) {
+    const { error } = await supabase
+        .from("user_notification_preferences")
+        .upsert({
+            user_id: userId,
+            reengagement_enabled: preferences.reengagementEnabled,
+            product_updates_enabled: preferences.productUpdatesEnabled,
+            email_notifications_enabled: preferences.emailNotificationsEnabled,
+            in_app_notifications_enabled: preferences.inAppNotificationsEnabled,
+            updated_at: new Date().toISOString(),
+        }, { onConflict: "user_id" });
+
+    if (error) {
+        console.error("saveNotificationPreferences error:", error.message);
+        return false;
+    }
+
+    return true;
+}
+
+export async function ensureAdminNotificationSettings() {
+    const { data, error } = await supabase
+        .from("admin_notification_settings")
+        .upsert({
+            id: DEFAULT_ADMIN_NOTIFICATION_SETTINGS.id,
+            reengagement_enabled: DEFAULT_ADMIN_NOTIFICATION_SETTINGS.reengagementEnabled,
+            reengagement_delay_days: DEFAULT_ADMIN_NOTIFICATION_SETTINGS.reengagementDelayDays,
+            max_reminders_per_user: DEFAULT_ADMIN_NOTIFICATION_SETTINGS.maxRemindersPerUser,
+            updated_at: new Date().toISOString(),
+        }, { onConflict: "id", ignoreDuplicates: true })
+        .select()
+        .maybeSingle();
+
+    if (error && error.code !== "23505") {
+        console.error("ensureAdminNotificationSettings error:", error.message);
+    }
+
+    return data ?? null;
+}
+
+export async function loadAdminNotificationSettings(): Promise<AdminNotificationSettings> {
+    const { data, error } = await supabase
+        .from("admin_notification_settings")
+        .select("*")
+        .eq("id", DEFAULT_ADMIN_NOTIFICATION_SETTINGS.id)
+        .maybeSingle();
+
+    if (error) {
+        console.error("loadAdminNotificationSettings error:", error.message);
+        return DEFAULT_ADMIN_NOTIFICATION_SETTINGS;
+    }
+
+    if (!data) {
+        await ensureAdminNotificationSettings();
+        return DEFAULT_ADMIN_NOTIFICATION_SETTINGS;
+    }
+
+    return {
+        id: data.id ?? DEFAULT_ADMIN_NOTIFICATION_SETTINGS.id,
+        reengagementEnabled: data.reengagement_enabled ?? DEFAULT_ADMIN_NOTIFICATION_SETTINGS.reengagementEnabled,
+        reengagementDelayDays: data.reengagement_delay_days ?? DEFAULT_ADMIN_NOTIFICATION_SETTINGS.reengagementDelayDays,
+        maxRemindersPerUser: data.max_reminders_per_user ?? DEFAULT_ADMIN_NOTIFICATION_SETTINGS.maxRemindersPerUser,
+    };
+}
+
+export async function saveAdminNotificationSettings(settings: AdminNotificationSettings) {
+    const { error } = await supabase
+        .from("admin_notification_settings")
+        .upsert({
+            id: settings.id,
+            reengagement_enabled: settings.reengagementEnabled,
+            reengagement_delay_days: settings.reengagementDelayDays,
+            max_reminders_per_user: settings.maxRemindersPerUser,
+            updated_at: new Date().toISOString(),
+        }, { onConflict: "id" });
+
+    if (error) {
+        console.error("saveAdminNotificationSettings error:", error.message);
+        return false;
+    }
+
+    return true;
+}
+
+export async function loadNotifications(userId: string, limit = 12): Promise<AppNotification[]> {
+    const { data, error } = await supabase
+        .from("notifications")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+
+    if (error) {
+        console.error("loadNotifications error:", error.message);
+        return [];
+    }
+
+    return (data ?? []).map((row) => ({
+        id: row.id,
+        userId: row.user_id,
+        type: row.type,
+        title: row.title,
+        message: row.message,
+        channel: row.channel,
+        status: row.status,
+        sentAt: row.sent_at ?? null,
+        readAt: row.read_at ?? null,
+        createdAt: row.created_at,
+    }));
+}
+
+export async function markNotificationRead(notificationId: string) {
+    const { error } = await supabase
+        .from("notifications")
+        .update({ read_at: new Date().toISOString() })
+        .eq("id", notificationId)
+        .is("read_at", null);
+
+    if (error) {
+        console.error("markNotificationRead error:", error.message);
+        return false;
+    }
+
+    return true;
 }
 
 // ── ACCOUNT ACCESS ────────────────────────────────────────────
@@ -294,23 +487,44 @@ export async function loadAccountAccess(userId: string) {
     return data ?? null;
 }
 
+export async function loadBillingSubscription(userId: string) {
+    const { data } = await supabase
+        .from("billing_subscriptions")
+        .select("*")
+        .eq("user_id", userId)
+        .maybeSingle();
+    return data ?? null;
+}
+
 // Creates a default access record if one doesn't exist yet.
 // Safe to call on every login — is a no-op if record exists.
 export async function ensureAccountAccess(userId: string) {
     const existing = await loadAccountAccess(userId);
     if (existing) return existing;
-    const { data } = await supabase
+
+    const payload = {
+        user_id: userId,
+        access_status: "active",
+        plan_type: "free",
+        subscription_status: "trial",
+        is_family_comp: false,
+    };
+
+    const { data, error } = await supabase
         .from("account_access")
-        .insert({
-            user_id: userId,
-            access_status: "active",
-            plan_type: "free",
-            subscription_status: "trial",
-            is_family_comp: false,
-        })
+        .upsert(payload, { onConflict: "user_id" })
         .select()
-        .single();
-    return data ?? null;
+        .maybeSingle();
+
+    if (error) {
+        console.error("ensureAccountAccess error:", error.message);
+        return await loadAccountAccess(userId);
+    }
+
+    if (data) return data;
+
+    const refreshed = await loadAccountAccess(userId);
+    return refreshed ?? null;
 }
 
 // Updates last_active_at and syncs email so admin dashboard has it.
@@ -320,6 +534,22 @@ export async function updateUserActivity(userId: string, email?: string) {
     };
     if (email) updates.email = email;
     await supabase.from("profiles").update(updates).eq("id", userId);
+}
+
+export async function recordMeaningfulActivity(
+    userId: string,
+    email?: string,
+    options?: { force?: boolean }
+) {
+    const now = Date.now();
+    const lastTouched = _activityTouchCache.get(userId) ?? 0;
+    if (!options?.force && now - lastTouched < MEANINGFUL_ACTIVITY_THROTTLE_MS) {
+        return false;
+    }
+
+    _activityTouchCache.set(userId, now);
+    await updateUserActivity(userId, email);
+    return true;
 }
 
 export async function ensureOwnerProfileRole(userId: string, email?: string | null) {

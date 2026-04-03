@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import { STAGES_DATA } from "../constants/stages";
 import { STAGE_COLORS } from "../constants/glossary";
+import { BUDGET_CARDS } from "../constants/onboarding";
 import { TAG_COLORS } from "../constants/styles";
 import { Icons } from "../icons";
+import { formatCurrency, getBudgetRangeLabel, parseBudgetInput } from "../lib/budget";
+import { summarizeBusinessIdea } from "../lib/businessSummary";
 import Logo from "./Logo";
 
 export default function HubScreen({
@@ -19,14 +22,15 @@ export default function HubScreen({
     onOpenDocuments,
     onOpenMarketIntel,
     onOpenCofounder,
+    onOpenSettings,
     onOpenAdminHub,
     isAdmin = false,
-    onOpenAdmin,
     completedByStage,
     accessSummary,
 }) {
     const [showDecisionModal, setShowDecisionModal] = useState(false);
     const [showExpenseModal, setShowExpenseModal] = useState(false);
+    const [showBudgetModal, setShowBudgetModal] = useState(false);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [showResetModal, setShowResetModal] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -35,6 +39,8 @@ export default function HubScreen({
     const [decisionTag, setDecisionTag] = useState("Strategy");
     const [expenseLabel, setExpenseLabel] = useState("");
     const [expenseAmount, setExpenseAmount] = useState("");
+    const [budgetEditAmount, setBudgetEditAmount] = useState("");
+    const [budgetEditRange, setBudgetEditRange] = useState(profile.budgetRange || "");
 
     useEffect(() => {
         const timer = setTimeout(() => setMounted(true), 100);
@@ -93,12 +99,48 @@ export default function HubScreen({
         setShowExpenseModal(false);
     };
 
+    const openBudgetModal = () => {
+        setBudgetEditAmount(String(profile.exactBudgetAmount ?? profile.budget?.total ?? 0));
+        setBudgetEditRange(profile.budgetRange || "");
+        setShowBudgetModal(true);
+    };
+
+    const saveBudget = () => {
+        const parsedAmount = parseBudgetInput(budgetEditAmount);
+        if (!parsedAmount) return;
+
+        const spent = profile.budget?.spent || 0;
+        onUpdateProfile({
+            budgetRange: budgetEditRange || null,
+            exactBudgetAmount: parsedAmount,
+            budgetIsEstimated: false,
+            budget: {
+                ...profile.budget,
+                total: parsedAmount,
+                remaining: Math.max(parsedAmount - spent, 0),
+            },
+        });
+
+        setShowBudgetModal(false);
+    };
+
     const currentStage = profile.currentStage || 1;
+    const businessSummary = summarizeBusinessIdea(profile.businessName, profile.idea, 10);
     const spentPct = profile.budget?.total
         ? Math.min((profile.budget.spent / profile.budget.total) * 100, 100)
         : 0;
 
     const NAV_ITEMS = [
+        ...(isAdmin ? [{
+            icon: Icons.sidebar.admin,
+            label: "Admin Hub",
+            sub: "Internal control panel",
+            action: () => {
+                setSidebarOpen(false);
+                onOpenAdminHub?.();
+            },
+            available: true,
+        }] : []),
         {
             icon: Icons.sidebar.journal,
             label: "Founder's Journal",
@@ -150,13 +192,6 @@ export default function HubScreen({
             available: true,
         },
         {
-            icon: Icons.sidebar.voice,
-            label: "Voice Mode",
-            sub: "Talk to Forge out loud",
-            action: null,
-            available: false,
-        },
-        {
             icon: Icons.sidebar.cofounder,
             label: "Co-Founder Mode",
             sub: "Shared team workspace",
@@ -166,25 +201,16 @@ export default function HubScreen({
             },
             available: true,
         },
-        ...(isAdmin ? [{
-            icon: Icons.sidebar.admin,
-            label: "Admin Hub",
-            sub: "Internal control panel",
+        {
+            icon: Icons.sidebar.settings,
+            label: "Settings",
+            sub: "Account, billing, and policies",
             action: () => {
                 setSidebarOpen(false);
-                onOpenAdminHub?.();
+                onOpenSettings?.();
             },
             available: true,
-        }, {
-            icon: Icons.sidebar.admin,
-            label: "Admin Dashboard",
-            sub: "Detailed user operations",
-            action: () => {
-                setSidebarOpen(false);
-                onOpenAdmin?.();
-            },
-            available: true,
-        }] : []),
+        },
     ];
 
 
@@ -282,7 +308,7 @@ export default function HubScreen({
                             fontStyle: "italic",
                         }}
                     >
-                        {profile.businessName || profile.idea?.slice(0, 40) || "Your business"}
+                        {businessSummary}
                     </div>
                 </div>
 
@@ -372,6 +398,7 @@ export default function HubScreen({
                                         alignItems: "center",
                                         justifyContent: "center",
                                         flexShrink: 0,
+                                        color: item.available ? "#F0EDE8" : "#888",
                                     }}
                                 >
                                     <Icon size={16} />
@@ -533,7 +560,7 @@ export default function HubScreen({
                             fontStyle: "italic",
                         }}
                     >
-                        {profile.businessName || profile.idea?.slice(0, 50) || "Your business"}
+                        {businessSummary}
                     </div>
                 </div>
 
@@ -677,13 +704,22 @@ export default function HubScreen({
                 <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "14px 16px", marginBottom: 14, animation: "fadeSlideUp 0.5s ease 0.25s both" }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
                         <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>Budget</div>
-                        <button onClick={() => setShowExpenseModal(true)} style={{ background: "rgba(232,98,42,0.1)", border: "1px solid rgba(232,98,42,0.25)", borderRadius: 8, padding: "4px 12px", color: "#E8622A", fontSize: 11, cursor: "pointer", fontWeight: 500 }}>+ Expense</button>
+                        <div style={{ display: "flex", gap: 8 }}>
+                            <button onClick={openBudgetModal} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "4px 12px", color: "#F0EDE8", fontSize: 11, cursor: "pointer", fontWeight: 500 }}>Customize Budget</button>
+                            <button onClick={() => setShowExpenseModal(true)} style={{ background: "rgba(232,98,42,0.1)", border: "1px solid rgba(232,98,42,0.25)", borderRadius: 8, padding: "4px 12px", color: "#E8622A", fontSize: 11, cursor: "pointer", fontWeight: 500 }}>+ Expense</button>
+                        </div>
                     </div>
+                    {(profile.budgetRange || profile.budgetIsEstimated) && (
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 12, fontSize: 10, color: "#666" }}>
+                            <div>Range: {getBudgetRangeLabel(profile.budgetRange) || "Not set"}</div>
+                            <div>{profile.budgetIsEstimated ? "Using provisional amount" : "Exact budget confirmed"}</div>
+                        </div>
+                    )}
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 14 }}>
                         {[
-                            { label: "Total", value: `$${(profile.budget?.total || 0).toLocaleString()}`, color: "#F0EDE8" },
-                            { label: "Spent", value: `$${(profile.budget?.spent || 0).toLocaleString()}`, color: "#E8622A" },
-                            { label: "Remaining", value: `$${(profile.budget?.remaining || 0).toLocaleString()}`, color: "#4CAF8A" },
+                            { label: "Total", value: formatCurrency(profile.budget?.total || 0), color: "#F0EDE8" },
+                            { label: "Spent", value: formatCurrency(profile.budget?.spent || 0), color: "#E8622A" },
+                            { label: "Remaining", value: formatCurrency(profile.budget?.remaining || 0), color: "#4CAF8A" },
                         ].map(item => (
                             <div key={item.label} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 10, padding: "10px", textAlign: "center" }}>
                                 <div style={{ fontSize: "clamp(14px, 4vw, 20px)", fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: item.color, lineHeight: 1, marginBottom: 3 }}>{item.value}</div>
@@ -789,6 +825,49 @@ export default function HubScreen({
                         <div style={{ display: "flex", gap: 8 }}>
                             <button onClick={() => setShowExpenseModal(false)} style={{ flex: 1, padding: "10px", background: "transparent", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#555", fontSize: 12, cursor: "pointer" }}>Cancel</button>
                             <button onClick={addExpense} style={{ flex: 2, padding: "10px", background: "linear-gradient(135deg, #E8622A, #c9521e)", border: "none", borderRadius: 10, color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}>Save Expense</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showBudgetModal && (
+                <div style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, animation: "fadeIn 0.2s ease" }} onClick={() => setShowBudgetModal(false)}>
+                    <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 460, background: "#0E0E10", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 22, animation: "fadeSlideUp 0.3s ease" }}>
+                        <div style={{ fontSize: 17, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 10 }}>Customize Budget</div>
+                        <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.6, marginBottom: 16 }}>
+                            Your budget is a living input. Update the exact amount you can realistically plan around right now, and adjust the range if it changed too.
+                        </div>
+                        <div style={{ marginBottom: 12 }}>
+                            <div style={{ fontSize: 11, color: "#666", marginBottom: 8, letterSpacing: "0.08em", textTransform: "uppercase" }}>Budget Range</div>
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                                {BUDGET_CARDS.map((card) => (
+                                    <button
+                                        key={card.id}
+                                        onClick={() => setBudgetEditRange(card.id)}
+                                        style={{
+                                            padding: "6px 10px",
+                                            borderRadius: 999,
+                                            border: budgetEditRange === card.id ? "1px solid rgba(232,98,42,0.35)" : "1px solid rgba(255,255,255,0.08)",
+                                            background: budgetEditRange === card.id ? "rgba(232,98,42,0.12)" : "rgba(255,255,255,0.03)",
+                                            color: budgetEditRange === card.id ? "#E8622A" : "#C8C4BE",
+                                            fontSize: 11,
+                                            cursor: "pointer",
+                                        }}
+                                    >
+                                        {card.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <input
+                            value={budgetEditAmount}
+                            onChange={e => setBudgetEditAmount(e.target.value)}
+                            placeholder="Exact amount available right now"
+                            style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'DM Sans', sans-serif", marginBottom: 16, boxSizing: "border-box" }}
+                        />
+                        <div style={{ display: "flex", gap: 8 }}>
+                            <button onClick={() => setShowBudgetModal(false)} style={{ flex: 1, padding: "10px", background: "transparent", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#555", fontSize: 12, cursor: "pointer" }}>Cancel</button>
+                            <button onClick={saveBudget} style={{ flex: 2, padding: "10px", background: "linear-gradient(135deg, #E8622A, #c9521e)", border: "none", borderRadius: 10, color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}>Save Budget</button>
                         </div>
                     </div>
                 </div>

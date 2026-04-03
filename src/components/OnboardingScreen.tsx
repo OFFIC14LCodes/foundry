@@ -9,6 +9,7 @@ import {
 } from "../constants/onboarding";
 import { FORGE_SYSTEM_PROMPT } from "../constants/prompts";
 import { STAGES_DATA } from "../constants/stages";
+import { formatCurrency, getBudgetCardById, getFallbackBudgetAmount, getBudgetRangeLabel, parseBudgetInput } from "../lib/budget";
 import MessageBubble from "./MessageBubble";
 import ForgeAvatar from "./ForgeAvatar";
 import TypingDots from "./TypingDots";
@@ -29,8 +30,9 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
         name: "",
         idea: "",
         experience: "",
-        budget: "",
-        budgetAmount: 0,
+        budgetRange: "",
+        exactBudgetAmount: 0,
+        budgetIsEstimated: false,
         strategy: "",
         strategyLabel: "",
         detectedStage: 1,
@@ -105,28 +107,49 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
 
         } else if (currentStep.id === "experience") {
             p.experience = value; setProfile(p);
-            const prompt = `Respond in 2 sentences only. First: acknowledge "${value}" in one specific sentence that shows you understand what that experience level means for building a business — not generic. Second: ask about their budget in a casual, direct way.`;
+            const prompt = `Respond in 2 sentences only. First: acknowledge "${value}" in one specific sentence that shows you understand what that experience level means for building a business — not generic. Second: ask about their budget in a casual, direct way, and mention you'll use a range first so they don't have to guess cold.`;
             try {
                 const r = await callForgeAPI([{ role: "user", content: prompt }], FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", `Onboarding. ${p.name}. Idea: ${p.idea}. Experience: ${p.experience}.`));
                 await deliverMessage(r, setLoading, addForgeMsg);
             } catch {
-                await deliverMessage(`Got it — that combination of industry knowledge without formal business experience is actually common for the best founders. What's your starting budget?`, setLoading, addForgeMsg);
+                await deliverMessage(`Got it — that combination of industry knowledge without formal business experience is actually common for the best founders. Start by picking the budget range that feels closest, then I'll ask for the exact amount so we can plan realistically.`, setLoading, addForgeMsg);
             }
             setStepIndex(4);
 
         } else if (currentStep.id === "budget") {
-            const card = BUDGET_CARDS.find(c => c.id === rawId);
-            p.budget = card?.label || value;
-            p.budgetAmount = card?.amount || 0;
+            const card = getBudgetCardById(rawId);
+            p.budgetRange = card?.id || rawId || "";
+            p.budgetIsEstimated = false;
             setProfile(p);
-            const prompt = `Respond in 2 sentences only. First: acknowledge "${p.budget}" in one sentence — honest, practical, not over-enthusiastic. Second: tell them the last question is about how they want to approach building this, and they'll see some options.`;
+            const rangeLabel = card?.label || value;
+            const prompt = `Respond in 2 sentences only. First: acknowledge "${rangeLabel}" in one sentence — honest, practical, not over-enthusiastic. Second: ask them how much money they actually have available to invest right now, and explain that the exact amount matters because it changes how you tailor the plan and keep it realistic.`;
             try {
-                const r = await callForgeAPI([{ role: "user", content: prompt }], FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", `Onboarding. ${p.name}. Idea: ${p.idea}. Budget: ${p.budget}.`));
+                const r = await callForgeAPI([{ role: "user", content: prompt }], FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", `Onboarding. ${p.name}. Idea: ${p.idea}. Budget range: ${rangeLabel}.`));
                 await deliverMessage(r, setLoading, addForgeMsg);
             } catch {
-                await deliverMessage(`${p.budget} — that's a workable foundation. Last question: how do you want to approach this?`, setLoading, addForgeMsg);
+                await deliverMessage(`${rangeLabel} gives me a useful bracket. Now give me the real number: **how much money do you actually have available to invest right now?** The exact amount matters because it changes what I recommend and keeps the plan grounded in reality.`, setLoading, addForgeMsg);
             }
             setStepIndex(5);
+
+        } else if (currentStep.id === "budget_exact") {
+            const parsedAmount = parseBudgetInput(value);
+            if (!parsedAmount) {
+                await deliverMessage(`Give me the actual number you'd be comfortable planning around right now — something like **2500** or **$2,500**. If you genuinely don't know yet, tap **I'm not sure yet** and I'll use a conservative placeholder you can update later.`, setLoading, addForgeMsg);
+                return;
+            }
+
+            p.exactBudgetAmount = parsedAmount;
+            p.budgetIsEstimated = false;
+            setProfile(p);
+
+            const prompt = `Respond in 2 sentences only. First: acknowledge that "${formatCurrency(parsedAmount)}" is the working budget in a practical, founder-focused way. Second: tell them the last question is about how they want to approach building this, and they'll see options now.`;
+            try {
+                const r = await callForgeAPI([{ role: "user", content: prompt }], FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", `Onboarding. ${p.name}. Idea: ${p.idea}. Budget range: ${getBudgetRangeLabel(p.budgetRange)}. Exact budget amount: ${parsedAmount}.`));
+                await deliverMessage(r, setLoading, addForgeMsg);
+            } catch {
+                await deliverMessage(`${formatCurrency(parsedAmount)} is enough to plan around honestly. Good. Last question: how do you want to approach building this?`, setLoading, addForgeMsg);
+            }
+            setStepIndex(7);
 
         } else if (currentStep.id === "strategy") {
             const card = STRATEGY_CARDS.find(c => c.id === rawId);
@@ -134,7 +157,9 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
             p.strategyLabel = card?.label || value;
             setProfile(p);
 
-            const context = `Founder: ${p.name} | Idea: ${p.idea} | Experience: ${p.experience} | Budget: ${p.budget} | Strategy: ${p.strategyLabel} | Starting Stage: ${p.detectedStage || 1} (${STAGES_DATA[(p.detectedStage || 1) - 1]?.label})`;
+            const budgetLabel = p.exactBudgetAmount ? `${formatCurrency(p.exactBudgetAmount)} available` : "Budget still being clarified";
+            const rangeLabel = getBudgetRangeLabel(p.budgetRange);
+            const context = `Founder: ${p.name} | Idea: ${p.idea} | Experience: ${p.experience} | Budget range: ${rangeLabel || "Not set"} | Exact budget: ${budgetLabel} | Strategy: ${p.strategyLabel} | Starting Stage: ${p.detectedStage || 1} (${STAGES_DATA[(p.detectedStage || 1) - 1]?.label})`;
             const startStage = p.detectedStage || 1;
             const startStageLabel = STAGES_DATA[startStage - 1]?.label || "Idea";
             const prompt = `Onboarding is complete. Give a personalized opening assessment in 3-4 short paragraphs. Reference their specific idea, budget, experience level, strategy mode, and the fact that we're starting them at Stage ${startStage}: ${startStageLabel}. Be direct and specific — not generic. If there's real potential in what they're building, name it specifically. If there's a common pitfall for this type of idea or stage, call it out. Explain in one sentence why Stage ${startStage} is the right starting point for them given where they are. Use **bold** on 2-3 key words. End with just the word "Ready?" on its own line — nothing after it.`;
@@ -146,17 +171,20 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                 await deliverMessage(`Alright ${p.name} — we have what we need. Let's build something real.\n\nReady?`, setLoading, addForgeMsg);
             }
 
-            setStepIndex(6);
+            setStepIndex(7);
             setCompletedProfile({
                 ...p,
                 businessName: "",
                 currentStage: p.detectedStage || 1,
+                budgetRange: p.budgetRange,
+                exactBudgetAmount: p.exactBudgetAmount,
+                budgetIsEstimated: p.budgetIsEstimated,
                 budget: {
-                    total: p.budgetAmount,
+                    total: p.exactBudgetAmount,
                     spent: 0,
-                    remaining: p.budgetAmount,
+                    remaining: p.exactBudgetAmount,
                     runway: "calculating...",
-                    income: [{ source: p.budget, amount: p.budgetAmount }],
+                    income: [{ source: getBudgetRangeLabel(p.budgetRange) || "Starting budget", amount: p.exactBudgetAmount }],
                     expenses: [],
                 },
                 decisions: [],
@@ -167,8 +195,29 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
 
     const handleSubmit = async () => {
         if (!input.trim() || loading) return;
-        const val = input.trim(); setInput("");
+        const val = input.trim();
+        if (currentStep?.id === "budget_exact" && !parseBudgetInput(val)) {
+            setInput("");
+            await deliverMessage(`Give me the actual number you'd be comfortable planning around right now — something like **2500** or **$2,500**. If you genuinely don't know yet, tap **I'm not sure yet** and I'll use a conservative placeholder you can update later.`, setLoading, addForgeMsg);
+            return;
+        }
+        setInput("");
         await processInput(val);
+    };
+
+    const handleBudgetNotSure = async () => {
+        if (loading || currentStep?.id !== "budget_exact") return;
+        const fallbackAmount = getFallbackBudgetAmount(profile.budgetRange);
+        addUserMsg("I'm not sure yet");
+        const p = {
+            ...profile,
+            exactBudgetAmount: fallbackAmount,
+            budgetIsEstimated: true,
+        };
+        setProfile(p);
+
+        await deliverMessage(`No problem. I'll use a **conservative planning number of ${formatCurrency(fallbackAmount)}** for now based on the range you picked, and you can update it later from the Hub when you know the real number. Last question: how do you want to approach building this?`, setLoading, addForgeMsg);
+        setStepIndex(6);
     };
 
     const handleCard = async (cardId) => {
@@ -183,7 +232,7 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
     };
 
     const showCards = currentStep?.cards && !loading && !readyToEnter;
-    const showInput = !currentStep?.cards && stepIndex < 6 && !readyToEnter;
+    const showInput = !currentStep?.cards && stepIndex < 7 && !readyToEnter;
 
     return (
         <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'DM Sans', sans-serif", color: "#F0EDE8", display: "flex", flexDirection: "column" }}>
@@ -194,7 +243,7 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                 </div>
                 {stepIndex > 0 && (
                     <div style={{ display: "flex", gap: 6 }}>
-                        {[0, 1, 2, 3, 4, 5].map(i => (
+                        {[0, 1, 2, 3, 4, 5, 6].map(i => (
                             <div key={i} style={{ width: i < stepIndex ? 18 : 6, height: 6, borderRadius: 3, background: i < stepIndex ? "linear-gradient(90deg, #E8622A, #F5A843)" : "rgba(255,255,255,0.12)", transition: "all 0.4s ease" }} />
                         ))}
                     </div>
@@ -221,6 +270,7 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                         key={msg.id || i}
                         msg={msg}
                         renderWithBold={renderWithBold}
+                        userName={profile.name || "You"}
                     />
                 ))}
 
@@ -303,6 +353,19 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                 )}
             </div>
 
+            {currentStep?.id === "budget_exact" && !loading && !readyToEnter && (
+                <div style={{ position: "fixed", left: 0, right: 0, bottom: 92, padding: "0 16px", zIndex: 19 }}>
+                    <div style={{ maxWidth: 680, margin: "0 auto", display: "flex", justifyContent: "flex-start" }}>
+                        <button
+                            onClick={handleBudgetNotSure}
+                            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 999, padding: "9px 14px", color: "#A8A4A0", fontSize: 12, cursor: "pointer" }}
+                        >
+                            I'm not sure yet
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {showInput && (
                 <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, padding: "16px 16px max(24px, calc(12px + env(safe-area-inset-bottom)))", background: "linear-gradient(to top, rgba(8,8,9,1) 60%, transparent)", zIndex: 20 }}>
                     <div style={{ maxWidth: 680, margin: "0 auto" }}>
@@ -312,7 +375,15 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                             onSend={handleSubmit}
                             onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
                             loading={loading}
-                            placeholder={stepIndex === 0 ? "Type your name..." : stepIndex === 2 ? "Tell me about your idea..." : "Type your response..."}
+                            placeholder={
+                                currentStep?.id === "name"
+                                    ? "Type your name..."
+                                    : currentStep?.id === "idea"
+                                        ? "Tell me about your idea..."
+                                        : currentStep?.id === "budget_exact"
+                                            ? "Enter your exact budget amount..."
+                                            : "Type your response..."
+                            }
                         />
                     </div>
                 </div>
