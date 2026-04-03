@@ -5,7 +5,6 @@ export const ONBOARDING_STEPS = [
     { id: "stage_assessment", cards: true },
     { id: "idea", cards: false },
     { id: "experience", cards: true },
-    { id: "budget", cards: true },
     { id: "budget_exact", cards: false },
     { id: "strategy", cards: true },
     { id: "complete", cards: false },
@@ -83,6 +82,27 @@ export const EXPERIENCE_CARDS = [
     },
 ] as const;
 
+export const STRATEGY_CARDS = [
+    {
+        id: "steady",
+        icon: Icons.onboarding.steady,
+        label: "Steady",
+        desc: "Validate before you spend. Earn before you invest. Build something sustainable that doesn't keep you up at night. Every step is proven before the next one begins.",
+    },
+    {
+        id: "balanced",
+        icon: Icons.onboarding.balanced,
+        label: "Balanced",
+        desc: "Smart risks. Reasonable investment. Real momentum without recklessness. The path most successful founders actually walked.",
+    },
+    {
+        id: "all_in",
+        icon: Icons.onboarding.allIn,
+        label: "All In",
+        desc: "Move fast. Build bold. Invest aggressively in growth. You're not here to play it safe — you're here to build something significant.",
+    },
+] as const;
+
 export const BUDGET_CARDS = [
     {
         id: "under_1k",
@@ -128,26 +148,5 @@ export const BUDGET_CARDS = [
         min: 100000,
         max: null,
         fallbackAmount: 100000,
-    },
-] as const;
-
-export const STRATEGY_CARDS = [
-    {
-        id: "steady",
-        icon: Icons.onboarding.steady,
-        label: "Steady",
-        desc: "Validate before you spend. Earn before you invest. Build something sustainable that doesn't keep you up at night. Every step is proven before the next one begins.",
-    },
-    {
-        id: "balanced",
-        icon: Icons.onboarding.balanced,
-        label: "Balanced",
-        desc: "Smart risks. Reasonable investment. Real momentum without recklessness. The path most successful founders actually walked.",
-    },
-    {
-        id: "all_in",
-        icon: Icons.onboarding.allIn,
-        label: "All In",
-        desc: "Move fast. Build bold. Invest aggressively in growth. You're not here to play it safe — you're here to build something significant.",
     },
 ] as const;

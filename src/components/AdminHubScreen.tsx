@@ -2,8 +2,10 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Icons } from "../icons";
 import type { AdminNotificationSettings } from "../lib/notifications";
 import { loadAdminTtsUsage, type TtsUsageSnapshot } from "../lib/ttsUsage";
+import AdminDashboard from "./AdminDashboard";
 
 interface Props {
+    userId: string;
     onBack: () => void;
     notificationSettings: AdminNotificationSettings;
     onNotificationSettingsChange: (next: AdminNotificationSettings) => void;
@@ -14,7 +16,8 @@ const ADMIN_SECTIONS = [
         title: "User Management",
         description: "Review accounts, inspect workspace history, and manage user operations directly from the Admin Hub as this control surface expands.",
         accent: "#E8622A",
-        cta: "User controls placeholder",
+        cta: "Open account controls",
+        action: "dashboard",
     },
     {
         title: "Subscription Status",
@@ -26,13 +29,15 @@ const ADMIN_SECTIONS = [
         title: "Comped / Family Access",
         description: "Manage manually granted accounts, family access, and gifted access rules in one place.",
         accent: "#9B7FE8",
-        cta: "Comp controls placeholder",
+        cta: "Grant free access",
+        action: "dashboard",
     },
     {
         title: "Suspend / Reactivate",
         description: "Handle restricted accounts safely with clear escalation and reactivation controls.",
         accent: "#F5A843",
-        cta: "Access actions placeholder",
+        cta: "Open access controls",
+        action: "dashboard",
     },
     {
         title: "Churn Tracking",
@@ -59,14 +64,18 @@ function AdminCard({
     description,
     accent,
     cta,
+    onClick,
 }: {
     title: string;
     description: string;
     accent: string;
     cta: string;
+    onClick?: () => void;
 }) {
     return (
-        <div
+        <button
+            type="button"
+            onClick={onClick}
             style={{
                 background: "rgba(255,255,255,0.02)",
                 border: "1px solid rgba(255,255,255,0.07)",
@@ -76,6 +85,19 @@ function AdminCard({
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "space-between",
+                width: "100%",
+                textAlign: "left",
+                cursor: onClick ? "pointer" : "default",
+                transition: "background 0.15s ease, border-color 0.15s ease",
+            }}
+            onMouseEnter={event => {
+                if (!onClick) return;
+                event.currentTarget.style.background = "rgba(255,255,255,0.04)";
+                event.currentTarget.style.borderColor = "rgba(255,255,255,0.12)";
+            }}
+            onMouseLeave={event => {
+                event.currentTarget.style.background = "rgba(255,255,255,0.02)";
+                event.currentTarget.style.borderColor = "rgba(255,255,255,0.07)";
             }}
         >
             <div>
@@ -121,15 +143,17 @@ function AdminCard({
             >
                 {cta}
             </div>
-        </div>
+        </button>
     );
 }
 
 export default function AdminHubScreen({
+    userId,
     onBack,
     notificationSettings,
     onNotificationSettingsChange,
 }: Props) {
+    const [activeView, setActiveView] = useState<"overview" | "dashboard">("overview");
     const [ttsUsage, setTtsUsage] = useState<TtsUsageSnapshot | null>(null);
     const [ttsUsageLoading, setTtsUsageLoading] = useState(true);
     const [ttsUsageError, setTtsUsageError] = useState<string | null>(null);
@@ -154,6 +178,10 @@ export default function AdminHubScreen({
     const usagePercent = ttsUsage?.totalCredits
         ? Math.min(100, Math.round((ttsUsage.usedCredits / ttsUsage.totalCredits) * 100))
         : 0;
+
+    if (activeView === "dashboard") {
+        return <AdminDashboard userId={userId} onBack={() => setActiveView("overview")} />;
+    }
 
     return (
         <div
@@ -363,6 +391,7 @@ export default function AdminHubScreen({
                                 description={section.description}
                                 accent={section.accent}
                                 cta={section.cta}
+                                onClick={section.action === "dashboard" ? () => setActiveView("dashboard") : undefined}
                             />
                         ))}
                     </div>

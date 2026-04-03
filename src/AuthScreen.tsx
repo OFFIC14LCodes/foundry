@@ -2,6 +2,15 @@ import { useState } from "react";
 import { supabase } from "./supabase";
 import Logo from "./components/Logo";
 
+function getAuthRedirectUrl() {
+    if (typeof window !== "undefined" && window.location?.origin) {
+        return window.location.origin.replace(/\/+$/, "");
+    }
+
+    const configuredUrl = import.meta.env.VITE_APP_URL?.trim();
+    return (configuredUrl || "").replace(/\/+$/, "");
+}
+
 // ─────────────────────────────────────────────────────────────
 // AUTH SCREEN — Foundry Login / Signup
 // ─────────────────────────────────────────────────────────────
@@ -19,7 +28,7 @@ export default function AuthScreen({ onAuth }: { onAuth: () => void }) {
         const { error } = await supabase.auth.signInWithOAuth({
             provider: "google",
             options: {
-                redirectTo: window.location.origin,
+                redirectTo: getAuthRedirectUrl(),
             },
         });
         if (error) setError(error.message);
@@ -41,7 +50,10 @@ export default function AuthScreen({ onAuth }: { onAuth: () => void }) {
             const { error } = await supabase.auth.signUp({
                 email: email.trim(),
                 password,
-                options: { data: { name: name.trim() } },
+                options: {
+                    data: { name: name.trim() },
+                    emailRedirectTo: getAuthRedirectUrl(),
+                },
             });
             if (error) {
                 setError(error.message);

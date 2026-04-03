@@ -1738,6 +1738,7 @@ export default function FoundryApp() {
       )}
       {showAdminHub && user && canOpenAdminHub && (
         <AdminHubScreen
+          userId={(user as any).id}
           onBack={() => setShowAdminHub(false)}
           notificationSettings={adminNotificationSettings}
           onNotificationSettingsChange={handleAdminNotificationSettingsChange}
