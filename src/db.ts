@@ -75,6 +75,7 @@ export async function saveProfile(userId: string, profile: any) {
     if (!profile) return;
     const { error } = await supabase.from("profiles").upsert({
         id: userId,
+        email: profile.email ?? null,
         name: profile.name,
         idea: profile.idea,
         business_name: profile.businessName,
@@ -83,6 +84,7 @@ export async function saveProfile(userId: string, profile: any) {
         strategy_label: profile.strategyLabel,
         experience: profile.experience,
         current_stage: profile.currentStage ?? 1,
+        setup_completed: profile.setupCompleted ?? false,
         budget_total: profile.budget?.total ?? 0,
         budget_spent: profile.budget?.spent ?? 0,
         budget_remaining: profile.budget?.remaining ?? 0,

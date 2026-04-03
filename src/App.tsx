@@ -387,7 +387,7 @@ function ForgeScreen({
 
   useEffect(() => {
     const stageMessages = messagesByStage[activeStage] || [];
-    if (stageMessages.length > 0 || loading || !briefingDismissed) return;
+    if (stageMessages.length > 0 || loading) return;
 
     const stageData = STAGES_DATA[activeStage - 1];
     const lastSeenRaw = localStorage.getItem("foundry_last_seen");
@@ -411,7 +411,7 @@ function ForgeScreen({
       if (isFirstVisit && activeStage === 1) {
         greetingPrompt = `${profile.name} just finished onboarding and is entering Stage 1 for the first time. Their idea: "${profile.idea}". Experience: ${profile.experience}. Budget: $${profile.budget?.total?.toLocaleString() || "unknown"}. Strategy: ${profile.strategyLabel}.
 
-Open with a warm, direct, personal greeting — reference something specific about their idea that signals you actually read it. Then pivot immediately to Stage 1's core question: is the problem real. Ask one sharp question to kick things off — something that gets at whether actual people have this problem right now. Use **bold** on 2-3 key words. Keep it to 3-4 tight paragraphs.`;
+Start with a short recap of what they told Foundry during onboarding: the business idea, their experience level, their budget, and their strategy. Make it sound natural and specific, not like a form readback. Then pivot immediately to Stage 1's core question: is the problem real. End with one sharp, concrete question that gets the conversation moving. Use **bold** on 2-3 key words. Keep it to 2-3 tight paragraphs.`;
       } else if (isLongAbsence && activeStage > 0) {
         const hoursText = hoursSince ? `about ${Math.round(hoursSince)} hours` : "a while";
         greetingPrompt = `${profile.name} is returning to Stage ${activeStage}: ${stageData.label} after ${hoursText} away. Welcome them back briefly and warmly — 1 sentence, not more. Reference where they are in this stage and what matters most right now. Then ask one sharp forward-moving question. 3-4 paragraphs max. Use **bold** on 2-3 key words.`;
@@ -432,9 +432,11 @@ Open with a warm, direct, personal greeting — reference something specific abo
           isFirstVisit && activeStage === 1
             ? `${profile.name} — welcome to Foundry.
 
-Stage 1 is where we find out if the problem you're solving is real enough that people will pay for it. That's the most important question in business.
+You came in with **${profile.idea || "a new business idea"}**, a ${profile.experience || "founder"} background, a budget of **$${profile.budget?.total?.toLocaleString() || "unknown"}**, and a **${profile.strategyLabel || profile.strategy || "focused"}** approach. That's enough to start pressure-testing this the right way.
 
-Who, specifically, has the problem you're solving?`
+Stage 1 is about one thing: making sure a real person has a real problem worth solving.
+
+Who, specifically, is the first person you believe feels this problem often enough to want a better solution?`
             : `${profile.name} — Stage ${activeStage}: ${stageData.label}.
 
 ${stageData.mission}
@@ -1080,6 +1082,17 @@ export default function FoundryApp() {
   const [marketReport, setMarketReport] = useState<any>(null);
   const [paywallStage, setPaywallStage] = useState<number | null>(null);
 
+  const getPersistedPostAuthScreen = (setupCompleted: boolean) => {
+    const fallback = setupCompleted ? "hub" : "intro";
+    const persistedScreen = loadFromStorage(STORAGE_KEYS.screen, fallback);
+
+    if (setupCompleted) {
+      return persistedScreen === "forge" || persistedScreen === "hub" ? persistedScreen : "hub";
+    }
+
+    return persistedScreen === "onboarding" ? "onboarding" : "intro";
+  };
+
   const resetClientSessionState = () => {
     setProfile(null);
     setCompletedByStage(createEmptyStageProgress());
@@ -1189,7 +1202,7 @@ export default function FoundryApp() {
         setBillingSubscription(dbBillingSubscription);
         // Update activity + sync email for admin dashboard
         updateUserActivity(uid, authEmail ?? undefined);
-        setScreen("hub");
+        setScreen(getPersistedPostAuthScreen(true));
       } else {
         if (dbProfile) {
           const ownerFallback = isOwnerEmail(authEmail);
@@ -1211,7 +1224,7 @@ export default function FoundryApp() {
         setNotificationPreferences(dbNotificationPreferences);
         setNotifications(dbNotifications);
         setBillingSubscription(dbBillingSubscription);
-        setScreen("intro");
+        setScreen(getPersistedPostAuthScreen(false));
         setIsFirstVisit(true);
       }
       setDataLoaded(true);
@@ -1597,7 +1610,7 @@ export default function FoundryApp() {
     <>
       <style>{GLOBAL_STYLES}</style>
       <div style={{ background: "#080809", minHeight: "100vh", minHeight: "-webkit-fill-available" }}>
-        {screen === "intro" && <CinematicIntro onComplete={() => setScreen("onboarding")} />}
+        {screen === "intro" && <CinematicIntro onComplete={() => setScreenPersisted("onboarding")} />}
         {screen === "onboarding" && (
           <OnboardingScreen
             onComplete={(p: any) => {
