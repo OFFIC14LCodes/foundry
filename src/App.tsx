@@ -693,7 +693,6 @@ Where do you want to start?`;
           display: "flex",
           alignItems: "center",
           gap: 8,
-          flexWrap: "wrap",
           flexShrink: 0,
         }}
       >
@@ -891,17 +890,18 @@ Where do you want to start?`;
 
         <div
           style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+            display: "flex",
             gap: 2,
             background: "rgba(255,255,255,0.07)",
             border: "1px solid rgba(255,255,255,0.1)",
             borderRadius: 8,
             padding: 3,
             flexShrink: 0,
-            width: "100%",
-            order: 3,
-            marginTop: 4,
+            marginLeft: "auto",
+            maxWidth: "40vw",
+            overflowX: "auto",
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
           }}
         >
           {[
@@ -913,7 +913,7 @@ Where do you want to start?`;
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               style={{
-                padding: "7px 8px",
+                padding: "6px 10px",
                 borderRadius: 6,
                 border: "none",
                 background:
@@ -921,13 +921,12 @@ Where do you want to start?`;
                     ? "linear-gradient(135deg, #E8622A, #c9521e)"
                     : "transparent",
                 color: activeTab === tab.id ? "#fff" : "#A8A4A0",
-                fontSize: 11,
+                fontSize: 10,
                 cursor: "pointer",
                 fontWeight: activeTab === tab.id ? 600 : 400,
                 transition: "all 0.15s",
                 whiteSpace: "nowrap",
-                width: "100%",
-                textAlign: "center",
+                flexShrink: 0,
               }}
             >
               {tab.label}
