@@ -264,7 +264,7 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
 
                 <div style={{ maxWidth: 560, margin: "0 auto", padding: "28px 16px 60px" }}>
                     {/* Intro */}
-                    <div style={{ marginBottom: 28, animation: "fadeSlideUp 0.4s ease both" }}>
+                    <div style={{ marginBottom: 28, animation: "fadeSlideUp 0.4s ease both", textAlign: "center" }}>
                         <div style={{ fontSize: 23, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, marginBottom: 8, lineHeight: 1.2 }}>
                             Your rehearsal room.
                         </div>
@@ -390,7 +390,7 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
                         </div>
                     ) : (
                         <>
-                            <div style={{ marginBottom: 20, animation: "fadeSlideUp 0.4s ease both" }}>
+                            <div style={{ marginBottom: 20, animation: "fadeSlideUp 0.4s ease both", textAlign: "center" }}>
                                 <div style={{ fontSize: 22, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, marginBottom: 4 }}>Coaching Feedback</div>
                                 <div style={{ fontSize: 12, color: "#555" }}>From your {scenarioLabel.toLowerCase()} · {formatTime(sessionTime)}</div>
                             </div>

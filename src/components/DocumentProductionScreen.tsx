@@ -327,7 +327,7 @@ export default function DocumentProductionScreen({ profile, onBack }: { profile:
 
                 <div style={{ maxWidth: 600, margin: "0 auto", padding: "24px 16px 80px" }}>
                     {/* Intro */}
-                    <div style={{ marginBottom: 28, animation: "fadeSlideUp 0.4s ease both" }}>
+                    <div style={{ marginBottom: 28, animation: "fadeSlideUp 0.4s ease both", textAlign: "center" }}>
                         <div style={{ fontSize: 22, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, marginBottom: 6, lineHeight: 1.25 }}>
                             What do you need built?
                         </div>

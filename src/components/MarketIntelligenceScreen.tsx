@@ -269,11 +269,11 @@ export default function MarketIntelligenceScreen({
                 {/* Empty state — no report at all */}
                 {!hasSavedReport && !generating && (
                     <div style={{ opacity: mounted ? 1 : 0, transition: "opacity 0.4s ease" }}>
-                        <div style={{ marginBottom: 28, animation: "fadeSlideUp 0.4s ease both" }}>
+                        <div style={{ marginBottom: 28, animation: "fadeSlideUp 0.4s ease both", textAlign: "center" }}>
                             <div style={{ fontSize: 22, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, marginBottom: 6, lineHeight: 1.25 }}>
                                 Daily Market Brief
                             </div>
-                            <div style={{ fontSize: 13, color: "#666", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", lineHeight: 1.75, maxWidth: 480 }}>
+                            <div style={{ fontSize: 13, color: "#666", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", lineHeight: 1.75, maxWidth: 480, margin: "0 auto" }}>
                                 Forge generates a focused intelligence report on your market — trends, competitors, risks, and opportunities — tailored to your stage and business context.
                             </div>
                         </div>

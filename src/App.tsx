@@ -1275,6 +1275,7 @@ export default function FoundryApp() {
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
 
   const [screen, setScreen] = useState("loading");
   const [isFirstVisit, setIsFirstVisit] = useState(false);
@@ -1353,10 +1354,15 @@ export default function FoundryApp() {
       setAuthChecked(true);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setIsPasswordRecovery(true);
+        return;
+      }
       const nextUser = session?.user ?? null;
       setUser(nextUser);
       if (!nextUser) {
+        setIsPasswordRecovery(false);
         resetClientSessionState();
       }
     });
@@ -1747,6 +1753,20 @@ export default function FoundryApp() {
           <Logo variant="flame" style={{ width: 52, height: 52, objectFit: "contain", opacity: 0.88 }} />
           <LoadingForgeAnimation size={62} />
         </div>
+      </>
+    );
+  }
+
+  // ── Password recovery (user clicked reset link in email) ──
+  if (isPasswordRecovery) {
+    return (
+      <>
+        <style>{GLOBAL_STYLES}</style>
+        <AuthScreen
+          onAuth={() => { }}
+          initialMode="reset"
+          onPasswordReset={() => setIsPasswordRecovery(false)}
+        />
       </>
     );
   }
