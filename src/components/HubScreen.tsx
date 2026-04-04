@@ -30,6 +30,7 @@ export default function HubScreen({
 }) {
     const [showDecisionModal, setShowDecisionModal] = useState(false);
     const [showExpenseModal, setShowExpenseModal] = useState(false);
+    const [showIncomeModal, setShowIncomeModal] = useState(false);
     const [showBudgetModal, setShowBudgetModal] = useState(false);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [showResetModal, setShowResetModal] = useState(false);
@@ -39,6 +40,12 @@ export default function HubScreen({
     const [decisionTag, setDecisionTag] = useState("Strategy");
     const [expenseLabel, setExpenseLabel] = useState("");
     const [expenseAmount, setExpenseAmount] = useState("");
+    const [expenseFrequency, setExpenseFrequency] = useState<"one-time" | "monthly" | "yearly">("one-time");
+    const [expenseRenewalDate, setExpenseRenewalDate] = useState("");
+    const [incomeLabel, setIncomeLabel] = useState("");
+    const [incomeAmount, setIncomeAmount] = useState("");
+    const [incomeFrequency, setIncomeFrequency] = useState<"one-time" | "monthly" | "yearly">("one-time");
+    const [incomeRenewalDate, setIncomeRenewalDate] = useState("");
     const [budgetEditAmount, setBudgetEditAmount] = useState("");
     const [budgetEditRange, setBudgetEditRange] = useState(profile.budgetRange || "");
 
@@ -73,30 +80,97 @@ export default function HubScreen({
         setShowDecisionModal(false);
     };
 
+    // Auto-apply recurring charges/income when renewal date passes
+    useEffect(() => {
+        const expenses = profile.budget?.expenses || [];
+        const incomes = profile.budget?.income || [];
+        const todayStr = new Date().toISOString().split("T")[0];
+
+        let hasChanges = false;
+        let newSpent = profile.budget?.spent || 0;
+        let newTotalIncome = profile.budget?.totalIncome || 0;
+
+        const updatedExpenses = expenses.map((exp: any) => {
+            if (!exp.renewalDate || exp.frequency === "one-time" || exp.renewalDate > todayStr) return exp;
+            hasChanges = true;
+            newSpent += exp.amount;
+            const next = new Date(`${exp.renewalDate}T12:00:00`);
+            if (exp.frequency === "monthly") next.setMonth(next.getMonth() + 1);
+            else if (exp.frequency === "yearly") next.setFullYear(next.getFullYear() + 1);
+            return { ...exp, renewalDate: next.toISOString().split("T")[0] };
+        });
+
+        const updatedIncomes = incomes.map((inc: any) => {
+            if (!inc.renewalDate || inc.frequency === "one-time" || inc.renewalDate > todayStr) return inc;
+            hasChanges = true;
+            newTotalIncome += inc.amount;
+            const next = new Date(`${inc.renewalDate}T12:00:00`);
+            if (inc.frequency === "monthly") next.setMonth(next.getMonth() + 1);
+            else if (inc.frequency === "yearly") next.setFullYear(next.getFullYear() + 1);
+            return { ...inc, renewalDate: next.toISOString().split("T")[0] };
+        });
+
+        if (!hasChanges) return;
+        const newRemaining = (profile.budget?.total || 0) + newTotalIncome - newSpent;
+        onUpdateProfile({
+            budget: { ...profile.budget, expenses: updatedExpenses, income: updatedIncomes, spent: newSpent, totalIncome: newTotalIncome, remaining: newRemaining },
+        });
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
     const addExpense = () => {
         const amt = parseFloat(expenseAmount);
         if (!expenseLabel.trim() || isNaN(amt) || amt <= 0) return;
+        if (expenseFrequency !== "one-time" && !expenseRenewalDate) return;
 
-        const newExpenses = [
-            ...(profile.budget?.expenses || []),
-            { label: expenseLabel.trim(), amount: amt, date: "Today" },
-        ];
+        const id = `exp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+        const todayDisplay = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+        const newEntry: any = { id, label: expenseLabel.trim(), amount: amt, date: todayDisplay, frequency: expenseFrequency };
+        if (expenseFrequency !== "one-time") newEntry.renewalDate = expenseRenewalDate;
 
+        const newExpenses = [...(profile.budget?.expenses || []), newEntry];
         const newSpent = (profile.budget?.spent || 0) + amt;
-        const newRemaining = (profile.budget?.total || 0) - newSpent;
+        const totalIncome = profile.budget?.totalIncome || 0;
+        const newRemaining = (profile.budget?.total || 0) + totalIncome - newSpent;
 
-        onUpdateProfile({
-            budget: {
-                ...profile.budget,
-                expenses: newExpenses,
-                spent: newSpent,
-                remaining: newRemaining,
-            },
-        });
-
-        setExpenseLabel("");
-        setExpenseAmount("");
+        onUpdateProfile({ budget: { ...profile.budget, expenses: newExpenses, spent: newSpent, remaining: newRemaining } });
+        setExpenseLabel(""); setExpenseAmount(""); setExpenseFrequency("one-time"); setExpenseRenewalDate("");
         setShowExpenseModal(false);
+    };
+
+    const addIncome = () => {
+        const amt = parseFloat(incomeAmount);
+        if (!incomeLabel.trim() || isNaN(amt) || amt <= 0) return;
+        if (incomeFrequency !== "one-time" && !incomeRenewalDate) return;
+
+        const id = `inc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+        const todayDisplay = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+        const newEntry: any = { id, label: incomeLabel.trim(), amount: amt, date: todayDisplay, frequency: incomeFrequency };
+        if (incomeFrequency !== "one-time") newEntry.renewalDate = incomeRenewalDate;
+
+        const newIncomes = [...(profile.budget?.income || []), newEntry];
+        const newTotalIncome = (profile.budget?.totalIncome || 0) + amt;
+        const spent = profile.budget?.spent || 0;
+        const newRemaining = (profile.budget?.total || 0) + newTotalIncome - spent;
+
+        onUpdateProfile({ budget: { ...profile.budget, income: newIncomes, totalIncome: newTotalIncome, remaining: newRemaining } });
+        setIncomeLabel(""); setIncomeAmount(""); setIncomeFrequency("one-time"); setIncomeRenewalDate("");
+        setShowIncomeModal(false);
+    };
+
+    const deleteExpense = (id: string) => {
+        const updated = (profile.budget?.expenses || []).filter((e: any) => e.id !== id);
+        const newSpent = updated.reduce((sum: number, e: any) => sum + (e.amount || 0), 0);
+        const totalIncome = profile.budget?.totalIncome || 0;
+        const newRemaining = (profile.budget?.total || 0) + totalIncome - newSpent;
+        onUpdateProfile({ budget: { ...profile.budget, expenses: updated, spent: newSpent, remaining: newRemaining } });
+    };
+
+    const deleteIncome = (id: string) => {
+        const updated = (profile.budget?.income || []).filter((e: any) => e.id !== id);
+        const newTotalIncome = updated.reduce((sum: number, e: any) => sum + (e.amount || 0), 0);
+        const spent = profile.budget?.spent || 0;
+        const newRemaining = (profile.budget?.total || 0) + newTotalIncome - spent;
+        onUpdateProfile({ budget: { ...profile.budget, income: updated, totalIncome: newTotalIncome, remaining: newRemaining } });
     };
 
     const openBudgetModal = () => {
@@ -704,8 +778,9 @@ export default function HubScreen({
                 <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "14px 16px", marginBottom: 14, animation: "fadeSlideUp 0.5s ease 0.25s both" }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
                         <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>Budget</div>
-                        <div style={{ display: "flex", gap: 8 }}>
-                            <button onClick={openBudgetModal} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "4px 12px", color: "#F0EDE8", fontSize: 11, cursor: "pointer", fontWeight: 500 }}>Customize Budget</button>
+                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                            <button onClick={openBudgetModal} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "4px 12px", color: "#F0EDE8", fontSize: 11, cursor: "pointer", fontWeight: 500 }}>Customize</button>
+                            <button onClick={() => setShowIncomeModal(true)} style={{ background: "rgba(76,175,138,0.1)", border: "1px solid rgba(76,175,138,0.25)", borderRadius: 8, padding: "4px 12px", color: "#4CAF8A", fontSize: 11, cursor: "pointer", fontWeight: 500 }}>+ Income</button>
                             <button onClick={() => setShowExpenseModal(true)} style={{ background: "rgba(232,98,42,0.1)", border: "1px solid rgba(232,98,42,0.25)", borderRadius: 8, padding: "4px 12px", color: "#E8622A", fontSize: 11, cursor: "pointer", fontWeight: 500 }}>+ Expense</button>
                         </div>
                     </div>
@@ -715,11 +790,12 @@ export default function HubScreen({
                             <div>{profile.budgetIsEstimated ? "Using provisional amount" : "Exact budget confirmed"}</div>
                         </div>
                     )}
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 14 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8, marginBottom: 14 }}>
                         {[
-                            { label: "Total", value: formatCurrency(profile.budget?.total || 0), color: "#F0EDE8" },
+                            { label: "Budget", value: formatCurrency(profile.budget?.total || 0), color: "#F0EDE8" },
+                            { label: "Income", value: formatCurrency(profile.budget?.totalIncome || 0), color: "#4CAF8A" },
                             { label: "Spent", value: formatCurrency(profile.budget?.spent || 0), color: "#E8622A" },
-                            { label: "Remaining", value: formatCurrency(profile.budget?.remaining || 0), color: "#4CAF8A" },
+                            { label: "Remaining", value: formatCurrency((profile.budget?.total || 0) + (profile.budget?.totalIncome || 0) - (profile.budget?.spent || 0)), color: (profile.budget?.total || 0) + (profile.budget?.totalIncome || 0) - (profile.budget?.spent || 0) >= 0 ? "#4CAF8A" : "#FF4444" },
                         ].map(item => (
                             <div key={item.label} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 10, padding: "10px", textAlign: "center" }}>
                                 <div style={{ fontSize: "clamp(14px, 4vw, 20px)", fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: item.color, lineHeight: 1, marginBottom: 3 }}>{item.value}</div>
@@ -736,11 +812,46 @@ export default function HubScreen({
                     </div>
                     {profile.budget?.expenses?.length > 0 && (
                         <div style={{ marginTop: 12 }}>
-                            <div style={{ fontSize: 10, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Recent Expenses</div>
-                            {profile.budget.expenses.slice(0, 4).map((exp, i) => (
-                                <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: i < 3 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
-                                    <div style={{ fontSize: 12, color: "#888" }}>{exp.label}</div>
-                                    <div style={{ fontSize: 12, color: "#E8622A", fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>-${exp.amount?.toLocaleString()}</div>
+                            <div style={{ fontSize: 10, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Expenses</div>
+                            {profile.budget.expenses.map((exp: any, i: number) => (
+                                <div key={exp.id || i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: i < profile.budget.expenses.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ fontSize: 12, color: "#888" }}>{exp.label}</div>
+                                        {exp.frequency && exp.frequency !== "one-time" && (
+                                            <div style={{ fontSize: 10, color: "#555", marginTop: 1 }}>
+                                                {exp.frequency} · renews {exp.renewalDate ? new Date(`${exp.renewalDate}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                        <div style={{ fontSize: 12, color: "#E8622A", fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>-{formatCurrency(exp.amount)}</div>
+                                        {exp.id && (
+                                            <button onClick={() => deleteExpense(exp.id)} style={{ background: "none", border: "none", color: "#555", cursor: "pointer", fontSize: 14, lineHeight: 1, padding: "0 2px" }} title="Delete expense">×</button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    {profile.budget?.income?.length > 0 && (
+                        <div style={{ marginTop: 12 }}>
+                            <div style={{ fontSize: 10, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Income</div>
+                            {profile.budget.income.map((inc: any, i: number) => (
+                                <div key={inc.id || i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: i < profile.budget.income.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ fontSize: 12, color: "#888" }}>{inc.label}</div>
+                                        {inc.frequency && inc.frequency !== "one-time" && (
+                                            <div style={{ fontSize: 10, color: "#555", marginTop: 1 }}>
+                                                {inc.frequency} · renews {inc.renewalDate ? new Date(`${inc.renewalDate}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                        <div style={{ fontSize: 12, color: "#4CAF8A", fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>+{formatCurrency(inc.amount)}</div>
+                                        {inc.id && (
+                                            <button onClick={() => deleteIncome(inc.id)} style={{ background: "none", border: "none", color: "#555", cursor: "pointer", fontSize: 14, lineHeight: 1, padding: "0 2px" }} title="Delete income">×</button>
+                                        )}
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -821,10 +932,49 @@ export default function HubScreen({
                     <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: "#0E0E10", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 22, animation: "fadeSlideUp 0.3s ease" }}>
                         <div style={{ fontSize: 17, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 16 }}>Log an Expense</div>
                         <input value={expenseLabel} onChange={e => setExpenseLabel(e.target.value)} placeholder="What was it for?" style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'DM Sans', sans-serif", marginBottom: 10, boxSizing: "border-box" }} />
-                        <input value={expenseAmount} onChange={e => setExpenseAmount(e.target.value)} placeholder="Amount ($)" type="number" style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'DM Sans', sans-serif", marginBottom: 16, boxSizing: "border-box" }} />
-                        <div style={{ display: "flex", gap: 8 }}>
+                        <input value={expenseAmount} onChange={e => setExpenseAmount(e.target.value)} placeholder="Amount ($)" type="number" style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'DM Sans', sans-serif", marginBottom: 10, boxSizing: "border-box" }} />
+                        <div style={{ fontSize: 11, color: "#666", marginBottom: 6, letterSpacing: "0.08em", textTransform: "uppercase" }}>Frequency</div>
+                        <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                            {(["one-time", "monthly", "yearly"] as const).map(f => (
+                                <button key={f} onClick={() => { setExpenseFrequency(f); if (f === "one-time") setExpenseRenewalDate(""); }} style={{ flex: 1, padding: "8px 4px", borderRadius: 8, border: expenseFrequency === f ? "1px solid rgba(232,98,42,0.5)" : "1px solid rgba(255,255,255,0.08)", background: expenseFrequency === f ? "rgba(232,98,42,0.12)" : "rgba(255,255,255,0.03)", color: expenseFrequency === f ? "#E8622A" : "#888", fontSize: 11, cursor: "pointer", fontWeight: 500, textTransform: "capitalize" }}>{f}</button>
+                            ))}
+                        </div>
+                        {expenseFrequency !== "one-time" && (
+                            <>
+                                <div style={{ fontSize: 11, color: "#666", marginBottom: 6, letterSpacing: "0.08em", textTransform: "uppercase" }}>Next Renewal Date</div>
+                                <input type="date" value={expenseRenewalDate} onChange={e => setExpenseRenewalDate(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'DM Sans', sans-serif", marginBottom: 10, boxSizing: "border-box", colorScheme: "dark" }} />
+                            </>
+                        )}
+                        <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
                             <button onClick={() => setShowExpenseModal(false)} style={{ flex: 1, padding: "10px", background: "transparent", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#555", fontSize: 12, cursor: "pointer" }}>Cancel</button>
                             <button onClick={addExpense} style={{ flex: 2, padding: "10px", background: "linear-gradient(135deg, #E8622A, #c9521e)", border: "none", borderRadius: 10, color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}>Save Expense</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Income modal */}
+            {showIncomeModal && (
+                <div style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, animation: "fadeIn 0.2s ease" }} onClick={() => setShowIncomeModal(false)}>
+                    <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: "#0E0E10", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 22, animation: "fadeSlideUp 0.3s ease" }}>
+                        <div style={{ fontSize: 17, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 16 }}>Log Income</div>
+                        <input value={incomeLabel} onChange={e => setIncomeLabel(e.target.value)} placeholder="Source of income?" style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'DM Sans', sans-serif", marginBottom: 10, boxSizing: "border-box" }} />
+                        <input value={incomeAmount} onChange={e => setIncomeAmount(e.target.value)} placeholder="Amount ($)" type="number" style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'DM Sans', sans-serif", marginBottom: 10, boxSizing: "border-box" }} />
+                        <div style={{ fontSize: 11, color: "#666", marginBottom: 6, letterSpacing: "0.08em", textTransform: "uppercase" }}>Frequency</div>
+                        <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                            {(["one-time", "monthly", "yearly"] as const).map(f => (
+                                <button key={f} onClick={() => { setIncomeFrequency(f); if (f === "one-time") setIncomeRenewalDate(""); }} style={{ flex: 1, padding: "8px 4px", borderRadius: 8, border: incomeFrequency === f ? "1px solid rgba(76,175,138,0.5)" : "1px solid rgba(255,255,255,0.08)", background: incomeFrequency === f ? "rgba(76,175,138,0.12)" : "rgba(255,255,255,0.03)", color: incomeFrequency === f ? "#4CAF8A" : "#888", fontSize: 11, cursor: "pointer", fontWeight: 500, textTransform: "capitalize" }}>{f}</button>
+                            ))}
+                        </div>
+                        {incomeFrequency !== "one-time" && (
+                            <>
+                                <div style={{ fontSize: 11, color: "#666", marginBottom: 6, letterSpacing: "0.08em", textTransform: "uppercase" }}>Next Renewal Date</div>
+                                <input type="date" value={incomeRenewalDate} onChange={e => setIncomeRenewalDate(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'DM Sans', sans-serif", marginBottom: 10, boxSizing: "border-box", colorScheme: "dark" }} />
+                            </>
+                        )}
+                        <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                            <button onClick={() => setShowIncomeModal(false)} style={{ flex: 1, padding: "10px", background: "transparent", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#555", fontSize: 12, cursor: "pointer" }}>Cancel</button>
+                            <button onClick={addIncome} style={{ flex: 2, padding: "10px", background: "linear-gradient(135deg, #4CAF8A, #3a9470)", border: "none", borderRadius: 10, color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}>Save Income</button>
                         </div>
                     </div>
                 </div>

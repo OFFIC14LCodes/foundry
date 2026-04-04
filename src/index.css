@@ -66,24 +66,6 @@ body {
   margin: 0;
 }
 
-/* Termly embed text overrides for dark theme */
-[name="termly-embed"] *,
-[name="termly-embed"] p,
-[name="termly-embed"] span,
-[name="termly-embed"] li,
-[name="termly-embed"] div {
-  color: #E8E4DF !important;
-}
-[name="termly-embed"] h1,
-[name="termly-embed"] h2,
-[name="termly-embed"] h3,
-[name="termly-embed"] h4,
-[name="termly-embed"] strong {
-  color: #F5F2EE !important;
-}
-[name="termly-embed"] a {
-  color: #A78BDB !important;
-}
 
 h1,
 h2 {

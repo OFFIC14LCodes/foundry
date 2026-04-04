@@ -1,41 +1,14 @@
-import { useEffect } from "react";
 import { SettingsScreenShell } from "./SettingsPrimitives";
+import TermlyEmbed from "./TermlyEmbed";
 
 export default function PrivacyPolicyScreen({ onBack }: { onBack: () => void }) {
-    useEffect(() => {
-        const scriptId = "termly-jssdk";
-        if (!document.getElementById(scriptId)) {
-            const script = document.createElement("script");
-            script.id = scriptId;
-            script.src = "https://app.termly.io/embed-policy.min.js";
-            document.body.appendChild(script);
-        } else {
-            (window as any).termly?.initialize?.();
-        }
-    }, []);
-
     return (
         <SettingsScreenShell
             title="Privacy Policy"
             subtitle="How we collect, store, and handle your personal data."
             onBack={onBack}
         >
-            <div
-                style={{
-                    background: "rgba(255,255,255,0.03)",
-                    borderRadius: 12,
-                    padding: "24px",
-                    border: "1px solid rgba(255,255,255,0.07)",
-                    color: "#C8C4BE",
-                    fontSize: 13,
-                    lineHeight: 1.75,
-                }}
-            >
-                <div
-                    name="termly-embed"
-                    data-id="0d176e23-aaa4-4ddb-a2ae-cdcb0620d79d"
-                />
-            </div>
+            <TermlyEmbed policyId="0d176e23-aaa4-4ddb-a2ae-cdcb0620d79d" />
         </SettingsScreenShell>
     );
 }

@@ -51,6 +51,7 @@ import TermsAndConditionsScreen from "./components/settings/TermsAndConditionsSc
 import AcceptableUsePolicyScreen from "./components/settings/AcceptableUsePolicyScreen";
 import DisclaimerScreen from "./components/settings/DisclaimerScreen";
 import Logo from "./components/Logo";
+import ForgeBubble from "./components/ForgeBubble";
 import LoadingForgeAnimation from "./components/LoadingForgeAnimation";
 import PaywallScreen from "./components/paywall/PaywallScreen";
 import BillingReturnScreen from "./components/BillingReturnScreen";
@@ -224,22 +225,37 @@ function parseForgeResponse(text) {
   return { cleanText, completedIds, advanceReady };
 }
 
-function getLocalDateKeyFromIso(dateLike) {
+// Returns the Monday (YYYY-MM-DD) of the week containing the given date
+function getWeekStartKey(dateLike?: string | number | Date) {
   const date = dateLike ? new Date(dateLike) : new Date();
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  const day = date.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+  const daysToMonday = day === 0 ? 6 : day - 1;
+  const monday = new Date(date);
+  monday.setDate(date.getDate() - daysToMonday);
+  const year = monday.getFullYear();
+  const month = String(monday.getMonth() + 1).padStart(2, "0");
+  const d = String(monday.getDate()).padStart(2, "0");
+  return `${year}-${month}-${d}`;
 }
 
-function groupMessagesByLocalDate(messages = []) {
+// Returns a human-readable label like "Apr 7 – Apr 13, 2026"
+function getWeekLabel(weekStartKey: string) {
+  const monday = new Date(`${weekStartKey}T12:00:00`);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  const fmt = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return `${fmt(monday)} – ${fmt(sunday)}, ${sunday.getFullYear()}`;
+}
+
+function groupMessagesByWeek(messages: any[] = []) {
   return messages.reduce((acc, msg) => {
-    const key = getLocalDateKeyFromIso(msg.createdAt);
+    const key = getWeekStartKey(msg.createdAt);
     if (!acc[key]) acc[key] = [];
     acc[key].push(msg);
     return acc;
   }, {} as Record<string, any[]>);
 }
+
 
 function getSummaryPreview(summary: string) {
   const plain = (summary || "").replace(/\s+/g, " ").trim();
@@ -385,6 +401,7 @@ function ForgeScreen({
   initialStage = null,
   teamId = null as string | null,
   onMeaningfulActivity,
+  bubbleSummaries = [] as any[],
 }) {
   const [activeStage, setActiveStage] = useState(initialStage || profile.currentStage);
   const [activeTab, setActiveTab] = useState("chat");
@@ -542,39 +559,40 @@ Where do you want to start?`;
   }, [activeStage, briefingDismissed, stageSummaries.length, !!messagesByStage[activeStage]?.length]);
 
   useEffect(() => {
-    const todayKey = getLocalDateKeyFromIso();
-    const grouped = groupMessagesByLocalDate(messages);
-    const summaryDates = new Set(stageSummaries.map((entry) => entry.date));
+    const currentWeekKey = getWeekStartKey();
+    const grouped = groupMessagesByWeek(messages);
+    const summaryWeeks = new Set(stageSummaries.map((entry) => entry.date));
     const archiveCandidates = Object.keys(grouped)
-      .filter((dateKey) => dateKey < todayKey && grouped[dateKey]?.length > 0 && !summaryDates.has(dateKey))
+      .filter((weekKey) => weekKey < currentWeekKey && grouped[weekKey]?.length > 0 && !summaryWeeks.has(weekKey))
       .sort();
 
     if (archiveCandidates.length === 0 || archivingDateKey) return;
 
-    const dateKey = archiveCandidates[0];
-    const dayMessages = grouped[dateKey];
+    const weekKey = archiveCandidates[0];
+    const weekMessages = grouped[weekKey];
+    const weekLabel = getWeekLabel(weekKey);
 
-    const archiveDay = async () => {
-      setArchivingDateKey(dateKey);
-      const transcript = dayMessages
-        .map((msg) => `${msg.role === "forge" ? "Forge" : profile.name}: ${msg.text}`)
+    const archiveWeek = async () => {
+      setArchivingDateKey(weekKey);
+      const transcript = weekMessages
+        .map((msg: any) => `${msg.role === "forge" ? "Forge" : profile.name}: ${msg.text}`)
         .join("\n");
 
-      const prompt = `Summarize this Foundry coaching conversation for ${profile.name} on ${dateKey}.\n\nReturn valid JSON with exactly these keys:\n"title": a concise dated headline under 80 characters\n"summary": a detailed markdown summary with these sections: Key Decisions, Main Insights, Risks or Blockers, Recommended Next Moves.\n\nConversation:\n${transcript}`;
+      const prompt = `Summarize this Foundry coaching conversation for ${profile.name} for the week of ${weekLabel}.\n\nReturn valid JSON with exactly these keys:\n"title": a concise week headline under 80 characters (include the week range)\n"summary": a detailed markdown summary with these sections: Key Decisions, Main Insights, Risks or Blockers, Recommended Next Moves.\n\nConversation:\n${transcript}`;
 
       try {
         const raw = await callForgeAPI(
           [{ role: "user", content: prompt }],
           "You write clean business conversation summaries. Return only valid JSON."
         );
-        const parsed = parseDailySummaryResponse(raw, dateKey);
+        const parsed = parseDailySummaryResponse(raw, weekKey);
         const saved = await saveConversationSummary(
           userId,
           activeStage,
-          dateKey,
+          weekKey,
           parsed.title,
           parsed.summary,
-          dayMessages.length
+          weekMessages.length
         );
 
         if (!saved) return;
@@ -583,15 +601,15 @@ Where do you want to start?`;
           ...prev,
           [activeStage]: [saved, ...(prev[activeStage] || [])].sort((a, b) => b.date.localeCompare(a.date)),
         }));
-        onUpdateMessages(activeStage, messages.filter((msg) => getLocalDateKeyFromIso(msg.createdAt) === todayKey));
+        onUpdateMessages(activeStage, messages.filter((msg: any) => getWeekStartKey(msg.createdAt) === currentWeekKey));
       } catch (error) {
-        console.error("daily summary archive error:", error);
+        console.error("weekly summary archive error:", error);
       } finally {
         setArchivingDateKey(null);
       }
     };
 
-    archiveDay();
+    archiveWeek();
   }, [activeStage, messages, stageSummaries, archivingDateKey, userId]);
 
   const send = async () => {
@@ -1138,12 +1156,12 @@ Where do you want to start?`;
               Stage {activeStage} Summaries
             </div>
             <div style={{ fontSize: 12, color: "#666", marginBottom: 18, lineHeight: 1.6 }}>
-              Each day’s Forge conversation is archived here so the next day can start fresh.
+              Each week’s Forge conversation is archived here. At the end of Sunday, Foundry summarizes the full week and starts fresh on Monday.
             </div>
 
             {stageSummaries.length === 0 && (
               <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "18px 16px", color: "#888", fontSize: 13, lineHeight: 1.7 }}>
-                No archived summaries yet. Once a day rolls over, Foundry will summarize the prior day’s conversation and store it here.
+                No archived summaries yet. At the end of each week (Sunday 11:59 PM), Foundry will summarize that week’s conversation and store it here.
               </div>
             )}
 
@@ -1164,7 +1182,7 @@ Where do you want to start?`;
                   }}
                 >
                   <div style={{ fontSize: 10, color: "#E8622A", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>
-                    {new Date(`${entry.date}T12:00:00`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                    {getWeekLabel(entry.date)}
                   </div>
                   <div style={{ fontSize: 17, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, marginBottom: 6 }}>
                     {entry.title}
@@ -1175,6 +1193,42 @@ Where do you want to start?`;
                 </button>
               ))}
             </div>
+
+            {bubbleSummaries.length > 0 && (
+              <>
+                <div style={{ fontSize: 11, color: "#4CAF8A", letterSpacing: "0.1em", textTransform: "uppercase", marginTop: stageSummaries.length > 0 ? 24 : 0, marginBottom: 10 }}>
+                  Quick Chats with Forge
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {bubbleSummaries.map((entry) => (
+                    <button
+                      key={entry.id || entry.date}
+                      onClick={() => setSummaryModal(entry)}
+                      style={{
+                        width: "100%",
+                        textAlign: "left",
+                        background: "rgba(76,175,138,0.05)",
+                        border: "1px solid rgba(76,175,138,0.15)",
+                        borderRadius: 14,
+                        padding: "14px 16px",
+                        color: "#F0EDE8",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <div style={{ fontSize: 10, color: "#4CAF8A", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6 }}>
+                        Quick Chat · {new Date(`${entry.date}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                      </div>
+                      <div style={{ fontSize: 15, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, marginBottom: 5 }}>
+                        {entry.title}
+                      </div>
+                      <div style={{ fontSize: 12, color: "#666", lineHeight: 1.7 }}>
+                        {getSummaryPreview(entry.summary)}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -1305,6 +1359,7 @@ export default function FoundryApp() {
   const [adminNotificationSettings, setAdminNotificationSettings] = useState<AdminNotificationSettings>(DEFAULT_ADMIN_NOTIFICATION_SETTINGS);
   const [marketReport, setMarketReport] = useState<any>(null);
   const [paywallStage, setPaywallStage] = useState<number | null>(null);
+  const [bubbleSummaries, setBubbleSummaries] = useState<any[]>([]);
 
   const getPersistedPostAuthScreen = (setupCompleted: boolean) => {
     const fallback = setupCompleted ? "hub" : "intro";
@@ -1346,6 +1401,7 @@ export default function FoundryApp() {
     setAdminNotificationSettings(DEFAULT_ADMIN_NOTIFICATION_SETTINGS);
     setMarketReport(null);
     setPaywallStage(null);
+    setBubbleSummaries([]);
     setDataLoaded(false);
     clearFoundryClientStorage();
   };
@@ -1905,6 +1961,7 @@ export default function FoundryApp() {
             initialStage={initialStage}
             teamId={userTeamId}
             onMeaningfulActivity={() => markMeaningfulActivity(true)}
+            bubbleSummaries={bubbleSummaries}
           />
         )}
       </div>
@@ -2027,6 +2084,23 @@ export default function FoundryApp() {
         billingMessage={billingMessage}
         onClose={() => setPaywallStage(null)}
       />
+      {profile && user && (
+        <ForgeBubble
+          profile={profile}
+          userId={(user as any).id}
+          currentScreen={
+            showMarketIntel ? "marketIntel"
+              : showDocuments ? "documents"
+                : showPitchPractice ? "pitchPractice"
+                  : showJournal ? "journal"
+                    : showBriefings ? "briefings"
+                      : showCofounder ? "cofounder"
+                        : settingsView ? "settings"
+                          : screen
+          }
+          onBubbleSummaryAdded={(summary) => setBubbleSummaries(prev => [summary, ...prev])}
+        />
+      )}
     </>
   );
 }
