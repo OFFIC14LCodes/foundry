@@ -140,6 +140,7 @@ You are in a quick-access floating chat bubble. The founder is asking a quick qu
         const displayDate = new Date(sessionDate).toLocaleDateString("en-US", {
             month: "short", day: "numeric", year: "numeric"
         });
+        const summaryStageId = Math.min(6, Math.max(1, Number(profile.currentStage) || 1));
 
         try {
             const raw = await callForgeAPI(
@@ -158,7 +159,7 @@ You are in a quick-access floating chat bubble. The founder is asking a quick qu
                 summary = parsed.summary?.trim() || raw;
             } catch { /* use raw fallbacks */ }
 
-            const saved = await saveConversationSummary(userId, 0, dateKey, title, summary, msgsToArchive.length);
+            const saved = await saveConversationSummary(userId, summaryStageId, dateKey, title, summary, msgsToArchive.length);
             if (saved && onBubbleSummaryAdded) {
                 onBubbleSummaryAdded(saved);
             }

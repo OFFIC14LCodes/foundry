@@ -1479,8 +1479,6 @@ export default function FoundryApp() {
         setNotificationPreferences(dbNotificationPreferences);
         setNotifications(dbNotifications);
         setMarketReport(dbMarket ?? null);
-        // Load team membership for cofounder context
-        getTeamForUser(uid).then(t => setUserTeamId(t?.id ?? null));
         // Load and ensure account access record
         const access = await ensureAccountAccess(uid);
         setAccountAccess(access);
@@ -1728,6 +1726,30 @@ export default function FoundryApp() {
     markMeaningfulActivity();
     setShowCofounder(true);
   };
+
+  useEffect(() => {
+    const uid = (user as any)?.id;
+    if (!uid) {
+      setUserTeamId(null);
+      return;
+    }
+
+    if (screen !== "forge" && !showCofounder) return;
+
+    let cancelled = false;
+    getTeamForUser(uid)
+      .then((team) => {
+        if (!cancelled) setUserTeamId(team?.id ?? null);
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          console.error("team lookup error:", error);
+          setUserTeamId(null);
+        }
+      });
+
+    return () => { cancelled = true; };
+  }, [screen, showCofounder, user]);
 
   const openSettings = () => {
     markMeaningfulActivity();

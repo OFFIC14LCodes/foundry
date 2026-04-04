@@ -21,6 +21,13 @@ function getLocalDateKey(date = new Date()) {
     return `${year}-${month}-${day}`;
 }
 
+let dailyChatSummariesAvailable: boolean | null = null;
+
+function isMissingRelationError(error: any, relationName: string) {
+    const message = String(error?.message ?? "").toLowerCase();
+    return error?.code === "PGRST205" || message.includes(relationName.toLowerCase()) || message.includes("could not find the table");
+}
+
 // ── PROFILE ──────────────────────────────────────────────────
 
 export async function loadProfile(userId: string) {
@@ -233,13 +240,25 @@ export async function saveJournalEntry(userId: string, content: string) {
 // ── DAILY CHAT SUMMARIES ─────────────────────────────────────
 
 export async function loadConversationSummaries(userId: string) {
+    if (dailyChatSummariesAvailable === false) return [];
+
     const { data, error } = await supabase
         .from("daily_chat_summaries")
         .select("*")
         .eq("user_id", userId)
         .order("summary_date", { ascending: false });
 
-    if (error || !data) return [];
+    if (error) {
+        if (isMissingRelationError(error, "daily_chat_summaries")) {
+            dailyChatSummariesAvailable = false;
+            return [];
+        }
+        console.error("loadConversationSummaries error:", error.message);
+        return [];
+    }
+
+    dailyChatSummariesAvailable = true;
+    if (!data) return [];
     return data.map((row) => ({
         id: row.id,
         userId: row.user_id,
@@ -261,6 +280,8 @@ export async function saveConversationSummary(
     summary: string,
     messageCount: number
 ) {
+    if (dailyChatSummariesAvailable === false) return null;
+
     const { data, error } = await supabase
         .from("daily_chat_summaries")
         .upsert({
@@ -276,10 +297,15 @@ export async function saveConversationSummary(
         .single();
 
     if (error) {
+        if (isMissingRelationError(error, "daily_chat_summaries")) {
+            dailyChatSummariesAvailable = false;
+            return null;
+        }
         console.error("saveConversationSummary error:", error.message);
         return null;
     }
 
+    dailyChatSummariesAvailable = true;
     return {
         id: data.id,
         userId: data.user_id,
