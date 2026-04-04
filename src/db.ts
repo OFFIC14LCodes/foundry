@@ -110,13 +110,13 @@ export async function saveProfile(userId: string, profile: any) {
 export async function ensureUserProfile(userId: string, user?: { email?: string | null; user_metadata?: Record<string, any> | null }) {
     const { error } = await supabase
         .from("profiles")
-        .insert({
+        .upsert({
             id: userId,
             email: user?.email ?? null,
             updated_at: new Date().toISOString(),
-        });
+        }, { onConflict: "id", ignoreDuplicates: true });
 
-    if (error && error.code !== "23505") {
+    if (error) {
         console.error("ensureUserProfile error:", error.message);
     }
     return !error;
