@@ -159,7 +159,12 @@ export async function loadAllMessages(userId: string) {
         const stage = result[row.stage_id];
         const prev = stage[stage.length - 1];
         if (prev && prev.role === row.role && prev.text === row.content) return;
-        stage.push({ role: row.role, text: row.content });
+        stage.push({
+            id: row.id,
+            role: row.role,
+            text: row.content,
+            createdAt: row.created_at ?? null,
+        });
     });
     return result;
 }
@@ -188,6 +193,7 @@ export function saveMessages(userId: string, stageId: number, messages: any[]) {
             stage_id: stageId,
             role: m.role,
             content: m.text || "",
+            created_at: m.createdAt ?? new Date().toISOString(),
         }));
 
         const { error } = await supabase.from("messages").insert(rows);
@@ -224,6 +230,69 @@ export async function saveJournalEntry(userId: string, content: string) {
     return { id: data.id, content: data.content, createdAt: data.created_at };
 }
 
+// ── DAILY CHAT SUMMARIES ─────────────────────────────────────
+
+export async function loadConversationSummaries(userId: string) {
+    const { data, error } = await supabase
+        .from("daily_chat_summaries")
+        .select("*")
+        .eq("user_id", userId)
+        .order("summary_date", { ascending: false });
+
+    if (error || !data) return [];
+    return data.map((row) => ({
+        id: row.id,
+        userId: row.user_id,
+        stageId: row.stage_id,
+        date: row.summary_date,
+        title: row.title,
+        summary: row.summary,
+        messageCount: row.message_count ?? 0,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+    }));
+}
+
+export async function saveConversationSummary(
+    userId: string,
+    stageId: number,
+    summaryDate: string,
+    title: string,
+    summary: string,
+    messageCount: number
+) {
+    const { data, error } = await supabase
+        .from("daily_chat_summaries")
+        .upsert({
+            user_id: userId,
+            stage_id: stageId,
+            summary_date: summaryDate,
+            title,
+            summary,
+            message_count: messageCount,
+            updated_at: new Date().toISOString(),
+        }, { onConflict: "user_id,stage_id,summary_date" })
+        .select()
+        .single();
+
+    if (error) {
+        console.error("saveConversationSummary error:", error.message);
+        return null;
+    }
+
+    return {
+        id: data.id,
+        userId: data.user_id,
+        stageId: data.stage_id,
+        date: data.summary_date,
+        title: data.title,
+        summary: data.summary,
+        messageCount: data.message_count ?? 0,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+    };
+}
+
 export async function deleteJournalEntry(userId: string, entryId: string) {
     const { error } = await supabase
         .from("journal_entries")
@@ -254,9 +323,25 @@ export async function loadLatestMarketReport(userId: string) {
         .eq("user_id", userId)
         .order("date", { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
     if (error || !data) return null;
     return { content: data.content, industry: data.industry, date: data.date, createdAt: data.created_at };
+}
+
+export async function loadMarketReportHistory(userId: string) {
+    const { data, error } = await supabase
+        .from("market_reports")
+        .select("*")
+        .eq("user_id", userId)
+        .order("date", { ascending: false });
+
+    if (error || !data) return [];
+    return data.map((row) => ({
+        content: row.content,
+        industry: row.industry,
+        date: row.date,
+        createdAt: row.created_at,
+    }));
 }
 
 export async function saveMarketReport(userId: string, content: string, industry: string) {
@@ -264,7 +349,14 @@ export async function saveMarketReport(userId: string, content: string, industry
     const { data, error } = await supabase
         .from("market_reports")
         .upsert(
-            { user_id: userId, date: today, content, industry, created_at: new Date().toISOString() },
+            {
+                user_id: userId,
+                date: today,
+                content,
+                industry,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            },
             { onConflict: "user_id,date" }
         )
         .select()

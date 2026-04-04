@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { supabase } from "./supabase";
 import AuthScreen from "./AuthScreen";
 import JournalScreen from "./JournalScreen";
@@ -7,6 +7,7 @@ import {
   loadProfile, saveProfile,
   loadAllStageProgress, saveStageProgress,
   loadAllMessages, saveMessages,
+  loadConversationSummaries, saveConversationSummary,
   loadJournalEntries, saveJournalEntry, deleteJournalEntry,
   loadBriefings, saveBriefing,
   loadLatestMarketReport,
@@ -220,6 +221,45 @@ function parseForgeResponse(text) {
   return { cleanText, completedIds, advanceReady };
 }
 
+function getLocalDateKeyFromIso(dateLike) {
+  const date = dateLike ? new Date(dateLike) : new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function groupMessagesByLocalDate(messages = []) {
+  return messages.reduce((acc, msg) => {
+    const key = getLocalDateKeyFromIso(msg.createdAt);
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(msg);
+    return acc;
+  }, {} as Record<string, any[]>);
+}
+
+function getSummaryPreview(summary: string) {
+  const plain = (summary || "").replace(/\s+/g, " ").trim();
+  if (plain.length <= 140) return plain;
+  return `${plain.slice(0, 140).trim()}...`;
+}
+
+function parseDailySummaryResponse(raw: string, fallbackDate: string) {
+  try {
+    const parsed = JSON.parse(raw);
+    return {
+      title: parsed.title?.trim() || `Conversation Summary · ${fallbackDate}`,
+      summary: parsed.summary?.trim() || raw.trim(),
+    };
+  } catch {
+    const [firstLine, ...rest] = raw.trim().split("\n");
+    return {
+      title: firstLine?.trim() || `Conversation Summary · ${fallbackDate}`,
+      summary: rest.join("\n").trim() || raw.trim(),
+    };
+  }
+}
+
 
 function renderWithBold(text, onStageRef, onGlossaryTap) {
   if (!text) return null;
@@ -328,6 +368,7 @@ function renderWithBold(text, onStageRef, onGlossaryTap) {
 // FORGE SCREEN — the main chat interface
 // ─────────────────────────────────────────────────────────────
 function ForgeScreen({
+  userId,
   profile,
   onBack,
   onUpdateProfile,
@@ -353,6 +394,9 @@ function ForgeScreen({
   const [glossaryModal, setGlossaryModal] = useState(null);
   const [briefingDismissed, setBriefingDismissed] = useState(false);
   const [cofoundersContext, setCofoundersContext] = useState<string | null>(null);
+  const [summariesByStage, setSummariesByStage] = useState<Record<number, any[]>>({ 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] });
+  const [summaryModal, setSummaryModal] = useState<any | null>(null);
+  const [archivingDateKey, setArchivingDateKey] = useState<string | null>(null);
 
   // Load shared team context for Forge injection
   useEffect(() => {
@@ -360,15 +404,33 @@ function ForgeScreen({
     getRecentCofounderContext(teamId, 20).then(ctx => setCofoundersContext(ctx || null));
   }, [teamId]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    loadConversationSummaries(userId).then((rows) => {
+      if (cancelled) return;
+      const grouped = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] } as Record<number, any[]>;
+      rows.forEach((row) => {
+        if (!grouped[row.stageId]) grouped[row.stageId] = [];
+        grouped[row.stageId].push(row);
+      });
+      setSummariesByStage(grouped);
+    });
+
+    return () => { cancelled = true; };
+  }, [userId]);
+
   const stage = STAGES_DATA[activeStage - 1];
   const StageIcon = stage.icon;
   const messages = messagesByStage[activeStage] || [];
+  const stageSummaries = summariesByStage[activeStage] || [];
   const completedMilestones = completedByStage[activeStage] || [];
   const completionPct = Math.round(
     (completedMilestones.length / stage.milestones.length) * 100
   );
 
   const scrollRef = useRef(null);
+  const bottomAnchorRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -379,6 +441,29 @@ function ForgeScreen({
     }
   }, [messages, loading]);
 
+  useLayoutEffect(() => {
+    const shouldShowBriefing = messages.length === 0 && stageSummaries.length === 0 && !loading && !briefingDismissed;
+    if (activeTab !== "chat" || shouldShowBriefing) return;
+
+    const restore = () => {
+      bottomAnchorRef.current?.scrollIntoView({ block: "end" });
+    };
+
+    restore();
+    const timer = window.setTimeout(restore, 60);
+    let rafTwo = 0;
+    const rafOne = window.requestAnimationFrame(() => {
+      restore();
+      rafTwo = window.requestAnimationFrame(restore);
+    });
+
+    return () => {
+      window.clearTimeout(timer);
+      window.cancelAnimationFrame(rafOne);
+      if (rafTwo) window.cancelAnimationFrame(rafTwo);
+    };
+  }, [activeStage, activeTab, briefingDismissed, messages.length, loading, stageSummaries.length]);
+
   useEffect(() => {
     setActiveTab("chat");
     setAdvanceReady(false);
@@ -387,7 +472,8 @@ function ForgeScreen({
 
   useEffect(() => {
     const stageMessages = messagesByStage[activeStage] || [];
-    if (stageMessages.length > 0 || loading) return;
+    const shouldShowBriefing = stageMessages.length === 0 && stageSummaries.length === 0 && !loading && !briefingDismissed;
+    if (stageMessages.length > 0 || loading || shouldShowBriefing) return;
 
     const stageData = STAGES_DATA[activeStage - 1];
     const lastSeenRaw = localStorage.getItem("foundry_last_seen");
@@ -426,7 +512,7 @@ Start with a short recap of what they told Foundry during onboarding: the busine
           [{ role: "user", content: greetingPrompt }],
           FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", ctx)
         );
-        onUpdateMessages(activeStage, [{ role: "forge", text: reply }]);
+        onUpdateMessages(activeStage, [{ id: `greet-${Date.now()}`, role: "forge", text: reply, createdAt: new Date().toISOString() }]);
       } catch {
         const fallback =
           isFirstVisit && activeStage === 1
@@ -443,14 +529,67 @@ ${stageData.mission}
 
 Where do you want to start?`;
 
-        onUpdateMessages(activeStage, [{ role: "forge", text: fallback }]);
+        onUpdateMessages(activeStage, [{ id: `greet-${Date.now()}`, role: "forge", text: fallback, createdAt: new Date().toISOString() }]);
       }
 
       setLoading(false);
     };
 
     setTimeout(runGreeting, 400);
-  }, [activeStage, !!messagesByStage[activeStage]?.length]);
+  }, [activeStage, briefingDismissed, stageSummaries.length, !!messagesByStage[activeStage]?.length]);
+
+  useEffect(() => {
+    const todayKey = getLocalDateKeyFromIso();
+    const grouped = groupMessagesByLocalDate(messages);
+    const summaryDates = new Set(stageSummaries.map((entry) => entry.date));
+    const archiveCandidates = Object.keys(grouped)
+      .filter((dateKey) => dateKey < todayKey && grouped[dateKey]?.length > 0 && !summaryDates.has(dateKey))
+      .sort();
+
+    if (archiveCandidates.length === 0 || archivingDateKey) return;
+
+    const dateKey = archiveCandidates[0];
+    const dayMessages = grouped[dateKey];
+
+    const archiveDay = async () => {
+      setArchivingDateKey(dateKey);
+      const transcript = dayMessages
+        .map((msg) => `${msg.role === "forge" ? "Forge" : profile.name}: ${msg.text}`)
+        .join("\n");
+
+      const prompt = `Summarize this Foundry coaching conversation for ${profile.name} on ${dateKey}.\n\nReturn valid JSON with exactly these keys:\n"title": a concise dated headline under 80 characters\n"summary": a detailed markdown summary with these sections: Key Decisions, Main Insights, Risks or Blockers, Recommended Next Moves.\n\nConversation:\n${transcript}`;
+
+      try {
+        const raw = await callForgeAPI(
+          [{ role: "user", content: prompt }],
+          "You write clean business conversation summaries. Return only valid JSON."
+        );
+        const parsed = parseDailySummaryResponse(raw, dateKey);
+        const saved = await saveConversationSummary(
+          userId,
+          activeStage,
+          dateKey,
+          parsed.title,
+          parsed.summary,
+          dayMessages.length
+        );
+
+        if (!saved) return;
+
+        setSummariesByStage((prev) => ({
+          ...prev,
+          [activeStage]: [saved, ...(prev[activeStage] || [])].sort((a, b) => b.date.localeCompare(a.date)),
+        }));
+        onUpdateMessages(activeStage, messages.filter((msg) => getLocalDateKeyFromIso(msg.createdAt) === todayKey));
+      } catch (error) {
+        console.error("daily summary archive error:", error);
+      } finally {
+        setArchivingDateKey(null);
+      }
+    };
+
+    archiveDay();
+  }, [activeStage, messages, stageSummaries, archivingDateKey, userId]);
 
   const send = async () => {
     if (!input.trim() || loading) return;
@@ -459,8 +598,9 @@ Where do you want to start?`;
     const text = input.trim();
     setInput("");
 
-    const userMsg = { role: "user", text };
-    const forgeMsg = { role: "forge", text: "", id: Date.now() };
+    const timestamp = new Date().toISOString();
+    const userMsg = { role: "user", text, id: `user-${Date.now()}`, createdAt: timestamp };
+    const forgeMsg = { role: "forge", text: "", id: `forge-${Date.now()}`, createdAt: new Date().toISOString() };
     const current = messagesByStage[activeStage] || [];
 
     onUpdateMessages(activeStage, [...current, userMsg]);
@@ -522,7 +662,7 @@ Where do you want to start?`;
     setAdvanceReady(false);
   };
 
-  const showBriefing = messages.length === 0 && !loading && !briefingDismissed;
+  const showBriefing = messages.length === 0 && stageSummaries.length === 0 && !loading && !briefingDismissed;
 
   return (
     <div
@@ -553,6 +693,7 @@ Where do you want to start?`;
           display: "flex",
           alignItems: "center",
           gap: 8,
+          flexWrap: "wrap",
           flexShrink: 0,
         }}
       >
@@ -599,6 +740,7 @@ Where do you want to start?`;
             alignItems: "center",
             justifyContent: "center",
             position: "relative",
+            minWidth: 0,
           }}
         >
           <button
@@ -749,24 +891,29 @@ Where do you want to start?`;
 
         <div
           style={{
-            display: "flex",
+            display: "grid",
+            gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
             gap: 2,
             background: "rgba(255,255,255,0.07)",
             border: "1px solid rgba(255,255,255,0.1)",
             borderRadius: 8,
             padding: 3,
             flexShrink: 0,
+            width: "100%",
+            order: 3,
+            marginTop: 4,
           }}
         >
           {[
             { id: "chat", label: "Chat" },
-            { id: "milestones", label: `Goals ${completedMilestones.length}/${stage.milestones.length}` },
+            { id: "summaries", label: "Archive" },
+            { id: "milestones", label: "Goals" },
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               style={{
-                padding: "6px 12px",
+                padding: "7px 8px",
                 borderRadius: 6,
                 border: "none",
                 background:
@@ -779,6 +926,8 @@ Where do you want to start?`;
                 fontWeight: activeTab === tab.id ? 600 : 400,
                 transition: "all 0.15s",
                 whiteSpace: "nowrap",
+                width: "100%",
+                textAlign: "center",
               }}
             >
               {tab.label}
@@ -965,7 +1114,7 @@ Where do you want to start?`;
               </div>
             )}
 
-            <div style={{ height: 80 }} />
+            <div ref={bottomAnchorRef} style={{ height: 80 }} />
           </div>
         )}
 
@@ -980,7 +1129,79 @@ Where do you want to start?`;
             onClose={() => setActiveTab("chat")}
           />
         )}
+
+        {activeTab === "summaries" && (
+          <div style={{ position: "absolute", inset: 0, overflowY: "auto", padding: "16px", maxWidth: 720, width: "100%", margin: "0 auto" }}>
+            <div style={{ fontSize: 18, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, marginBottom: 8 }}>
+              Stage {activeStage} Summaries
+            </div>
+            <div style={{ fontSize: 12, color: "#666", marginBottom: 18, lineHeight: 1.6 }}>
+              Each day’s Forge conversation is archived here so the next day can start fresh.
+            </div>
+
+            {stageSummaries.length === 0 && (
+              <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "18px 16px", color: "#888", fontSize: 13, lineHeight: 1.7 }}>
+                No archived summaries yet. Once a day rolls over, Foundry will summarize the prior day’s conversation and store it here.
+              </div>
+            )}
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {stageSummaries.map((entry) => (
+                <button
+                  key={entry.id || `${entry.stageId}-${entry.date}`}
+                  onClick={() => setSummaryModal(entry)}
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    background: "rgba(255,255,255,0.03)",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                    borderRadius: 14,
+                    padding: "16px 18px",
+                    color: "#F0EDE8",
+                    cursor: "pointer",
+                  }}
+                >
+                  <div style={{ fontSize: 10, color: "#E8622A", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>
+                    {new Date(`${entry.date}T12:00:00`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                  </div>
+                  <div style={{ fontSize: 17, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, marginBottom: 6 }}>
+                    {entry.title}
+                  </div>
+                  <div style={{ fontSize: 12, color: "#666", lineHeight: 1.7 }}>
+                    {getSummaryPreview(entry.summary)}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
+
+      {summaryModal && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 80, background: "rgba(4,4,5,0.84)", backdropFilter: "blur(12px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }}>
+          <div style={{ width: "min(720px, 100%)", maxHeight: "85vh", overflowY: "auto", background: "#0E0E10", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, padding: "20px 18px 18px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 14 }}>
+              <div>
+                <div style={{ fontSize: 10, color: "#E8622A", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>
+                  {new Date(`${summaryModal.date}T12:00:00`).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                </div>
+                <div style={{ fontSize: 24, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700 }}>
+                  {summaryModal.title}
+                </div>
+              </div>
+              <button
+                onClick={() => setSummaryModal(null)}
+                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#999", padding: "8px 12px", cursor: "pointer", height: "fit-content" }}
+              >
+                Close
+              </button>
+            </div>
+            <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "18px 16px", fontSize: 14, color: "#C8C4BE", lineHeight: 1.8, fontFamily: "'Lora', Georgia, serif" }}>
+              {renderWithBold(summaryModal.summary, () => { }, () => { })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {
         activeTab === "chat" && !showBriefing && (
@@ -1648,6 +1869,7 @@ export default function FoundryApp() {
         {screen === "forge" && profile && (
           <ForgeScreen
             key="forge"
+            userId={(user as any).id}
             profile={profile}
             onBack={() => { setIsFirstVisit(false); setInitialStage(null); setScreenPersisted("hub"); }}
             onUpdateProfile={updateProfile}

@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { streamForgeAPI } from "../lib/forgeApi";
 import { buildMarketReportPrompt, MARKET_REPORT_SYSTEM } from "../constants/marketPrompt";
-import { loadLatestMarketReport, saveMarketReport } from "../db";
+import { loadLatestMarketReport, loadMarketReportHistory, saveMarketReport } from "../db";
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -106,6 +106,11 @@ function ReportSection({ content }: { content: string }) {
     return <>{elements}</>;
 }
 
+function upsertReport(history: MarketReport[], nextReport: MarketReport) {
+    const next = [nextReport, ...history.filter((entry) => entry.date !== nextReport.date)];
+    return next.sort((a, b) => b.date.localeCompare(a.date));
+}
+
 // ─────────────────────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────────────────────
@@ -126,21 +131,34 @@ export default function MarketIntelligenceScreen({
     const [streamedContent, setStreamedContent] = useState("");
     const [mounted, setMounted] = useState(false);
     const [currentReport, setCurrentReport] = useState<MarketReport | null>(report);
-
-    useEffect(() => { setTimeout(() => setMounted(true), 80); }, []);
+    const [reportHistory, setReportHistory] = useState<MarketReport[]>(report ? [report] : []);
+    const [saveError, setSaveError] = useState<string | null>(null);
+    const latestLocalMutationRef = useRef(0);
 
     useEffect(() => {
+        const timer = window.setTimeout(() => setMounted(true), 80);
+        return () => window.clearTimeout(timer);
+    }, []);
+
+    useEffect(() => {
+        if (!report) return;
         setCurrentReport(report);
+        setReportHistory((prev) => upsertReport(prev, report));
     }, [report]);
 
     useEffect(() => {
         let cancelled = false;
+        const startedAt = Date.now();
 
         const loadReport = async () => {
-            const latest = await loadLatestMarketReport(userId);
-            if (cancelled) return;
+            const [latest, history] = await Promise.all([
+                loadLatestMarketReport(userId),
+                loadMarketReportHistory(userId),
+            ]);
+            if (cancelled || startedAt < latestLocalMutationRef.current) return;
 
             setCurrentReport(latest);
+            setReportHistory(history);
             onReportChange(latest);
         };
 
@@ -155,10 +173,18 @@ export default function MarketIntelligenceScreen({
 
     const industry = profile.industry || profile.idea?.slice(0, 40) || "your market";
 
+    const selectReport = (next: MarketReport) => {
+        latestLocalMutationRef.current = Date.now();
+        setCurrentReport(next);
+        onReportChange(next);
+        setSaveError(null);
+    };
+
     const generate = async () => {
         if (generating || isCurrentReport) return;
         setGenerating(true);
         setStreamedContent("");
+        setSaveError(null);
 
         const prompt = buildMarketReportPrompt(profile);
 
@@ -169,15 +195,34 @@ export default function MarketIntelligenceScreen({
                 (chunk) => setStreamedContent(chunk)
             );
 
+            const optimisticReport: MarketReport = {
+                content: final,
+                industry: profile.industry || industry,
+                date: todayStr(),
+                createdAt: new Date().toISOString(),
+            };
+
+            latestLocalMutationRef.current = Date.now();
+            setCurrentReport(optimisticReport);
+            setReportHistory((prev) => upsertReport(prev, optimisticReport));
+            onReportChange(optimisticReport);
+
             const saved = await saveMarketReport(userId, final, profile.industry || industry);
             if (saved) {
+                latestLocalMutationRef.current = Date.now();
                 setCurrentReport(saved);
+                setReportHistory((prev) => upsertReport(prev, saved));
                 onReportChange(saved);
+            } else {
+                setSaveError("This report is staying visible now, but the database save did not complete. Refresh later and verify it appears in Saved Reports.");
             }
             setStreamedContent("");
         } catch (err) {
             console.error("Market report error:", err);
-            setStreamedContent("");
+            if (!currentReport?.content) {
+                setStreamedContent("");
+            }
+            setSaveError("Report generation or saving failed. The latest result will remain visible in this session when available.");
         }
 
         setGenerating(false);
@@ -186,7 +231,7 @@ export default function MarketIntelligenceScreen({
     const displayContent = generating
         ? streamedContent || currentReport?.content || ""
         : currentReport?.content || "";
-    const displayDate = hasSavedReport ? currentReport?.date : undefined;
+    const displayDate = currentReport?.date;
 
     return (
         <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'DM Sans', sans-serif", color: "#F0EDE8", display: "flex", flexDirection: "column" }}>
@@ -217,7 +262,9 @@ export default function MarketIntelligenceScreen({
             </div>
 
             {/* Content */}
-            <div style={{ flex: 1, overflowY: "auto", padding: "20px 16px 60px", maxWidth: 680, width: "100%", margin: "0 auto" }}>
+            <div style={{ flex: 1, overflowY: "auto", padding: "20px 16px 60px", maxWidth: 980, width: "100%", margin: "0 auto" }}>
+                <div style={{ display: "grid", gridTemplateColumns: reportHistory.length > 0 ? "minmax(0, 1fr) 260px" : "minmax(0, 1fr)", gap: 18, alignItems: "start" }}>
+                    <div>
 
                 {/* Empty state — no report at all */}
                 {!hasSavedReport && !generating && (
@@ -317,6 +364,12 @@ export default function MarketIntelligenceScreen({
                             </div>
                         )}
 
+                        {saveError && (
+                            <div style={{ fontSize: 11, color: "#F5A843", lineHeight: 1.6, marginBottom: 12 }}>
+                                {saveError}
+                            </div>
+                        )}
+
                         {/* Footer */}
                         {!generating && (
                             <div style={{ fontSize: 10, color: "#333", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", textAlign: "center", paddingTop: 8 }}>
@@ -325,6 +378,43 @@ export default function MarketIntelligenceScreen({
                         )}
                     </div>
                 )}
+                    </div>
+
+                    {reportHistory.length > 0 && (
+                        <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 12px", position: "sticky", top: 78 }}>
+                            <div style={{ fontSize: 10, color: "#444", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
+                                Saved Reports
+                            </div>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: "calc(100vh - 180px)", overflowY: "auto" }}>
+                                {reportHistory.map((entry) => {
+                                    const selected = currentReport?.date === entry.date;
+                                    return (
+                                        <button
+                                            key={entry.date}
+                                            onClick={() => selectReport(entry)}
+                                            style={{
+                                                textAlign: "left",
+                                                background: selected ? "rgba(232,98,42,0.12)" : "rgba(255,255,255,0.02)",
+                                                border: selected ? "1px solid rgba(232,98,42,0.24)" : "1px solid rgba(255,255,255,0.06)",
+                                                borderRadius: 10,
+                                                padding: "10px 12px",
+                                                color: "#F0EDE8",
+                                                cursor: "pointer",
+                                            }}
+                                        >
+                                            <div style={{ fontSize: 11, fontWeight: 600, color: selected ? "#E8622A" : "#C8C4BE", marginBottom: 4 }}>
+                                                {formatReportDate(entry.date)}
+                                            </div>
+                                            <div style={{ fontSize: 10, color: "#666", lineHeight: 1.5 }}>
+                                                {entry.content.slice(0, 110).trim()}{entry.content.length > 110 ? "..." : ""}
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
