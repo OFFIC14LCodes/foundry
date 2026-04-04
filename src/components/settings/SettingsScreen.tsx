@@ -21,8 +21,11 @@ type SettingsScreenProps = {
     } | null;
     billingSubscription: BillingSubscription | null;
     onBack: () => void;
-    onOpenTerms: () => void;
     onOpenPrivacy: () => void;
+    onOpenEula: () => void;
+    onOpenTermsAndConditions: () => void;
+    onOpenAcceptableUse: () => void;
+    onOpenDisclaimer: () => void;
     notificationPreferences: UserNotificationPreferences;
     onNotificationPreferencesChange: (next: UserNotificationPreferences) => void;
     notifications: AppNotification[];
@@ -39,8 +42,11 @@ export default function SettingsScreen({
     accessSummary,
     billingSubscription,
     onBack,
-    onOpenTerms,
     onOpenPrivacy,
+    onOpenEula,
+    onOpenTermsAndConditions,
+    onOpenAcceptableUse,
+    onOpenDisclaimer,
     notificationPreferences,
     onNotificationPreferencesChange,
     notifications,
@@ -115,21 +121,52 @@ export default function SettingsScreen({
                 </SettingsSection>
 
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 18 }}>
-                    <SettingsSection title="Terms of Service" description="Platform usage terms and account responsibilities.">
-                        <SettingsCard>
-                            <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.7, marginBottom: 14 }}>
-                                Review the legal terms that govern use of Foundry.
-                            </div>
-                            <SettingsButton onClick={onOpenTerms}>Open Terms</SettingsButton>
-                        </SettingsCard>
-                    </SettingsSection>
-
                     <SettingsSection title="Privacy Policy" description="How account, workspace, and AI-processed data are handled.">
                         <SettingsCard>
                             <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.7, marginBottom: 14 }}>
                                 View the current privacy policy for data collection, storage, and AI processing.
                             </div>
                             <SettingsButton onClick={onOpenPrivacy}>Open Privacy Policy</SettingsButton>
+                        </SettingsCard>
+                    </SettingsSection>
+
+                    <SettingsSection title="Terms & Conditions" description="The terms and conditions governing your use of Foundry.">
+                        <SettingsCard>
+                            <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.7, marginBottom: 14 }}>
+                                Review the Terms & Conditions for Foundry.
+                            </div>
+                            <SettingsButton onClick={onOpenTermsAndConditions}>Open Terms & Conditions</SettingsButton>
+                        </SettingsCard>
+                    </SettingsSection>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 18 }}>
+                    <SettingsSection title="End User License Agreement" description="The EULA governing your license to use the Foundry platform.">
+                        <SettingsCard>
+                            <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.7, marginBottom: 14 }}>
+                                Review the End User License Agreement for Foundry.
+                            </div>
+                            <SettingsButton onClick={onOpenEula}>Open EULA</SettingsButton>
+                        </SettingsCard>
+                    </SettingsSection>
+
+                    <SettingsSection title="Acceptable Use Policy" description="Guidelines for appropriate use of the Foundry platform.">
+                        <SettingsCard>
+                            <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.7, marginBottom: 14 }}>
+                                Review the Acceptable Use Policy for Foundry.
+                            </div>
+                            <SettingsButton onClick={onOpenAcceptableUse}>Open Acceptable Use Policy</SettingsButton>
+                        </SettingsCard>
+                    </SettingsSection>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 18 }}>
+                    <SettingsSection title="Disclaimer" description="Important disclaimers regarding the use of Foundry.">
+                        <SettingsCard>
+                            <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.7, marginBottom: 14 }}>
+                                Review the Disclaimer for Foundry.
+                            </div>
+                            <SettingsButton onClick={onOpenDisclaimer}>Open Disclaimer</SettingsButton>
                         </SettingsCard>
                     </SettingsSection>
                 </div>

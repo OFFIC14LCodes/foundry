@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { SettingsScreenShell } from "./SettingsPrimitives";
 
-export default function PrivacyPolicyScreen({ onBack }: { onBack: () => void }) {
+export default function AcceptableUsePolicyScreen({ onBack }: { onBack: () => void }) {
     useEffect(() => {
         const scriptId = "termly-jssdk";
         if (!document.getElementById(scriptId)) {
@@ -16,8 +16,8 @@ export default function PrivacyPolicyScreen({ onBack }: { onBack: () => void }) 
 
     return (
         <SettingsScreenShell
-            title="Privacy Policy"
-            subtitle="How we collect, store, and handle your personal data."
+            title="Acceptable Use Policy"
+            subtitle="Guidelines for appropriate use of the Foundry platform."
             onBack={onBack}
         >
             <div
@@ -33,7 +33,7 @@ export default function PrivacyPolicyScreen({ onBack }: { onBack: () => void }) 
             >
                 <div
                     name="termly-embed"
-                    data-id="0d176e23-aaa4-4ddb-a2ae-cdcb0620d79d"
+                    data-id="90925d9f-b9b8-4c79-b03b-4913f9f43cf4"
                 />
             </div>
         </SettingsScreenShell>

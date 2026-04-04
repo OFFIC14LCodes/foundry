@@ -45,8 +45,11 @@ import MarketIntelligenceScreen from "./components/MarketIntelligenceScreen";
 import CofounderModeScreen from "./components/CofounderModeScreen";
 import AdminHubScreen from "./components/AdminHubScreen";
 import SettingsScreen from "./components/settings/SettingsScreen";
-import TermsOfServiceScreen from "./components/settings/TermsOfServiceScreen";
 import PrivacyPolicyScreen from "./components/settings/PrivacyPolicyScreen";
+import EulaScreen from "./components/settings/EulaScreen";
+import TermsAndConditionsScreen from "./components/settings/TermsAndConditionsScreen";
+import AcceptableUsePolicyScreen from "./components/settings/AcceptableUsePolicyScreen";
+import DisclaimerScreen from "./components/settings/DisclaimerScreen";
 import Logo from "./components/Logo";
 import LoadingForgeAnimation from "./components/LoadingForgeAnimation";
 import PaywallScreen from "./components/paywall/PaywallScreen";
@@ -1288,7 +1291,7 @@ export default function FoundryApp() {
   const [showDocuments, setShowDocuments] = useState(false);
   const [showMarketIntel, setShowMarketIntel] = useState(false);
   const [showCofounder, setShowCofounder] = useState(false);
-  const [settingsView, setSettingsView] = useState<null | "settings" | "terms" | "privacy">(null);
+  const [settingsView, setSettingsView] = useState<null | "settings" | "privacy" | "eula" | "termsAndConditions" | "acceptableUse" | "disclaimer">(null);
   const [showAdminHub, setShowAdminHub] = useState(false);
   const [userTeamId, setUserTeamId] = useState<string | null>(null);
   const [accountAccess, setAccountAccess] = useState<AccountAccess | null>(null);
@@ -1967,8 +1970,11 @@ export default function FoundryApp() {
             accessSummary={accessSummary}
             billingSubscription={billingSubscription}
             onBack={() => setSettingsView(null)}
-            onOpenTerms={() => setSettingsView("terms")}
             onOpenPrivacy={() => setSettingsView("privacy")}
+            onOpenEula={() => setSettingsView("eula")}
+            onOpenTermsAndConditions={() => setSettingsView("termsAndConditions")}
+            onOpenAcceptableUse={() => setSettingsView("acceptableUse")}
+            onOpenDisclaimer={() => setSettingsView("disclaimer")}
             notificationPreferences={notificationPreferences}
             onNotificationPreferencesChange={handleNotificationPreferencesChange}
             notifications={notifications}
@@ -1980,14 +1986,29 @@ export default function FoundryApp() {
           />
         </div>
       )}
-      {settingsView === "terms" && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 121, background: "#080809", overflowY: "auto" }}>
-          <TermsOfServiceScreen onBack={() => setSettingsView("settings")} />
-        </div>
-      )}
       {settingsView === "privacy" && (
         <div style={{ position: "fixed", inset: 0, zIndex: 121, background: "#080809", overflowY: "auto" }}>
           <PrivacyPolicyScreen onBack={() => setSettingsView("settings")} />
+        </div>
+      )}
+      {settingsView === "eula" && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 121, background: "#080809", overflowY: "auto" }}>
+          <EulaScreen onBack={() => setSettingsView("settings")} />
+        </div>
+      )}
+      {settingsView === "termsAndConditions" && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 121, background: "#080809", overflowY: "auto" }}>
+          <TermsAndConditionsScreen onBack={() => setSettingsView("settings")} />
+        </div>
+      )}
+      {settingsView === "acceptableUse" && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 121, background: "#080809", overflowY: "auto" }}>
+          <AcceptableUsePolicyScreen onBack={() => setSettingsView("settings")} />
+        </div>
+      )}
+      {settingsView === "disclaimer" && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 121, background: "#080809", overflowY: "auto" }}>
+          <DisclaimerScreen onBack={() => setSettingsView("settings")} />
         </div>
       )}
       {showAdminHub && user && canOpenAdminHub && (
