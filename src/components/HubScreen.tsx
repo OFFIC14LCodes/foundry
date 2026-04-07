@@ -24,6 +24,7 @@ export default function HubScreen({
     onOpenCofounder,
     onOpenSettings,
     onOpenAdminHub,
+    onOpenChatRoom,
     isAdmin = false,
     completedByStage,
     accessSummary,
@@ -215,6 +216,16 @@ export default function HubScreen({
             },
             available: true,
         }] : []),
+        {
+            icon: Icons.sidebar.chatRoom,
+            label: "Chat with Forge",
+            sub: "Open-ended learning & questions",
+            action: () => {
+                setSidebarOpen(false);
+                onOpenChatRoom?.();
+            },
+            available: true,
+        },
         {
             icon: Icons.sidebar.journal,
             label: "Founder's Journal",

@@ -45,6 +45,7 @@ import PitchPracticeScreen from "./components/PitchPracticeScreen";
 import DocumentProductionScreen from "./components/DocumentProductionScreen";
 import MarketIntelligenceScreen from "./components/MarketIntelligenceScreen";
 import CofounderModeScreen from "./components/CofounderModeScreen";
+import ForgeChatRoom from "./components/ForgeChatRoom";
 import AdminHubScreen from "./components/AdminHubScreen";
 import SettingsScreen from "./components/settings/SettingsScreen";
 import PrivacyPolicyScreen from "./components/settings/PrivacyPolicyScreen";
@@ -1425,6 +1426,7 @@ export default function FoundryApp() {
   const [showDocuments, setShowDocuments] = useState(false);
   const [showMarketIntel, setShowMarketIntel] = useState(false);
   const [showCofounder, setShowCofounder] = useState(false);
+  const [showChatRoom, setShowChatRoom] = useState(false);
   const [settingsView, setSettingsView] = useState<null | "settings" | "privacy" | "eula" | "termsAndConditions" | "acceptableUse" | "disclaimer">(null);
   const [showAdminHub, setShowAdminHub] = useState(false);
   const [userTeamId, setUserTeamId] = useState<string | null>(null);
@@ -1810,6 +1812,11 @@ export default function FoundryApp() {
     setShowMarketIntel(true);
   };
 
+  const openChatRoom = () => {
+    markMeaningfulActivity();
+    setShowChatRoom(true);
+  };
+
   const openCofounder = () => {
     markMeaningfulActivity();
     setShowCofounder(true);
@@ -2047,6 +2054,7 @@ export default function FoundryApp() {
             onOpenDocuments={openDocuments}
             onOpenMarketIntel={openMarketIntel}
             onOpenCofounder={openCofounder}
+            onOpenChatRoom={openChatRoom}
             onOpenSettings={openSettings}
             onOpenAdminHub={() => setShowAdminHub(true)}
             isAdmin={canOpenAdminHub}
@@ -2121,6 +2129,14 @@ export default function FoundryApp() {
           onBack={() => setShowBriefings(false)}
           completedByStage={completedByStage}
         />
+      )}
+      {showChatRoom && profile && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "#080809" }}>
+          <ForgeChatRoom
+            profile={profile}
+            onBack={() => setShowChatRoom(false)}
+          />
+        </div>
       )}
       {showCofounder && user && profile && (
         <CofounderModeScreen
@@ -2207,8 +2223,9 @@ export default function FoundryApp() {
                   : showJournal ? "journal"
                     : showBriefings ? "briefings"
                       : showCofounder ? "cofounder"
-                        : settingsView ? "settings"
-                          : screen
+                        : showChatRoom ? "chatRoom"
+                          : settingsView ? "settings"
+                            : screen
           }
           onBubbleSummaryAdded={(summary) => setBubbleSummaries(prev => [summary, ...prev])}
         />

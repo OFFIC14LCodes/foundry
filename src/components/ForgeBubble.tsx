@@ -32,6 +32,7 @@ const SCREEN_LABELS: Record<string, string> = {
     documents: "the Document Production screen",
     marketIntel: "the Market Intelligence screen",
     cofounder: "the Co-Founder Mode screen",
+    chatRoom: "the Chat Room (open-ended learning and conversation with Forge)",
 };
 
 function renderBubbleText(text: string) {

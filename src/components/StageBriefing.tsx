@@ -7,17 +7,20 @@ export default function StageBriefing({ stage, stageId, onStart }) {
     return (
         <div
             style={{
-                flex: 1,
+                position: "absolute",
+                inset: 0,
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                justifyContent: "center",
-                padding: "28px 20px",
+                justifyContent: "flex-start",
+                padding: "28px 20px max(28px, calc(20px + env(safe-area-inset-bottom)))",
+                boxSizing: "border-box",
                 overflowY: "auto",
+                WebkitOverflowScrolling: "touch",
                 animation: "fadeIn 0.4s ease",
             }}
         >
-            <div style={{ maxWidth: 520, width: "100%", textAlign: "center" }}>
+            <div style={{ maxWidth: 520, width: "100%", textAlign: "center", margin: "auto 0", flexShrink: 0 }}>
                 <div style={{ marginBottom: 14, display: "flex", justifyContent: "center" }}>
                     <StageIcon size={44} color={stage.color} />
                 </div>

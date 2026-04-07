@@ -484,6 +484,7 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
     const previewRef = useRef<HTMLDivElement>(null);
     const refineRef = useRef<HTMLTextAreaElement>(null);
     const saveStatusResetRef = useRef<number | null>(null);
+    const currentDocumentIdRef = useRef<string | null>(null);
 
     // Scroll preview to top when doc changes
     useEffect(() => {
@@ -517,7 +518,12 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
         return content.split("\n")[0].replace(/^#+\s*/, "").trim() || fallbackDocType;
     };
 
-    const persistDocument = async (content: string, nextHistory: GenRecord[], existingId = currentDocumentId) => {
+    const setActiveDocumentId = (id: string | null) => {
+        currentDocumentIdRef.current = id;
+        setCurrentDocumentId(id);
+    };
+
+    const persistDocument = async (content: string, nextHistory: GenRecord[], existingId = currentDocumentIdRef.current) => {
         if (!content.trim()) return null;
 
         setSaveStatus("saving");
@@ -537,7 +543,7 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
             return null;
         }
 
-        setCurrentDocumentId(saved.id);
+        setActiveDocumentId(saved.id);
         upsertDocumentList(saved);
         setSaveStatus("saved");
         if (saveStatusResetRef.current) window.clearTimeout(saveStatusResetRef.current);
@@ -546,7 +552,7 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
     };
 
     const openSavedDocument = (doc: ProducedDocument) => {
-        setCurrentDocumentId(doc.id);
+        setActiveDocumentId(doc.id);
         setDocType(doc.docType);
         setAudience(doc.audience);
         setTone(doc.tone);
@@ -562,6 +568,7 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
     const generate = async () => {
         if (generating) return;
         setGenerating(true);
+        setActiveDocumentId(null);
         setCurrentDoc("");
         setHistory([]);
         setPhase("studio");
@@ -606,7 +613,8 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
             const nextHistory = [...history, { instruction, doc: final }];
             setCurrentDoc(final);
             setHistory(nextHistory);
-            await persistDocument(final, nextHistory);
+            const savedId = currentDocumentIdRef.current;
+            await persistDocument(final, nextHistory, savedId);
         } catch {
             // Restore last good doc on failure
             const last = history[history.length - 1];
@@ -619,7 +627,7 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
         setPhase("request");
         setCurrentDoc("");
         setHistory([]);
-        setCurrentDocumentId(null);
+        setActiveDocumentId(null);
         setRefineInput("");
         setGenerating(false);
         setRefining(false);
@@ -686,7 +694,16 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
                                     <button
                                         key={doc.id}
                                         onClick={() => openSavedDocument(doc)}
-                                        style={{ width: "100%", padding: "11px 13px", borderRadius: 11, border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.025)", textAlign: "left", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}
+                                        style={{
+                                            width: "100%",
+                                            padding: "11px 13px",
+                                            borderRadius: 11,
+                                            border: currentDocumentId === doc.id ? "1px solid rgba(232,98,42,0.32)" : "1px solid rgba(255,255,255,0.07)",
+                                            background: currentDocumentId === doc.id ? "rgba(232,98,42,0.08)" : "rgba(255,255,255,0.025)",
+                                            textAlign: "left",
+                                            cursor: "pointer",
+                                            fontFamily: "'DM Sans', sans-serif",
+                                        }}
                                     >
                                         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 3 }}>
                                             <span style={{ fontSize: 12, color: "#C8C4BE", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.title}</span>

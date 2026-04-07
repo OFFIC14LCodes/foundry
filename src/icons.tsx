@@ -72,6 +72,7 @@ export const Icons = {
         cofounder: Users,
         admin: ShieldCheck,
         settings: Settings,
+        chatRoom: ChatsCircle,
     },
 
     hub: {
