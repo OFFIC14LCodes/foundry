@@ -2,7 +2,9 @@
 // Extracted here so PitchPracticeScreen and ForgeScreen can both use them
 // without duplication or coupling to App.tsx.
 
-export async function callForgeAPI(messages: Array<{ role: string; content: string }>, systemPrompt: string): Promise<string> {
+type MessageContent = string | Array<Record<string, unknown>>;
+
+export async function callForgeAPI(messages: Array<{ role: string; content: MessageContent }>, systemPrompt: string): Promise<string> {
     const res = await fetch("/api/forge", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -22,7 +24,7 @@ export async function callForgeAPI(messages: Array<{ role: string; content: stri
 }
 
 export async function streamForgeAPI(
-    messages: Array<{ role: string; content: string }>,
+    messages: Array<{ role: string; content: MessageContent }>,
     systemPrompt: string,
     onChunk: (text: string) => void
 ): Promise<string> {

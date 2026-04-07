@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { streamForgeAPI } from "../lib/forgeApi";
 import { buildDocSystemPrompt, buildDocRequest, buildRefinementRequest } from "../constants/docPrompt";
+import { loadProducedDocuments, saveProducedDocument, type ProducedDocument } from "../db";
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -212,7 +213,7 @@ function ChipRow({ options, selected, onSelect }: { options: string[]; selected:
 // ─────────────────────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────────────────────
-export default function DocumentProductionScreen({ profile, onBack }: { profile: any; onBack: () => void }) {
+export default function DocumentProductionScreen({ userId, profile, onBack }: { userId: string; profile: any; onBack: () => void }) {
     // Phase
     const [phase, setPhase] = useState<Phase>("request");
 
@@ -230,14 +231,87 @@ export default function DocumentProductionScreen({ profile, onBack }: { profile:
     const [history, setHistory] = useState<GenRecord[]>([]);
     const [copied, setCopied] = useState(false);
     const [activeTab, setActiveTab] = useState<"preview" | "refine">("preview");
+    const [documents, setDocuments] = useState<ProducedDocument[]>([]);
+    const [currentDocumentId, setCurrentDocumentId] = useState<string | null>(null);
+    const [documentsLoading, setDocumentsLoading] = useState(true);
+    const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "unavailable">("idle");
 
     const previewRef = useRef<HTMLDivElement>(null);
     const refineRef = useRef<HTMLTextAreaElement>(null);
+    const saveStatusResetRef = useRef<number | null>(null);
 
     // Scroll preview to top when doc changes
     useEffect(() => {
         previewRef.current?.scrollTo({ top: 0, behavior: "smooth" });
     }, [currentDoc]);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        setDocumentsLoading(true);
+        loadProducedDocuments(userId).then((rows) => {
+            if (cancelled) return;
+            setDocuments(rows);
+            setDocumentsLoading(false);
+        });
+
+        return () => { cancelled = true; };
+    }, [userId]);
+
+    useEffect(() => {
+        return () => {
+            if (saveStatusResetRef.current) window.clearTimeout(saveStatusResetRef.current);
+        };
+    }, []);
+
+    const upsertDocumentList = (saved: ProducedDocument) => {
+        setDocuments(prev => [saved, ...prev.filter(doc => doc.id !== saved.id)]);
+    };
+
+    const getDocTitle = (content: string, fallbackDocType = docType) => {
+        return content.split("\n")[0].replace(/^#+\s*/, "").trim() || fallbackDocType;
+    };
+
+    const persistDocument = async (content: string, nextHistory: GenRecord[], existingId = currentDocumentId) => {
+        if (!content.trim()) return null;
+
+        setSaveStatus("saving");
+        const saved = await saveProducedDocument(userId, {
+            id: existingId,
+            title: getDocTitle(content),
+            docType,
+            audience,
+            tone,
+            request,
+            content,
+            history: nextHistory,
+        });
+
+        if (!saved) {
+            setSaveStatus("unavailable");
+            return null;
+        }
+
+        setCurrentDocumentId(saved.id);
+        upsertDocumentList(saved);
+        setSaveStatus("saved");
+        if (saveStatusResetRef.current) window.clearTimeout(saveStatusResetRef.current);
+        saveStatusResetRef.current = window.setTimeout(() => setSaveStatus("idle"), 2000);
+        return saved;
+    };
+
+    const openSavedDocument = (doc: ProducedDocument) => {
+        setCurrentDocumentId(doc.id);
+        setDocType(doc.docType);
+        setAudience(doc.audience);
+        setTone(doc.tone);
+        setRequest(doc.request ?? "");
+        setCurrentDoc(doc.content);
+        setHistory(doc.history?.length ? doc.history : [{ instruction: doc.request || doc.docType, doc: doc.content }]);
+        setPhase("studio");
+        setActiveTab("preview");
+        setSaveStatus("idle");
+    };
 
     // ── Generate initial document ──
     const generate = async () => {
@@ -257,8 +331,10 @@ export default function DocumentProductionScreen({ profile, onBack }: { profile:
                 systemPrompt,
                 (chunk) => setCurrentDoc(chunk)
             );
+            const nextHistory = [{ instruction: userContent, doc: final }];
             setCurrentDoc(final);
-            setHistory([{ instruction: userContent, doc: final }]);
+            setHistory(nextHistory);
+            await persistDocument(final, nextHistory, null);
         } catch {
             setCurrentDoc("# Document Generation Failed\n\nSomething went wrong. Try again or adjust your request.");
         }
@@ -282,8 +358,10 @@ export default function DocumentProductionScreen({ profile, onBack }: { profile:
                 systemPrompt,
                 (chunk) => setCurrentDoc(chunk)
             );
+            const nextHistory = [...history, { instruction, doc: final }];
             setCurrentDoc(final);
-            setHistory(prev => [...prev, { instruction, doc: final }]);
+            setHistory(nextHistory);
+            await persistDocument(final, nextHistory);
         } catch {
             // Restore last good doc on failure
             const last = history[history.length - 1];
@@ -296,9 +374,11 @@ export default function DocumentProductionScreen({ profile, onBack }: { profile:
         setPhase("request");
         setCurrentDoc("");
         setHistory([]);
+        setCurrentDocumentId(null);
         setRefineInput("");
         setGenerating(false);
         setRefining(false);
+        setSaveStatus("idle");
     };
 
     const handleCopy = async () => {
@@ -309,6 +389,13 @@ export default function DocumentProductionScreen({ profile, onBack }: { profile:
     const docTitle = currentDoc.split("\n")[0].replace(/^#+\s*/, "").trim() || docType;
     const businessName = profile.businessName || profile.idea?.slice(0, 30) || "Foundry";
     const todayDate = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+    const saveLabel = saveStatus === "saving"
+        ? "Saving..."
+        : saveStatus === "saved"
+            ? "Saved"
+            : saveStatus === "unavailable"
+                ? "Save unavailable"
+                : "";
 
     // ═══════════════════════════════════════════════════════════
     // REQUEST PHASE
@@ -334,6 +421,37 @@ export default function DocumentProductionScreen({ profile, onBack }: { profile:
                         <div style={{ fontSize: 13, color: "#666", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", lineHeight: 1.7 }}>
                             Forge will generate a professional document tailored to your business, audience, and purpose — ready for real use.
                         </div>
+                    </div>
+
+                    {/* Saved documents */}
+                    <div style={{ marginBottom: 26, animation: "fadeSlideUp 0.4s ease 0.02s both" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                            <div style={{ fontSize: 10, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase" }}>Saved Documents</div>
+                            <div style={{ fontSize: 10, color: "#444" }}>
+                                {documentsLoading ? "Loading..." : `${documents.length} saved`}
+                            </div>
+                        </div>
+                        {documents.length === 0 && !documentsLoading ? (
+                            <div style={{ padding: "12px 14px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)", color: "#555", fontSize: 12, lineHeight: 1.6 }}>
+                                Generated and refined documents will save here automatically when Forge finishes writing.
+                            </div>
+                        ) : (
+                            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                {documents.map(doc => (
+                                    <button
+                                        key={doc.id}
+                                        onClick={() => openSavedDocument(doc)}
+                                        style={{ width: "100%", padding: "11px 13px", borderRadius: 11, border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.025)", textAlign: "left", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}
+                                    >
+                                        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 3 }}>
+                                            <span style={{ fontSize: 12, color: "#C8C4BE", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.title}</span>
+                                            <span style={{ fontSize: 10, color: "#555", flexShrink: 0 }}>{new Date(doc.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+                                        </div>
+                                        <div style={{ fontSize: 10, color: "#555" }}>{doc.docType} · {doc.audience} · {doc.tone}</div>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     {/* Document Type */}
@@ -409,7 +527,9 @@ export default function DocumentProductionScreen({ profile, onBack }: { profile:
                     <button onClick={onBack} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "5px 11px", color: "#888", fontSize: 12, cursor: "pointer" }}>← Hub</button>
                     <div>
                         <div style={{ fontSize: 14, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, lineHeight: 1.2 }}>Document Studio</div>
-                        <div style={{ fontSize: 10, color: "#555" }}>{docType} · {audience} · {tone}</div>
+                        <div style={{ fontSize: 10, color: "#555" }}>
+                            {docType} · {audience} · {tone}{saveLabel ? ` · ${saveLabel}` : ""}
+                        </div>
                     </div>
                 </div>
                 <button onClick={reset} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 8, padding: "5px 12px", color: "#666", fontSize: 11, cursor: "pointer" }}>
@@ -580,7 +700,12 @@ export default function DocumentProductionScreen({ profile, onBack }: { profile:
                                     <div key={i} style={{ padding: "10px 12px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 10, marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
                                         <div style={{ fontSize: 12, color: "#666", flex: 1 }}>"{rec.instruction}"</div>
                                         <button
-                                            onClick={() => setCurrentDoc(rec.doc)}
+                                            onClick={() => {
+                                                setCurrentDoc(rec.doc);
+                                                const nextHistory = history.slice(0, i + 2);
+                                                setHistory(nextHistory);
+                                                persistDocument(rec.doc, nextHistory);
+                                            }}
                                             style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 6, padding: "3px 10px", color: "#555", fontSize: 10, cursor: "pointer", flexShrink: 0 }}
                                         >
                                             Restore

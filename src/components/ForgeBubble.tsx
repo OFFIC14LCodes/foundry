@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { cleanAIText } from "../lib/cleanAIText";
 import { callForgeAPI, streamForgeAPI } from "../lib/forgeApi";
+import { processFile, buildMessageContent, type AttachedFile } from "../lib/fileAttach";
 import { FORGE_SYSTEM_PROMPT } from "../constants/prompts";
 import { saveConversationSummary } from "../db";
 import ForgeAvatar from "./ForgeAvatar";
@@ -75,8 +76,10 @@ export default function ForgeBubble({ profile, userId, currentScreen, onBubbleSu
     const [closing, setClosing] = useState(false);
     const [pos, setPos] = useState(loadSavedPos);
     const [dragging, setDragging] = useState(false);
+    const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
     const scrollRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const sessionStartRef = useRef<string | null>(null);
     const posRef = useRef(pos);
     const dragState = useRef<{
@@ -154,15 +157,23 @@ You are in a quick-access floating chat bubble. The founder is asking a quick qu
     };
 
     const send = async () => {
-        if (!input.trim() || loading) return;
+        if ((!input.trim() && attachedFiles.length === 0) || loading) return;
         if (!sessionStartRef.current) {
             sessionStartRef.current = new Date().toISOString();
         }
 
         const text = input.trim();
+        const currentFiles = [...attachedFiles];
         setInput("");
+        setAttachedFiles([]);
+
+        const attachmentLabel = currentFiles.length > 0
+            ? `[Attached: ${currentFiles.map(f => f.name).join(", ")}]`
+            : "";
+        const displayText = [attachmentLabel, text].filter(Boolean).join("\n");
+
         const timestamp = new Date().toISOString();
-        const userMsg: BubbleMessage = { id: `u-${Date.now()}`, role: "user", text, createdAt: timestamp };
+        const userMsg: BubbleMessage = { id: `u-${Date.now()}`, role: "user", text: displayText, createdAt: timestamp };
         const forgeMsg: BubbleMessage = { id: `f-${Date.now()}`, role: "forge", text: "", createdAt: new Date().toISOString() };
 
         const currentMessages = [...messages, userMsg];
@@ -171,10 +182,16 @@ You are in a quick-access floating chat bubble. The founder is asking a quick qu
 
         try {
             const ctx = buildContext();
-            const apiMsgs = currentMessages.map(m => ({
-                role: m.role === "forge" ? "assistant" : "user",
-                content: m.text,
-            }));
+            const apiMsgs = [
+                ...currentMessages.slice(0, -1).map(m => ({
+                    role: m.role === "forge" ? "assistant" : "user",
+                    content: m.text,
+                })),
+                {
+                    role: "user" as const,
+                    content: buildMessageContent(text, currentFiles),
+                },
+            ];
 
             await streamForgeAPI(
                 apiMsgs,
@@ -422,67 +439,142 @@ You are in a quick-access floating chat bubble. The founder is asking a quick qu
                     {/* Input */}
                     <div
                         style={{
-                            padding: "10px 12px",
+                            padding: "8px 12px 10px",
                             borderTop: "1px solid rgba(255,255,255,0.05)",
                             background: "rgba(8,8,9,0.8)",
-                            display: "flex",
-                            gap: 8,
-                            alignItems: "flex-end",
                             flexShrink: 0,
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 6,
                         }}
                     >
-                        <textarea
-                            ref={inputRef}
-                            value={input}
-                            onChange={e => setInput(e.target.value)}
-                            onKeyDown={e => {
-                                if (e.key === "Enter" && !e.shiftKey) {
-                                    e.preventDefault();
-                                    send();
-                                }
-                            }}
-                            placeholder="Ask anything..."
-                            rows={1}
-                            style={{
-                                flex: 1,
-                                background: "rgba(255,255,255,0.05)",
-                                border: "1px solid rgba(255,255,255,0.09)",
-                                borderRadius: 10,
-                                padding: "8px 11px",
-                                color: "#F0EDE8",
-                                fontSize: 12.5,
-                                fontFamily: "'DM Sans', sans-serif",
-                                resize: "none",
-                                outline: "none",
-                                lineHeight: 1.5,
-                                maxHeight: 80,
-                                overflowY: "auto",
-                            }}
-                        />
-                        <button
-                            onClick={send}
-                            disabled={!input.trim() || loading}
-                            style={{
-                                width: 34,
-                                height: 34,
-                                borderRadius: 9,
-                                border: "none",
-                                background: input.trim() && !loading
-                                    ? "linear-gradient(135deg, #E8622A, #c9521e)"
-                                    : "rgba(255,255,255,0.06)",
-                                color: input.trim() && !loading ? "#fff" : "#444",
-                                cursor: input.trim() && !loading ? "pointer" : "default",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                flexShrink: 0,
-                                transition: "all 0.15s",
-                            }}
-                        >
-                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                                <path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                        </button>
+                        {/* Attached file chips */}
+                        {attachedFiles.length > 0 && (
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                                {attachedFiles.map(file => (
+                                    <div
+                                        key={file.id}
+                                        style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 4,
+                                            background: "rgba(232,98,42,0.08)",
+                                            border: "1px solid rgba(232,98,42,0.2)",
+                                            borderRadius: 7,
+                                            padding: "3px 7px 3px 5px",
+                                            maxWidth: 180,
+                                        }}
+                                    >
+                                        {file.isImage && file.previewUrl ? (
+                                            <img src={file.previewUrl} alt={file.name} style={{ width: 16, height: 16, borderRadius: 3, objectFit: "cover", flexShrink: 0 }} />
+                                        ) : (
+                                            <span style={{ fontSize: 11, flexShrink: 0 }}>{file.isPDF ? "📄" : "📝"}</span>
+                                        )}
+                                        <span style={{ fontSize: 10, color: "#C8C4BE", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                            {file.name}
+                                        </span>
+                                        <button
+                                            onClick={() => {
+                                                if (file.previewUrl) URL.revokeObjectURL(file.previewUrl);
+                                                setAttachedFiles(prev => prev.filter(f => f.id !== file.id));
+                                            }}
+                                            style={{ background: "none", border: "none", color: "#777", cursor: "pointer", padding: 0, fontSize: 12, lineHeight: 1, flexShrink: 0 }}
+                                        >×</button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Text row */}
+                        <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+                            {/* Paperclip */}
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                title="Attach file"
+                                style={{
+                                    background: "none",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    color: attachedFiles.length > 0 ? "#E8622A" : "#555",
+                                    padding: "4px 2px",
+                                    flexShrink: 0,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    transition: "color 0.15s",
+                                }}
+                            >
+                                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                                    <path d="M13.5 7.5L7 14c-1.657 1.657-4.343 1.657-6 0-1.657-1.657-1.657-4.343 0-6L8 1c1.105-1.105 2.895-1.105 4 0 1.105 1.105 1.105 2.895 0 4L5.5 11.5C4.948 12.052 4.052 12.052 3.5 11.5 2.948 10.948 2.948 10.052 3.5 9.5L9 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                            </button>
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                multiple
+                                accept="image/*,.pdf,.txt,.md,.csv,.json,.js,.ts,.jsx,.tsx,.py,.java,.c,.cpp,.h,.css,.html,.xml,.yaml,.yml"
+                                style={{ display: "none" }}
+                                onChange={async (e) => {
+                                    const files = Array.from(e.target.files || []);
+                                    if (files.length === 0) return;
+                                    const processed = await Promise.all(files.map(processFile));
+                                    setAttachedFiles(prev => [...prev, ...processed]);
+                                    e.target.value = "";
+                                }}
+                            />
+
+                            <textarea
+                                ref={inputRef}
+                                value={input}
+                                onChange={e => setInput(e.target.value)}
+                                onKeyDown={e => {
+                                    if (e.key === "Enter" && !e.shiftKey) {
+                                        e.preventDefault();
+                                        send();
+                                    }
+                                }}
+                                placeholder="Ask anything..."
+                                rows={1}
+                                style={{
+                                    flex: 1,
+                                    background: "rgba(255,255,255,0.05)",
+                                    border: "1px solid rgba(255,255,255,0.09)",
+                                    borderRadius: 10,
+                                    padding: "8px 11px",
+                                    color: "#F0EDE8",
+                                    fontSize: 12.5,
+                                    fontFamily: "'DM Sans', sans-serif",
+                                    resize: "none",
+                                    outline: "none",
+                                    lineHeight: 1.5,
+                                    maxHeight: 80,
+                                    overflowY: "auto",
+                                }}
+                            />
+                            <button
+                                onClick={send}
+                                disabled={(!input.trim() && attachedFiles.length === 0) || loading}
+                                style={{
+                                    width: 34,
+                                    height: 34,
+                                    borderRadius: 9,
+                                    border: "none",
+                                    background: (input.trim() || attachedFiles.length > 0) && !loading
+                                        ? "linear-gradient(135deg, #E8622A, #c9521e)"
+                                        : "rgba(255,255,255,0.06)",
+                                    color: (input.trim() || attachedFiles.length > 0) && !loading ? "#fff" : "#444",
+                                    cursor: (input.trim() || attachedFiles.length > 0) && !loading ? "pointer" : "default",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    flexShrink: 0,
+                                    transition: "all 0.15s",
+                                }}
+                            >
+                                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                                    <path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

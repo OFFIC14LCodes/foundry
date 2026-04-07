@@ -22,6 +22,7 @@ function getLocalDateKey(date = new Date()) {
 }
 
 let dailyChatSummariesAvailable: boolean | null = null;
+let producedDocumentsAvailable: boolean | null = null;
 
 function isMissingRelationError(error: any, relationName: string) {
     const message = String(error?.message ?? "").toLowerCase();
@@ -420,6 +421,109 @@ export async function saveBriefing(userId: string, content: string, stageId: num
     if (error) { console.error("saveBriefing error:", error.message); return null; }
     await recordMeaningfulActivity(userId, undefined, { force: true });
     return { id: data.id, content: data.content, stageId: data.stage_id, createdAt: data.created_at };
+}
+
+// ── PRODUCED DOCUMENTS ───────────────────────────────────────
+
+export type ProducedDocument = {
+    id: string;
+    userId: string;
+    title: string;
+    docType: string;
+    audience: string;
+    tone: string;
+    request: string;
+    content: string;
+    history: Array<{ instruction: string; doc: string }>;
+    createdAt: string;
+    updatedAt: string;
+};
+
+function mapProducedDocument(row: any): ProducedDocument {
+    return {
+        id: row.id,
+        userId: row.user_id,
+        title: row.title,
+        docType: row.doc_type,
+        audience: row.audience,
+        tone: row.tone,
+        request: row.request ?? "",
+        content: row.content,
+        history: Array.isArray(row.history) ? row.history : [],
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+    };
+}
+
+export async function loadProducedDocuments(userId: string): Promise<ProducedDocument[]> {
+    if (producedDocumentsAvailable === false) return [];
+
+    const { data, error } = await supabase
+        .from("produced_documents")
+        .select("*")
+        .eq("user_id", userId)
+        .order("updated_at", { ascending: false });
+
+    if (error) {
+        if (isMissingRelationError(error, "produced_documents")) {
+            producedDocumentsAvailable = false;
+            return [];
+        }
+        console.error("loadProducedDocuments error:", error.message);
+        return [];
+    }
+
+    producedDocumentsAvailable = true;
+    return (data ?? []).map(mapProducedDocument);
+}
+
+export async function saveProducedDocument(
+    userId: string,
+    document: {
+        id?: string | null;
+        title: string;
+        docType: string;
+        audience: string;
+        tone: string;
+        request: string;
+        content: string;
+        history: Array<{ instruction: string; doc: string }>;
+    }
+): Promise<ProducedDocument | null> {
+    if (producedDocumentsAvailable === false) return null;
+
+    const now = new Date().toISOString();
+    const payload = {
+        ...(document.id ? { id: document.id } : {}),
+        user_id: userId,
+        title: document.title || document.docType,
+        doc_type: document.docType,
+        audience: document.audience,
+        tone: document.tone,
+        request: document.request ?? "",
+        content: document.content,
+        history: document.history ?? [],
+        updated_at: now,
+    };
+
+    const query = document.id
+        ? supabase.from("produced_documents").upsert(payload, { onConflict: "id" })
+        : supabase.from("produced_documents").insert(payload);
+
+    const { data, error } = await query.select().single();
+
+    if (error) {
+        if (isMissingRelationError(error, "produced_documents")) {
+            producedDocumentsAvailable = false;
+            return null;
+        }
+        console.error("saveProducedDocument error:", error.message);
+        return null;
+    }
+
+    await recordMeaningfulActivity(userId, undefined, { force: true });
+    producedDocumentsAvailable = true;
+    return mapProducedDocument(data);
 }
 
 // ── NOTIFICATION PREFERENCES ─────────────────────────────────

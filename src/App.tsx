@@ -27,6 +27,7 @@ import { FORGE_SYSTEM_PROMPT, FOUNDRY_METHOD } from "./constants/prompts";
 import { STAGES_DATA } from "./constants/stages";
 import { applyGlossaryHighlights } from "./lib/applyGlossaryHighlights";
 import { cleanAIText } from "./lib/cleanAIText";
+import { buildMessageContent, type AttachedFile } from "./lib/fileAttach";
 import TypingDots from "./components/TypingDots";
 import ForgeAvatar from "./components/ForgeAvatar";
 import ChatInput from "./components/ChatInput";
@@ -408,6 +409,7 @@ function ForgeScreen({
   const [activeStage, setActiveStage] = useState(initialStage || profile.currentStage);
   const [activeTab, setActiveTab] = useState("chat");
   const [input, setInput] = useState("");
+  const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
   const [loading, setLoading] = useState(false);
   const [hubOpen, setHubOpen] = useState(false);
   const [advanceReady, setAdvanceReady] = useState(false);
@@ -630,14 +632,22 @@ Where do you want to start?`;
   }, [activeStage, messages, stageSummaries, archivingDateKey, userId]);
 
   const send = async () => {
-    if (!input.trim() || loading) return;
+    if ((!input.trim() && attachedFiles.length === 0) || loading) return;
     onMeaningfulActivity?.();
 
     const text = input.trim();
+    const currentFiles = [...attachedFiles];
     setInput("");
+    setAttachedFiles([]);
+
+    // Build display text (shown in chat and saved to DB)
+    const attachmentLabel = currentFiles.length > 0
+      ? `[Attached: ${currentFiles.map(f => f.name).join(", ")}]`
+      : "";
+    const displayText = [attachmentLabel, text].filter(Boolean).join("\n");
 
     const timestamp = new Date().toISOString();
-    const userMsg = { role: "user", text, id: `user-${Date.now()}`, createdAt: timestamp };
+    const userMsg = { role: "user", text: displayText, id: `user-${Date.now()}`, createdAt: timestamp };
     const forgeMsg = { role: "forge", text: "", id: `forge-${Date.now()}`, createdAt: new Date().toISOString() };
     const current = messagesByStage[activeStage] || [];
 
@@ -649,10 +659,17 @@ Where do you want to start?`;
 
     try {
       const allMsgs = [...current, userMsg];
-      const apiMsgs = allMsgs.map((m) => ({
-        role: m.role === "forge" ? "assistant" : "user",
-        content: m.text,
-      }));
+      // Historical messages use plain text; last user message uses rich content if files attached
+      const apiMsgs = [
+        ...allMsgs.slice(0, -1).map((m) => ({
+          role: m.role === "forge" ? "assistant" : "user",
+          content: m.text,
+        })),
+        {
+          role: "user" as const,
+          content: buildMessageContent(text, currentFiles),
+        },
+      ];
 
       const ctx = appendMarketContext(await buildRichContext(
         profile,
@@ -1346,6 +1363,8 @@ Where do you want to start?`;
               }}
               loading={loading}
               placeholder={`Talk to Forge about Stage ${activeStage}...`}
+              attachedFiles={attachedFiles}
+              onFilesChange={setAttachedFiles}
             />
           </div>
         )
@@ -2070,6 +2089,7 @@ export default function FoundryApp() {
       {showDocuments && profile && (
         <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "#080809", overflowY: "auto" }}>
           <DocumentProductionScreen
+            userId={(user as any).id}
             profile={profile}
             onBack={() => setShowDocuments(false)}
           />
