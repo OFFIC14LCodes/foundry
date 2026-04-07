@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { BillingSubscription } from "../../lib/accessGate";
 import { roleLabel } from "../../lib/roles";
 import { getReengagementThresholdCopy, type AppNotification, type UserNotificationPreferences } from "../../lib/notifications";
@@ -33,6 +34,7 @@ type SettingsScreenProps = {
     onOpenManageSubscription: () => void;
     billingActionMessage: string | null;
     billingPortalLoading: boolean;
+    onProfileSave: (updates: { displayName: string; businessName: string }) => Promise<void>;
     onLogout: () => void;
 };
 
@@ -54,9 +56,25 @@ export default function SettingsScreen({
     onOpenManageSubscription,
     billingActionMessage,
     billingPortalLoading,
+    onProfileSave,
     onLogout,
 }: SettingsScreenProps) {
     const email = authEmail ?? profile?.email ?? "Not available";
+
+    const [displayName, setDisplayName] = useState(profile?.name ?? "");
+    const [businessName, setBusinessName] = useState(profile?.businessName ?? "");
+    const [profileSaving, setProfileSaving] = useState(false);
+    const [profileSaved, setProfileSaved] = useState(false);
+
+    const handleProfileSave = async () => {
+        setProfileSaving(true);
+        setProfileSaved(false);
+        await onProfileSave({ displayName: displayName.trim(), businessName: businessName.trim() });
+        setProfileSaving(false);
+        setProfileSaved(true);
+        setTimeout(() => setProfileSaved(false), 2500);
+    };
+
     const planName = accessSummary?.planName ?? "Free";
     const billingStatus = accessSummary?.statusLabel ?? "Pending";
     const version = "Foundry v1";
@@ -86,13 +104,63 @@ export default function SettingsScreen({
                 >
                     <SettingsCard>
                         <SettingsRow label="Signed-in email" value={email} />
-                        <SettingsRow label="Profile name" value={profile?.name || "Not set yet"} />
                         <SettingsRow label="Role" value={roleLabel(profile?.role)} />
                         <SettingsRow
-                            label="Editable fields"
-                            value="Coming soon"
-                            hint="Display name, workspace preferences, and account metadata can be managed here in a later release."
+                            label="Display name"
+                            hint="Your name shown across the Foundry workspace."
+                            action={
+                                <input
+                                    value={displayName}
+                                    onChange={(e) => setDisplayName(e.target.value)}
+                                    placeholder="Enter your name"
+                                    style={{
+                                        background: "rgba(255,255,255,0.04)",
+                                        border: "1px solid rgba(255,255,255,0.1)",
+                                        borderRadius: 8,
+                                        color: "#F0EDE8",
+                                        fontSize: 13,
+                                        padding: "8px 12px",
+                                        outline: "none",
+                                        width: 220,
+                                        textAlign: "center",
+                                    }}
+                                />
+                            }
                         />
+                        <SettingsRow
+                            label="Business name"
+                            hint="Your startup or company name used throughout Foundry."
+                            action={
+                                <input
+                                    value={businessName}
+                                    onChange={(e) => setBusinessName(e.target.value)}
+                                    placeholder="Enter business name"
+                                    style={{
+                                        background: "rgba(255,255,255,0.04)",
+                                        border: "1px solid rgba(255,255,255,0.1)",
+                                        borderRadius: 8,
+                                        color: "#F0EDE8",
+                                        fontSize: 13,
+                                        padding: "8px 12px",
+                                        outline: "none",
+                                        width: 220,
+                                        textAlign: "center",
+                                    }}
+                                />
+                            }
+                        />
+                        <div style={{ paddingTop: 14, display: "flex", justifyContent: "center", gap: 10, alignItems: "center" }}>
+                            <SettingsButton
+                                tone="primary"
+                                onClick={handleProfileSave}
+                                disabled={profileSaving}
+                            >
+                                {profileSaving ? "Saving…" : "Save Changes"}
+                            </SettingsButton>
+                            {profileSaved && (
+                                <span style={{ fontSize: 12, color: "#4CAF8A" }}>Saved</span>
+                            )}
+                        </div>
                     </SettingsCard>
                 </SettingsSection>
 

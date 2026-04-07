@@ -185,8 +185,7 @@ export default function MilestonesPanel({
                 {advanceReady && (
                     <div
                         style={{
-                            background:
-                                "linear-gradient(135deg, rgba(76,175,138,0.15), rgba(72,187,120,0.06))",
+                            background: "linear-gradient(135deg, rgba(76,175,138,0.15), rgba(72,187,120,0.06))",
                             border: "1px solid rgba(76,175,138,0.35)",
                             borderRadius: 14,
                             padding: "16px",
@@ -194,25 +193,15 @@ export default function MilestonesPanel({
                             animation: "fadeSlideUp 0.4s ease",
                         }}
                     >
-                        <div
-                            style={{
-                                fontSize: 14,
-                                fontFamily: "'Lora', Georgia, serif",
-                                color: "#4CAF8A",
-                                fontWeight: 600,
-                                marginBottom: 6,
-                            }}
-                        >
-                            ✓ Forge says you're ready to advance
+                        <div style={{ fontSize: 14, fontFamily: "'Lora', Georgia, serif", color: "#4CAF8A", fontWeight: 600, marginBottom: 6 }}>
+                            ✓ All goals complete — ready to advance
                         </div>
-
                         <div style={{ fontSize: 12, color: "#888", marginBottom: 14 }}>
-                            All Stage {stageId} work is done.
+                            You've finished Stage {stageId}.
                             {STAGES_DATA[stageId]
-                                ? ` Stage ${stageId + 1} — ${STAGES_DATA[stageId].label} — awaits.`
-                                : " You've completed all stages."}
+                                ? ` Stage ${stageId + 1} — ${STAGES_DATA[stageId].label} — is next. Your full chat history carries over.`
+                                : " You've completed all stages. Incredible work."}
                         </div>
-
                         {STAGES_DATA[stageId] && (
                             <button
                                 onClick={() => onAdvance(stageId + 1)}
@@ -229,7 +218,7 @@ export default function MilestonesPanel({
                                     cursor: "pointer",
                                 }}
                             >
-                                Advance to Stage {stageId + 1} — {STAGES_DATA[stageId].label} →
+                                Begin Stage {stageId + 1} — {STAGES_DATA[stageId].label} →
                             </button>
                         )}
                     </div>

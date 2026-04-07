@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "./supabase";
 import AuthScreen from "./AuthScreen";
 import JournalScreen from "./JournalScreen";
@@ -26,6 +26,7 @@ import { GLOBAL_STYLES } from "./constants/styles";
 import { FORGE_SYSTEM_PROMPT, FOUNDRY_METHOD } from "./constants/prompts";
 import { STAGES_DATA } from "./constants/stages";
 import { applyGlossaryHighlights } from "./lib/applyGlossaryHighlights";
+import { cleanAIText } from "./lib/cleanAIText";
 import TypingDots from "./components/TypingDots";
 import ForgeAvatar from "./components/ForgeAvatar";
 import ChatInput from "./components/ChatInput";
@@ -282,6 +283,7 @@ function parseDailySummaryResponse(raw: string, fallbackDate: string) {
 
 function renderWithBold(text, onStageRef, onGlossaryTap) {
   if (!text) return null;
+  text = cleanAIText(text);
 
   const stageRefRegex = /\[STAGE_REF:(\d+)\](.*?)\[\/STAGE_REF\]/gs;
   const parts = [];
@@ -410,8 +412,8 @@ function ForgeScreen({
   const [hubOpen, setHubOpen] = useState(false);
   const [advanceReady, setAdvanceReady] = useState(false);
   const [showStageSelector, setShowStageSelector] = useState(false);
-  const [stageRefModal, setStageRefModal] = useState(null);
-  const [glossaryModal, setGlossaryModal] = useState(null);
+  const [stageRefModal, setStageRefModal] = useState<number | null>(null);
+  const [glossaryModal, setGlossaryModal] = useState<{ term: string; entry: any } | null>(null);
   const [briefingDismissed, setBriefingDismissed] = useState(false);
   const [cofoundersContext, setCofoundersContext] = useState<string | null>(null);
   const [summariesByStage, setSummariesByStage] = useState<Record<number, any[]>>({ 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] });
@@ -445,6 +447,21 @@ function ForgeScreen({
   const messages = messagesByStage[activeStage] || [];
   const stageSummaries = summariesByStage[activeStage] || [];
   const completedMilestones = completedByStage[activeStage] || [];
+  const allMilestonesComplete = completedMilestones.length >= stage.milestones.length && stage.milestones.length > 0;
+
+  // Combined chat view: all stages up to activeStage, with stage-transition markers
+  const combinedMessages = useMemo(() => {
+    const result: Array<any> = [];
+    for (let s = 1; s <= activeStage; s++) {
+      const stageMsgs = messagesByStage[s] || [];
+      if (stageMsgs.length === 0) continue;
+      if (result.length > 0) {
+        result.push({ _stageMarker: true, stageId: s, id: `marker-s${s}` });
+      }
+      result.push(...stageMsgs);
+    }
+    return result;
+  }, [messagesByStage, activeStage]);
   const completionPct = Math.round(
     (completedMilestones.length / stage.milestones.length) * 100
   );
@@ -1055,16 +1072,44 @@ Where do you want to start?`;
               />
             )}
 
-            {messages.map((msg, i) => (
-              <MessageBubble
-                key={msg.id || i}
-                msg={msg}
-                onStageRef={(id) => setStageRefModal(id)}
-                onGlossaryTap={(term, entry) => setGlossaryModal({ term, entry })}
-                renderWithBold={renderWithBold}
-                userName={profile?.name || "You"}
-              />
-            ))}
+            {combinedMessages.map((item, i) => {
+              if (item._stageMarker) {
+                const ms = STAGES_DATA[item.stageId - 1];
+                const MarkerIcon = ms.icon;
+                return (
+                  <div
+                    key={item.id}
+                    style={{ display: "flex", alignItems: "center", gap: 10, padding: "4px 0", margin: "6px 0" }}
+                  >
+                    <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.07)" }} />
+                    <div style={{
+                      display: "flex", alignItems: "center", gap: 6,
+                      padding: "4px 12px",
+                      background: "rgba(255,255,255,0.03)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      borderRadius: 20,
+                      fontSize: 10, color: "#555",
+                      letterSpacing: "0.08em", textTransform: "uppercase" as const,
+                      whiteSpace: "nowrap" as const,
+                    }}>
+                      <MarkerIcon size={10} color={ms.color} />
+                      Stage {item.stageId} — {ms.label}
+                    </div>
+                    <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.07)" }} />
+                  </div>
+                );
+              }
+              return (
+                <MessageBubble
+                  key={item.id || i}
+                  msg={item}
+                  onStageRef={(id: number) => setStageRefModal(id)}
+                  onGlossaryTap={(term: string, entry: any) => setGlossaryModal({ term, entry })}
+                  renderWithBold={renderWithBold}
+                  userName={profile?.name || "You"}
+                />
+              );
+            })}
 
             {loading && (
               <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
@@ -1143,7 +1188,7 @@ Where do you want to start?`;
             stage={stage}
             stageId={activeStage}
             completedMilestones={completedMilestones}
-            advanceReady={advanceReady}
+            advanceReady={advanceReady || allMilestonesComplete}
             onAdvance={handleAdvance}
             onSwitchToChat={() => setActiveTab("chat")}
             onClose={() => setActiveTab("chat")}
@@ -1152,51 +1197,66 @@ Where do you want to start?`;
 
         {activeTab === "summaries" && (
           <div style={{ position: "absolute", inset: 0, overflowY: "auto", padding: "16px", maxWidth: 720, width: "100%", margin: "0 auto" }}>
-            <div style={{ fontSize: 18, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, marginBottom: 8 }}>
-              Stage {activeStage} Summaries
+            <div style={{ fontSize: 18, fontFamily: "’Cormorant Garamond’, Georgia, serif", fontWeight: 700, marginBottom: 4 }}>
+              Full Archive
             </div>
             <div style={{ fontSize: 12, color: "#666", marginBottom: 18, lineHeight: 1.6 }}>
-              Each week’s Forge conversation is archived here. At the end of Sunday, Foundry summarizes the full week and starts fresh on Monday.
+              Every week’s Forge conversation across all stages, archived here. Forge carries this history with you no matter which stage you’re in.
             </div>
 
-            {stageSummaries.length === 0 && (
+            {STAGES_DATA.map((s) => {
+              const entries = summariesByStage[s.id] || [];
+              if (entries.length === 0) return null;
+              const SIcon = s.icon;
+              return (
+                <div key={s.id} style={{ marginBottom: 24 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                    <SIcon size={12} color={s.color} />
+                    <div style={{ fontSize: 10, color: s.color, letterSpacing: "0.12em", textTransform: "uppercase", fontWeight: 700 }}>
+                      Stage {s.id} — {s.label}
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {entries.map((entry) => (
+                      <button
+                        key={entry.id || `${entry.stageId}-${entry.date}`}
+                        onClick={() => setSummaryModal(entry)}
+                        style={{
+                          width: "100%",
+                          textAlign: "left",
+                          background: "rgba(255,255,255,0.03)",
+                          border: "1px solid rgba(255,255,255,0.06)",
+                          borderRadius: 14,
+                          padding: "14px 16px",
+                          color: "#F0EDE8",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <div style={{ fontSize: 10, color: "#E8622A", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6 }}>
+                          {getWeekLabel(entry.date)}
+                        </div>
+                        <div style={{ fontSize: 15, fontFamily: "’Cormorant Garamond’, Georgia, serif", fontWeight: 700, marginBottom: 4 }}>
+                          {entry.title}
+                        </div>
+                        <div style={{ fontSize: 12, color: "#666", lineHeight: 1.7 }}>
+                          {getSummaryPreview(entry.summary)}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+
+            {Object.values(summariesByStage).every((arr) => arr.length === 0) && (
               <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "18px 16px", color: "#888", fontSize: 13, lineHeight: 1.7 }}>
-                No archived summaries yet. At the end of each week (Sunday 11:59 PM), Foundry will summarize that week’s conversation and store it here.
+                No archived summaries yet. At the end of each week, Foundry will summarize your conversations and store them here.
               </div>
             )}
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {stageSummaries.map((entry) => (
-                <button
-                  key={entry.id || `${entry.stageId}-${entry.date}`}
-                  onClick={() => setSummaryModal(entry)}
-                  style={{
-                    width: "100%",
-                    textAlign: "left",
-                    background: "rgba(255,255,255,0.03)",
-                    border: "1px solid rgba(255,255,255,0.06)",
-                    borderRadius: 14,
-                    padding: "16px 18px",
-                    color: "#F0EDE8",
-                    cursor: "pointer",
-                  }}
-                >
-                  <div style={{ fontSize: 10, color: "#E8622A", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>
-                    {getWeekLabel(entry.date)}
-                  </div>
-                  <div style={{ fontSize: 17, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, marginBottom: 6 }}>
-                    {entry.title}
-                  </div>
-                  <div style={{ fontSize: 12, color: "#666", lineHeight: 1.7 }}>
-                    {getSummaryPreview(entry.summary)}
-                  </div>
-                </button>
-              ))}
-            </div>
-
             {bubbleSummaries.length > 0 && (
-              <>
-                <div style={{ fontSize: 11, color: "#4CAF8A", letterSpacing: "0.1em", textTransform: "uppercase", marginTop: stageSummaries.length > 0 ? 24 : 0, marginBottom: 10 }}>
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 10, color: "#4CAF8A", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 700, marginBottom: 10 }}>
                   Quick Chats with Forge
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -1218,7 +1278,7 @@ Where do you want to start?`;
                       <div style={{ fontSize: 10, color: "#4CAF8A", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6 }}>
                         Quick Chat · {new Date(`${entry.date}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                       </div>
-                      <div style={{ fontSize: 15, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, marginBottom: 5 }}>
+                      <div style={{ fontSize: 15, fontFamily: "’Cormorant Garamond’, Georgia, serif", fontWeight: 700, marginBottom: 5 }}>
                         {entry.title}
                       </div>
                       <div style={{ fontSize: 12, color: "#666", lineHeight: 1.7 }}>
@@ -1227,7 +1287,7 @@ Where do you want to start?`;
                     </button>
                   ))}
                 </div>
-              </>
+              </div>
             )}
           </div>
         )}
@@ -1675,6 +1735,14 @@ export default function FoundryApp() {
     markMeaningfulActivity(true);
   };
 
+  const handleProfileSave = async (updates: { displayName: string; businessName: string }) => {
+    if (!user?.id) return;
+    const next = { ...profile, name: updates.displayName, businessName: updates.businessName };
+    setProfile(next);
+    await saveProfile(user.id, next);
+    markMeaningfulActivity(true);
+  };
+
   useEffect(() => {
     if (!canOpenAdminHub) return;
     loadAdminNotificationSettings().then((settings) => {
@@ -2061,6 +2129,7 @@ export default function FoundryApp() {
             onOpenManageSubscription={handleOpenManageSubscription}
             billingActionMessage={billingMessage}
             billingPortalLoading={billingPortalLoading}
+            onProfileSave={handleProfileSave}
             onLogout={handleLogout}
           />
         </div>

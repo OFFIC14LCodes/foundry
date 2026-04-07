@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { cleanAIText } from "../lib/cleanAIText";
 import { streamForgeAPI } from "../lib/forgeApi";
 import { buildMarketReportPrompt, MARKET_REPORT_SYSTEM } from "../constants/marketPrompt";
 import { loadLatestMarketReport, loadMarketReportHistory, saveMarketReport } from "../db";
@@ -55,7 +56,7 @@ function renderInline(text: string) {
 // Report content renderer — markdown → styled JSX
 // ─────────────────────────────────────────────────────────────
 function ReportSection({ content }: { content: string }) {
-    const lines = content.split("\n");
+    const lines = cleanAIText(content).split("\n");
     const elements: React.ReactNode[] = [];
     let i = 0;
 
@@ -133,7 +134,15 @@ export default function MarketIntelligenceScreen({
     const [currentReport, setCurrentReport] = useState<MarketReport | null>(report);
     const [reportHistory, setReportHistory] = useState<MarketReport[]>(report ? [report] : []);
     const [saveError, setSaveError] = useState<string | null>(null);
+    const [isNarrow, setIsNarrow] = useState(() => window.innerWidth < 640);
     const latestLocalMutationRef = useRef(0);
+
+    useEffect(() => {
+        const mq = window.matchMedia("(max-width: 639px)");
+        const handler = (e: MediaQueryListEvent) => setIsNarrow(e.matches);
+        mq.addEventListener("change", handler);
+        return () => mq.removeEventListener("change", handler);
+    }, []);
 
     useEffect(() => {
         const timer = window.setTimeout(() => setMounted(true), 80);
@@ -237,24 +246,24 @@ export default function MarketIntelligenceScreen({
         <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'DM Sans', sans-serif", color: "#F0EDE8", display: "flex", flexDirection: "column" }}>
 
             {/* Header */}
-            <div style={{ padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)", zIndex: 10, flexShrink: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <button onClick={onBack} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "6px 12px", color: "#888", fontSize: 12, cursor: "pointer" }}>← Hub</button>
-                    <div>
-                        <div style={{ fontSize: 15, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700 }}>Market Intelligence</div>
-                        <div style={{ fontSize: 10, color: "#555" }}>{industry}</div>
+            <div style={{ padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, position: "sticky", top: 0, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)", zIndex: 10, flexShrink: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                    <button onClick={onBack} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "6px 12px", color: "#888", fontSize: 12, cursor: "pointer", flexShrink: 0 }}>← Hub</button>
+                    <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 15, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Market Intelligence</div>
+                        <div style={{ fontSize: 10, color: "#555", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{industry}</div>
                     </div>
                 </div>
 
                 {/* Freshness badge */}
                 {isCurrentReport && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(76,175,138,0.08)", border: "1px solid rgba(76,175,138,0.2)", borderRadius: 20, padding: "4px 10px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(76,175,138,0.08)", border: "1px solid rgba(76,175,138,0.2)", borderRadius: 20, padding: "4px 10px", flexShrink: 0 }}>
                         <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#4CAF8A" }} />
                         <span style={{ fontSize: 10, color: "#4CAF8A", fontWeight: 600 }}>Current</span>
                     </div>
                 )}
                 {hasOutdatedReport && !generating && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(245,168,67,0.08)", border: "1px solid rgba(245,168,67,0.2)", borderRadius: 20, padding: "4px 10px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(245,168,67,0.08)", border: "1px solid rgba(245,168,67,0.2)", borderRadius: 20, padding: "4px 10px", flexShrink: 0 }}>
                         <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#F5A843" }} />
                         <span style={{ fontSize: 10, color: "#F5A843", fontWeight: 600 }}>Outdated</span>
                     </div>
@@ -263,7 +272,41 @@ export default function MarketIntelligenceScreen({
 
             {/* Content */}
             <div style={{ flex: 1, overflowY: "auto", padding: "20px 16px 60px", maxWidth: 980, width: "100%", margin: "0 auto" }}>
-                <div style={{ display: "grid", gridTemplateColumns: reportHistory.length > 0 ? "minmax(0, 1fr) 260px" : "minmax(0, 1fr)", gap: 18, alignItems: "start" }}>
+
+                {/* Mobile: horizontal history strip above main content */}
+                {isNarrow && reportHistory.length > 0 && (
+                    <div style={{ marginBottom: 14 }}>
+                        <div style={{ fontSize: 10, color: "#444", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Saved Reports</div>
+                        <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 6, WebkitOverflowScrolling: "touch" as any }}>
+                            {reportHistory.map((entry) => {
+                                const selected = currentReport?.date === entry.date;
+                                return (
+                                    <button
+                                        key={entry.date}
+                                        onClick={() => selectReport(entry)}
+                                        style={{
+                                            flexShrink: 0,
+                                            textAlign: "left",
+                                            background: selected ? "rgba(232,98,42,0.12)" : "rgba(255,255,255,0.02)",
+                                            border: selected ? "1px solid rgba(232,98,42,0.24)" : "1px solid rgba(255,255,255,0.06)",
+                                            borderRadius: 10,
+                                            padding: "8px 12px",
+                                            color: "#F0EDE8",
+                                            cursor: "pointer",
+                                            maxWidth: 180,
+                                        }}
+                                    >
+                                        <div style={{ fontSize: 11, fontWeight: 600, color: selected ? "#E8622A" : "#C8C4BE", whiteSpace: "nowrap" }}>
+                                            {formatReportDate(entry.date)}
+                                        </div>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
+                <div style={{ display: isNarrow ? "block" : "grid", gridTemplateColumns: reportHistory.length > 0 ? "minmax(0, 1fr) 260px" : "minmax(0, 1fr)", gap: 18, alignItems: "start" }}>
                     <div>
 
                 {/* Empty state — no report at all */}
@@ -380,7 +423,7 @@ export default function MarketIntelligenceScreen({
                 )}
                     </div>
 
-                    {reportHistory.length > 0 && (
+                    {!isNarrow && reportHistory.length > 0 && (
                         <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 12px", position: "sticky", top: 78 }}>
                             <div style={{ fontSize: 10, color: "#444", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
                                 Saved Reports

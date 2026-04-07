@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { cleanAIText } from "../lib/cleanAIText";
 import { callForgeAPI, streamForgeAPI } from "../lib/forgeApi";
 import { FORGE_SYSTEM_PROMPT } from "../constants/prompts";
 import { saveConversationSummary } from "../db";
@@ -34,7 +35,7 @@ const SCREEN_LABELS: Record<string, string> = {
 
 function renderBubbleText(text: string) {
     if (!text) return null;
-    return text.split(/\n\n+/).map((para, pi) => (
+    return cleanAIText(text).split(/\n\n+/).map((para, pi) => (
         <p key={pi} style={{ margin: pi === 0 ? 0 : "8px 0 0 0" }}>
             {para.split(/(\*\*.*?\*\*)/).map((part, i) => {
                 if (part.startsWith("**") && part.endsWith("**")) {
@@ -48,15 +49,82 @@ function renderBubbleText(text: string) {
     ));
 }
 
+const BUBBLE_SIZE = 56;
+const BUBBLE_STORAGE_KEY = "forge-bubble-pos";
+
+function clamp(val: number, min: number, max: number) {
+    return Math.max(min, Math.min(max, val));
+}
+
+function loadSavedPos(): { bottom: number; right: number } {
+    try {
+        const stored = localStorage.getItem(BUBBLE_STORAGE_KEY);
+        if (stored) {
+            const p = JSON.parse(stored);
+            if (typeof p.bottom === "number" && typeof p.right === "number") return p;
+        }
+    } catch {}
+    return { bottom: 24, right: 24 };
+}
+
 export default function ForgeBubble({ profile, userId, currentScreen, onBubbleSummaryAdded }: ForgeBubbleProps) {
     const [open, setOpen] = useState(false);
     const [messages, setMessages] = useState<BubbleMessage[]>([]);
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
     const [closing, setClosing] = useState(false);
+    const [pos, setPos] = useState(loadSavedPos);
+    const [dragging, setDragging] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const sessionStartRef = useRef<string | null>(null);
+    const posRef = useRef(pos);
+    const dragState = useRef<{
+        moved: boolean;
+        startX: number;
+        startY: number;
+        startBottom: number;
+        startRight: number;
+    } | null>(null);
+
+    useEffect(() => { posRef.current = pos; }, [pos]);
+
+    const handlePointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+        dragState.current = {
+            moved: false,
+            startX: e.clientX,
+            startY: e.clientY,
+            startBottom: posRef.current.bottom,
+            startRight: posRef.current.right,
+        };
+        e.currentTarget.setPointerCapture(e.pointerId);
+    };
+
+    const handlePointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
+        const ds = dragState.current;
+        if (!ds) return;
+        const dx = e.clientX - ds.startX;
+        const dy = e.clientY - ds.startY;
+        if (!ds.moved && Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+        if (!ds.moved) { ds.moved = true; setDragging(true); }
+        const margin = 8;
+        const newRight = clamp(ds.startRight - dx, margin, window.innerWidth - BUBBLE_SIZE - margin);
+        const newBottom = clamp(ds.startBottom - dy, margin, window.innerHeight - BUBBLE_SIZE - margin);
+        setPos({ bottom: newBottom, right: newRight });
+    };
+
+    const handlePointerUp = (e: React.PointerEvent<HTMLButtonElement>) => {
+        const ds = dragState.current;
+        dragState.current = null;
+        setDragging(false);
+        if (ds?.moved) {
+            localStorage.setItem(BUBBLE_STORAGE_KEY, JSON.stringify(posRef.current));
+        } else if (open) {
+            handleClose();
+        } else {
+            setOpen(true);
+        }
+    };
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -181,8 +249,8 @@ You are in a quick-access floating chat bubble. The founder is asking a quick qu
                 <div
                     style={{
                         position: "fixed",
-                        bottom: 92,
-                        right: 24,
+                        bottom: pos.bottom + BUBBLE_SIZE + 12,
+                        right: pos.right,
                         zIndex: 200,
                         width: "min(370px, calc(100vw - 32px))",
                         height: "min(520px, calc(100vh - 120px))",
@@ -421,40 +489,43 @@ You are in a quick-access floating chat bubble. The founder is asking a quick qu
 
             {/* Floating Bubble Button */}
             <button
-                onClick={() => {
-                    if (open) {
-                        handleClose();
-                    } else {
-                        setOpen(true);
-                    }
-                }}
-                title="Ask Forge"
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                title="Ask Forge — hold and drag to move"
                 style={{
                     position: "fixed",
-                    bottom: 24,
-                    right: 24,
+                    bottom: pos.bottom,
+                    right: pos.right,
                     zIndex: 200,
-                    width: 56,
-                    height: 56,
+                    width: BUBBLE_SIZE,
+                    height: BUBBLE_SIZE,
                     borderRadius: "50%",
                     background: open
                         ? "linear-gradient(135deg, #1a120e, #2D221C)"
                         : "linear-gradient(135deg, #2D221C, #1a120e)",
-                    border: `1.5px solid ${open ? "rgba(232,98,42,0.6)" : "rgba(232,98,42,0.35)"}`,
-                    boxShadow: open
+                    border: `1.5px solid ${dragging ? "rgba(232,98,42,0.8)" : open ? "rgba(232,98,42,0.6)" : "rgba(232,98,42,0.35)"}`,
+                    boxShadow: dragging
+                        ? "0 8px 32px rgba(232,98,42,0.55), 0 4px 12px rgba(0,0,0,0.6)"
+                        : open
                         ? "0 4px 24px rgba(232,98,42,0.35), 0 2px 8px rgba(0,0,0,0.5)"
                         : "0 4px 20px rgba(232,98,42,0.22), 0 2px 8px rgba(0,0,0,0.4)",
-                    cursor: "pointer",
+                    cursor: dragging ? "grabbing" : "grab",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    transition: "all 0.2s ease",
+                    transform: dragging ? "scale(1.1)" : "scale(1)",
+                    transition: dragging ? "box-shadow 0.15s, border-color 0.15s" : "all 0.2s ease",
+                    userSelect: "none",
+                    touchAction: "none",
                 }}
                 onMouseEnter={e => {
+                    if (dragging) return;
                     e.currentTarget.style.boxShadow = "0 6px 28px rgba(232,98,42,0.45), 0 2px 10px rgba(0,0,0,0.5)";
                     e.currentTarget.style.transform = "scale(1.06)";
                 }}
                 onMouseLeave={e => {
+                    if (dragging) return;
                     e.currentTarget.style.boxShadow = open
                         ? "0 4px 24px rgba(232,98,42,0.35), 0 2px 8px rgba(0,0,0,0.5)"
                         : "0 4px 20px rgba(232,98,42,0.22), 0 2px 8px rgba(0,0,0,0.4)";

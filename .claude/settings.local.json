@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(netstat -ano)",
-      "Bash(findstr :3001)"
+      "Bash(findstr :3001)",
+      "Bash(find \"c:\\\\Users\\\\kolto\\\\OneDrive\\\\Desktop\\\\vitejs-vite-ewasxxqd\\\\src\" -name \"*.ts\" -type f -exec grep -l \"profile\\\\|Profile\" {} \\\\;)"
     ]
   }
 }
