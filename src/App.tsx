@@ -114,7 +114,7 @@ async function buildRichContext(profile, activeStage, completedByStage, messages
     .map(m => `- ${m.id}: "${m.label}"`).join("\n");
   const done = stageData.milestones
     .filter(m => completedMilestones.includes(m.id))
-    .map(m => `{isComplete ? <Icons.ui.check size={18} /> : <StageIcon size={18} color={isCurrent ? stage.color : "#888"} />} ${m.label}`).join("\n");
+    .map(m => `  ✓ ${m.label}`).join("\n");
 
   const now = new Date();
   const dateStr = now.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
@@ -202,7 +202,7 @@ function buildContext(profile, stage = null, completedMilestones = []) {
     ? stageData.milestones.filter(m => !completedMilestones.includes(m.id)).map(m => `- ${m.id}: "${m.label}"`).join("\n")
     : "";
   const done = stageData
-    ? stageData.milestones.filter(m => completedMilestones.includes(m.id)).map(m => `{isComplete ? <Icons.ui.check size={18} /> : <StageIcon size={18} color={isCurrent ? stage.color : "#888"} />} ${m.label}`).join("\n")
+    ? stageData.milestones.filter(m => completedMilestones.includes(m.id)).map(m => `  ✓ ${m.label}`).join("\n")
     : "";
   const now = new Date();
   const dateStr = now.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
@@ -666,8 +666,9 @@ Where do you want to start?`;
         apiMsgs,
         FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", ctx),
         (chunk) => {
+          const { cleanText: cleanChunk } = parseForgeResponse(chunk);
           onUpdateMessages(activeStage, (msgs) =>
-            msgs.map((m) => (m.id === forgeMsg.id ? { ...m, text: chunk } : m))
+            msgs.map((m) => (m.id === forgeMsg.id ? { ...m, text: cleanChunk } : m))
           );
         }
       );
@@ -1147,7 +1148,7 @@ Where do you want to start?`;
                     marginBottom: 4,
                   }}
                 >
-                  {isComplete ? <Icons.ui.check size={18} /> : <StageIcon size={18} color={isCurrent ? stage.color : "#888"} />} Forge says you're ready to advance
+                  ✓ Forge says you're ready to advance
                 </div>
 
                 <div style={{ fontSize: 12, color: "#888", marginBottom: 12 }}>
