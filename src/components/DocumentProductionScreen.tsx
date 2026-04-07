@@ -108,67 +108,312 @@ function DocPreview({ content }: { content: string }) {
 // ─────────────────────────────────────────────────────────────
 // Download utilities
 // ─────────────────────────────────────────────────────────────
-function downloadTxt(content: string, title: string) {
-    const blob = new Blob([content], { type: "text/plain" });
+function getDownloadName(title: string, extension: string) {
+    return `${title.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.${extension}`;
+}
+
+function downloadBlob(blob: Blob, fileName: string) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${title.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.txt`;
+    a.download = fileName;
     a.click();
     URL.revokeObjectURL(url);
 }
 
-function downloadHtml(content: string, meta: { businessName: string; docType: string; date: string }) {
-    const title = content.split("\n")[0].replace(/^#+\s*/, "").trim() || meta.docType;
+function plainTextFromMarkdown(markdown: string) {
+    return markdown
+        .replace(/^#{1,3}\s+/gm, "")
+        .replace(/^\s*[-*]\s+/gm, "• ")
+        .replace(/\*\*(.+?)\*\*/g, "$1")
+        .trim();
+}
 
-    // Convert markdown to basic HTML
-    const bodyHtml = content
-        .split("\n")
-        .map(line => {
-            if (line.startsWith("# ")) return `<h1>${line.slice(2)}</h1>`;
-            if (line.startsWith("## ")) return `<h2>${line.slice(3)}</h2>`;
-            if (line.startsWith("### ")) return `<h3>${line.slice(4)}</h3>`;
-            if (line.startsWith("- ") || line.startsWith("* ")) return `<li>${line.slice(2)}</li>`;
-            if (line.trim() === "") return "";
-            return `<p>${line}</p>`;
-        })
-        .join("\n")
-        // Wrap consecutive <li> blocks in <ul>
-        .replace(/(<li>.*<\/li>\n?)+/g, "<ul>\n$&</ul>\n")
-        // Bold
-        .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+function wrapText(text: string, maxChars: number) {
+    const words = text.split(/\s+/).filter(Boolean);
+    const lines: string[] = [];
+    let line = "";
 
-    const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<title>${title}</title>
-<style>
-  body{font-family:Georgia,serif;max-width:750px;margin:50px auto;padding:40px 50px;color:#1a1a1a;line-height:1.7}
-  h1{font-size:22px;text-align:center;margin-bottom:6px;font-weight:700}
-  .doc-meta{text-align:center;font-size:11px;color:#888;margin-bottom:36px;border-bottom:1px solid #ddd;padding-bottom:14px}
-  h2{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-top:32px;margin-bottom:8px;border-bottom:1px solid #eee;padding-bottom:4px;color:#333}
-  h3{font-size:13px;font-weight:700;font-style:italic;margin-top:20px;margin-bottom:5px}
-  p{margin:0 0 10px;font-size:13px}
-  ul{margin:4px 0 12px 22px;font-size:13px}
-  li{margin-bottom:5px}
-  strong{font-weight:700}
-  @media print{body{margin:20px;padding:0}}
-</style>
-</head>
-<body>
-<div class="doc-meta">${meta.businessName} &middot; ${meta.docType} &middot; ${meta.date}</div>
-${bodyHtml}
-</body>
-</html>`;
+    words.forEach((word) => {
+        const next = line ? `${line} ${word}` : word;
+        if (next.length > maxChars && line) {
+            lines.push(line);
+            line = word;
+        } else {
+            line = next;
+        }
+    });
 
-    const blob = new Blob([html], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${title.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.html`;
-    a.click();
-    URL.revokeObjectURL(url);
+    if (line) lines.push(line);
+    return lines;
+}
+
+function pdfEscape(value: string) {
+    return value
+        .replace(/[^\x20-\x7E\n]/g, "")
+        .replace(/\\/g, "\\\\")
+        .replace(/\(/g, "\\(")
+        .replace(/\)/g, "\\)");
+}
+
+function downloadPdf(content: string, title: string, meta: string) {
+    const pageWidth = 612;
+    const pageHeight = 792;
+    const margin = 54;
+    const lineHeight = 15;
+    const lines = [meta, "", ...plainTextFromMarkdown(content).split("\n").flatMap(line => line.trim() ? wrapText(line, 86) : [""])];
+    const pages: string[][] = [];
+    let page: string[] = [];
+
+    lines.forEach((line) => {
+        if (page.length >= 44) {
+            pages.push(page);
+            page = [];
+        }
+        page.push(line);
+    });
+    if (page.length) pages.push(page);
+
+    const objects: string[] = [];
+    const addObject = (body: string) => {
+        objects.push(body);
+        return objects.length;
+    };
+
+    const catalogId = addObject("<< /Type /Catalog /Pages 2 0 R >>");
+    const pagesId = addObject("");
+    const fontId = addObject("<< /Type /Font /Subtype /Type1 /BaseFont /Times-Roman >>");
+    const pageIds: number[] = [];
+
+    pages.forEach((pageLines) => {
+        const streamLines = ["BT", `/F1 11 Tf`, `1 0 0 1 ${margin} ${pageHeight - margin} Tm`];
+        pageLines.forEach((line, index) => {
+            const fontSize = index === 0 ? 9 : 11;
+            streamLines.push(`/${fontSize === 9 ? "F1 9 Tf" : "F1 11 Tf"}`);
+            streamLines.push(`(${pdfEscape(line)}) Tj`);
+            streamLines.push(`0 -${lineHeight} Td`);
+        });
+        streamLines.push("ET");
+
+        const stream = streamLines.join("\n");
+        const streamId = addObject(`<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`);
+        const pageId = addObject(`<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 ${fontId} 0 R >> >> /Contents ${streamId} 0 R >>`);
+        pageIds.push(pageId);
+    });
+
+    objects[pagesId - 1] = `<< /Type /Pages /Kids [${pageIds.map(id => `${id} 0 R`).join(" ")}] /Count ${pageIds.length} >>`;
+
+    const chunks = [`%PDF-1.4\n`];
+    const offsets = [0];
+    objects.forEach((body, index) => {
+        offsets.push(chunks.join("").length);
+        chunks.push(`${index + 1} 0 obj\n${body}\nendobj\n`);
+    });
+
+    const xrefOffset = chunks.join("").length;
+    chunks.push(`xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`);
+    offsets.slice(1).forEach(offset => chunks.push(`${String(offset).padStart(10, "0")} 00000 n \n`));
+    chunks.push(`trailer\n<< /Size ${objects.length + 1} /Root ${catalogId} 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`);
+
+    const pdfString = chunks.join("");
+    const bytes = new Uint8Array(pdfString.length);
+    for (let i = 0; i < pdfString.length; i++) bytes[i] = pdfString.charCodeAt(i) & 0xff;
+    downloadBlob(new Blob([bytes], { type: "application/pdf" }), getDownloadName(title, "pdf"));
+}
+
+function drawWrappedCanvasText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, lineHeight: number) {
+    const words = text.split(/\s+/).filter(Boolean);
+    let line = "";
+    let nextY = y;
+
+    words.forEach((word) => {
+        const next = line ? `${line} ${word}` : word;
+        if (ctx.measureText(next).width > maxWidth && line) {
+            ctx.fillText(line, x, nextY);
+            nextY += lineHeight;
+            line = word;
+        } else {
+            line = next;
+        }
+    });
+
+    if (line) {
+        ctx.fillText(line, x, nextY);
+        nextY += lineHeight;
+    }
+
+    return nextY;
+}
+
+function downloadImage(content: string, title: string, meta: string, format: "png" | "jpg") {
+    const lines = [meta, "", ...plainTextFromMarkdown(content).split("\n")];
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const width = 1200;
+    const margin = 90;
+    const maxWidth = width - margin * 2;
+    let height = 180;
+
+    ctx.font = "30px Georgia, serif";
+    lines.forEach((line) => {
+        height += line.trim() ? Math.max(34, wrapText(line, 80).length * 34) : 22;
+    });
+    canvas.width = width;
+    canvas.height = Math.max(height, 700);
+
+    ctx.fillStyle = "#F8F5F0";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#999";
+    ctx.font = "22px Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(meta.toUpperCase(), width / 2, 70);
+    ctx.strokeStyle = "#e0dbd4";
+    ctx.beginPath();
+    ctx.moveTo(margin, 100);
+    ctx.lineTo(width - margin, 100);
+    ctx.stroke();
+
+    let y = 155;
+    ctx.textAlign = "left";
+    lines.slice(2).forEach((line) => {
+        if (!line.trim()) {
+            y += 22;
+            return;
+        }
+
+        if (line.startsWith("# ")) {
+            ctx.fillStyle = "#1a1a1a";
+            ctx.font = "bold 34px Georgia, serif";
+            y = drawWrappedCanvasText(ctx, plainTextFromMarkdown(line), margin, y, maxWidth, 42) + 8;
+        } else if (line.startsWith("## ")) {
+            ctx.fillStyle = "#333";
+            ctx.font = "bold 22px Arial, sans-serif";
+            y += 22;
+            y = drawWrappedCanvasText(ctx, plainTextFromMarkdown(line).toUpperCase(), margin, y, maxWidth, 30) + 4;
+        } else {
+            ctx.fillStyle = "#2a2a2a";
+            ctx.font = "26px Georgia, serif";
+            y = drawWrappedCanvasText(ctx, plainTextFromMarkdown(line), margin, y, maxWidth, 34);
+        }
+    });
+
+    canvas.toBlob((blob) => {
+        if (!blob) return;
+        downloadBlob(blob, getDownloadName(title, format));
+    }, format === "png" ? "image/png" : "image/jpeg", 0.92);
+}
+
+function xmlEscape(value: string) {
+    return value
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+}
+
+function docxRuns(text: string) {
+    return text.split(/(\*\*.+?\*\*)/g).filter(Boolean).map(part => {
+        const bold = part.startsWith("**") && part.endsWith("**");
+        const value = bold ? part.slice(2, -2) : part;
+        return `<w:r>${bold ? "<w:rPr><w:b/></w:rPr>" : ""}<w:t xml:space="preserve">${xmlEscape(value)}</w:t></w:r>`;
+    }).join("");
+}
+
+function docxParagraph(line: string) {
+    if (line.startsWith("# ")) return `<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="180"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="32"/></w:rPr><w:t>${xmlEscape(line.slice(2))}</w:t></w:r></w:p>`;
+    if (line.startsWith("## ")) return `<w:p><w:pPr><w:spacing w:before="360" w:after="120"/></w:pPr><w:r><w:rPr><w:b/><w:caps/><w:sz w:val="22"/></w:rPr><w:t>${xmlEscape(line.slice(3))}</w:t></w:r></w:p>`;
+    if (line.startsWith("### ")) return `<w:p><w:pPr><w:spacing w:before="240" w:after="80"/></w:pPr><w:r><w:rPr><w:b/><w:i/><w:sz w:val="24"/></w:rPr><w:t>${xmlEscape(line.slice(4))}</w:t></w:r></w:p>`;
+    if (line.startsWith("- ") || line.startsWith("* ")) return `<w:p><w:pPr><w:ind w:left="720" w:hanging="360"/></w:pPr><w:r><w:t>• </w:t></w:r>${docxRuns(line.slice(2))}</w:p>`;
+    if (!line.trim()) return "<w:p/>";
+    return `<w:p>${docxRuns(line)}</w:p>`;
+}
+
+const crcTable = (() => {
+    const table = new Uint32Array(256);
+    for (let i = 0; i < 256; i++) {
+        let c = i;
+        for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+        table[i] = c >>> 0;
+    }
+    return table;
+})();
+
+function crc32(bytes: Uint8Array) {
+    let crc = 0xffffffff;
+    bytes.forEach(byte => { crc = crcTable[(crc ^ byte) & 0xff] ^ (crc >>> 8); });
+    return (crc ^ 0xffffffff) >>> 0;
+}
+
+function uint16(value: number) {
+    return [value & 0xff, (value >>> 8) & 0xff];
+}
+
+function uint32(value: number) {
+    return [value & 0xff, (value >>> 8) & 0xff, (value >>> 16) & 0xff, (value >>> 24) & 0xff];
+}
+
+function createZip(files: Array<{ name: string; content: string }>) {
+    const encoder = new TextEncoder();
+    const chunks: Uint8Array[] = [];
+    const centralChunks: Uint8Array[] = [];
+    let offset = 0;
+
+    files.forEach((file) => {
+        const nameBytes = encoder.encode(file.name);
+        const data = encoder.encode(file.content);
+        const crc = crc32(data);
+        const localHeader = new Uint8Array([
+            ...uint32(0x04034b50), ...uint16(20), ...uint16(0), ...uint16(0), ...uint16(0), ...uint16(0),
+            ...uint32(crc), ...uint32(data.length), ...uint32(data.length), ...uint16(nameBytes.length), ...uint16(0),
+        ]);
+        const centralHeader = new Uint8Array([
+            ...uint32(0x02014b50), ...uint16(20), ...uint16(20), ...uint16(0), ...uint16(0), ...uint16(0), ...uint16(0),
+            ...uint32(crc), ...uint32(data.length), ...uint32(data.length), ...uint16(nameBytes.length), ...uint16(0),
+            ...uint16(0), ...uint16(0), ...uint16(0), ...uint32(0), ...uint32(offset),
+        ]);
+
+        chunks.push(localHeader, nameBytes, data);
+        centralChunks.push(centralHeader, nameBytes);
+        offset += localHeader.length + nameBytes.length + data.length;
+    });
+
+    const centralOffset = offset;
+    const centralSize = centralChunks.reduce((sum, chunk) => sum + chunk.length, 0);
+    const endRecord = new Uint8Array([
+        ...uint32(0x06054b50), ...uint16(0), ...uint16(0), ...uint16(files.length), ...uint16(files.length),
+        ...uint32(centralSize), ...uint32(centralOffset), ...uint16(0),
+    ]);
+
+    return new Blob([...chunks, ...centralChunks, endRecord], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+}
+
+function downloadDocx(content: string, title: string, meta: string) {
+    const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+<w:body>
+<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="360"/></w:pPr><w:r><w:rPr><w:sz w:val="18"/><w:color w:val="888888"/></w:rPr><w:t>${xmlEscape(meta)}</w:t></w:r></w:p>
+${content.split("\n").map(docxParagraph).join("")}
+<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr>
+</w:body>
+</w:document>`;
+    const contentTypes = `<?xml version="1.0" encoding="UTF-8"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+<Default Extension="xml" ContentType="application/xml"/>
+<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+</Types>`;
+    const rels = `<?xml version="1.0" encoding="UTF-8"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+</Relationships>`;
+
+    downloadBlob(createZip([
+        { name: "[Content_Types].xml", content: contentTypes },
+        { name: "_rels/.rels", content: rels },
+        { name: "word/document.xml", content: documentXml },
+    ]), getDownloadName(title, "docx"));
 }
 
 async function copyToClipboard(text: string): Promise<boolean> {
@@ -613,16 +858,28 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
                                             {copied ? "✓ Copied" : "Copy Text"}
                                         </button>
                                         <button
-                                            onClick={() => downloadTxt(currentDoc, docTitle)}
+                                            onClick={() => downloadPdf(currentDoc, docTitle, `${businessName} · ${docType} · ${todayDate}`)}
                                             style={{ flex: 1, minWidth: 100, padding: "10px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#C8C4BE", fontSize: 12, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}
                                         >
-                                            Download .txt
+                                            PDF
                                         </button>
                                         <button
-                                            onClick={() => downloadHtml(currentDoc, { businessName, docType, date: todayDate })}
+                                            onClick={() => downloadImage(currentDoc, docTitle, `${businessName} · ${docType} · ${todayDate}`, "png")}
+                                            style={{ flex: 1, minWidth: 100, padding: "10px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#C8C4BE", fontSize: 12, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}
+                                        >
+                                            PNG
+                                        </button>
+                                        <button
+                                            onClick={() => downloadImage(currentDoc, docTitle, `${businessName} · ${docType} · ${todayDate}`, "jpg")}
+                                            style={{ flex: 1, minWidth: 100, padding: "10px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#C8C4BE", fontSize: 12, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}
+                                        >
+                                            JPG
+                                        </button>
+                                        <button
+                                            onClick={() => downloadDocx(currentDoc, docTitle, `${businessName} · ${docType} · ${todayDate}`)}
                                             style={{ flex: 1, minWidth: 100, padding: "10px 14px", background: "rgba(232,98,42,0.08)", border: "1px solid rgba(232,98,42,0.2)", borderRadius: 10, color: "#E8622A", fontSize: 12, cursor: "pointer", fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}
                                         >
-                                            Download .html
+                                            DOCX
                                         </button>
                                     </div>
                                 )}
