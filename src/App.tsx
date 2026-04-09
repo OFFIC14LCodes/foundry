@@ -410,7 +410,7 @@ function ForgeScreen({
   onRequestUpgrade = null as ((stage: number) => void) | null,
   onDowngradeToFree = null as (() => void) | null,
 }) {
-  const [activeStage, setActiveStage] = useState(initialStage || profile.currentStage);
+  const [activeStage, setActiveStage] = useState(pendingUpgradeStage || initialStage || profile.currentStage);
   const [activeTab, setActiveTab] = useState("chat");
   const [input, setInput] = useState("");
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
@@ -512,6 +512,13 @@ function ForgeScreen({
     setAdvanceReady(false);
     setBriefingDismissed(false);
   }, [activeStage]);
+
+  // Ensure activeStage matches pendingUpgradeStage when arriving from onboarding with a paid stage
+  useEffect(() => {
+    if (pendingUpgradeStage && activeStage !== pendingUpgradeStage) {
+      setActiveStage(pendingUpgradeStage);
+    }
+  }, [pendingUpgradeStage]);
 
   useEffect(() => {
     const stageMessages = messagesByStage[activeStage] || [];
