@@ -406,6 +406,9 @@ function ForgeScreen({
   teamId = null as string | null,
   onMeaningfulActivity,
   bubbleSummaries = [] as any[],
+  pendingUpgradeStage = null as number | null,
+  onRequestUpgrade = null as ((stage: number) => void) | null,
+  onDowngradeToFree = null as (() => void) | null,
 }) {
   const [activeStage, setActiveStage] = useState(initialStage || profile.currentStage);
   const [activeTab, setActiveTab] = useState("chat");
@@ -534,7 +537,11 @@ function ForgeScreen({
 
       let greetingPrompt = "";
 
-      if (isFirstVisit && activeStage === 1) {
+      if (isFirstVisit && pendingUpgradeStage && activeStage === pendingUpgradeStage) {
+        greetingPrompt = `${profile.name} just finished onboarding and wants to start at Stage ${activeStage}: ${stageData.label}. Their idea: "${profile.idea}". Experience: ${profile.experience}. Budget: $${profile.budget?.total?.toLocaleString() || "unknown"}. Strategy: ${profile.strategyLabel}.
+
+Write a 2-3 paragraph welcome. First: recap what they shared during onboarding — the idea, experience, budget, and strategy — in a natural, specific way, not a form readback. Second: briefly describe what Stage ${activeStage} is about and why it fits where they are. Third (short): let them know Stage ${activeStage} requires a Starter or Pro plan to access — they can upgrade now to jump straight in, or step back and explore Stage 1 for free first. Keep the tone warm and direct. Use **bold** on 2-3 key words. Do NOT end with a question — end after the payment note.`;
+      } else if (isFirstVisit && activeStage === 1) {
         greetingPrompt = `${profile.name} just finished onboarding and is entering Stage 1 for the first time. Their idea: "${profile.idea}". Experience: ${profile.experience}. Budget: $${profile.budget?.total?.toLocaleString() || "unknown"}. Strategy: ${profile.strategyLabel}.
 
 Start with a short recap of what they told Foundry during onboarding: the business idea, their experience level, their budget, and their strategy. Make it sound natural and specific, not like a form readback. Then pivot immediately to Stage 1's core question: is the problem real. End with one sharp, concrete question that gets the conversation moving. Use **bold** on 2-3 key words. Keep it to 2-3 tight paragraphs.`;
@@ -1352,21 +1359,41 @@ Where do you want to start?`;
               alignSelf: "center",
             }}
           >
-            <ChatInput
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onSend={send}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  send();
-                }
-              }}
-              loading={loading}
-              placeholder={`Talk to Forge about Stage ${activeStage}...`}
-              attachedFiles={attachedFiles}
-              onFilesChange={setAttachedFiles}
-            />
+            {pendingUpgradeStage && activeStage === pendingUpgradeStage ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <button
+                  onClick={() => onRequestUpgrade && onRequestUpgrade(pendingUpgradeStage)}
+                  style={{ width: "100%", padding: "14px", background: "linear-gradient(135deg, #E8622A, #c9521e)", border: "none", borderRadius: 10, color: "#fff", fontSize: 14, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, cursor: "pointer", boxShadow: "0 4px 20px rgba(232,98,42,0.3)" }}
+                >
+                  Unlock Stage {pendingUpgradeStage} →
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveStage(1);
+                    onDowngradeToFree && onDowngradeToFree();
+                  }}
+                  style={{ width: "100%", padding: "12px", background: "transparent", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#888", fontSize: 13, fontFamily: "'Lora', Georgia, serif", fontWeight: 500, cursor: "pointer" }}
+                >
+                  ← Start with Stage 1 (free)
+                </button>
+              </div>
+            ) : (
+              <ChatInput
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onSend={send}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    send();
+                  }
+                }}
+                loading={loading}
+                placeholder={`Talk to Forge about Stage ${activeStage}...`}
+                attachedFiles={attachedFiles}
+                onFilesChange={setAttachedFiles}
+              />
+            )}
           </div>
         )
       }
@@ -1418,6 +1445,7 @@ export default function FoundryApp() {
   const [screen, setScreen] = useState("loading");
   const [isFirstVisit, setIsFirstVisit] = useState(false);
   const [initialStage, setInitialStage] = useState(null);
+  const [pendingUpgradeStage, setPendingUpgradeStage] = useState<number | null>(null);
   const [journalEntries, setJournalEntries] = useState([]);
   const [showJournal, setShowJournal] = useState(false);
   const [briefings, setBriefings] = useState([]);
@@ -1624,6 +1652,13 @@ export default function FoundryApp() {
     setBillingSubscription(subscription);
     setBillingSyncing(false);
   };
+
+  // ── Clear pendingUpgradeStage once the user gains access (after paying) ──
+  useEffect(() => {
+    if (pendingUpgradeStage && canAccessStage(pendingUpgradeStage, accountAccess)) {
+      setPendingUpgradeStage(null);
+    }
+  }, [accountAccess, pendingUpgradeStage]);
 
   // ── Save stage progress to Supabase whenever it changes ──
   useEffect(() => {
@@ -2030,10 +2065,13 @@ export default function FoundryApp() {
         {screen === "onboarding" && (
           <OnboardingScreen
             onComplete={(p: any) => {
-              setProfile({ ...p, setupCompleted: true, currentStage: 1 });
+              setProfile({ ...p, setupCompleted: true });
               setIsFirstVisit(true);
-              setInitialStage(1 as any);
+              setInitialStage((p.detectedStage || 1) as any);
               setScreenPersisted("forge");
+              if ((p.detectedStage || 1) > 1) {
+                setPendingUpgradeStage(p.detectedStage);
+              }
             }}
             callForgeAPI={callForgeAPI}
             renderWithBold={renderWithBold}
@@ -2080,6 +2118,13 @@ export default function FoundryApp() {
             teamId={userTeamId}
             onMeaningfulActivity={() => markMeaningfulActivity(true)}
             bubbleSummaries={bubbleSummaries}
+            pendingUpgradeStage={pendingUpgradeStage}
+            onRequestUpgrade={(stage: number) => setPaywallStage(stage)}
+            onDowngradeToFree={() => {
+              setPendingUpgradeStage(null);
+              updateProfile({ ...(profile as any), currentStage: 1 });
+              setInitialStage(1 as any);
+            }}
           />
         )}
       </div>
