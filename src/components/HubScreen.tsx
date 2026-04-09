@@ -13,6 +13,7 @@ export default function HubScreen({
     onUpdateProfile,
     onEnterStage,
     onOpenForge,
+    onRevertToStage,
     onLogout,
     onOpenUpgrade,
     onReset,
@@ -27,6 +28,7 @@ export default function HubScreen({
     onOpenChatRoom,
     isAdmin = false,
     completedByStage,
+    furthestStageReached = 1,
     accessSummary,
 }) {
     const [showDecisionModal, setShowDecisionModal] = useState(false);
@@ -200,6 +202,8 @@ export default function HubScreen({
     };
 
     const currentStage = profile.currentStage || 1;
+    const revisitingStage = furthestStageReached > currentStage;
+    const nextReachedStage = revisitingStage ? currentStage + 1 : null;
     const businessSummary = summarizeBusinessIdea(profile.businessName, profile.idea, 10);
     const spentPct = profile.budget?.total
         ? Math.min((profile.budget.spent / profile.budget.total) * 100, 100)
@@ -760,6 +764,32 @@ export default function HubScreen({
                             Continue Stage {currentStage} →
                         </div>
                     </div>
+
+                    {currentStage > 1 && (
+                        <button
+                            onClick={() => onRevertToStage?.(currentStage - 1)}
+                            style={{
+                                marginTop: 12,
+                                width: "100%",
+                                padding: "10px 12px",
+                                background: "rgba(255,255,255,0.03)",
+                                border: "1px solid rgba(255,255,255,0.08)",
+                                borderRadius: 10,
+                                color: "#C8C4BE",
+                                fontSize: 12,
+                                fontWeight: 600,
+                                cursor: "pointer",
+                            }}
+                        >
+                            Go Back to Stage {currentStage - 1}
+                        </button>
+                    )}
+
+                    {revisitingStage && nextReachedStage && (
+                        <div style={{ marginTop: 10, fontSize: 11, color: "#666", lineHeight: 1.6 }}>
+                            You&apos;re revisiting Stage {currentStage}. When you&apos;re ready, the Goals tab will let you move back into Stage {nextReachedStage}.
+                        </div>
+                    )}
                 </div>
 
                 {accessSummary && (

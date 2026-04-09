@@ -228,6 +228,19 @@ function parseForgeResponse(text) {
   return { cleanText, completedIds, advanceReady };
 }
 
+function getFurthestStageReached(profile, completedByStage, messagesByStage) {
+  const reachedStages = STAGES_DATA.map((stage) => {
+    const hasCompletedMilestones = (completedByStage[stage.id] || []).length > 0;
+    const hasMessages = (messagesByStage[stage.id] || []).some((message: any) => {
+      const text = typeof message?.text === "string" ? message.text : "";
+      return text.trim().length > 0;
+    });
+    return hasCompletedMilestones || hasMessages ? stage.id : 0;
+  });
+
+  return Math.max(profile?.currentStage ?? 1, 1, ...reachedStages);
+}
+
 // Returns the Monday (YYYY-MM-DD) of the week containing the given date
 function getWeekStartKey(dateLike?: string | number | Date) {
   const date = dateLike ? new Date(dateLike) : new Date();
@@ -407,6 +420,7 @@ function ForgeScreen({
   onMeaningfulActivity,
   bubbleSummaries = [] as any[],
   pendingUpgradeStage = null as number | null,
+  furthestStageReached = 1,
   onRequestUpgrade = null as ((stage: number) => void) | null,
   onDowngradeToFree = null as (() => void) | null,
 }) {
@@ -1272,6 +1286,7 @@ Where do you want to start?`;
             stageId={activeStage}
             completedMilestones={completedMilestones}
             advanceReady={advanceReady || allMilestonesComplete}
+            furthestStageReached={furthestStageReached}
             onAdvance={handleAdvance}
             onSwitchToChat={() => setActiveTab("chat")}
             onClose={() => setActiveTab("chat")}
@@ -1690,6 +1705,8 @@ export default function FoundryApp() {
     setBillingSyncing(false);
   };
 
+  const furthestStageReached = getFurthestStageReached(profile, completedByStage, messagesByStage);
+
   // ── Clear pendingUpgradeStage once the user gains access (after paying) ──
   useEffect(() => {
     if (pendingUpgradeStage && canAccessStage(pendingUpgradeStage, accountAccess)) {
@@ -1753,6 +1770,18 @@ export default function FoundryApp() {
     markMeaningfulActivity(true);
     updateProfile({ currentStage: newStage });
     setInitialStage(newStage);
+    return true;
+  };
+
+  const revertToStage = (targetStage) => {
+    const nextStage = Math.max(1, Math.min(targetStage, furthestStageReached));
+    markMeaningfulActivity(true);
+    setPendingUpgradeStage(null);
+    setPaywallStage(null);
+    updateProfile({ currentStage: nextStage });
+    setInitialStage(nextStage);
+    setIsFirstVisit(false);
+    setScreenPersisted("hub");
     return true;
   };
 
@@ -2132,8 +2161,10 @@ export default function FoundryApp() {
             onUpdateProfile={updateProfile}
             onEnterStage={id => openForge(id)}
             onOpenForge={() => openForge(null)}
+            onRevertToStage={(stageId: number) => revertToStage(stageId)}
             onLogout={handleLogout}
             completedByStage={completedByStage}
+            furthestStageReached={furthestStageReached}
             onReset={handleReset}
             onOpenJournal={openJournal}
             onOpenBriefings={openBriefings}
@@ -2168,12 +2199,9 @@ export default function FoundryApp() {
             onMeaningfulActivity={() => markMeaningfulActivity(true)}
             bubbleSummaries={bubbleSummaries}
             pendingUpgradeStage={effectivePendingUpgradeStage}
+            furthestStageReached={furthestStageReached}
             onRequestUpgrade={(stage: number) => setPaywallStage(stage)}
-            onDowngradeToFree={() => {
-              setPendingUpgradeStage(null);
-              updateProfile({ ...(profile as any), currentStage: 1 });
-              setInitialStage(1 as any);
-            }}
+            onDowngradeToFree={() => revertToStage(1)}
           />
         )}
       </div>

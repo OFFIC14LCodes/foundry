@@ -7,6 +7,7 @@ export default function MilestonesPanel({
     onClose,
     onSwitchToChat,
     advanceReady,
+    furthestStageReached = 1,
     onAdvance,
     stageId,
 }) {
@@ -14,6 +15,8 @@ export default function MilestonesPanel({
         (completedMilestones.length / stage.milestones.length) * 100
     );
     const StageIcon = stage.icon;
+    const nextStage = STAGES_DATA[stageId] || null;
+    const canResumeReachedStage = furthestStageReached > stageId && nextStage;
 
     return (
         <div
@@ -202,7 +205,7 @@ export default function MilestonesPanel({
                                 ? ` Stage ${stageId + 1} — ${STAGES_DATA[stageId].label} — is next. Your full chat history carries over.`
                                 : " You've completed all stages. Incredible work."}
                         </div>
-                        {STAGES_DATA[stageId] && (
+                        {nextStage && (
                             <button
                                 onClick={() => onAdvance(stageId + 1)}
                                 style={{
@@ -218,9 +221,46 @@ export default function MilestonesPanel({
                                     cursor: "pointer",
                                 }}
                             >
-                                Begin Stage {stageId + 1} — {STAGES_DATA[stageId].label} →
+                                Begin Stage {stageId + 1} — {nextStage.label} →
                             </button>
                         )}
+                    </div>
+                )}
+
+                {!advanceReady && canResumeReachedStage && (
+                    <div
+                        style={{
+                            background: "linear-gradient(135deg, rgba(232,98,42,0.12), rgba(255,255,255,0.03))",
+                            border: "1px solid rgba(232,98,42,0.22)",
+                            borderRadius: 14,
+                            padding: "16px",
+                            marginBottom: 16,
+                            animation: "fadeSlideUp 0.4s ease",
+                        }}
+                    >
+                        <div style={{ fontSize: 14, fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8", fontWeight: 600, marginBottom: 6 }}>
+                            Revisit complete whenever you&apos;re ready
+                        </div>
+                        <div style={{ fontSize: 12, color: "#A8A4A0", marginBottom: 14, lineHeight: 1.7 }}>
+                            You&apos;ve already reached Stage {stageId + 1}. Stay here as long as you want, or move back forward whenever it makes sense.
+                        </div>
+                        <button
+                            onClick={() => onAdvance(stageId + 1)}
+                            style={{
+                                width: "100%",
+                                background: "linear-gradient(135deg, #E8622A, #c9521e)",
+                                border: "none",
+                                borderRadius: 10,
+                                padding: "11px",
+                                color: "#fff",
+                                fontSize: 13,
+                                fontFamily: "'Lora', Georgia, serif",
+                                fontWeight: 600,
+                                cursor: "pointer",
+                            }}
+                        >
+                            Return to Stage {stageId + 1} — {nextStage.label} →
+                        </button>
                     </div>
                 )}
 
