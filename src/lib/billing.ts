@@ -24,87 +24,102 @@ export function getCheckoutPriceSummary(intent: CheckoutIntent): string {
 async function getBillingAuthHeaders() {
     const { data } = await supabase.auth.getSession();
     const token = data.session?.access_token;
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
     if (!token) {
         throw new Error("Your session expired. Sign in again before starting checkout.");
     }
 
+    if (!supabaseUrl || !supabaseAnonKey) {
+        throw new Error("Missing Supabase billing configuration.");
+    }
+
     return {
+        supabaseUrl,
         Authorization: `Bearer ${token}`,
+        apikey: supabaseAnonKey,
+    };
+}
+
+async function invokeBillingFunction<TBody extends object>(name: string, body: TBody) {
+    const headers = await getBillingAuthHeaders();
+    const response = await fetch(`${headers.supabaseUrl}/functions/v1/${name}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: headers.Authorization,
+            apikey: headers.apikey,
+        },
+        body: JSON.stringify(body),
+    });
+
+    const payload = await response.json().catch(() => null);
+
+    return {
+        ok: response.ok,
+        status: response.status,
+        data: payload,
     };
 }
 
 export async function beginCheckout(intent: CheckoutIntent): Promise<CheckoutResult> {
-    let headers: Record<string, string>;
-
     try {
-        headers = await getBillingAuthHeaders();
+        const result = await invokeBillingFunction("create-checkout-session", {
+            planId: intent.planId,
+            interval: intent.interval,
+            extraSeats: Math.max(0, intent.extraSeats),
+            source: intent.source,
+        });
+
+        if (!result.ok || !result.data?.url) {
+            return {
+                ok: false,
+                message:
+                    result.data?.error ||
+                    result.data?.message ||
+                    `Checkout could not be started for ${BILLING_PLANS[intent.planId].name}.`,
+            };
+        }
+
+        window.location.assign(result.data.url as string);
+
+        return {
+            ok: true,
+            message: `Redirecting to checkout for ${BILLING_PLANS[intent.planId].name}.`,
+        };
     } catch (error) {
         return {
             ok: false,
             message: error instanceof Error ? error.message : "You need to sign in before starting checkout.",
         };
     }
-
-    const { data, error } = await supabase.functions.invoke("create-checkout-session", {
-        headers,
-        body: {
-            planId: intent.planId,
-            interval: intent.interval,
-            extraSeats: Math.max(0, intent.extraSeats),
-            source: intent.source,
-        },
-    });
-
-    if (error || !data?.url) {
-        return {
-            ok: false,
-            message:
-                data?.error ||
-                error?.message ||
-                `Checkout could not be started for ${BILLING_PLANS[intent.planId].name}.`,
-        };
-    }
-
-    window.location.assign(data.url as string);
-
-    return {
-        ok: true,
-        message: `Redirecting to checkout for ${BILLING_PLANS[intent.planId].name}.`,
-    };
 }
 
 export async function openCustomerPortal(): Promise<CheckoutResult> {
-    let headers: Record<string, string>;
-
     try {
-        headers = await getBillingAuthHeaders();
+        const result = await invokeBillingFunction("create-customer-portal-session", {});
+
+        if (!result.ok || !result.data?.url) {
+            return {
+                ok: false,
+                message:
+                    result.data?.error ||
+                    result.data?.message ||
+                    "Billing management is not available right now.",
+            };
+        }
+
+        window.location.assign(result.data.url as string);
+
+        return {
+            ok: true,
+            message: "Redirecting to billing management.",
+        };
     } catch (error) {
         return {
             ok: false,
             message: error instanceof Error ? error.message : "You need to sign in before opening billing management.",
         };
     }
-
-    const { data, error } = await supabase.functions.invoke("create-customer-portal-session", {
-        headers,
-        body: {},
-    });
-
-    if (error || !data?.url) {
-        return {
-            ok: false,
-            message:
-                data?.error ||
-                error?.message ||
-                "Billing management is not available right now.",
-        };
-    }
-
-    window.location.assign(data.url as string);
-
-    return {
-        ok: true,
-        message: "Redirecting to billing management.",
-    };
 }
