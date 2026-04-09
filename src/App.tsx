@@ -1804,6 +1804,14 @@ export default function FoundryApp() {
   };
 
   const accessSummary = getAccessSummary(accountAccess);
+  const lockedSelectedStage = profile
+    ? (() => {
+      const targetStage = initialStage ?? profile.currentStage ?? 1;
+      if (targetStage <= 1) return null;
+      return canAccessStage(targetStage, accountAccess) ? null : targetStage;
+    })()
+    : null;
+  const effectivePendingUpgradeStage = pendingUpgradeStage ?? lockedSelectedStage;
   const authUserEmail = ((user as any)?.email ?? null) as string | null;
   const canOpenAdminHub = hasAdminHubAccess({
     role: profile?.role,
@@ -2156,7 +2164,7 @@ export default function FoundryApp() {
             teamId={userTeamId}
             onMeaningfulActivity={() => markMeaningfulActivity(true)}
             bubbleSummaries={bubbleSummaries}
-            pendingUpgradeStage={pendingUpgradeStage}
+            pendingUpgradeStage={effectivePendingUpgradeStage}
             onRequestUpgrade={(stage: number) => setPaywallStage(stage)}
             onDowngradeToFree={() => {
               setPendingUpgradeStage(null);
@@ -2295,7 +2303,7 @@ export default function FoundryApp() {
         billingMessage={billingMessage}
         onClose={() => {
           setPaywallStage(null);
-          if (pendingUpgradeStage && !canAccessStage(pendingUpgradeStage, accountAccess)) {
+          if (effectivePendingUpgradeStage && !canAccessStage(effectivePendingUpgradeStage, accountAccess)) {
             setIsFirstVisit(false);
             setInitialStage(null);
             setScreenPersisted("hub");
