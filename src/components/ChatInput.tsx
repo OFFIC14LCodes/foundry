@@ -11,6 +11,7 @@ interface ChatInputProps {
     placeholder?: string;
     attachedFiles?: AttachedFile[];
     onFilesChange?: (files: AttachedFile[]) => void;
+    allowAttachments?: boolean;
 }
 
 export default function ChatInput({
@@ -22,6 +23,7 @@ export default function ChatInput({
     placeholder,
     attachedFiles = [],
     onFilesChange,
+    allowAttachments = true,
 }: ChatInputProps) {
     const textareaRef = useRef<HTMLTextAreaElement | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -57,7 +59,7 @@ export default function ChatInput({
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {/* Attached file chips */}
-            {attachedFiles.length > 0 && (
+            {allowAttachments && attachedFiles.length > 0 && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6, paddingLeft: 2 }}>
                     {attachedFiles.map(file => (
                         <div
@@ -132,43 +134,46 @@ export default function ChatInput({
                 }}
             >
                 {/* Paperclip button */}
-                <button
-                    onClick={() => fileInputRef.current?.click()}
-                    title="Attach file"
-                    style={{
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        color: attachedFiles.length > 0 ? "#E8622A" : "#555",
-                        padding: "4px 2px",
-                        flexShrink: 0,
-                        display: "flex",
-                        alignItems: "center",
-                        transition: "color 0.15s",
-                    }}
-                    onMouseEnter={e => { if (attachedFiles.length === 0) e.currentTarget.style.color = "#C8C4BE"; }}
-                    onMouseLeave={e => { if (attachedFiles.length === 0) e.currentTarget.style.color = "#555"; }}
-                >
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <path
-                            d="M13.5 7.5L7 14c-1.657 1.657-4.343 1.657-6 0-1.657-1.657-1.657-4.343 0-6L8 1c1.105-1.105 2.895-1.105 4 0 1.105 1.105 1.105 2.895 0 4L5.5 11.5C4.948 12.052 4.052 12.052 3.5 11.5 2.948 10.948 2.948 10.052 3.5 9.5L9 4"
-                            stroke="currentColor"
-                            strokeWidth="1.4"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                        />
-                    </svg>
-                </button>
+                {allowAttachments && (
+                    <button
+                        onClick={() => fileInputRef.current?.click()}
+                        title="Attach file"
+                        style={{
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            color: attachedFiles.length > 0 ? "#E8622A" : "#555",
+                            padding: "4px 2px",
+                            flexShrink: 0,
+                            display: "flex",
+                            alignItems: "center",
+                            transition: "color 0.15s",
+                        }}
+                        onMouseEnter={e => { if (attachedFiles.length === 0) e.currentTarget.style.color = "#C8C4BE"; }}
+                        onMouseLeave={e => { if (attachedFiles.length === 0) e.currentTarget.style.color = "#555"; }}
+                    >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <path
+                                d="M13.5 7.5L7 14c-1.657 1.657-4.343 1.657-6 0-1.657-1.657-1.657-4.343 0-6L8 1c1.105-1.105 2.895-1.105 4 0 1.105 1.105 1.105 2.895 0 4L5.5 11.5C4.948 12.052 4.052 12.052 3.5 11.5 2.948 10.948 2.948 10.052 3.5 9.5L9 4"
+                                stroke="currentColor"
+                                strokeWidth="1.4"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            />
+                        </svg>
+                    </button>
+                )}
 
-                {/* Hidden file input */}
-                <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    accept="image/*,.pdf,.txt,.md,.csv,.json,.js,.ts,.jsx,.tsx,.py,.java,.c,.cpp,.h,.css,.html,.xml,.yaml,.yml,.sh,.rb,.go,.rs,.swift,.kt"
-                    style={{ display: "none" }}
-                    onChange={handleFileChange}
-                />
+                {allowAttachments && (
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        multiple
+                        accept="image/*,.pdf,.txt,.md,.csv,.json,.js,.ts,.jsx,.tsx,.py,.java,.c,.cpp,.h,.css,.html,.xml,.yaml,.yml,.sh,.rb,.go,.rs,.swift,.kt"
+                        style={{ display: "none" }}
+                        onChange={handleFileChange}
+                    />
+                )}
 
                 <textarea
                     ref={textareaRef}

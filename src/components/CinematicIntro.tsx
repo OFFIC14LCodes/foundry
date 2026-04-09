@@ -22,7 +22,7 @@ export default function CinematicIntro({ onComplete }) {
             <Logo
                 variant="full"
                 style={{
-                    width: "min(320px, 78vw)",
+                    width: "min(256px, 62vw)",
                     height: "auto",
                     marginBottom: 24,
                     opacity: phase >= 1 ? 1 : 0,

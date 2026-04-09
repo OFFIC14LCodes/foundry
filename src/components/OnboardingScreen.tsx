@@ -326,6 +326,7 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                             onSend={handleSubmit}
                             onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
                             loading={loading}
+                            allowAttachments={false}
                             placeholder={
                                 currentStep?.id === "name"
                                     ? "Type your name..."

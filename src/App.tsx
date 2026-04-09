@@ -1757,6 +1757,7 @@ export default function FoundryApp() {
   };
 
   const requestUpgrade = (targetStage = 2) => {
+    setPendingUpgradeStage(targetStage);
     setPaywallStage(targetStage);
     return false;
   };
