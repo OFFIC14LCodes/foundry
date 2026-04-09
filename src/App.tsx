@@ -1775,6 +1775,9 @@ export default function FoundryApp() {
   const openForge = (stageId = null) => {
     const targetStage = stageId || profile?.currentStage || 1;
     if (!attemptStageAccess(targetStage)) return false;
+    if (canAccessStage(targetStage, accountAccess)) {
+      setPendingUpgradeStage(null);
+    }
     setInitialStage(stageId ?? targetStage);
     setIsFirstVisit(false);
     setScreenPersisted("forge");
