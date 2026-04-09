@@ -1,6 +1,6 @@
 import ForgeAvatar from "./ForgeAvatar";
 
-export default function MessageBubble({ msg, onStageRef, onGlossaryTap, renderWithBold, userName = "You" }) {
+export default function MessageBubble({ msg, onStageRef, onGlossaryTap, renderWithBold, userName = "You", onAction = null }) {
     const isForge = msg.role === "forge" || msg.role === "assistant";
     const senderName = isForge ? "Forge" : userName;
 
@@ -55,6 +55,45 @@ export default function MessageBubble({ msg, onStageRef, onGlossaryTap, renderWi
                         <div style={{ whiteSpace: "pre-wrap" }}>{msg.text}</div>
                     )}
                 </div>
+                {isForge && Array.isArray(msg.actions) && msg.actions.length > 0 && (
+                    <div
+                        style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 8,
+                            marginTop: 10,
+                            width: "100%",
+                        }}
+                    >
+                        {msg.actions.map((action) => (
+                            <button
+                                key={action.id}
+                                onClick={() => onAction && onAction(action)}
+                                style={{
+                                    width: "100%",
+                                    padding: action.variant === "primary" ? "14px" : "12px",
+                                    background: action.variant === "primary"
+                                        ? "linear-gradient(135deg, #E8622A, #c9521e)"
+                                        : "transparent",
+                                    border: action.variant === "primary"
+                                        ? "none"
+                                        : "1px solid rgba(255,255,255,0.1)",
+                                    borderRadius: 10,
+                                    color: action.variant === "primary" ? "#fff" : "#888",
+                                    fontSize: action.variant === "primary" ? 14 : 13,
+                                    fontFamily: "'Lora', Georgia, serif",
+                                    fontWeight: action.variant === "primary" ? 600 : 500,
+                                    cursor: "pointer",
+                                    boxShadow: action.variant === "primary"
+                                        ? "0 4px 20px rgba(232,98,42,0.3)"
+                                        : "none",
+                                }}
+                            >
+                                {action.label}
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     );

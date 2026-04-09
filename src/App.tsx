@@ -475,6 +475,23 @@ function ForgeScreen({
   const scrollRef = useRef(null);
   const bottomAnchorRef = useRef<HTMLDivElement | null>(null);
 
+  const buildUpgradeActions = (stageNumber: number) => ([
+    {
+      id: `upgrade-stage-${stageNumber}`,
+      type: "upgrade",
+      stage: stageNumber,
+      label: `Unlock Stage ${stageNumber} →`,
+      variant: "primary",
+    },
+    {
+      id: `free-stage-1`,
+      type: "downgrade_to_stage_1",
+      stage: 1,
+      label: "← Start with Stage 1 (free)",
+      variant: "secondary",
+    },
+  ]);
+
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -566,7 +583,15 @@ Start with a short recap of what they told Foundry during onboarding: the busine
           [{ role: "user", content: greetingPrompt }],
           FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", ctx)
         );
-        onUpdateMessages(activeStage, [{ id: `greet-${Date.now()}`, role: "forge", text: reply, createdAt: new Date().toISOString() }]);
+        onUpdateMessages(activeStage, [{
+          id: `greet-${Date.now()}`,
+          role: "forge",
+          text: reply,
+          createdAt: new Date().toISOString(),
+          actions: isFirstVisit && pendingUpgradeStage && activeStage === pendingUpgradeStage
+            ? buildUpgradeActions(activeStage)
+            : undefined,
+        }]);
       } catch {
         const fallback =
           isFirstVisit && activeStage === 1
@@ -577,13 +602,27 @@ You came in with **${profile.idea || "a new business idea"}**, a ${profile.exper
 Stage 1 is about one thing: making sure a real person has a real problem worth solving.
 
 Who, specifically, is the first person you believe feels this problem often enough to want a better solution?`
-            : `${profile.name} — Stage ${activeStage}: ${stageData.label}.
+            : isFirstVisit && pendingUpgradeStage && activeStage === pendingUpgradeStage
+              ? `${profile.name} — Stage ${activeStage}: ${stageData.label}.
+
+You came in wanting to start here, which makes sense based on what you shared. This stage is where the work gets more concrete and more consequential.
+
+To continue in Stage ${activeStage}, you'll need a paid plan. You can unlock it now, or step back and start with Stage 1 for free first.`
+              : `${profile.name} — Stage ${activeStage}: ${stageData.label}.
 
 ${stageData.mission}
 
 Where do you want to start?`;
 
-        onUpdateMessages(activeStage, [{ id: `greet-${Date.now()}`, role: "forge", text: fallback, createdAt: new Date().toISOString() }]);
+        onUpdateMessages(activeStage, [{
+          id: `greet-${Date.now()}`,
+          role: "forge",
+          text: fallback,
+          createdAt: new Date().toISOString(),
+          actions: isFirstVisit && pendingUpgradeStage && activeStage === pendingUpgradeStage
+            ? buildUpgradeActions(activeStage)
+            : undefined,
+        }]);
       }
 
       setLoading(false);
@@ -1140,6 +1179,17 @@ Where do you want to start?`;
                   onGlossaryTap={(term: string, entry: any) => setGlossaryModal({ term, entry })}
                   renderWithBold={renderWithBold}
                   userName={profile?.name || "You"}
+                  onAction={(action: any) => {
+                    if (action.type === "upgrade") {
+                      onRequestUpgrade && onRequestUpgrade(action.stage || activeStage);
+                      return;
+                    }
+
+                    if (action.type === "downgrade_to_stage_1") {
+                      setActiveStage(1);
+                      onDowngradeToFree && onDowngradeToFree();
+                    }
+                  }}
                 />
               );
             })}
@@ -1384,39 +1434,6 @@ Where do you want to start?`;
           </div>
         )
       }
-      {pendingUpgradeStage && activeStage === pendingUpgradeStage && (
-        <div
-          style={{
-            padding: "12px 16px",
-            paddingBottom: "max(20px, calc(12px + env(safe-area-inset-bottom)))",
-            flexShrink: 0,
-            borderTop: "1px solid rgba(255,255,255,0.05)",
-            background: "rgba(8,8,9,0.95)",
-            maxWidth: 720,
-            width: "100%",
-            alignSelf: "center",
-            display: "flex",
-            flexDirection: "column",
-            gap: 10,
-          }}
-        >
-          <button
-            onClick={() => onRequestUpgrade && onRequestUpgrade(pendingUpgradeStage)}
-            style={{ width: "100%", padding: "14px", background: "linear-gradient(135deg, #E8622A, #c9521e)", border: "none", borderRadius: 10, color: "#fff", fontSize: 14, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, cursor: "pointer", boxShadow: "0 4px 20px rgba(232,98,42,0.3)" }}
-          >
-            Unlock Stage {pendingUpgradeStage} →
-          </button>
-          <button
-            onClick={() => {
-              setActiveStage(1);
-              onDowngradeToFree && onDowngradeToFree();
-            }}
-            style={{ width: "100%", padding: "12px", background: "transparent", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#888", fontSize: 13, fontFamily: "'Lora', Georgia, serif", fontWeight: 500, cursor: "pointer" }}
-          >
-            ← Start with Stage 1 (free)
-          </button>
-        </div>
-      )}
     </div >
   );
 }
