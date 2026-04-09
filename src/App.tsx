@@ -2030,7 +2030,7 @@ export default function FoundryApp() {
         {screen === "onboarding" && (
           <OnboardingScreen
             onComplete={(p: any) => {
-              setProfile({ ...p, setupCompleted: true });
+              setProfile({ ...p, setupCompleted: true, currentStage: 1 });
               setIsFirstVisit(true);
               setInitialStage(1 as any);
               setScreenPersisted("forge");
@@ -2212,7 +2212,7 @@ export default function FoundryApp() {
         billingMessage={billingMessage}
         onClose={() => setPaywallStage(null)}
       />
-      {profile && user && (
+      {profile && user && screen !== "onboarding" && screen !== "intro" && (
         <ForgeBubble
           profile={profile}
           userId={(user as any).id}

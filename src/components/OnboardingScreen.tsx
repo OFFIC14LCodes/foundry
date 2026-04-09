@@ -254,17 +254,30 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
 
                 {showCards && (
                     <div style={{ display: "flex", flexDirection: "column", gap: 10, marginLeft: 42, animation: "fadeSlideUp 0.5s ease" }}>
-                        {currentStep.id === "stage_assessment" && STAGE_ASSESSMENT_CARDS.map(card => (
-                            <button key={card.id} onClick={() => handleCard(card.id)} style={{ background: cardSelection === card.id ? "rgba(232,98,42,0.15)" : "rgba(255,255,255,0.02)", border: cardSelection === card.id ? "1px solid rgba(232,98,42,0.6)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "14px 16px", cursor: "pointer", textAlign: "left", transition: "all 0.2s" }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                    {(() => { const CardIcon = card.icon; return <CardIcon size={20} color="#C8C4BE" />; })()}
-                                    <div>
-                                        <div style={{ fontSize: 14, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 2 }}>{card.label}</div>
-                                        <div style={{ fontSize: 12, color: "#888" }}>{card.sub}</div>
-                                    </div>
+                        {currentStep.id === "stage_assessment" && (
+                            <>
+                                <div style={{ fontSize: 12, color: "#888", padding: "6px 4px 2px", lineHeight: 1.5 }}>
+                                    Stage 1 is free. Stages 2–6 require a Starter or Pro plan.
                                 </div>
-                            </button>
-                        ))}
+                                {STAGE_ASSESSMENT_CARDS.map(card => (
+                                    <button key={card.id} onClick={() => handleCard(card.id)} style={{ background: cardSelection === card.id ? "rgba(232,98,42,0.15)" : "rgba(255,255,255,0.02)", border: cardSelection === card.id ? "1px solid rgba(232,98,42,0.6)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "14px 16px", cursor: "pointer", textAlign: "left", transition: "all 0.2s" }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                            {(() => { const CardIcon = card.icon; return <CardIcon size={20} color="#C8C4BE" />; })()}
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
+                                                    <span style={{ fontSize: 14, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>{card.label}</span>
+                                                    {card.stage === 1
+                                                        ? <span style={{ fontSize: 10, fontWeight: 600, color: "#5cb85c", background: "rgba(92,184,92,0.12)", border: "1px solid rgba(92,184,92,0.3)", borderRadius: 4, padding: "1px 6px", letterSpacing: "0.04em" }}>FREE</span>
+                                                        : <span style={{ fontSize: 10, fontWeight: 600, color: "#E8622A", background: "rgba(232,98,42,0.1)", border: "1px solid rgba(232,98,42,0.3)", borderRadius: 4, padding: "1px 6px", letterSpacing: "0.04em" }}>PAID</span>
+                                                    }
+                                                </div>
+                                                <div style={{ fontSize: 12, color: "#888" }}>{card.sub}</div>
+                                            </div>
+                                        </div>
+                                    </button>
+                                ))}
+                            </>
+                        )}
                         {currentStep.id === "experience" && EXPERIENCE_CARDS.map(card => (
                             <button key={card.id} onClick={() => handleCard(card.id)} style={{ background: cardSelection === card.id ? "rgba(232,98,42,0.15)" : "rgba(255,255,255,0.02)", border: cardSelection === card.id ? "1px solid rgba(232,98,42,0.6)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "14px 16px", cursor: "pointer", textAlign: "left", transition: "all 0.2s" }}>
                                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
