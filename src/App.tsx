@@ -2293,9 +2293,16 @@ export default function FoundryApp() {
         access={accountAccess}
         onManageSubscription={handleOpenManageSubscription}
         billingMessage={billingMessage}
-        onClose={() => setPaywallStage(null)}
+        onClose={() => {
+          setPaywallStage(null);
+          if (pendingUpgradeStage && !canAccessStage(pendingUpgradeStage, accountAccess)) {
+            setIsFirstVisit(false);
+            setInitialStage(null);
+            setScreenPersisted("hub");
+          }
+        }}
       />
-      {profile && user && screen !== "onboarding" && screen !== "intro" && (
+      {profile && user && screen !== "onboarding" && screen !== "intro" && canAccessStage(profile.currentStage || 1, accountAccess) && (
         <ForgeBubble
           profile={profile}
           userId={(user as any).id}
