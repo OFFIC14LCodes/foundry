@@ -28,30 +28,24 @@ Deno.serve(async (request) => {
         }
 
         const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-        const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
         const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
         const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY") ?? "";
 
-        if (!supabaseUrl || !anonKey || !serviceRoleKey || !stripeSecretKey) {
+        if (!supabaseUrl || !serviceRoleKey || !stripeSecretKey) {
             return jsonResponse({ error: "Missing billing environment variables." }, 500);
         }
 
-        const authClient = createClient(supabaseUrl, anonKey, {
-            global: {
-                headers: {
-                    Authorization: request.headers.get("Authorization") ?? "",
-                },
-            },
-        });
         const serviceClient = createClient(supabaseUrl, serviceRoleKey);
         const stripe = new Stripe(stripeSecretKey, { apiVersion: STRIPE_API_VERSION });
+        const authHeader = request.headers.get("Authorization") ?? "";
+        const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
 
         const {
             data: { user },
             error: authError,
-        } = await authClient.auth.getUser();
+        } = await serviceClient.auth.getUser(token);
 
-        if (authError || !user) {
+        if (!token || authError || !user) {
             return jsonResponse({ error: "Unauthorized." }, 401);
         }
 

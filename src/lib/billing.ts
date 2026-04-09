@@ -42,6 +42,17 @@ async function getBillingAuthHeaders() {
     };
 }
 
+function normalizeBillingError(message: string | null | undefined, fallback: string) {
+    if (!message) return fallback;
+
+    const normalized = message.trim().toLowerCase();
+    if (normalized === "invalid jwt" || normalized === "unauthorized.") {
+        return "Billing could not be started from this session. Refresh the page and try again.";
+    }
+
+    return message;
+}
+
 async function invokeBillingFunction<TBody extends object>(name: string, body: TBody) {
     const headers = await getBillingAuthHeaders();
     const response = await fetch(`${headers.supabaseUrl}/functions/v1/${name}`, {
@@ -75,10 +86,12 @@ export async function beginCheckout(intent: CheckoutIntent): Promise<CheckoutRes
         if (!result.ok || !result.data?.url) {
             return {
                 ok: false,
-                message:
+                message: normalizeBillingError(
                     result.data?.error ||
                     result.data?.message ||
+                    null,
                     `Checkout could not be started for ${BILLING_PLANS[intent.planId].name}.`,
+                ),
             };
         }
 
@@ -103,10 +116,12 @@ export async function openCustomerPortal(): Promise<CheckoutResult> {
         if (!result.ok || !result.data?.url) {
             return {
                 ok: false,
-                message:
+                message: normalizeBillingError(
                     result.data?.error ||
                     result.data?.message ||
+                    null,
                     "Billing management is not available right now.",
+                ),
             };
         }
 
