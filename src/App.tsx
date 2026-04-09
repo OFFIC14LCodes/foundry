@@ -733,7 +733,7 @@ Where do you want to start?`;
     setAdvanceReady(false);
   };
 
-  const showBriefing = messages.length === 0 && stageSummaries.length === 0 && !loading && !briefingDismissed;
+  const showBriefing = !pendingUpgradeStage && messages.length === 0 && stageSummaries.length === 0 && !loading && !briefingDismissed;
 
   return (
     <div
