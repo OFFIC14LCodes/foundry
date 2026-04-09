@@ -522,7 +522,7 @@ function ForgeScreen({
 
   useEffect(() => {
     const stageMessages = messagesByStage[activeStage] || [];
-    const shouldShowBriefing = stageMessages.length === 0 && stageSummaries.length === 0 && !loading && !briefingDismissed;
+    const shouldShowBriefing = !pendingUpgradeStage && stageMessages.length === 0 && stageSummaries.length === 0 && !loading && !briefingDismissed;
     if (stageMessages.length > 0 || loading || shouldShowBriefing) return;
 
     const stageData = STAGES_DATA[activeStage - 1];
@@ -1353,7 +1353,7 @@ Where do you want to start?`;
       )}
 
       {
-        activeTab === "chat" && !showBriefing && (
+        activeTab === "chat" && !showBriefing && !pendingUpgradeStage && (
           <div
             style={{
               padding: "12px 16px",
@@ -1366,44 +1366,57 @@ Where do you want to start?`;
               alignSelf: "center",
             }}
           >
-            {pendingUpgradeStage && activeStage === pendingUpgradeStage ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <button
-                  onClick={() => onRequestUpgrade && onRequestUpgrade(pendingUpgradeStage)}
-                  style={{ width: "100%", padding: "14px", background: "linear-gradient(135deg, #E8622A, #c9521e)", border: "none", borderRadius: 10, color: "#fff", fontSize: 14, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, cursor: "pointer", boxShadow: "0 4px 20px rgba(232,98,42,0.3)" }}
-                >
-                  Unlock Stage {pendingUpgradeStage} →
-                </button>
-                <button
-                  onClick={() => {
-                    setActiveStage(1);
-                    onDowngradeToFree && onDowngradeToFree();
-                  }}
-                  style={{ width: "100%", padding: "12px", background: "transparent", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#888", fontSize: 13, fontFamily: "'Lora', Georgia, serif", fontWeight: 500, cursor: "pointer" }}
-                >
-                  ← Start with Stage 1 (free)
-                </button>
-              </div>
-            ) : (
-              <ChatInput
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onSend={send}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    send();
-                  }
-                }}
-                loading={loading}
-                placeholder={`Talk to Forge about Stage ${activeStage}...`}
-                attachedFiles={attachedFiles}
-                onFilesChange={setAttachedFiles}
-              />
-            )}
+            <ChatInput
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onSend={send}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  send();
+                }
+              }}
+              loading={loading}
+              placeholder={`Talk to Forge about Stage ${activeStage}...`}
+              attachedFiles={attachedFiles}
+              onFilesChange={setAttachedFiles}
+            />
           </div>
         )
       }
+      {pendingUpgradeStage && activeStage === pendingUpgradeStage && (
+        <div
+          style={{
+            padding: "12px 16px",
+            paddingBottom: "max(20px, calc(12px + env(safe-area-inset-bottom)))",
+            flexShrink: 0,
+            borderTop: "1px solid rgba(255,255,255,0.05)",
+            background: "rgba(8,8,9,0.95)",
+            maxWidth: 720,
+            width: "100%",
+            alignSelf: "center",
+            display: "flex",
+            flexDirection: "column",
+            gap: 10,
+          }}
+        >
+          <button
+            onClick={() => onRequestUpgrade && onRequestUpgrade(pendingUpgradeStage)}
+            style={{ width: "100%", padding: "14px", background: "linear-gradient(135deg, #E8622A, #c9521e)", border: "none", borderRadius: 10, color: "#fff", fontSize: 14, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, cursor: "pointer", boxShadow: "0 4px 20px rgba(232,98,42,0.3)" }}
+          >
+            Unlock Stage {pendingUpgradeStage} →
+          </button>
+          <button
+            onClick={() => {
+              setActiveStage(1);
+              onDowngradeToFree && onDowngradeToFree();
+            }}
+            style={{ width: "100%", padding: "12px", background: "transparent", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#888", fontSize: 13, fontFamily: "'Lora', Georgia, serif", fontWeight: 500, cursor: "pointer" }}
+          >
+            ← Start with Stage 1 (free)
+          </button>
+        </div>
+      )}
     </div >
   );
 }
