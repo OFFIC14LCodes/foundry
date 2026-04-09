@@ -21,8 +21,33 @@ export function getCheckoutPriceSummary(intent: CheckoutIntent): string {
     return `$${((base + seatTotal) / 100).toFixed(2)}/${intent.interval === "yearly" ? "year" : "month"}`;
 }
 
+async function getBillingAuthHeaders() {
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+
+    if (!token) {
+        throw new Error("Your session expired. Sign in again before starting checkout.");
+    }
+
+    return {
+        Authorization: `Bearer ${token}`,
+    };
+}
+
 export async function beginCheckout(intent: CheckoutIntent): Promise<CheckoutResult> {
+    let headers: Record<string, string>;
+
+    try {
+        headers = await getBillingAuthHeaders();
+    } catch (error) {
+        return {
+            ok: false,
+            message: error instanceof Error ? error.message : "You need to sign in before starting checkout.",
+        };
+    }
+
     const { data, error } = await supabase.functions.invoke("create-checkout-session", {
+        headers,
         body: {
             planId: intent.planId,
             interval: intent.interval,
@@ -50,7 +75,19 @@ export async function beginCheckout(intent: CheckoutIntent): Promise<CheckoutRes
 }
 
 export async function openCustomerPortal(): Promise<CheckoutResult> {
+    let headers: Record<string, string>;
+
+    try {
+        headers = await getBillingAuthHeaders();
+    } catch (error) {
+        return {
+            ok: false,
+            message: error instanceof Error ? error.message : "You need to sign in before opening billing management.",
+        };
+    }
+
     const { data, error } = await supabase.functions.invoke("create-customer-portal-session", {
+        headers,
         body: {},
     });
 
