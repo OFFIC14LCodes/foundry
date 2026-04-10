@@ -4,13 +4,13 @@
 
 type MessageContent = string | Array<Record<string, unknown>>;
 
-export async function callForgeAPI(messages: Array<{ role: string; content: MessageContent }>, systemPrompt: string): Promise<string> {
+export async function callForgeAPI(messages: Array<{ role: string; content: MessageContent }>, systemPrompt: string, maxTokens = 1000): Promise<string> {
     const res = await fetch("/api/forge", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
             model: "claude-sonnet-4-20250514",
-            max_tokens: 1000,
+            max_tokens: maxTokens,
             system: systemPrompt,
             messages,
         }),
@@ -26,14 +26,15 @@ export async function callForgeAPI(messages: Array<{ role: string; content: Mess
 export async function streamForgeAPI(
     messages: Array<{ role: string; content: MessageContent }>,
     systemPrompt: string,
-    onChunk: (text: string) => void
+    onChunk: (text: string) => void,
+    maxTokens = 1000
 ): Promise<string> {
     const res = await fetch("/api/forge", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
             model: "claude-sonnet-4-20250514",
-            max_tokens: 1000,
+            max_tokens: maxTokens,
             stream: true,
             system: systemPrompt,
             messages,

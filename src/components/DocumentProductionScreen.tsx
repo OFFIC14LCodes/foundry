@@ -1,12 +1,40 @@
 import { useState, useRef, useEffect } from "react";
+import {
+    ChartLineUp, Gavel, CurrencyDollar, Bank, ShieldCheck, Handshake,
+    Users, TrendUp, Buildings, Shield, Megaphone, Door,
+    ArrowLeft, Star, MapPin,
+} from "@phosphor-icons/react";
 import { streamForgeAPI } from "../lib/forgeApi";
 import { buildDocSystemPrompt, buildDocRequest, buildRefinementRequest } from "../constants/docPrompt";
 import { loadProducedDocuments, saveProducedDocument, type ProducedDocument } from "../db";
+import DocumentFieldsForm from "./DocumentFieldsForm";
+import {
+    DOCUMENT_PREVIEW_CSS,
+    buildOfficialTitleBlockHtml,
+    downloadStyledDocx,
+    downloadStyledHtml,
+    markdownToDocumentHtml,
+    printStyledPdf,
+    sanitizeDocumentMarkdown,
+    type DocumentExportMeta,
+} from "../lib/documentExport";
+import {
+    createDocumentInputDefaults,
+    formatDocumentInputsForPrompt,
+    getDocumentRequirement,
+    getSuggestedDocumentSettings,
+    validateDocumentInputs,
+} from "../lib/documentRequirements";
+import { formatLegalDate, formatLongDate, getIsoDate } from "../lib/legalDate";
+import {
+    DOC_CATEGORIES, SMART_PROMPTS, DEFAULT_SMART_PROMPTS,
+    type DocCategory, type DocItem,
+} from "../constants/docCategories";
 
 // ─────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────
-type Phase = "request" | "studio";
+type Phase = "categories" | "documents" | "configure" | "studio";
 
 interface GenRecord {
     instruction: string;
@@ -16,404 +44,49 @@ interface GenRecord {
 // ─────────────────────────────────────────────────────────────
 // Constants
 // ─────────────────────────────────────────────────────────────
-const DOC_TYPES = [
-    { id: "Business Summary", emoji: "📄", sub: "Bank or investor ready" },
-    { id: "Executive Summary", emoji: "📊", sub: "Strategic overview" },
-    { id: "Investor Overview", emoji: "💼", sub: "Funding round support" },
-    { id: "Funding Request", emoji: "💰", sub: "Loan or investment ask" },
-    { id: "Partnership Proposal", emoji: "🤝", sub: "Strategic partnership" },
-    { id: "Founder Profile", emoji: "👤", sub: "Background & credentials" },
-    { id: "Concept Overview", emoji: "💡", sub: "One-page pitch" },
-    { id: "Custom Document", emoji: "✏️", sub: "You describe it" },
+const AUDIENCES = [
+    "Bank", "Investor", "Partner", "General", "Grant Body", "Internal",
+    "Attorney", "Co-Founder", "Media/Press", "Customers", "Government/Regulatory",
 ];
 
-const AUDIENCES = ["Bank", "Investor", "Partner", "General", "Grant Body", "Internal"];
-const TONES = ["Professional", "Formal", "Persuasive", "Conservative", "Modern", "Premium"];
+const TONES = [
+    "Professional", "Formal", "Persuasive", "Conservative", "Modern",
+    "Premium", "Friendly", "Technical", "Urgent", "Empathetic",
+];
+
+// Max tokens for document generation — documents need more space than chat
+const DOC_MAX_TOKENS = 4000;
 
 // ─────────────────────────────────────────────────────────────
-// Inline text renderer: handles **bold**
+// Phosphor icon resolver
 // ─────────────────────────────────────────────────────────────
-function renderInline(text: string) {
-    const parts = text.split(/\*\*(.+?)\*\*/g);
-    return parts.map((part, i) =>
-        i % 2 === 1
-            ? <strong key={i} style={{ fontWeight: 700 }}>{part}</strong>
-            : <span key={i}>{part}</span>
-    );
+const ICON_MAP: Record<string, React.ComponentType<{ size?: number; weight?: "thin" | "light" | "regular" | "bold" | "fill" | "duotone"; color?: string }>> = {
+    ChartLineUp, Gavel, CurrencyDollar, Bank, ShieldCheck,
+    Handshake, Users, TrendUp, Buildings, Shield, Megaphone, Door,
+};
+
+function CategoryIcon({ name, size = 24, color }: { name: string; size?: number; color?: string }) {
+    const Comp = ICON_MAP[name];
+    if (!Comp) return null;
+    return <Comp size={size} weight="regular" color={color} />;
 }
 
 // ─────────────────────────────────────────────────────────────
-// Document preview renderer — markdown → styled JSX
+// Document preview renderer - markdown -> shared styled HTML
 // ─────────────────────────────────────────────────────────────
-function DocPreview({ content }: { content: string }) {
+function DocPreview({ content, meta }: { content: string; meta: DocumentExportMeta }) {
     if (!content) return null;
-
-    const lines = content.split("\n");
-    const elements: React.ReactNode[] = [];
-    let i = 0;
-
-    while (i < lines.length) {
-        const line = lines[i];
-
-        if (line.startsWith("# ")) {
-            elements.push(
-                <h1 key={i} style={{ fontSize: 20, fontFamily: "'Georgia', serif", fontWeight: 700, color: "#1a1a1a", textAlign: "center", marginBottom: 4, lineHeight: 1.3 }}>
-                    {renderInline(line.slice(2))}
-                </h1>
-            );
-        } else if (line.startsWith("## ")) {
-            elements.push(
-                <h2 key={i} style={{ fontSize: 11, fontFamily: "'DM Sans', sans-serif", fontWeight: 700, color: "#333", textTransform: "uppercase", letterSpacing: "0.08em", marginTop: 28, marginBottom: 8, paddingBottom: 5, borderBottom: "1px solid #ddd" }}>
-                    {renderInline(line.slice(3))}
-                </h2>
-            );
-        } else if (line.startsWith("### ")) {
-            elements.push(
-                <h3 key={i} style={{ fontSize: 13, fontFamily: "'Georgia', serif", fontWeight: 700, color: "#222", marginTop: 18, marginBottom: 5, fontStyle: "italic" }}>
-                    {renderInline(line.slice(4))}
-                </h3>
-            );
-        } else if (line.startsWith("- ") || line.startsWith("* ")) {
-            const bullets: string[] = [];
-            while (i < lines.length && (lines[i].startsWith("- ") || lines[i].startsWith("* "))) {
-                bullets.push(lines[i].slice(2));
-                i++;
-            }
-            elements.push(
-                <ul key={`ul-${i}`} style={{ margin: "6px 0 12px 20px", padding: 0 }}>
-                    {bullets.map((b, j) => (
-                        <li key={j} style={{ fontSize: 13, color: "#2a2a2a", lineHeight: 1.75, marginBottom: 4, fontFamily: "'Georgia', serif" }}>
-                            {renderInline(b)}
-                        </li>
-                    ))}
-                </ul>
-            );
-            continue;
-        } else if (line.trim() === "") {
-            // blank line — spacing handled by element margins
-        } else {
-            elements.push(
-                <p key={i} style={{ fontSize: 13, color: "#2a2a2a", lineHeight: 1.85, marginBottom: 10, fontFamily: "'Georgia', serif" }}>
-                    {renderInline(line)}
-                </p>
-            );
-        }
-
-        i++;
-    }
-
-    return <>{elements}</>;
-}
-
-// ─────────────────────────────────────────────────────────────
-// Download utilities
-// ─────────────────────────────────────────────────────────────
-function getDownloadName(title: string, extension: string) {
-    return `${title.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.${extension}`;
-}
-
-function downloadBlob(blob: Blob, fileName: string) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = fileName;
-    a.click();
-    URL.revokeObjectURL(url);
-}
-
-function plainTextFromMarkdown(markdown: string) {
-    return markdown
-        .replace(/^#{1,3}\s+/gm, "")
-        .replace(/^\s*[-*]\s+/gm, "• ")
-        .replace(/\*\*(.+?)\*\*/g, "$1")
-        .trim();
-}
-
-function wrapText(text: string, maxChars: number) {
-    const words = text.split(/\s+/).filter(Boolean);
-    const lines: string[] = [];
-    let line = "";
-
-    words.forEach((word) => {
-        const next = line ? `${line} ${word}` : word;
-        if (next.length > maxChars && line) {
-            lines.push(line);
-            line = word;
-        } else {
-            line = next;
-        }
-    });
-
-    if (line) lines.push(line);
-    return lines;
-}
-
-function pdfEscape(value: string) {
-    return value
-        .replace(/[^\x20-\x7E\n]/g, "")
-        .replace(/\\/g, "\\\\")
-        .replace(/\(/g, "\\(")
-        .replace(/\)/g, "\\)");
-}
-
-function downloadPdf(content: string, title: string, meta: string) {
-    const pageWidth = 612;
-    const pageHeight = 792;
-    const margin = 54;
-    const lineHeight = 15;
-    const lines = [meta, "", ...plainTextFromMarkdown(content).split("\n").flatMap(line => line.trim() ? wrapText(line, 86) : [""])];
-    const pages: string[][] = [];
-    let page: string[] = [];
-
-    lines.forEach((line) => {
-        if (page.length >= 44) {
-            pages.push(page);
-            page = [];
-        }
-        page.push(line);
-    });
-    if (page.length) pages.push(page);
-
-    const objects: string[] = [];
-    const addObject = (body: string) => {
-        objects.push(body);
-        return objects.length;
-    };
-
-    const catalogId = addObject("<< /Type /Catalog /Pages 2 0 R >>");
-    const pagesId = addObject("");
-    const fontId = addObject("<< /Type /Font /Subtype /Type1 /BaseFont /Times-Roman >>");
-    const pageIds: number[] = [];
-
-    pages.forEach((pageLines) => {
-        const streamLines = ["BT", `/F1 11 Tf`, `1 0 0 1 ${margin} ${pageHeight - margin} Tm`];
-        pageLines.forEach((line, index) => {
-            const fontSize = index === 0 ? 9 : 11;
-            streamLines.push(`/${fontSize === 9 ? "F1 9 Tf" : "F1 11 Tf"}`);
-            streamLines.push(`(${pdfEscape(line)}) Tj`);
-            streamLines.push(`0 -${lineHeight} Td`);
-        });
-        streamLines.push("ET");
-
-        const stream = streamLines.join("\n");
-        const streamId = addObject(`<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`);
-        const pageId = addObject(`<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 ${fontId} 0 R >> >> /Contents ${streamId} 0 R >>`);
-        pageIds.push(pageId);
-    });
-
-    objects[pagesId - 1] = `<< /Type /Pages /Kids [${pageIds.map(id => `${id} 0 R`).join(" ")}] /Count ${pageIds.length} >>`;
-
-    const chunks = [`%PDF-1.4\n`];
-    const offsets = [0];
-    objects.forEach((body, index) => {
-        offsets.push(chunks.join("").length);
-        chunks.push(`${index + 1} 0 obj\n${body}\nendobj\n`);
-    });
-
-    const xrefOffset = chunks.join("").length;
-    chunks.push(`xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`);
-    offsets.slice(1).forEach(offset => chunks.push(`${String(offset).padStart(10, "0")} 00000 n \n`));
-    chunks.push(`trailer\n<< /Size ${objects.length + 1} /Root ${catalogId} 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`);
-
-    const pdfString = chunks.join("");
-    const bytes = new Uint8Array(pdfString.length);
-    for (let i = 0; i < pdfString.length; i++) bytes[i] = pdfString.charCodeAt(i) & 0xff;
-    downloadBlob(new Blob([bytes], { type: "application/pdf" }), getDownloadName(title, "pdf"));
-}
-
-function drawWrappedCanvasText(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, lineHeight: number) {
-    const words = text.split(/\s+/).filter(Boolean);
-    let line = "";
-    let nextY = y;
-
-    words.forEach((word) => {
-        const next = line ? `${line} ${word}` : word;
-        if (ctx.measureText(next).width > maxWidth && line) {
-            ctx.fillText(line, x, nextY);
-            nextY += lineHeight;
-            line = word;
-        } else {
-            line = next;
-        }
-    });
-
-    if (line) {
-        ctx.fillText(line, x, nextY);
-        nextY += lineHeight;
-    }
-
-    return nextY;
-}
-
-function downloadImage(content: string, title: string, meta: string, format: "png" | "jpg") {
-    const lines = [meta, "", ...plainTextFromMarkdown(content).split("\n")];
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const width = 1200;
-    const margin = 90;
-    const maxWidth = width - margin * 2;
-    let height = 180;
-
-    ctx.font = "30px Georgia, serif";
-    lines.forEach((line) => {
-        height += line.trim() ? Math.max(34, wrapText(line, 80).length * 34) : 22;
-    });
-    canvas.width = width;
-    canvas.height = Math.max(height, 700);
-
-    ctx.fillStyle = "#F8F5F0";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "#999";
-    ctx.font = "22px Arial, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(meta.toUpperCase(), width / 2, 70);
-    ctx.strokeStyle = "#e0dbd4";
-    ctx.beginPath();
-    ctx.moveTo(margin, 100);
-    ctx.lineTo(width - margin, 100);
-    ctx.stroke();
-
-    let y = 155;
-    ctx.textAlign = "left";
-    lines.slice(2).forEach((line) => {
-        if (!line.trim()) {
-            y += 22;
-            return;
-        }
-
-        if (line.startsWith("# ")) {
-            ctx.fillStyle = "#1a1a1a";
-            ctx.font = "bold 34px Georgia, serif";
-            y = drawWrappedCanvasText(ctx, plainTextFromMarkdown(line), margin, y, maxWidth, 42) + 8;
-        } else if (line.startsWith("## ")) {
-            ctx.fillStyle = "#333";
-            ctx.font = "bold 22px Arial, sans-serif";
-            y += 22;
-            y = drawWrappedCanvasText(ctx, plainTextFromMarkdown(line).toUpperCase(), margin, y, maxWidth, 30) + 4;
-        } else {
-            ctx.fillStyle = "#2a2a2a";
-            ctx.font = "26px Georgia, serif";
-            y = drawWrappedCanvasText(ctx, plainTextFromMarkdown(line), margin, y, maxWidth, 34);
-        }
-    });
-
-    canvas.toBlob((blob) => {
-        if (!blob) return;
-        downloadBlob(blob, getDownloadName(title, format));
-    }, format === "png" ? "image/png" : "image/jpeg", 0.92);
-}
-
-function xmlEscape(value: string) {
-    return value
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
-}
-
-function docxRuns(text: string) {
-    return text.split(/(\*\*.+?\*\*)/g).filter(Boolean).map(part => {
-        const bold = part.startsWith("**") && part.endsWith("**");
-        const value = bold ? part.slice(2, -2) : part;
-        return `<w:r>${bold ? "<w:rPr><w:b/></w:rPr>" : ""}<w:t xml:space="preserve">${xmlEscape(value)}</w:t></w:r>`;
-    }).join("");
-}
-
-function docxParagraph(line: string) {
-    if (line.startsWith("# ")) return `<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="180"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="32"/></w:rPr><w:t>${xmlEscape(line.slice(2))}</w:t></w:r></w:p>`;
-    if (line.startsWith("## ")) return `<w:p><w:pPr><w:spacing w:before="360" w:after="120"/></w:pPr><w:r><w:rPr><w:b/><w:caps/><w:sz w:val="22"/></w:rPr><w:t>${xmlEscape(line.slice(3))}</w:t></w:r></w:p>`;
-    if (line.startsWith("### ")) return `<w:p><w:pPr><w:spacing w:before="240" w:after="80"/></w:pPr><w:r><w:rPr><w:b/><w:i/><w:sz w:val="24"/></w:rPr><w:t>${xmlEscape(line.slice(4))}</w:t></w:r></w:p>`;
-    if (line.startsWith("- ") || line.startsWith("* ")) return `<w:p><w:pPr><w:ind w:left="720" w:hanging="360"/></w:pPr><w:r><w:t>• </w:t></w:r>${docxRuns(line.slice(2))}</w:p>`;
-    if (!line.trim()) return "<w:p/>";
-    return `<w:p>${docxRuns(line)}</w:p>`;
-}
-
-const crcTable = (() => {
-    const table = new Uint32Array(256);
-    for (let i = 0; i < 256; i++) {
-        let c = i;
-        for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-        table[i] = c >>> 0;
-    }
-    return table;
-})();
-
-function crc32(bytes: Uint8Array) {
-    let crc = 0xffffffff;
-    bytes.forEach(byte => { crc = crcTable[(crc ^ byte) & 0xff] ^ (crc >>> 8); });
-    return (crc ^ 0xffffffff) >>> 0;
-}
-
-function uint16(value: number) {
-    return [value & 0xff, (value >>> 8) & 0xff];
-}
-
-function uint32(value: number) {
-    return [value & 0xff, (value >>> 8) & 0xff, (value >>> 16) & 0xff, (value >>> 24) & 0xff];
-}
-
-function createZip(files: Array<{ name: string; content: string }>) {
-    const encoder = new TextEncoder();
-    const chunks: Uint8Array[] = [];
-    const centralChunks: Uint8Array[] = [];
-    let offset = 0;
-
-    files.forEach((file) => {
-        const nameBytes = encoder.encode(file.name);
-        const data = encoder.encode(file.content);
-        const crc = crc32(data);
-        const localHeader = new Uint8Array([
-            ...uint32(0x04034b50), ...uint16(20), ...uint16(0), ...uint16(0), ...uint16(0), ...uint16(0),
-            ...uint32(crc), ...uint32(data.length), ...uint32(data.length), ...uint16(nameBytes.length), ...uint16(0),
-        ]);
-        const centralHeader = new Uint8Array([
-            ...uint32(0x02014b50), ...uint16(20), ...uint16(20), ...uint16(0), ...uint16(0), ...uint16(0), ...uint16(0),
-            ...uint32(crc), ...uint32(data.length), ...uint32(data.length), ...uint16(nameBytes.length), ...uint16(0),
-            ...uint16(0), ...uint16(0), ...uint16(0), ...uint32(0), ...uint32(offset),
-        ]);
-
-        chunks.push(localHeader, nameBytes, data);
-        centralChunks.push(centralHeader, nameBytes);
-        offset += localHeader.length + nameBytes.length + data.length;
-    });
-
-    const centralOffset = offset;
-    const centralSize = centralChunks.reduce((sum, chunk) => sum + chunk.length, 0);
-    const endRecord = new Uint8Array([
-        ...uint32(0x06054b50), ...uint16(0), ...uint16(0), ...uint16(files.length), ...uint16(files.length),
-        ...uint32(centralSize), ...uint32(centralOffset), ...uint16(0),
-    ]);
-
-    return new Blob([...chunks, ...centralChunks, endRecord], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
-}
-
-function downloadDocx(content: string, title: string, meta: string) {
-    const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
-<w:body>
-<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="360"/></w:pPr><w:r><w:rPr><w:sz w:val="18"/><w:color w:val="888888"/></w:rPr><w:t>${xmlEscape(meta)}</w:t></w:r></w:p>
-${content.split("\n").map(docxParagraph).join("")}
-<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr>
-</w:body>
-</w:document>`;
-    const contentTypes = `<?xml version="1.0" encoding="UTF-8"?>
-<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
-<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
-<Default Extension="xml" ContentType="application/xml"/>
-<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
-</Types>`;
-    const rels = `<?xml version="1.0" encoding="UTF-8"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
-</Relationships>`;
-
-    downloadBlob(createZip([
-        { name: "[Content_Types].xml", content: contentTypes },
-        { name: "_rels/.rels", content: rels },
-        { name: "word/document.xml", content: documentXml },
-    ]), getDownloadName(title, "docx"));
+    const safeContent = sanitizeDocumentMarkdown(content, meta);
+    return (
+        <>
+            <style>{DOCUMENT_PREVIEW_CSS}</style>
+            <div dangerouslySetInnerHTML={{ __html: buildOfficialTitleBlockHtml(meta) }} />
+            <div
+                className="foundry-document"
+                dangerouslySetInnerHTML={{ __html: markdownToDocumentHtml(safeContent, { skipFirstHeading: true }) }}
+            />
+        </>
+    );
 }
 
 async function copyToClipboard(text: string): Promise<boolean> {
@@ -426,7 +99,7 @@ async function copyToClipboard(text: string): Promise<boolean> {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Chip selector — reused for type / audience / tone
+// Chip selector — reused for audience / tone
 // ─────────────────────────────────────────────────────────────
 function ChipRow({ options, selected, onSelect }: { options: string[]; selected: string; onSelect: (v: string) => void }) {
     return (
@@ -456,19 +129,102 @@ function ChipRow({ options, selected, onSelect }: { options: string[]; selected:
 }
 
 // ─────────────────────────────────────────────────────────────
+// Shared header component
+// ─────────────────────────────────────────────────────────────
+function ScreenHeader({
+    onBack,
+    backLabel,
+    title,
+    subtitle,
+    right,
+}: {
+    onBack: () => void;
+    backLabel: string;
+    title: string;
+    subtitle?: string;
+    right?: React.ReactNode;
+}) {
+    return (
+        <div style={{
+            padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px",
+            borderBottom: "1px solid rgba(255,255,255,0.05)",
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            position: "sticky", top: 0,
+            background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)", zIndex: 10,
+        }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <button
+                    onClick={onBack}
+                    style={{
+                        display: "flex", alignItems: "center", gap: 5,
+                        background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+                        borderRadius: 8, padding: "6px 12px", color: "#888", fontSize: 12, cursor: "pointer",
+                        fontFamily: "'DM Sans', sans-serif",
+                    }}
+                >
+                    <ArrowLeft size={12} /> {backLabel}
+                </button>
+                <div>
+                    <div style={{ fontSize: 15, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, lineHeight: 1.2 }}>{title}</div>
+                    {subtitle && <div style={{ fontSize: 10, color: "#555" }}>{subtitle}</div>}
+                </div>
+            </div>
+            {right}
+        </div>
+    );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Badge components
+// ─────────────────────────────────────────────────────────────
+function StateAwareBadge() {
+    return (
+        <span style={{
+            display: "inline-flex", alignItems: "center", gap: 3,
+            padding: "2px 7px", borderRadius: 10,
+            background: "rgba(234,179,8,0.1)", border: "1px solid rgba(234,179,8,0.3)",
+            fontSize: 9, color: "#EAB308", fontWeight: 600, letterSpacing: "0.04em",
+            fontFamily: "'DM Sans', sans-serif", whiteSpace: "nowrap", flexShrink: 0,
+        }}>
+            <MapPin size={8} weight="fill" /> State-Aware
+        </span>
+    );
+}
+
+function PopularBadge() {
+    return (
+        <span style={{
+            display: "inline-flex", alignItems: "center", gap: 3,
+            padding: "2px 7px", borderRadius: 10,
+            background: "rgba(232,98,42,0.1)", border: "1px solid rgba(232,98,42,0.25)",
+            fontSize: 9, color: "#E8622A", fontWeight: 600,
+            fontFamily: "'DM Sans', sans-serif", whiteSpace: "nowrap", flexShrink: 0,
+        }}>
+            <Star size={8} weight="fill" /> Most Popular
+        </span>
+    );
+}
+
+// ─────────────────────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────────────────────
 export default function DocumentProductionScreen({ userId, profile, onBack }: { userId: string; profile: any; onBack: () => void }) {
-    // Phase
-    const [phase, setPhase] = useState<Phase>("request");
+    // ── Navigation ──────────────────────────────────────────
+    const [phase, setPhase] = useState<Phase>("categories");
+    const [selectedCategory, setSelectedCategory] = useState<DocCategory | null>(null);
+    const [selectedDoc, setSelectedDoc] = useState<DocItem | null>(null);
 
-    // Request phase state
-    const [docType, setDocType] = useState("Business Summary");
+    // ── Config state ─────────────────────────────────────────
+    const [docType, setDocType] = useState("");
     const [audience, setAudience] = useState("General");
     const [tone, setTone] = useState("Professional");
     const [request, setRequest] = useState("");
+    const [docState, setDocState] = useState("");
+    const [docInputs, setDocInputs] = useState<Record<string, any>>({});
+    const [showValidation, setShowValidation] = useState(false);
+    const [autoFillCurrentDate, setAutoFillCurrentDate] = useState(true);
 
-    // Studio phase state
+    // ── Studio state ─────────────────────────────────────────
     const [currentDoc, setCurrentDoc] = useState("");
     const [generating, setGenerating] = useState(false);
     const [refineInput, setRefineInput] = useState("");
@@ -486,21 +242,18 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
     const saveStatusResetRef = useRef<number | null>(null);
     const currentDocumentIdRef = useRef<string | null>(null);
 
-    // Scroll preview to top when doc changes
     useEffect(() => {
         previewRef.current?.scrollTo({ top: 0, behavior: "smooth" });
     }, [currentDoc]);
 
     useEffect(() => {
         let cancelled = false;
-
         setDocumentsLoading(true);
         loadProducedDocuments(userId).then((rows) => {
             if (cancelled) return;
             setDocuments(rows);
             setDocumentsLoading(false);
         });
-
         return () => { cancelled = true; };
     }, [userId]);
 
@@ -514,8 +267,8 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
         setDocuments(prev => [saved, ...prev.filter(doc => doc.id !== saved.id)]);
     };
 
-    const getDocTitle = (content: string, fallbackDocType = docType) => {
-        return content.split("\n")[0].replace(/^#+\s*/, "").trim() || fallbackDocType;
+    const getDocTitle = (content: string, fallback = docType) => {
+        return content.split("\n")[0].replace(/^#+\s*/, "").trim() || fallback;
     };
 
     const setActiveDocumentId = (id: string | null) => {
@@ -525,7 +278,6 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
 
     const persistDocument = async (content: string, nextHistory: GenRecord[], existingId = currentDocumentIdRef.current) => {
         if (!content.trim()) return null;
-
         setSaveStatus("saving");
         const saved = await saveProducedDocument(userId, {
             id: existingId,
@@ -537,12 +289,10 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
             content,
             history: nextHistory,
         });
-
         if (!saved) {
             setSaveStatus("unavailable");
             return null;
         }
-
         setActiveDocumentId(saved.id);
         upsertDocumentList(saved);
         setSaveStatus("saved");
@@ -564,9 +314,38 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
         setSaveStatus("idle");
     };
 
-    // ── Generate initial document ──
+    // ── Navigate to a category ───────────────────────────────
+    const selectCategory = (cat: DocCategory) => {
+        setSelectedCategory(cat);
+        setPhase("documents");
+    };
+
+    // ── Navigate to a document's config ─────────────────────
+    const selectDoc = (doc: DocItem) => {
+        setSelectedDoc(doc);
+        setDocType(doc.name);
+        setRequest("");
+        setDocState("");
+        if (selectedCategory) {
+            const suggested = getSuggestedDocumentSettings(doc, selectedCategory);
+            setAudience(suggested.audience);
+            setTone(suggested.tone);
+            setDocInputs(createDocumentInputDefaults(doc, selectedCategory, profile));
+        }
+        setAutoFillCurrentDate(true);
+        setShowValidation(false);
+        setPhase("configure");
+    };
+
+    // ── Generate document ────────────────────────────────────
     const generate = async () => {
         if (generating) return;
+        const requirement = selectedDoc && selectedCategory ? getDocumentRequirement(selectedDoc, selectedCategory) : null;
+        const validation = requirement ? validateDocumentInputs(requirement, docInputs) : { valid: true, missingRequired: [], errors: {} };
+        if (!validation.valid) {
+            setShowValidation(true);
+            return;
+        }
         setGenerating(true);
         setActiveDocumentId(null);
         setCurrentDoc("");
@@ -575,25 +354,40 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
         setActiveTab("preview");
 
         const systemPrompt = buildDocSystemPrompt(profile);
-        const userContent = buildDocRequest(docType, audience, tone, request);
+        const structuredInputs = requirement ? formatDocumentInputsForPrompt(requirement, docInputs) : "";
+        const useCaseContext = selectedDoc?.whenToUse ? `Document use case:\n- ${selectedDoc.whenToUse}` : "";
+        const userContent = buildDocRequest(
+            docType,
+            audience,
+            tone,
+            request,
+            selectedDoc?.isStateAware ? docState : undefined,
+            [useCaseContext, structuredInputs].filter(Boolean).join("\n\n")
+        );
 
         try {
             const final = await streamForgeAPI(
                 [{ role: "user", content: userContent }],
                 systemPrompt,
-                (chunk) => setCurrentDoc(chunk)
+                (chunk) => setCurrentDoc(chunk),
+                DOC_MAX_TOKENS
             );
-            const nextHistory = [{ instruction: userContent, doc: final }];
-            setCurrentDoc(final);
+            const safeFinal = sanitizeDocumentMarkdown(final, {
+                ...exportMeta,
+                title: getDocTitle(final),
+                legalDate: formatLegalDate(docInputs.documentDate || getIsoDate()),
+            });
+            const nextHistory = [{ instruction: userContent, doc: safeFinal }];
+            setCurrentDoc(safeFinal);
             setHistory(nextHistory);
-            await persistDocument(final, nextHistory, null);
+            await persistDocument(safeFinal, nextHistory, null);
         } catch {
             setCurrentDoc("# Document Generation Failed\n\nSomething went wrong. Try again or adjust your request.");
         }
         setGenerating(false);
     };
 
-    // ── Refine existing document ──
+    // ── Refine document ──────────────────────────────────────
     const refine = async () => {
         if (!refineInput.trim() || refining || generating) return;
         const instruction = refineInput.trim();
@@ -608,23 +402,30 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
             const final = await streamForgeAPI(
                 [{ role: "user", content: userContent }],
                 systemPrompt,
-                (chunk) => setCurrentDoc(chunk)
+                (chunk) => setCurrentDoc(chunk),
+                DOC_MAX_TOKENS
             );
-            const nextHistory = [...history, { instruction, doc: final }];
-            setCurrentDoc(final);
+            const safeFinal = sanitizeDocumentMarkdown(final, {
+                ...exportMeta,
+                title: getDocTitle(final),
+                legalDate: formatLegalDate(docInputs.documentDate || getIsoDate()),
+            });
+            const nextHistory = [...history, { instruction, doc: safeFinal }];
+            setCurrentDoc(safeFinal);
             setHistory(nextHistory);
             const savedId = currentDocumentIdRef.current;
-            await persistDocument(final, nextHistory, savedId);
+            await persistDocument(safeFinal, nextHistory, savedId);
         } catch {
-            // Restore last good doc on failure
             const last = history[history.length - 1];
             if (last) setCurrentDoc(last.doc);
         }
         setRefining(false);
     };
 
-    const reset = () => {
-        setPhase("request");
+    const resetToCategories = () => {
+        setPhase("categories");
+        setSelectedCategory(null);
+        setSelectedDoc(null);
         setCurrentDoc("");
         setHistory([]);
         setActiveDocumentId(null);
@@ -632,6 +433,8 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
         setGenerating(false);
         setRefining(false);
         setSaveStatus("idle");
+        setDocState("");
+        setAutoFillCurrentDate(true);
     };
 
     const handleCopy = async () => {
@@ -640,8 +443,28 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
     };
 
     const docTitle = currentDoc.split("\n")[0].replace(/^#+\s*/, "").trim() || docType;
-    const businessName = profile.businessName || profile.idea?.slice(0, 30) || "Foundry";
-    const todayDate = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+    const businessName = String(docInputs.legalBusinessName || "").trim();
+    const todayIso = getIsoDate();
+    const effectiveDocumentDate = docInputs.documentDate || todayIso;
+    const todayDate = formatLongDate(effectiveDocumentDate);
+    const currentRequirement = selectedDoc && selectedCategory ? getDocumentRequirement(selectedDoc, selectedCategory) : null;
+    const suggestedSettings = selectedDoc && selectedCategory ? getSuggestedDocumentSettings(selectedDoc, selectedCategory) : null;
+    const currentValidation = currentRequirement
+        ? validateDocumentInputs(currentRequirement, docInputs)
+        : { valid: true, missingRequired: [], errors: {} };
+    const requiredFieldCount = currentRequirement
+        ? currentRequirement.groups.reduce((count, group) => count + group.fields.filter(field => field.required).length, 0)
+        : 0;
+    const completedRequiredCount = Math.max(0, requiredFieldCount - currentValidation.missingRequired.length);
+    const canExportOfficialDocument = businessName.length > 0;
+    const exportMeta: DocumentExportMeta = {
+        title: docTitle,
+        businessName,
+        docType,
+        date: todayDate,
+        legalDate: formatLegalDate(effectiveDocumentDate),
+        state: docState || undefined,
+    };
     const saveLabel = saveStatus === "saving"
         ? "Saving..."
         : saveStatus === "saved"
@@ -650,18 +473,50 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
                 ? "Save unavailable"
                 : "";
 
+    const handleDocInputChange = (fieldId: string, value: any) => {
+        setDocInputs(prev => ({ ...prev, [fieldId]: value }));
+        if (fieldId === "jurisdictionState") setDocState(String(value || ""));
+        const changedField = currentRequirement?.groups.flatMap(group => group.fields).find(field => field.id === fieldId);
+        if (changedField?.type === "date") setAutoFillCurrentDate(false);
+    };
+
+    const handleAutoFillCurrentDateChange = (enabled: boolean) => {
+        setAutoFillCurrentDate(enabled);
+        if (!enabled) return;
+        const dateFields = currentRequirement?.groups.flatMap(group => group.fields).filter(field => field.type === "date") ?? [];
+        setDocInputs(prev => dateFields.reduce(
+            (next, field) => ({ ...next, [field.id]: todayIso }),
+            { ...prev, documentDate: todayIso, signatureDate: todayIso }
+        ));
+    };
+
     // ═══════════════════════════════════════════════════════════
-    // REQUEST PHASE
+    // SCREEN 1 — CATEGORY SELECTION
     // ═══════════════════════════════════════════════════════════
-    if (phase === "request") {
+    if (phase === "categories") {
         return (
             <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'DM Sans', sans-serif", color: "#F0EDE8" }}>
                 {/* Header */}
-                <div style={{ padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)", zIndex: 10 }}>
-                    <button onClick={onBack} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "6px 12px", color: "#888", fontSize: 13, cursor: "pointer" }}>← Back</button>
+                <div style={{
+                    padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px",
+                    borderBottom: "1px solid rgba(255,255,255,0.05)",
+                    display: "flex", alignItems: "center", gap: 12,
+                    position: "sticky", top: 0,
+                    background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)", zIndex: 10,
+                }}>
+                    <button
+                        onClick={onBack}
+                        style={{
+                            display: "flex", alignItems: "center", gap: 5,
+                            background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+                            borderRadius: 8, padding: "6px 12px", color: "#888", fontSize: 12, cursor: "pointer",
+                        }}
+                    >
+                        <ArrowLeft size={12} /> Hub
+                    </button>
                     <div>
                         <div style={{ fontSize: 16, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700 }}>Document Production</div>
-                        <div style={{ fontSize: 10, color: "#555" }}>Professional document studio</div>
+                        <div style={{ fontSize: 10, color: "#555" }}>Professional document studio · {DOC_CATEGORIES.reduce((n, c) => n + c.documents.length, 0)} documents</div>
                     </div>
                 </div>
 
@@ -669,109 +524,363 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
                     {/* Intro */}
                     <div style={{ marginBottom: 28, animation: "fadeSlideUp 0.4s ease both", textAlign: "center" }}>
                         <div style={{ fontSize: 22, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, marginBottom: 6, lineHeight: 1.25 }}>
-                            What do you need built?
+                            What do you need?
                         </div>
                         <div style={{ fontSize: 13, color: "#666", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", lineHeight: 1.7 }}>
-                            Forge will generate a professional document tailored to your business, audience, and purpose — ready for real use.
+                            Every document a founder needs, from day one through exit — generated by Forge and tailored to your business.
                         </div>
                     </div>
 
-                    {/* Saved documents */}
-                    <div style={{ marginBottom: 26, animation: "fadeSlideUp 0.4s ease 0.02s both" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                            <div style={{ fontSize: 10, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase" }}>Saved Documents</div>
-                            <div style={{ fontSize: 10, color: "#444" }}>
-                                {documentsLoading ? "Loading..." : `${documents.length} saved`}
+                    {/* Recent documents */}
+                    {(documents.length > 0 || documentsLoading) && (
+                        <div style={{ marginBottom: 28, animation: "fadeSlideUp 0.4s ease 0.02s both" }}>
+                            <div style={{ fontSize: 10, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
+                                Recent Documents
                             </div>
-                        </div>
-                        {documents.length === 0 && !documentsLoading ? (
-                            <div style={{ padding: "12px 14px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)", color: "#555", fontSize: 12, lineHeight: 1.6 }}>
-                                Generated and refined documents will save here automatically when Forge finishes writing.
-                            </div>
-                        ) : (
-                            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                                {documents.map(doc => (
-                                    <button
-                                        key={doc.id}
-                                        onClick={() => openSavedDocument(doc)}
-                                        style={{
-                                            width: "100%",
-                                            padding: "11px 13px",
-                                            borderRadius: 11,
-                                            border: currentDocumentId === doc.id ? "1px solid rgba(232,98,42,0.32)" : "1px solid rgba(255,255,255,0.07)",
-                                            background: currentDocumentId === doc.id ? "rgba(232,98,42,0.08)" : "rgba(255,255,255,0.025)",
-                                            textAlign: "left",
-                                            cursor: "pointer",
-                                            fontFamily: "'DM Sans', sans-serif",
-                                        }}
-                                    >
-                                        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 3 }}>
-                                            <span style={{ fontSize: 12, color: "#C8C4BE", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.title}</span>
-                                            <span style={{ fontSize: 10, color: "#555", flexShrink: 0 }}>{new Date(doc.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+                            {documentsLoading ? (
+                                <div style={{ fontSize: 11, color: "#444" }}>Loading...</div>
+                            ) : (
+                                <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                                    {documents.slice(0, 4).map(doc => (
+                                        <button
+                                            key={doc.id}
+                                            onClick={() => openSavedDocument(doc)}
+                                            style={{
+                                                width: "100%", padding: "10px 13px", borderRadius: 10, textAlign: "left",
+                                                border: "1px solid rgba(255,255,255,0.07)",
+                                                background: "rgba(255,255,255,0.025)",
+                                                cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                                            }}
+                                        >
+                                            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 2 }}>
+                                                <span style={{ fontSize: 12, color: "#C8C4BE", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.title}</span>
+                                                <span style={{ fontSize: 10, color: "#555", flexShrink: 0 }}>{new Date(doc.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+                                            </div>
+                                            <div style={{ fontSize: 10, color: "#555" }}>{doc.docType} · {doc.audience} · {doc.tone}</div>
+                                        </button>
+                                    ))}
+                                    {documents.length > 4 && (
+                                        <div style={{ fontSize: 10, color: "#444", textAlign: "center", paddingTop: 4 }}>
+                                            +{documents.length - 4} more saved
                                         </div>
-                                        <div style={{ fontSize: 10, color: "#555" }}>{doc.docType} · {doc.audience} · {doc.tone}</div>
-                                    </button>
-                                ))}
-                            </div>
-                        )}
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Category grid */}
+                    <div style={{ fontSize: 10, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>
+                        Document Categories
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {DOC_CATEGORIES.map((cat, index) => (
+                            <button
+                                key={cat.id}
+                                onClick={() => selectCategory(cat)}
+                                style={{
+                                    display: "flex", alignItems: "center", gap: 14,
+                                    padding: "14px 16px", borderRadius: 14, textAlign: "left",
+                                    border: "1px solid rgba(255,255,255,0.07)",
+                                    background: "rgba(255,255,255,0.025)",
+                                    cursor: "pointer", width: "100%",
+                                    transition: "all 0.15s",
+                                    animation: `fadeSlideUp 0.4s ease ${0.03 + index * 0.02}s both`,
+                                    fontFamily: "'DM Sans', sans-serif",
+                                }}
+                            >
+                                {/* Icon */}
+                                <div style={{
+                                    width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+                                    background: "rgba(232,98,42,0.08)", border: "1px solid rgba(232,98,42,0.15)",
+                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                }}>
+                                    <CategoryIcon name={cat.icon} size={20} color="#E8622A" />
+                                </div>
+
+                                {/* Text */}
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3, flexWrap: "wrap" }}>
+                                        <span style={{ fontSize: 13, color: "#C8C4BE", fontWeight: 600 }}>{cat.name}</span>
+                                        {cat.isStateAware && <StateAwareBadge />}
+                                    </div>
+                                    <div style={{ fontSize: 11, color: "#555", lineHeight: 1.45 }}>{cat.description}</div>
+                                </div>
+
+                                {/* Count badge */}
+                                <div style={{
+                                    flexShrink: 0, padding: "3px 9px", borderRadius: 20,
+                                    background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
+                                    fontSize: 11, color: "#666", fontWeight: 600,
+                                }}>
+                                    {cat.documents.length}
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // SCREEN 2 — DOCUMENT SELECTION
+    // ═══════════════════════════════════════════════════════════
+    if (phase === "documents" && selectedCategory) {
+        return (
+            <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'DM Sans', sans-serif", color: "#F0EDE8" }}>
+                <ScreenHeader
+                    onBack={() => setPhase("categories")}
+                    backLabel="Categories"
+                    title={selectedCategory.name}
+                    subtitle={`${selectedCategory.documents.length} documents${selectedCategory.isStateAware ? " · State-Aware" : ""}`}
+                    right={
+                        selectedCategory.isStateAware ? (
+                            <StateAwareBadge />
+                        ) : undefined
+                    }
+                />
+
+                <div style={{ maxWidth: 600, margin: "0 auto", padding: "20px 16px 80px" }}>
+                    {/* Category context */}
+                    <div style={{ marginBottom: 20, animation: "fadeSlideUp 0.3s ease both" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px", borderRadius: 12, background: "rgba(232,98,42,0.05)", border: "1px solid rgba(232,98,42,0.1)" }}>
+                            <CategoryIcon name={selectedCategory.icon} size={22} color="#E8622A" />
+                            <div style={{ fontSize: 12, color: "#888", lineHeight: 1.5 }}>{selectedCategory.description}</div>
+                        </div>
                     </div>
 
-                    {/* Document Type */}
-                    <div style={{ marginBottom: 22, animation: "fadeSlideUp 0.4s ease 0.04s both" }}>
-                        <div style={{ fontSize: 10, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>Document Type</div>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                            {DOC_TYPES.map(d => (
-                                <button
-                                    key={d.id}
-                                    onClick={() => setDocType(d.id)}
-                                    style={{
-                                        display: "flex", alignItems: "center", gap: 10,
-                                        padding: "11px 13px", borderRadius: 11, textAlign: "left",
-                                        border: docType === d.id ? "1px solid rgba(232,98,42,0.5)" : "1px solid rgba(255,255,255,0.06)",
-                                        background: docType === d.id ? "rgba(232,98,42,0.08)" : "rgba(255,255,255,0.02)",
-                                        cursor: "pointer", transition: "all 0.15s", width: "100%",
-                                    }}
-                                >
-                                    <span style={{ fontSize: 18, flexShrink: 0 }}>{d.emoji}</span>
-                                    <div>
-                                        <div style={{ fontSize: 12, color: docType === d.id ? "#E8622A" : "#C8C4BE", fontWeight: 600, marginBottom: 1 }}>{d.id}</div>
-                                        <div style={{ fontSize: 10, color: "#555" }}>{d.sub}</div>
+                    {/* State-aware notice */}
+                    {selectedCategory.isStateAware && (
+                        <div style={{ marginBottom: 16, padding: "10px 14px", borderRadius: 10, background: "rgba(234,179,8,0.05)", border: "1px solid rgba(234,179,8,0.15)", animation: "fadeSlideUp 0.3s ease 0.05s both" }}>
+                            <div style={{ fontSize: 11, color: "#d4a017", lineHeight: 1.55 }}>
+                                Documents in this category vary by state. You will be asked to confirm your state before configuration.
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Document list */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {selectedCategory.documents.map((doc, index) => (
+                            <button
+                                key={doc.id}
+                                onClick={() => selectDoc(doc)}
+                                style={{
+                                    padding: "14px 16px", borderRadius: 12, textAlign: "left",
+                                    border: "1px solid rgba(255,255,255,0.07)",
+                                    background: "rgba(255,255,255,0.025)",
+                                    cursor: "pointer", width: "100%",
+                                    transition: "all 0.15s",
+                                    animation: `fadeSlideUp 0.35s ease ${0.05 + index * 0.02}s both`,
+                                    fontFamily: "'DM Sans', sans-serif",
+                                }}
+                            >
+                                {/* Name + badges */}
+                                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
+                                    <span style={{ fontSize: 13, color: "#D0CCC6", fontWeight: 600, lineHeight: 1.3 }}>{doc.name}</span>
+                                    <div style={{ display: "flex", gap: 5, flexShrink: 0, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                                        {doc.isMostPopular && <PopularBadge />}
+                                        {doc.isStateAware && <StateAwareBadge />}
                                     </div>
-                                </button>
-                            ))}
+                                </div>
+                                {/* When to use */}
+                                <div style={{ fontSize: 11, color: "#666", lineHeight: 1.6 }}>
+                                    {doc.whenToUse}
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // SCREEN 3 — CONFIGURE
+    // ═══════════════════════════════════════════════════════════
+    if (phase === "configure" && selectedDoc && selectedCategory) {
+        const smartPrompts = SMART_PROMPTS[selectedDoc.id] ?? DEFAULT_SMART_PROMPTS;
+        const canGenerate = currentValidation.valid;
+
+        return (
+            <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'DM Sans', sans-serif", color: "#F0EDE8" }}>
+                <ScreenHeader
+                    onBack={() => setPhase("documents")}
+                    backLabel={selectedCategory.name}
+                    title={selectedDoc.name}
+                    subtitle="Configure and generate"
+                />
+
+                <div style={{ maxWidth: 600, margin: "0 auto", padding: "20px 16px 100px" }}>
+                    {/* Document identity block */}
+                    <div style={{ marginBottom: 24, padding: "16px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.02)", animation: "fadeSlideUp 0.3s ease both" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                            <CategoryIcon name={selectedCategory.icon} size={16} color="#E8622A" />
+                            <span style={{ fontSize: 10, color: "#555", textTransform: "uppercase", letterSpacing: "0.08em" }}>{selectedCategory.name}</span>
+                        </div>
+                        <div style={{ fontSize: 15, color: "#C8C4BE", fontWeight: 600, marginBottom: 8 }}>{selectedDoc.name}</div>
+                        <div style={{ fontSize: 11, color: "#666", lineHeight: 1.6 }}>{selectedDoc.whenToUse}</div>
+                        <div style={{ display: "flex", gap: 5, marginTop: 8, flexWrap: "wrap" }}>
+                            {selectedDoc.isMostPopular && <PopularBadge />}
+                            {selectedDoc.isStateAware && <StateAwareBadge />}
                         </div>
                     </div>
 
                     {/* Audience */}
-                    <div style={{ marginBottom: 18, animation: "fadeSlideUp 0.4s ease 0.08s both" }}>
-                        <div style={{ fontSize: 10, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Audience</div>
+                    <div style={{ marginBottom: 20, animation: "fadeSlideUp 0.3s ease 0.08s both" }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 8 }}>
+                            <div style={{ fontSize: 10, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase" }}>Audience</div>
+                            {suggestedSettings && (
+                                <div style={{ fontSize: 10, color: "#E8622A" }}>Suggested: {suggestedSettings.audience}</div>
+                            )}
+                        </div>
                         <ChipRow options={AUDIENCES} selected={audience} onSelect={setAudience} />
                     </div>
 
                     {/* Tone */}
-                    <div style={{ marginBottom: 20, animation: "fadeSlideUp 0.4s ease 0.12s both" }}>
-                        <div style={{ fontSize: 10, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Tone</div>
+                    <div style={{ marginBottom: 22, animation: "fadeSlideUp 0.3s ease 0.11s both" }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 8 }}>
+                            <div style={{ fontSize: 10, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase" }}>Tone</div>
+                            {suggestedSettings && (
+                                <div style={{ fontSize: 10, color: "#E8622A" }}>Suggested: {suggestedSettings.tone}</div>
+                            )}
+                        </div>
                         <ChipRow options={TONES} selected={tone} onSelect={setTone} />
                     </div>
 
-                    {/* Special instructions */}
-                    <div style={{ marginBottom: 24, animation: "fadeSlideUp 0.4s ease 0.16s both" }}>
-                        <div style={{ fontSize: 10, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Special Instructions</div>
+                    {currentRequirement && (
+                        <div style={{ marginBottom: 22, animation: "fadeSlideUp 0.3s ease 0.13s both" }}>
+                            <div style={{
+                                marginBottom: 12,
+                                padding: "12px 14px",
+                                borderRadius: 12,
+                                background: "rgba(76,175,138,0.06)",
+                                border: "1px solid rgba(76,175,138,0.18)",
+                                fontSize: 11,
+                                color: "#A8A4A0",
+                                lineHeight: 1.65,
+                            }}>
+                                <strong style={{ color: "#D8D4CE" }}>One-time use:</strong> these fill-in fields are used for this document and are not saved as reusable profile memory. The finished generated document may still be saved in your document history and can contain the details you choose to include.
+                            </div>
+                            <div style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                gap: 12,
+                                marginBottom: 12,
+                                padding: "12px 14px",
+                                borderRadius: 12,
+                                background: currentValidation.valid ? "rgba(76,175,138,0.08)" : "rgba(232,98,42,0.07)",
+                                border: currentValidation.valid ? "1px solid rgba(76,175,138,0.2)" : "1px solid rgba(232,98,42,0.18)",
+                            }}>
+                                <div>
+                                    <div style={{ fontSize: 12, color: "#F0EDE8", fontWeight: 700, marginBottom: 3 }}>
+                                        Document readiness
+                                    </div>
+                                    <div style={{ fontSize: 11, color: "#777", lineHeight: 1.5 }}>
+                                        {completedRequiredCount} of {requiredFieldCount} required fields complete
+                                    </div>
+                                </div>
+                                <div style={{ fontSize: 11, color: currentValidation.valid ? "#4CAF8A" : "#E8622A", fontWeight: 700, flexShrink: 0 }}>
+                                    {currentValidation.valid ? "Ready to generate" : "Missing info"}
+                                </div>
+                            </div>
+
+                            {showValidation && !currentValidation.valid && (
+                                <div style={{ marginBottom: 12, fontSize: 11, color: "#D65037", lineHeight: 1.6 }}>
+                                    Complete these before generation: {currentValidation.missingRequired.join(", ")}
+                                </div>
+                            )}
+
+                            <label style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                gap: 12,
+                                marginBottom: 12,
+                                padding: "11px 13px",
+                                borderRadius: 12,
+                                background: "rgba(255,255,255,0.025)",
+                                border: "1px solid rgba(255,255,255,0.07)",
+                                cursor: "pointer",
+                            }}>
+                                <span>
+                                    <span style={{ display: "block", fontSize: 12, color: "#D8D4CE", fontWeight: 700, marginBottom: 2 }}>
+                                        Auto-fill current date
+                                    </span>
+                                    <span style={{ display: "block", fontSize: 10, color: "#666", lineHeight: 1.5 }}>
+                                        Uses {formatLongDate(todayIso)} for document and signature dates unless you override it.
+                                    </span>
+                                </span>
+                                <input
+                                    type="checkbox"
+                                    checked={autoFillCurrentDate}
+                                    onChange={(event) => handleAutoFillCurrentDateChange(event.target.checked)}
+                                    style={{ accentColor: "#E8622A", width: 17, height: 17, flexShrink: 0 }}
+                                />
+                            </label>
+
+                            <DocumentFieldsForm
+                                requirement={currentRequirement}
+                                values={docInputs}
+                                errors={showValidation ? currentValidation.errors : {}}
+                                onChange={handleDocInputChange}
+                            />
+                        </div>
+                    )}
+
+                    {/* Smart prompt suggestions */}
+                    <div style={{ marginBottom: 22, animation: "fadeSlideUp 0.3s ease 0.14s both" }}>
+                        <div style={{ fontSize: 10, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Quick Instructions</div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
+                            {smartPrompts.map(p => (
+                                <button
+                                    key={p}
+                                    onClick={() => setRequest(prev => prev ? `${prev} ${p}` : p)}
+                                    style={{
+                                        padding: "5px 12px", borderRadius: 20,
+                                        border: request.includes(p) ? "1px solid rgba(232,98,42,0.4)" : "1px solid rgba(255,255,255,0.08)",
+                                        background: request.includes(p) ? "rgba(232,98,42,0.08)" : "rgba(255,255,255,0.025)",
+                                        color: request.includes(p) ? "#E8622A" : "#777",
+                                        fontSize: 11, cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                                        transition: "all 0.15s",
+                                    }}
+                                >
+                                    {p}
+                                </button>
+                            ))}
+                        </div>
+
                         <textarea
                             value={request}
                             onChange={e => setRequest(e.target.value)}
-                            placeholder={`Describe anything specific:\n— key points to include\n— special requirements\n— purpose or context\n\nLeave blank to let Forge decide based on your profile.`}
-                            rows={5}
-                            style={{ width: "100%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "12px 14px", color: "#F0EDE8", fontSize: 13, fontFamily: "'DM Sans', sans-serif", lineHeight: 1.6, boxSizing: "border-box" }}
+                            placeholder={`Or describe anything specific:\n— key points to include\n— special requirements\n— purpose or context\n\nLeave blank to let Forge decide based on your profile.`}
+                            rows={4}
+                            style={{
+                                width: "100%", background: "rgba(255,255,255,0.03)",
+                                border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12,
+                                padding: "12px 14px", color: "#F0EDE8", fontSize: 13,
+                                fontFamily: "'DM Sans', sans-serif", lineHeight: 1.6, boxSizing: "border-box",
+                            }}
                         />
                     </div>
 
-                    {/* Generate */}
+                    {/* Generate button */}
                     <button
                         onClick={generate}
-                        style={{ width: "100%", padding: "15px", background: "linear-gradient(135deg, #E8622A, #c9521e)", border: "none", borderRadius: 14, color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", animation: "fadeSlideUp 0.4s ease 0.2s both" }}
+                        disabled={generating}
+                        style={{
+                            width: "100%", padding: "15px",
+                            background: canGenerate ? "linear-gradient(135deg, #E8622A, #c9521e)" : "rgba(255,255,255,0.06)",
+                            border: "none", borderRadius: 14,
+                            color: canGenerate ? "#fff" : "#444",
+                            fontSize: 15, fontWeight: 700, cursor: generating ? "not-allowed" : "pointer",
+                            fontFamily: "'DM Sans', sans-serif",
+                            animation: "fadeSlideUp 0.3s ease 0.18s both",
+                            transition: "all 0.15s",
+                        }}
                     >
-                        Generate Document →
+                        {canGenerate ? "Generate Document →" : "Complete Required Info →"}
                     </button>
                 </div>
             </div>
@@ -779,22 +888,40 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
     }
 
     // ═══════════════════════════════════════════════════════════
-    // STUDIO PHASE
+    // SCREEN 4 — STUDIO (preview + refine)
     // ═══════════════════════════════════════════════════════════
     return (
         <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'DM Sans', sans-serif", color: "#F0EDE8", display: "flex", flexDirection: "column" }}>
             {/* Studio Header */}
-            <div style={{ padding: "max(12px, calc(6px + env(safe-area-inset-top))) 16px 12px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)", zIndex: 10, position: "sticky", top: 0 }}>
+            <div style={{
+                padding: "max(12px, calc(6px + env(safe-area-inset-top))) 16px 12px",
+                borderBottom: "1px solid rgba(255,255,255,0.05)",
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                flexShrink: 0, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)",
+                zIndex: 10, position: "sticky", top: 0,
+            }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <button onClick={onBack} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "5px 11px", color: "#888", fontSize: 12, cursor: "pointer" }}>← Hub</button>
+                    <button
+                        onClick={resetToCategories}
+                        style={{
+                            display: "flex", alignItems: "center", gap: 5,
+                            background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+                            borderRadius: 8, padding: "5px 11px", color: "#888", fontSize: 12, cursor: "pointer",
+                        }}
+                    >
+                        <ArrowLeft size={12} /> Hub
+                    </button>
                     <div>
                         <div style={{ fontSize: 14, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, lineHeight: 1.2 }}>Document Studio</div>
                         <div style={{ fontSize: 10, color: "#555" }}>
-                            {docType} · {audience} · {tone}{saveLabel ? ` · ${saveLabel}` : ""}
+                            {docType} · {audience} · {tone}{docState ? ` · ${docState}` : ""}{saveLabel ? ` · ${saveLabel}` : ""}
                         </div>
                     </div>
                 </div>
-                <button onClick={reset} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 8, padding: "5px 12px", color: "#666", fontSize: 11, cursor: "pointer" }}>
+                <button
+                    onClick={resetToCategories}
+                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 8, padding: "5px 12px", color: "#666", fontSize: 11, cursor: "pointer" }}
+                >
                     New Doc
                 </button>
             </div>
@@ -805,7 +932,14 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
                     <button
                         key={tab}
                         onClick={() => setActiveTab(tab)}
-                        style={{ flex: 1, padding: "10px", background: "none", border: "none", borderBottom: activeTab === tab ? "2px solid #E8622A" : "2px solid transparent", color: activeTab === tab ? "#E8622A" : "#555", fontSize: 12, fontWeight: activeTab === tab ? 600 : 400, cursor: "pointer", textTransform: "capitalize", transition: "all 0.15s", fontFamily: "'DM Sans', sans-serif" }}
+                        style={{
+                            flex: 1, padding: "10px", background: "none", border: "none",
+                            borderBottom: activeTab === tab ? "2px solid #E8622A" : "2px solid transparent",
+                            color: activeTab === tab ? "#E8622A" : "#555",
+                            fontSize: 12, fontWeight: activeTab === tab ? 600 : 400,
+                            cursor: "pointer", textTransform: "capitalize", transition: "all 0.15s",
+                            fontFamily: "'DM Sans', sans-serif",
+                        }}
                     >
                         {tab === "preview" ? "Document Preview" : `Refine${history.length > 1 ? ` (${history.length - 1})` : ""}`}
                     </button>
@@ -817,7 +951,6 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
                 {/* ── PREVIEW TAB ── */}
                 {activeTab === "preview" && (
                     <>
-                        {/* Generating state */}
                         {generating && !currentDoc && (
                             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, padding: "80px 0", color: "#555" }}>
                                 <div style={{ display: "flex", gap: 6 }}>
@@ -829,20 +962,16 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
                             </div>
                         )}
 
-                        {/* Document paper */}
                         {currentDoc && (
                             <div style={{ maxWidth: 680, margin: "0 auto" }}>
                                 {/* Paper */}
                                 <div style={{
-                                    background: "#F8F5F0",
-                                    borderRadius: 12,
-                                    padding: "36px 40px",
-                                    boxShadow: "0 4px 40px rgba(0,0,0,0.5)",
+                                    background: "#F8F5F0", borderRadius: 12,
+                                    padding: "36px 40px", boxShadow: "0 4px 40px rgba(0,0,0,0.5)",
                                     marginBottom: 16,
                                     animation: generating ? "none" : "fadeSlideUp 0.4s ease both",
                                     position: "relative",
                                 }}>
-                                    {/* Streaming badge */}
                                     {generating && (
                                         <div style={{ position: "absolute", top: 12, right: 12, display: "flex", alignItems: "center", gap: 5, background: "rgba(232,98,42,0.1)", border: "1px solid rgba(232,98,42,0.3)", borderRadius: 20, padding: "3px 10px" }}>
                                             <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#E8622A", animation: "forgePulse 1.2s infinite" }} />
@@ -850,19 +979,8 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
                                         </div>
                                     )}
 
-                                    {/* Document meta line */}
-                                    <div style={{ textAlign: "center", fontSize: 10, color: "#999", fontFamily: "'DM Sans', sans-serif", marginBottom: 20, paddingBottom: 14, borderBottom: "1px solid #e0dbd4", letterSpacing: "0.05em", textTransform: "uppercase" }}>
-                                        {businessName} · {docType} · {todayDate}
-                                    </div>
+                                    <DocPreview content={currentDoc} meta={exportMeta} />
 
-                                    <DocPreview content={currentDoc} />
-
-                                    {/* Footer line */}
-                                    {!generating && (
-                                        <div style={{ marginTop: 32, paddingTop: 14, borderTop: "1px solid #e0dbd4", fontSize: 10, color: "#bbb", fontFamily: "'DM Sans', sans-serif", textAlign: "center", letterSpacing: "0.04em" }}>
-                                            Generated by Forge · Foundry Document Studio
-                                        </div>
-                                    )}
                                 </div>
 
                                 {/* Download controls */}
@@ -870,33 +988,33 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
                                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 24, animation: "fadeSlideUp 0.3s ease 0.1s both" }}>
                                         <button
                                             onClick={handleCopy}
-                                            style={{ flex: 1, minWidth: 100, padding: "10px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: copied ? "#4CAF8A" : "#C8C4BE", fontSize: 12, cursor: "pointer", transition: "all 0.2s", fontFamily: "'DM Sans', sans-serif" }}
+                                            style={{ flex: 1, minWidth: 80, padding: "10px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: copied ? "#4CAF8A" : "#C8C4BE", fontSize: 12, cursor: "pointer", transition: "all 0.2s", fontFamily: "'DM Sans', sans-serif" }}
                                         >
-                                            {copied ? "✓ Copied" : "Copy Text"}
+                                            {copied ? "✓ Copied" : "Copy"}
                                         </button>
                                         <button
-                                            onClick={() => downloadPdf(currentDoc, docTitle, `${businessName} · ${docType} · ${todayDate}`)}
-                                            style={{ flex: 1, minWidth: 100, padding: "10px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#C8C4BE", fontSize: 12, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}
+                                            onClick={() => printStyledPdf(currentDoc, exportMeta)}
+                                            disabled={!canExportOfficialDocument}
+                                            title={!canExportOfficialDocument ? "Legal Business Name is required before export." : undefined}
+                                            style={{ flex: 1, minWidth: 110, padding: "10px 14px", background: canExportOfficialDocument ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: canExportOfficialDocument ? "#C8C4BE" : "#555", fontSize: 12, cursor: canExportOfficialDocument ? "pointer" : "not-allowed", fontFamily: "'DM Sans', sans-serif" }}
                                         >
-                                            PDF
+                                            Download PDF
                                         </button>
                                         <button
-                                            onClick={() => downloadImage(currentDoc, docTitle, `${businessName} · ${docType} · ${todayDate}`, "png")}
-                                            style={{ flex: 1, minWidth: 100, padding: "10px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#C8C4BE", fontSize: 12, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}
+                                            onClick={() => downloadStyledDocx(currentDoc, exportMeta)}
+                                            disabled={!canExportOfficialDocument}
+                                            title={!canExportOfficialDocument ? "Legal Business Name is required before export." : undefined}
+                                            style={{ flex: 1, minWidth: 120, padding: "10px 14px", background: canExportOfficialDocument ? "rgba(232,98,42,0.08)" : "rgba(255,255,255,0.025)", border: canExportOfficialDocument ? "1px solid rgba(232,98,42,0.2)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: canExportOfficialDocument ? "#E8622A" : "#555", fontSize: 12, cursor: canExportOfficialDocument ? "pointer" : "not-allowed", fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}
                                         >
-                                            PNG
+                                            Download DOCX
                                         </button>
                                         <button
-                                            onClick={() => downloadImage(currentDoc, docTitle, `${businessName} · ${docType} · ${todayDate}`, "jpg")}
-                                            style={{ flex: 1, minWidth: 100, padding: "10px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#C8C4BE", fontSize: 12, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}
+                                            onClick={() => downloadStyledHtml(currentDoc, exportMeta)}
+                                            disabled={!canExportOfficialDocument}
+                                            title={!canExportOfficialDocument ? "Legal Business Name is required before export." : undefined}
+                                            style={{ flex: 1, minWidth: 110, padding: "10px 14px", background: canExportOfficialDocument ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: canExportOfficialDocument ? "#C8C4BE" : "#555", fontSize: 12, cursor: canExportOfficialDocument ? "pointer" : "not-allowed", fontFamily: "'DM Sans', sans-serif" }}
                                         >
-                                            JPG
-                                        </button>
-                                        <button
-                                            onClick={() => downloadDocx(currentDoc, docTitle, `${businessName} · ${docType} · ${todayDate}`)}
-                                            style={{ flex: 1, minWidth: 100, padding: "10px 14px", background: "rgba(232,98,42,0.08)", border: "1px solid rgba(232,98,42,0.2)", borderRadius: 10, color: "#E8622A", fontSize: 12, cursor: "pointer", fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}
-                                        >
-                                            DOCX
+                                            Styled HTML
                                         </button>
                                     </div>
                                 )}
@@ -915,7 +1033,6 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
                             </div>
                         </div>
 
-                        {/* Refinement quick chips */}
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14, animation: "fadeSlideUp 0.3s ease 0.05s both" }}>
                             {[
                                 "Make it more formal",
@@ -966,7 +1083,6 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
                             </button>
                         </div>
 
-                        {/* Refinement history */}
                         {history.length > 1 && (
                             <div style={{ marginTop: 28 }}>
                                 <div style={{ fontSize: 10, color: "#444", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>Refinement History</div>
