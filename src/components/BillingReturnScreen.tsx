@@ -34,7 +34,7 @@ export default function BillingReturnScreen({
                 alignItems: "center",
                 justifyContent: "center",
                 padding: 24,
-                fontFamily: "'DM Sans', sans-serif",
+                fontFamily: "'Lora', Georgia, serif",
                 color: "#F0EDE8",
             }}
         >
@@ -52,7 +52,7 @@ export default function BillingReturnScreen({
                 <div style={{ fontSize: 11, color: mode === "success" ? "#E8622A" : "#888", letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 10 }}>
                     Billing
                 </div>
-                <div style={{ fontSize: "clamp(28px, 7vw, 38px)", lineHeight: 1.02, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, marginBottom: 12 }}>
+                <div style={{ fontSize: "clamp(28px, 7vw, 38px)", lineHeight: 1.02, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 12 }}>
                     {title}
                 </div>
                 <div style={{ fontSize: 14, color: "#C8C4BE", lineHeight: 1.75, marginBottom: 14 }}>

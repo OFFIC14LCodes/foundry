@@ -65,13 +65,13 @@ function ReportSection({ content }: { content: string }) {
 
         if (line.startsWith("## ")) {
             elements.push(
-                <div key={i} style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#E8622A", fontWeight: 700, marginTop: i > 0 ? 26 : 0, marginBottom: 8, paddingBottom: 5, borderBottom: "1px solid rgba(232,98,42,0.15)", fontFamily: "'DM Sans', sans-serif" }}>
+                <div key={i} style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#E8622A", fontWeight: 700, marginTop: i > 0 ? 26 : 0, marginBottom: 8, paddingBottom: 5, borderBottom: "1px solid rgba(232,98,42,0.15)", fontFamily: "'Lora', Georgia, serif" }}>
                     {line.slice(3)}
                 </div>
             );
         } else if (line.startsWith("**") && line.endsWith("**")) {
             elements.push(
-                <div key={i} style={{ fontSize: 12, fontWeight: 700, color: "#C8C4BE", marginTop: 10, marginBottom: 4, fontFamily: "'DM Sans', sans-serif" }}>
+                <div key={i} style={{ fontSize: 12, fontWeight: 700, color: "#C8C4BE", marginTop: 10, marginBottom: 4, fontFamily: "'Lora', Georgia, serif" }}>
                     {renderInline(line)}
                 </div>
             );
@@ -243,14 +243,14 @@ export default function MarketIntelligenceScreen({
     const displayDate = currentReport?.date;
 
     return (
-        <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'DM Sans', sans-serif", color: "#F0EDE8", display: "flex", flexDirection: "column" }}>
+        <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8", display: "flex", flexDirection: "column" }}>
 
             {/* Header */}
             <div style={{ padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, position: "sticky", top: 0, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)", zIndex: 10, flexShrink: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
                     <button onClick={onBack} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "6px 12px", color: "#888", fontSize: 12, cursor: "pointer", flexShrink: 0 }}>← Hub</button>
                     <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: 15, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Market Intelligence</div>
+                        <div style={{ fontSize: 15, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Market Intelligence</div>
                         <div style={{ fontSize: 10, color: "#555", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{industry}</div>
                     </div>
                 </div>
@@ -312,11 +312,11 @@ export default function MarketIntelligenceScreen({
                 {/* Empty state — no report at all */}
                 {!hasSavedReport && !generating && (
                     <div style={{ opacity: mounted ? 1 : 0, transition: "opacity 0.4s ease" }}>
-                        <div style={{ marginBottom: 28, animation: "fadeSlideUp 0.4s ease both", textAlign: "center" }}>
-                            <div style={{ fontSize: 22, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, marginBottom: 6, lineHeight: 1.25 }}>
+                        <div style={{ marginBottom: 28, animation: "fadeSlideUp 0.4s ease both", textAlign: "left" }}>
+                            <div style={{ fontSize: 22, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 6, lineHeight: 1.25 }}>
                                 Daily Market Brief
                             </div>
-                            <div style={{ fontSize: 13, color: "#666", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", lineHeight: 1.75, maxWidth: 480, margin: "0 auto" }}>
+                            <div style={{ fontSize: 13, color: "#666", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", lineHeight: 1.75, maxWidth: 480, margin: 0 }}>
                                 Forge generates a focused intelligence report on your market — trends, competitors, risks, and opportunities — tailored to your stage and business context.
                             </div>
                         </div>
@@ -339,7 +339,7 @@ export default function MarketIntelligenceScreen({
 
                         <button
                             onClick={generate}
-                            style={{ width: "100%", padding: "15px", background: "linear-gradient(135deg, #E8622A, #c9521e)", border: "none", borderRadius: 14, color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", animation: "fadeSlideUp 0.4s ease 0.15s both" }}
+                            style={{ width: "100%", padding: "15px", background: "linear-gradient(135deg, #E8622A, #c9521e)", border: "none", borderRadius: 14, color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "'Lora', Georgia, serif", animation: "fadeSlideUp 0.4s ease 0.15s both" }}
                         >
                             Generate Today's Report →
                         </button>
@@ -364,7 +364,7 @@ export default function MarketIntelligenceScreen({
 
                 {/* Generating pulse state (before content starts streaming) */}
                 {generating && !streamedContent && (
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, padding: "70px 0", animation: "fadeIn 0.3s ease" }}>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 14, padding: "70px 0", animation: "fadeIn 0.3s ease" }}>
                         <div style={{ display: "flex", gap: 6 }}>
                             {[0, 1, 2].map(i => (
                                 <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: "#E8622A", animation: "forgePulse 1.4s infinite ease-in-out", animationDelay: `${i * 0.2}s` }} />
@@ -381,7 +381,7 @@ export default function MarketIntelligenceScreen({
                     <div style={{ animation: "fadeSlideUp 0.4s ease both" }}>
                         {/* Report header */}
                         <div style={{ marginBottom: 18 }}>
-                            <div style={{ fontSize: 20, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, lineHeight: 1.25, marginBottom: 4 }}>
+                            <div style={{ fontSize: 20, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, lineHeight: 1.25, marginBottom: 4 }}>
                                 {profile.industry || "Market"} Intelligence
                             </div>
                             <div style={{ fontSize: 11, color: "#555" }}>
@@ -415,7 +415,7 @@ export default function MarketIntelligenceScreen({
 
                         {/* Footer */}
                         {!generating && (
-                            <div style={{ fontSize: 10, color: "#333", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", textAlign: "center", paddingTop: 8 }}>
+                            <div style={{ fontSize: 10, color: "#333", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", textAlign: "left", paddingTop: 8 }}>
                                 AI-synthesised intelligence based on industry knowledge · Not a live data feed
                             </div>
                         )}

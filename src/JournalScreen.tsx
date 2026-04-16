@@ -59,7 +59,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
         <div style={{
             position: "fixed", inset: 0, background: "#080809",
             display: "flex", flexDirection: "column",
-            fontFamily: "'DM Sans', sans-serif", color: "#F0EDE8", zIndex: 200
+            fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8", zIndex: 200
         }}>
 
             {/* Header */}
@@ -77,7 +77,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                         fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 6
                     }}><Logo variant="flame" style={{ width: 14, height: 14, objectFit: "contain" }} />Hub</button>
                 </div>
-                <div style={{ textAlign: "center" }}>
+                <div style={{ textAlign: "left", flex: 1, marginLeft: 12 }}>
                     <div style={{
                         fontSize: 14, fontFamily: "'Lora', Georgia, serif",
                         fontWeight: 600, color: "#F0EDE8"
@@ -99,17 +99,17 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                 {/* Empty state */}
                 {entries.length === 0 && !writing && (
                     <div style={{
-                        textAlign: "center", padding: "60px 24px",
+                        textAlign: "left", padding: "60px 24px",
                         opacity: mounted ? 1 : 0, transition: "opacity 0.5s ease"
                     }}>
                         <div style={{ fontSize: 48, marginBottom: 16 }}>📓</div>
                         <div style={{
-                            fontSize: 20, fontFamily: "'Cormorant Garamond', Georgia, serif",
+                            fontSize: 20, fontFamily: "'Playfair Display', Georgia, serif",
                             fontWeight: 700, color: "#F0EDE8", marginBottom: 10
                         }}>Your journal is empty</div>
                         <div style={{
                             fontSize: 13, color: "#555", fontFamily: "'Lora', Georgia, serif",
-                            fontStyle: "italic", lineHeight: 1.7, maxWidth: 300, margin: "0 auto 24px"
+                            fontStyle: "italic", lineHeight: 1.7, maxWidth: 300, margin: "0 0 24px"
                         }}>
                             This is your private space. Write about wins, fears, decisions, or anything on your mind as you build.
                         </div>
@@ -237,7 +237,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                         <button onClick={() => setExpandedId(isExpanded ? null : entry.id)} style={{
                                             background: "transparent", border: "none",
                                             color: "#E8622A", fontSize: 11, cursor: "pointer",
-                                            padding: "8px 0 0", fontFamily: "'DM Sans', sans-serif"
+                                            padding: "8px 0 0", fontFamily: "'Lora', Georgia, serif"
                                         }}>
                                             {isExpanded ? "Show less ↑" : "Read more ↓"}
                                         </button>

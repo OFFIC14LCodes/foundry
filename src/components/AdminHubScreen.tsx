@@ -120,7 +120,7 @@ function AdminCard({
                 >
                     •
                 </div>
-                <div style={{ fontSize: 18, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 8 }}>
+                <div style={{ fontSize: 18, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 8 }}>
                     {title}
                 </div>
                 <div style={{ fontSize: 12, color: "#888", lineHeight: 1.7 }}>
@@ -191,7 +191,7 @@ export default function AdminHubScreen({
                 zIndex: 180,
                 background: "#080809",
                 color: "#F0EDE8",
-                fontFamily: "'DM Sans', sans-serif",
+                fontFamily: "'Lora', Georgia, serif",
                 display: "flex",
                 flexDirection: "column",
             }}
@@ -242,7 +242,7 @@ export default function AdminHubScreen({
                         <div style={{ fontSize: 10, color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 10 }}>
                             Internal Control Panel
                         </div>
-                        <div style={{ fontSize: "clamp(30px, 5vw, 42px)", lineHeight: 1, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 12 }}>
+                        <div style={{ fontSize: "clamp(30px, 5vw, 42px)", lineHeight: 1, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 12 }}>
                             Foundry Admin Hub
                         </div>
                         <div style={{ fontSize: 14, color: "#A8A4A0", lineHeight: 1.75, maxWidth: 760 }}>
@@ -254,7 +254,7 @@ export default function AdminHubScreen({
                         <div style={{ fontSize: 10, color: "#F5A843", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 10 }}>
                             Voice Usage
                         </div>
-                        <div style={{ fontSize: 24, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 10 }}>
+                        <div style={{ fontSize: 24, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 10 }}>
                             ElevenLabs credits
                         </div>
                         <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.75, maxWidth: 720, marginBottom: 18 }}>
@@ -331,7 +331,7 @@ export default function AdminHubScreen({
                         <div style={{ fontSize: 10, color: "#63B3ED", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 10 }}>
                             Notification Controls
                         </div>
-                        <div style={{ fontSize: 24, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 10 }}>
+                        <div style={{ fontSize: 24, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 10 }}>
                             Global notification behavior
                         </div>
                         <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.75, maxWidth: 720, marginBottom: 18 }}>

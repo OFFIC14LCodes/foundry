@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────
 // MARKET INTELLIGENCE PROMPTS
 // Used only for market report generation.
-// Does NOT modify FORGE_SYSTEM_PROMPT or FOUNDRY_METHOD.
+// Does NOT modify FORGE_SYSTEM_PROMPT or book retrieval behavior.
 // ─────────────────────────────────────────────────────────────
 
 export function buildMarketReportPrompt(profile: any): string {

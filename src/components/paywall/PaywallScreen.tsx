@@ -105,7 +105,7 @@ function PlanCard({
                     <div style={{ fontSize: 11, color: planId === "pro" ? "#F5A843" : "#888", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6 }}>
                         {plan.shortLabel}
                     </div>
-                    <div style={{ fontSize: 20, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
+                    <div style={{ fontSize: 20, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
                         {plan.headline}
                     </div>
                 </div>
@@ -210,7 +210,7 @@ export default function PaywallScreen({ open, targetStage, access, onManageSubsc
                         <div style={{ fontSize: 11, color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 10 }}>
                             Unlock Stage {targetStage}
                         </div>
-                        <div style={{ fontSize: "clamp(32px, 5vw, 48px)", lineHeight: 1, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 12 }}>
+                        <div style={{ fontSize: "clamp(32px, 5vw, 48px)", lineHeight: 1, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 12 }}>
                             Continue the build. Step into execution.
                         </div>
                         <div style={{ fontSize: 15, color: "#C8C4BE", lineHeight: 1.7, maxWidth: 760 }}>

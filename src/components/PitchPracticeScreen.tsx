@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, type ReactNode } from "react";
 import { Icons } from "../icons";
 import { useSpeech } from "../hooks/useSpeech";
 import { useConversationalTts } from "../hooks/useConversationalTts";
@@ -24,11 +24,11 @@ interface PitchMessage {
 // ─────────────────────────────────────────────────────────────
 // Constants
 // ─────────────────────────────────────────────────────────────
-const SCENARIOS: { id: Scenario; label: string; sub: string; emoji: string }[] = [
-    { id: "investor", label: "Investor Pitch", sub: "Convince an angel to write a check", emoji: "💼" },
-    { id: "customer", label: "Customer Pitch", sub: "Win your first paying customer", emoji: "🛍️" },
-    { id: "elevator", label: "Elevator Pitch", sub: "60 seconds — make it count", emoji: "⬆️" },
-    { id: "partner", label: "Partner Pitch", sub: "Find the right co-founder or partner", emoji: "🤝" },
+const SCENARIOS: { id: Scenario; label: string; sub: string; icon: any }[] = [
+    { id: "investor", label: "Investor Pitch", sub: "Convince an angel to write a check", icon: Icons.onboarding.twentyToHundredK },
+    { id: "customer", label: "Customer Pitch", sub: "Win your first paying customer", icon: Icons.onboarding.alreadyRunning },
+    { id: "elevator", label: "Elevator Pitch", sub: "60 seconds — make it count", icon: Icons.forge.advance },
+    { id: "partner", label: "Partner Pitch", sub: "Find the right co-founder or partner", icon: Icons.sidebar.cofounder },
 ];
 
 // ─────────────────────────────────────────────────────────────
@@ -72,6 +72,81 @@ function FeedbackText({ text }: { text: string }) {
             })}
         </>
     );
+}
+
+function StructuredPitchText({ text }: { text: string }) {
+    const cleaned = text.replace(/\[COACH\]\s*/g, "");
+    const lines = cleaned.split("\n");
+    const blocks: ReactNode[] = [];
+    let paragraphLines: string[] = [];
+    let i = 0;
+
+    const flushParagraph = () => {
+        if (paragraphLines.length === 0) return;
+        blocks.push(
+            <div key={`p-${blocks.length}`} style={{ lineHeight: 1.75 }}>
+                {renderInline(paragraphLines.join("\n"))}
+            </div>
+        );
+        paragraphLines = [];
+    };
+
+    while (i < lines.length) {
+        const line = lines[i];
+
+        if (!line.trim()) {
+            flushParagraph();
+            i++;
+            continue;
+        }
+
+        const numbered = line.match(/^(\d+)\.\s+(.*)$/);
+        if (numbered) {
+            flushParagraph();
+            const items: { value: number; content: string }[] = [];
+            while (i < lines.length) {
+                const match = lines[i].match(/^(\d+)\.\s+(.*)$/);
+                if (!match) break;
+                items.push({ value: Number(match[1]), content: match[2] });
+                i++;
+            }
+            blocks.push(
+                <ol key={`ol-${blocks.length}`} start={items[0]?.value || 1} style={{ margin: "0 0 0 18px", padding: 0 }}>
+                    {items.map((item, index) => (
+                        <li key={index} style={{ lineHeight: 1.75, marginBottom: 6 }}>
+                            {renderInline(item.content)}
+                        </li>
+                    ))}
+                </ol>
+            );
+            continue;
+        }
+
+        if (line.startsWith("- ") || line.startsWith("* ")) {
+            flushParagraph();
+            const items: string[] = [];
+            while (i < lines.length && (lines[i].startsWith("- ") || lines[i].startsWith("* "))) {
+                items.push(lines[i].slice(2));
+                i++;
+            }
+            blocks.push(
+                <ul key={`ul-${blocks.length}`} style={{ margin: "0 0 0 18px", padding: 0 }}>
+                    {items.map((item, index) => (
+                        <li key={index} style={{ lineHeight: 1.75, marginBottom: 6 }}>
+                            {renderInline(item)}
+                        </li>
+                    ))}
+                </ul>
+            );
+            continue;
+        }
+
+        paragraphLines.push(line);
+        i++;
+    }
+
+    flushParagraph();
+    return <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{blocks}</div>;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -247,7 +322,7 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
     // ═══════════════════════════════════════════════════════════
     if (phase === "setup") {
         return (
-            <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'DM Sans', sans-serif", color: "#F0EDE8" }}>
+            <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8" }}>
                 {/* Header */}
                 <div style={{ padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)", zIndex: 10 }}>
                     <button
@@ -257,15 +332,15 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
                         ← Back
                     </button>
                     <div>
-                        <div style={{ fontSize: 16, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700 }}>Pitch Practice</div>
+                        <div style={{ fontSize: 16, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>Pitch Practice</div>
                         <div style={{ fontSize: 10, color: "#555" }}>Rehearse your pitch with Forge</div>
                     </div>
                 </div>
 
                 <div style={{ maxWidth: 560, margin: "0 auto", padding: "28px 16px 60px" }}>
                     {/* Intro */}
-                    <div style={{ marginBottom: 28, animation: "fadeSlideUp 0.4s ease both", textAlign: "center" }}>
-                        <div style={{ fontSize: 23, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, marginBottom: 8, lineHeight: 1.2 }}>
+                    <div style={{ marginBottom: 28, animation: "fadeSlideUp 0.4s ease both", textAlign: "left" }}>
+                        <div style={{ fontSize: 23, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 8, lineHeight: 1.2 }}>
                             Your rehearsal room.
                         </div>
                         <div style={{ fontSize: 13, color: "#888", lineHeight: 1.75, fontFamily: "'Lora', Georgia, serif", fontStyle: "italic" }}>
@@ -279,6 +354,7 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                             {(["text", "voice"] as Mode[]).map(m => {
                                 const unavailable = m === "voice" && !speechSupported;
+                                const ModeIcon = m === "text" ? Icons.sidebar.documents : Icons.sidebar.voice;
                                 return (
                                     <button
                                         key={m}
@@ -290,11 +366,25 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
                                             background: mode === m ? "rgba(232,98,42,0.1)" : "rgba(255,255,255,0.02)",
                                             cursor: unavailable ? "not-allowed" : "pointer",
                                             opacity: unavailable ? 0.35 : 1,
-                                            textAlign: "center",
+                                            textAlign: "left",
                                             transition: "all 0.15s",
                                         }}
                                     >
-                                        <div style={{ fontSize: 20, marginBottom: 5 }}>{m === "text" ? "⌨️" : "🎤"}</div>
+                                        <div
+                                            style={{
+                                                width: 34,
+                                                height: 34,
+                                                borderRadius: 10,
+                                                background: mode === m ? "rgba(232,98,42,0.12)" : "rgba(255,255,255,0.04)",
+                                                border: mode === m ? "1px solid rgba(232,98,42,0.24)" : "1px solid rgba(255,255,255,0.08)",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                marginBottom: 8,
+                                            }}
+                                        >
+                                            <ModeIcon size={18} color={mode === m ? "#E8622A" : "#888"} />
+                                        </div>
                                         <div style={{ fontSize: 13, fontWeight: 600, color: mode === m ? "#E8622A" : "#C8C4BE", marginBottom: 3 }}>
                                             {m === "text" ? "Text" : "Voice"}
                                         </div>
@@ -312,6 +402,9 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
                         <div style={{ fontSize: 10, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>Scenario</div>
                         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                             {SCENARIOS.map(s => (
+                                (() => {
+                                    const ScenarioIcon = s.icon;
+                                    return (
                                 <button
                                     key={s.id}
                                     onClick={() => setScenario(s.id)}
@@ -329,13 +422,29 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
                                         width: "100%",
                                     }}
                                 >
-                                    <span style={{ fontSize: 20, flexShrink: 0 }}>{s.emoji}</span>
+                                    <span
+                                        style={{
+                                            width: 34,
+                                            height: 34,
+                                            borderRadius: 10,
+                                            background: scenario === s.id ? "rgba(232,98,42,0.12)" : "rgba(255,255,255,0.04)",
+                                            border: scenario === s.id ? "1px solid rgba(232,98,42,0.24)" : "1px solid rgba(255,255,255,0.08)",
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        <ScenarioIcon size={18} color={scenario === s.id ? "#E8622A" : "#888"} />
+                                    </span>
                                     <div style={{ flex: 1 }}>
                                         <div style={{ fontSize: 13, color: scenario === s.id ? "#E8622A" : "#C8C4BE", fontWeight: 600, marginBottom: 2 }}>{s.label}</div>
                                         <div style={{ fontSize: 11, color: "#555" }}>{s.sub}</div>
                                     </div>
                                     {scenario === s.id && <span style={{ color: "#E8622A", fontSize: 12, flexShrink: 0 }}>✓</span>}
                                 </button>
+                                    );
+                                })()
                             ))}
                         </div>
                     </div>
@@ -356,7 +465,7 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
                     {/* Start Button */}
                     <button
                         onClick={startSession}
-                        style={{ width: "100%", padding: "15px", background: "linear-gradient(135deg, #E8622A, #c9521e)", border: "none", borderRadius: 14, color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.02em", animation: "fadeSlideUp 0.4s ease 0.15s both" }}
+                        style={{ width: "100%", padding: "15px", background: "linear-gradient(135deg, #E8622A, #c9521e)", border: "none", borderRadius: 14, color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "'Lora', Georgia, serif", letterSpacing: "0.02em", animation: "fadeSlideUp 0.4s ease 0.15s both" }}
                     >
                         Start Session →
                     </button>
@@ -371,18 +480,18 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
     if (phase === "feedback") {
         const scenarioLabel = SCENARIOS.find(s => s.id === scenario)?.label || "Pitch";
         return (
-            <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'DM Sans', sans-serif", color: "#F0EDE8" }}>
+            <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8" }}>
                 <div style={{ padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)", zIndex: 10 }}>
                     <button onClick={onBack} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "6px 12px", color: "#888", fontSize: 13, cursor: "pointer" }}>← Hub</button>
                     <div>
-                        <div style={{ fontSize: 16, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700 }}>Session Complete</div>
+                        <div style={{ fontSize: 16, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>Session Complete</div>
                         <div style={{ fontSize: 10, color: "#555" }}>{formatTime(sessionTime)} · {scenarioLabel}</div>
                     </div>
                 </div>
 
                 <div style={{ maxWidth: 560, margin: "0 auto", padding: "28px 16px 60px" }}>
                     {loading ? (
-                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16, padding: "80px 0", color: "#555" }}>
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 16, padding: "80px 0", color: "#555" }}>
                             <Logo variant="flame" style={{ width: 32, height: 32, objectFit: "contain" }} />
                             <div style={{ fontSize: 14, fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", color: "#666" }}>
                                 Forge is reviewing your pitch...
@@ -390,8 +499,8 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
                         </div>
                     ) : (
                         <>
-                            <div style={{ marginBottom: 20, animation: "fadeSlideUp 0.4s ease both", textAlign: "center" }}>
-                                <div style={{ fontSize: 22, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, marginBottom: 4 }}>Coaching Feedback</div>
+                            <div style={{ marginBottom: 20, animation: "fadeSlideUp 0.4s ease both", textAlign: "left" }}>
+                                <div style={{ fontSize: 22, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 4 }}>Coaching Feedback</div>
                                 <div style={{ fontSize: 12, color: "#555" }}>From your {scenarioLabel.toLowerCase()} · {formatTime(sessionTime)}</div>
                             </div>
 
@@ -426,13 +535,13 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
     const scenarioLabel = SCENARIOS.find(s => s.id === scenario)?.label || "Pitch";
 
     return (
-        <div style={{ height: "100dvh", display: "flex", flexDirection: "column", background: "#080809", fontFamily: "'DM Sans', sans-serif", color: "#F0EDE8", overflow: "hidden" }}>
+        <div style={{ height: "100dvh", display: "flex", flexDirection: "column", background: "#080809", fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8", overflow: "hidden" }}>
             {/* Session Header */}
             <div style={{ padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 12px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <Logo variant="flame" style={{ width: 32, height: 32, objectFit: "contain" }} />
                     <div>
-                        <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "'Cormorant Garamond', Georgia, serif" }}>{scenarioLabel}</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "'Playfair Display', Georgia, serif" }}>{scenarioLabel}</div>
                         <div style={{ fontSize: 10, color: "#555" }}>{formatTime(sessionTime)} · {mode === "voice" ? "Voice" : "Text"}</div>
                     </div>
                 </div>
@@ -475,7 +584,9 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
                             }}
                         >
                             {msg.text
-                                ? msg.text.replace(/\[COACH\]\s*/g, "💡 ")
+                                ? msg.role === "forge"
+                                    ? <StructuredPitchText text={msg.text} />
+                                    : <div style={{ whiteSpace: "pre-wrap" }}>{msg.text}</div>
                                 : (msg.id ? <TypingDots /> : null)
                             }
                         </div>
@@ -533,7 +644,7 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
                         >
                             <Icons.sidebar.voice size={26} color={listening ? "#4CAF8A" : "#E8622A"} />
                         </button>
-                        <div style={{ fontSize: 11, color: "#555", textAlign: "center" }}>
+                        <div style={{ fontSize: 11, color: "#555", textAlign: "left", width: "100%" }}>
                             {listening ? "Tap to stop" : speaking ? "Forge is speaking..." : loading ? "Thinking..." : "Tap mic to speak"}
                         </div>
                     </div>
@@ -560,7 +671,7 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
                                 padding: "10px 12px",
                                 color: "#F0EDE8",
                                 fontSize: 14,
-                                fontFamily: "'DM Sans', sans-serif",
+                                fontFamily: "'Lora', Georgia, serif",
                                 lineHeight: 1.5,
                                 resize: "none",
                                 outline: "none",

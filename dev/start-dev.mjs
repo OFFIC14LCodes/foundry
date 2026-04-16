@@ -1,13 +1,22 @@
 import { spawn } from "node:child_process";
+import net from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, "..");
+const forgePort = await findAvailablePort(Number(process.env.FORGE_PORT || 3001));
+const childEnv = {
+  ...process.env,
+  FORGE_PORT: String(forgePort),
+};
+
+console.log(`Using Forge dev API port ${forgePort}`);
 
 const forgeProcess = spawn(process.execPath, [path.join(repoRoot, "dev/forge-server.mjs")], {
   cwd: repoRoot,
+  env: childEnv,
   stdio: "inherit",
   shell: false,
 });
@@ -20,6 +29,7 @@ if (!npmCliPath) {
 
 const viteProcess = spawn(process.execPath, [npmCliPath, "run", "dev:vite"], {
   cwd: repoRoot,
+  env: childEnv,
   stdio: "inherit",
   shell: false,
 });
@@ -57,5 +67,27 @@ for (const signal of ["SIGINT", "SIGTERM"]) {
       if (!child.killed) child.kill();
     }
     process.exit(0);
+  });
+}
+
+async function findAvailablePort(startPort) {
+  let port = startPort;
+
+  while (!(await canListenOnPort(port))) {
+    port += 1;
+  }
+
+  return port;
+}
+
+function canListenOnPort(port) {
+  return new Promise((resolve) => {
+    const server = net.createServer();
+
+    server.unref();
+    server.on("error", () => resolve(false));
+    server.listen(port, "127.0.0.1", () => {
+      server.close(() => resolve(true));
+    });
   });
 }

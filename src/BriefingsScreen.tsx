@@ -1,6 +1,89 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { saveBriefing } from "./db";
 import Logo from "./components/Logo";
+
+function renderInline(text: string) {
+    const parts = text.split(/\*\*(.+?)\*\*/g);
+    return parts.map((part, i) =>
+        i % 2 === 1
+            ? <strong key={i} style={{ color: "#F0EDE8", fontWeight: 700 }}>{part}</strong>
+            : <span key={i}>{part}</span>
+    );
+}
+
+function BriefingText({ text }: { text: string }) {
+    const lines = text.split("\n");
+    const blocks: ReactNode[] = [];
+    let paragraphLines: string[] = [];
+    let i = 0;
+
+    const flushParagraph = () => {
+        if (paragraphLines.length === 0) return;
+        blocks.push(
+            <div key={`p-${blocks.length}`} style={{ fontSize: 14, color: "#C8C4BE", lineHeight: 1.8, fontFamily: "'Lora', Georgia, serif" }}>
+                {renderInline(paragraphLines.join("\n"))}
+            </div>
+        );
+        paragraphLines = [];
+    };
+
+    while (i < lines.length) {
+        const line = lines[i];
+
+        if (!line.trim()) {
+            flushParagraph();
+            i++;
+            continue;
+        }
+
+        const numbered = line.match(/^(\d+)\.\s+(.*)$/);
+        if (numbered) {
+            flushParagraph();
+            const items: { value: number; content: string }[] = [];
+            while (i < lines.length) {
+                const match = lines[i].match(/^(\d+)\.\s+(.*)$/);
+                if (!match) break;
+                items.push({ value: Number(match[1]), content: match[2] });
+                i++;
+            }
+            blocks.push(
+                <ol key={`ol-${blocks.length}`} start={items[0]?.value || 1} style={{ margin: "0 0 0 20px", padding: 0 }}>
+                    {items.map((item, index) => (
+                        <li key={index} style={{ fontSize: 14, color: "#C8C4BE", lineHeight: 1.8, marginBottom: 8, fontFamily: "'Lora', Georgia, serif" }}>
+                            {renderInline(item.content)}
+                        </li>
+                    ))}
+                </ol>
+            );
+            continue;
+        }
+
+        if (line.startsWith("- ") || line.startsWith("* ")) {
+            flushParagraph();
+            const bullets: string[] = [];
+            while (i < lines.length && (lines[i].startsWith("- ") || lines[i].startsWith("* "))) {
+                bullets.push(lines[i].slice(2));
+                i++;
+            }
+            blocks.push(
+                <ul key={`ul-${blocks.length}`} style={{ margin: "0 0 0 20px", padding: 0 }}>
+                    {bullets.map((item, index) => (
+                        <li key={index} style={{ fontSize: 14, color: "#C8C4BE", lineHeight: 1.8, marginBottom: 8, fontFamily: "'Lora', Georgia, serif" }}>
+                            {renderInline(item)}
+                        </li>
+                    ))}
+                </ul>
+            );
+            continue;
+        }
+
+        paragraphLines.push(line);
+        i++;
+    }
+
+    flushParagraph();
+    return <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>{blocks}</div>;
+}
 
 const FORGE_BRIEFING_PROMPT = (profile: any, stageLabel: string, completedCount: number, totalCount: number) => `
 You are Forge. Generate a Monday morning briefing for ${profile.name}, who is building "${profile.businessName || profile.idea}".
@@ -12,15 +95,31 @@ Their current situation:
 - Budget remaining: $${(profile.budget?.remaining || 0).toLocaleString()}
 - Industry: ${profile.industry || "Early stage"}
 
-Write a Monday morning briefing in exactly this structure — no headers, no bullet points, just flowing paragraphs:
+Write a Monday morning briefing that is easy to scan on a phone. Keep everything flush-left. Use short paragraphs, bullet points, and numbered lines when they help clarity. No centered prose blocks.
 
-1. A warm but direct opening that acknowledges where they are right now in the journey. Reference something specific about their business or stage. 2-3 sentences.
+Use this structure:
 
-2. The single most important priority for this week given their stage and progress. Be specific and direct. 2-3 sentences.
+1. Opening
+- A warm but direct opening that acknowledges where they are right now in the journey.
+- Reference something specific about their business or stage.
+- Keep it to 2-3 sentences.
 
-3. A relevant framework, mental model, or founder story that applies directly to what they're working on right now. Name it, explain it briefly, connect it to their situation. 3-4 sentences.
+2. This Week's Priority
+- The single most important priority for this week given their stage and progress.
+- Be specific and direct.
+- Keep it to 2-3 sentences.
 
-4. One sharp question to sit with this week. Not a task — a question that will shape how they think. One sentence, make it count.
+3. Teaching Point
+- Give one relevant framework, mental model, or founder story that applies directly to what they're working on right now.
+- Name it clearly.
+- Explain it briefly.
+- Connect it directly to their situation.
+- Keep it to 3-4 sentences or 2-4 bullets.
+
+4. One Sharp Question
+- End with one sharp question to sit with this week.
+- Not a task. A question that shapes how they think.
+- One sentence.
 
 Keep the whole thing under 300 words. Write it the way Forge speaks — direct, warm, no filler, no corporate language. This should feel like a Monday morning text from a partner who's been thinking about their business over the weekend.
 `.trim();
@@ -58,7 +157,7 @@ export default function BriefingsScreen({ userId, profile, briefings, onBriefing
                 body: JSON.stringify({
                     model: "claude-sonnet-4-20250514",
                     max_tokens: 600,
-                    system: "You are Forge, the AI business partner inside Foundry. Write exactly as instructed — no extra formatting, no headers, no bullet points. Pure flowing prose.",
+                    system: "You are Forge, the AI business partner inside Foundry. Write exactly as instructed. Keep the text flush-left, easy to scan, and structured with short paragraphs, bullets, and numbered lines when useful.",
                     messages: [{ role: "user", content: prompt }],
                 }),
             });
@@ -92,7 +191,7 @@ export default function BriefingsScreen({ userId, profile, briefings, onBriefing
         <div style={{
             position: "fixed", inset: 0, background: "#080809",
             display: "flex", flexDirection: "column",
-            fontFamily: "'DM Sans', sans-serif", color: "#F0EDE8", zIndex: 200
+            fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8", zIndex: 200
         }}>
             {/* Header */}
             <div style={{
@@ -109,7 +208,7 @@ export default function BriefingsScreen({ userId, profile, briefings, onBriefing
                     display: "flex", alignItems: "center", gap: 6
                 }}><Logo variant="flame" style={{ width: 14, height: 14, objectFit: "contain" }} />Hub</button>
 
-                <div style={{ textAlign: "center" }}>
+                <div style={{ textAlign: "left", flex: 1, marginLeft: 12 }}>
                     <div style={{
                         fontSize: 14, fontFamily: "'Lora', Georgia, serif",
                         fontWeight: 600, color: "#F0EDE8"
@@ -145,18 +244,18 @@ export default function BriefingsScreen({ userId, profile, briefings, onBriefing
                 {/* Empty state */}
                 {briefings.length === 0 && !generating && (
                     <div style={{
-                        textAlign: "center", padding: "60px 24px",
+                        textAlign: "left", padding: "60px 24px",
                         opacity: mounted ? 1 : 0, transition: "opacity 0.5s ease"
                     }}>
                         <div style={{ fontSize: 48, marginBottom: 16 }}>📅</div>
                         <div style={{
-                            fontSize: 20, fontFamily: "'Cormorant Garamond', Georgia, serif",
+                            fontSize: 20, fontFamily: "'Playfair Display', Georgia, serif",
                             fontWeight: 700, color: "#F0EDE8", marginBottom: 10
                         }}>No briefings yet</div>
                         <div style={{
                             fontSize: 13, color: "#555", fontFamily: "'Lora', Georgia, serif",
                             fontStyle: "italic", lineHeight: 1.7, maxWidth: 300,
-                            margin: "0 auto 24px"
+                            margin: "0 0 24px"
                         }}>
                             Forge will write you a personalized briefing — your priorities, a relevant framework, and one sharp question to start the week with.
                         </div>
@@ -174,8 +273,8 @@ export default function BriefingsScreen({ userId, profile, briefings, onBriefing
 
                 {/* Generating state */}
                 {generating && briefings.length === 0 && (
-                    <div style={{ textAlign: "center", padding: "40px 24px" }}>
-                        <div style={{ display: "flex", gap: 6, justifyContent: "center", marginBottom: 16 }}>
+                    <div style={{ textAlign: "left", padding: "40px 24px" }}>
+                        <div style={{ display: "flex", gap: 6, justifyContent: "flex-start", marginBottom: 16 }}>
                             {[0, 1, 2].map(i => (
                                 <div key={i} style={{
                                     width: 8, height: 8, borderRadius: "50%", background: "#E8622A",
@@ -235,11 +334,11 @@ export default function BriefingsScreen({ userId, profile, briefings, onBriefing
                                 {/* Briefing content */}
                                 {isExpanded && (
                                     <div style={{ padding: "16px" }}>
-                                        <div style={{
+                                    <div style={{
                                             fontSize: 14, fontFamily: "'Lora', Georgia, serif",
-                                            color: "#C8C4BE", lineHeight: 1.85, whiteSpace: "pre-wrap"
+                                            color: "#C8C4BE", lineHeight: 1.85
                                         }}>
-                                            {briefing.content}
+                                            <BriefingText text={briefing.content} />
                                         </div>
                                         <div style={{
                                             marginTop: 16, paddingTop: 12,

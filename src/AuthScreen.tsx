@@ -149,7 +149,7 @@ export default function AuthScreen({
         borderRadius: 10,
         color: "#F0EDE8",
         fontSize: 13,
-        fontFamily: "'DM Sans', sans-serif",
+        fontFamily: "'Lora', Georgia, serif",
         boxSizing: "border-box",
     };
 
@@ -157,7 +157,7 @@ export default function AuthScreen({
         <div style={{
             position: "fixed", inset: 0, background: "#080809",
             display: "flex", flexDirection: "column", alignItems: "center",
-            justifyContent: "center", fontFamily: "'DM Sans', sans-serif",
+            justifyContent: "center", fontFamily: "'Lora', Georgia, serif",
             padding: "24px", zIndex: 200
         }}>
 
@@ -181,7 +181,7 @@ export default function AuthScreen({
                 <div style={{
                     fontSize: "clamp(26px, 7vw, 34px)",
                     color: "#F0EDE8",
-                    fontFamily: "'Cormorant Garamond', Georgia, serif",
+                    fontFamily: "'Playfair Display', Georgia, serif",
                     fontWeight: 700,
                     letterSpacing: "0.02em",
                     lineHeight: 1,
@@ -207,7 +207,7 @@ export default function AuthScreen({
                         <div style={{ marginBottom: 20, textAlign: "center" }}>
                             <div style={{
                                 fontSize: 16, fontWeight: 600, color: "#F0EDE8",
-                                fontFamily: "'Cormorant Garamond', Georgia, serif",
+                                fontFamily: "'Playfair Display', Georgia, serif",
                                 marginBottom: 6
                             }}>Set a new password</div>
                             <div style={{ fontSize: 12, color: "#666", lineHeight: 1.5 }}>
@@ -283,7 +283,7 @@ export default function AuthScreen({
                         <div style={{ marginBottom: 20, textAlign: "center" }}>
                             <div style={{
                                 fontSize: 16, fontWeight: 600, color: "#F0EDE8",
-                                fontFamily: "'Cormorant Garamond', Georgia, serif",
+                                fontFamily: "'Playfair Display', Georgia, serif",
                                 marginBottom: 6
                             }}>Reset your password</div>
                             <div style={{ fontSize: 12, color: "#666", lineHeight: 1.5 }}>
@@ -433,7 +433,7 @@ export default function AuthScreen({
                                                 background: "none", border: "none",
                                                 color: "#555", fontSize: 11,
                                                 cursor: "pointer", padding: 0,
-                                                fontFamily: "'DM Sans', sans-serif",
+                                                fontFamily: "'Lora', Georgia, serif",
                                             }}
                                             onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#E8622A"}
                                             onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "#555"}

@@ -16,7 +16,7 @@ export function SettingsScreenShell({
     footer,
 }: SettingsScreenShellProps) {
     return (
-        <div style={{ minHeight: "100vh", background: "#080809", color: "#F0EDE8", fontFamily: "'DM Sans', sans-serif" }}>
+        <div style={{ minHeight: "100vh", background: "#080809", color: "#F0EDE8", fontFamily: "'Lora', Georgia, serif" }}>
             <div style={{ position: "sticky", top: 0, zIndex: 20, background: "rgba(8,8,9,0.94)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                 <div style={{ maxWidth: 1100, margin: "0 auto", padding: "max(18px, calc(10px + env(safe-area-inset-top))) 20px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
                     <div style={{ flex: 1, textAlign: "center" }}>

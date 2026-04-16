@@ -134,7 +134,7 @@ function UserRow({ user, onClick }: { user: AdminUser; onClick: () => void }) {
                 padding: '12px 14px', background: 'rgba(255,255,255,0.02)',
                 border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12,
                 cursor: 'pointer', textAlign: 'left', marginBottom: 6,
-                transition: 'background 0.15s', fontFamily: "'DM Sans', sans-serif",
+                transition: 'background 0.15s', fontFamily: "'Lora', Georgia, serif",
             }}
             onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
             onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
@@ -272,7 +272,7 @@ function UserDetailPanel({
     return (
         <div style={{
             position: 'fixed', inset: 0, background: '#080809', zIndex: 110,
-            fontFamily: "'DM Sans', sans-serif", color: '#F0EDE8',
+            fontFamily: "'Lora', Georgia, serif", color: '#F0EDE8',
             display: 'flex', flexDirection: 'column', animation: 'fadeIn 0.2s ease',
         }}>
             {/* Header */}
@@ -481,7 +481,7 @@ function UserDetailPanel({
                             width: '100%', background: 'rgba(255,255,255,0.04)',
                             border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8,
                             padding: '9px 12px', color: '#F0EDE8', fontSize: 12,
-                            fontFamily: "'DM Sans', sans-serif", lineHeight: 1.6,
+                            fontFamily: "'Lora', Georgia, serif", lineHeight: 1.6,
                             resize: 'vertical', boxSizing: 'border-box', outline: 'none',
                         }}
                     />
@@ -542,7 +542,7 @@ function ActionItem({
                     border: expanded ? `1px solid ${color}30` : '1px solid rgba(255,255,255,0.06)',
                     color: expanded ? color : '#C8C4BE', fontSize: 12, cursor: 'pointer',
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    fontFamily: "'DM Sans', sans-serif", transition: 'all 0.15s',
+                    fontFamily: "'Lora', Georgia, serif", transition: 'all 0.15s',
                 }}
             >
                 <span>{label}</span>
@@ -564,7 +564,7 @@ function ActionItem({
                                 width: '100%', background: 'rgba(255,255,255,0.04)',
                                 border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6,
                                 padding: '8px 10px', color: '#F0EDE8', fontSize: 12,
-                                fontFamily: "'DM Sans', sans-serif", marginBottom: 8,
+                                fontFamily: "'Lora', Georgia, serif", marginBottom: 8,
                                 boxSizing: 'border-box', outline: 'none',
                             }}
                         />
@@ -578,7 +578,7 @@ function ActionItem({
                             background: destructive ? 'rgba(245,68,67,0.15)' : `${color}18`,
                             border: `1px solid ${destructive ? 'rgba(245,68,67,0.3)' : `${color}35`}`,
                             color: destructive ? '#F54443' : color,
-                            fontFamily: "'DM Sans', sans-serif",
+                            fontFamily: "'Lora', Georgia, serif",
                         }}
                     >
                         {loading ? 'Working...' : confirmLabel}
@@ -652,7 +652,7 @@ export default function AdminDashboard({ userId, onBack }: Props) {
     return (
         <div style={{
             position: 'fixed', inset: 0, background: '#080809', zIndex: 100,
-            fontFamily: "'DM Sans', sans-serif", color: '#F0EDE8',
+            fontFamily: "'Lora', Georgia, serif", color: '#F0EDE8',
             display: 'flex', flexDirection: 'column',
         }}>
             {/* Header */}
@@ -692,7 +692,7 @@ export default function AdminDashboard({ userId, onBack }: Props) {
                         width: '100%', background: 'rgba(255,255,255,0.04)',
                         border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10,
                         padding: '9px 14px', color: '#F0EDE8', fontSize: 13,
-                        fontFamily: "'DM Sans', sans-serif", outline: 'none',
+                        fontFamily: "'Lora', Georgia, serif", outline: 'none',
                         boxSizing: 'border-box', marginBottom: 10,
                     }}
                 />
@@ -707,7 +707,7 @@ export default function AdminDashboard({ userId, onBack }: Props) {
                                 background: filter === f.key ? 'rgba(232,98,42,0.15)' : 'rgba(255,255,255,0.04)',
                                 border: filter === f.key ? '1px solid rgba(232,98,42,0.35)' : '1px solid rgba(255,255,255,0.08)',
                                 color: filter === f.key ? '#E8622A' : '#666',
-                                fontFamily: "'DM Sans', sans-serif", fontWeight: filter === f.key ? 600 : 400,
+                                fontFamily: "'Lora', Georgia, serif", fontWeight: filter === f.key ? 600 : 400,
                                 transition: 'all 0.15s',
                             }}
                         >

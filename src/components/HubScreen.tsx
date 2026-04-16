@@ -304,7 +304,7 @@ export default function HubScreen({
 
 
     return (
-        <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'DM Sans', sans-serif", color: "#F0EDE8" }}>
+        <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8" }}>
             {sidebarOpen && (
                 <div
                     onClick={() => setSidebarOpen(false)}
@@ -355,7 +355,7 @@ export default function HubScreen({
                             <span
                                 style={{
                                     fontSize: 15,
-                                    fontFamily: "'Cormorant Garamond', Georgia, serif",
+                                    fontFamily: "'Playfair Display', Georgia, serif",
                                     fontWeight: 700,
                                     color: "#F0EDE8",
                                 }}
@@ -588,7 +588,7 @@ export default function HubScreen({
                         <div
                             style={{
                                 fontSize: 16,
-                                fontFamily: "'Cormorant Garamond', Georgia, serif",
+                                fontFamily: "'Playfair Display', Georgia, serif",
                                 fontWeight: 700,
                                 color: "#F0EDE8",
                             }}
@@ -613,7 +613,7 @@ export default function HubScreen({
                         display: "flex",
                         alignItems: "center",
                         gap: 6,
-                        fontFamily: "'DM Sans', sans-serif",
+                        fontFamily: "'Lora', Georgia, serif",
                     }}
                 >
                     <Icons.forge.chat size={14} /> Talk to Forge
@@ -632,7 +632,7 @@ export default function HubScreen({
                     <div
                         style={{
                             fontSize: 22,
-                            fontFamily: "'Cormorant Garamond', Georgia, serif",
+                            fontFamily: "'Playfair Display', Georgia, serif",
                             fontWeight: 700,
                             color: "#F0EDE8",
                             lineHeight: 1.2,
@@ -912,11 +912,34 @@ export default function HubScreen({
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                             {(profile.glossaryLearned || []).map((item, i) => {
                                 const color = STAGE_COLORS[item.stage] || "#E8622A";
-                                return <div key={i} style={{ fontSize: 11, color, background: `${color}12`, border: `1px solid ${color}25`, borderRadius: 20, padding: "3px 10px", fontFamily: "'DM Sans', sans-serif", fontWeight: 500 }}>{item.term}</div>;
+                                return <div key={i} style={{ fontSize: 11, color, background: `${color}12`, border: `1px solid ${color}25`, borderRadius: 20, padding: "3px 10px", fontFamily: "'Lora', Georgia, serif", fontWeight: 500 }}>{item.term}</div>;
                             })}
                         </div>
                         {(profile.glossaryLearned || []).length >= 5 && (
                             <div style={{ fontSize: 11, color: "#555", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", marginTop: 10 }}>You're building real business literacy. Keep going.</div>
+                        )}
+                    </div>
+                )}
+
+                {/* Concepts explored */}
+                {(profile.exploredConcepts || []).length > 0 && (
+                    <div style={{ background: "rgba(159,122,234,0.03)", border: "1px solid rgba(159,122,234,0.12)", borderRadius: 16, padding: "14px 16px", marginBottom: 12, animation: "fadeSlideUp 0.5s ease 0.34s both" }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>
+                                <span style={{ color: "#9F7AEA" }}>✦</span>
+                                <span>Concepts Explored</span>
+                            </div>
+                            <div style={{ fontSize: 11, color: "#9F7AEA" }}>{(profile.exploredConcepts || []).length} explored</div>
+                        </div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                            {(profile.exploredConcepts || []).map((item: any, i: number) => (
+                                <div key={i} style={{ fontSize: 11, color: "#9F7AEA", background: "rgba(159,122,234,0.1)", border: "1px solid rgba(159,122,234,0.22)", borderRadius: 20, padding: "3px 10px", fontFamily: "'Lora', Georgia, serif", fontWeight: 500 }}>
+                                    ✦ {item.concept}
+                                </div>
+                            ))}
+                        </div>
+                        {(profile.exploredConcepts || []).length >= 3 && (
+                            <div style={{ fontSize: 11, color: "#555", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", marginTop: 10 }}>Every concept you explore is a framework you now carry into every decision.</div>
                         )}
                     </div>
                 )}
@@ -953,7 +976,7 @@ export default function HubScreen({
                 <div style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, animation: "fadeIn 0.2s ease" }} onClick={() => setShowDecisionModal(false)}>
                     <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: "#0E0E10", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 22, animation: "fadeSlideUp 0.3s ease" }}>
                         <div style={{ fontSize: 17, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 16 }}>Log a Decision</div>
-                        <textarea value={decisionText} onChange={e => setDecisionText(e.target.value)} placeholder="What did you decide and why?" rows={3} autoFocus style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'DM Sans', sans-serif", lineHeight: 1.6, boxSizing: "border-box" }} />
+                        <textarea value={decisionText} onChange={e => setDecisionText(e.target.value)} placeholder="What did you decide and why?" rows={3} autoFocus style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", lineHeight: 1.6, boxSizing: "border-box" }} />
                         <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
                             {Object.keys(TAG_COLORS).map(t => (
                                 <button key={t} onClick={() => setDecisionTag(t)} style={{ padding: "4px 12px", borderRadius: 20, border: "none", background: decisionTag === t ? TAG_COLORS[t].bg : "rgba(255,255,255,0.04)", color: decisionTag === t ? TAG_COLORS[t].text : "#555", fontSize: 11, cursor: "pointer" }}>{t}</button>
@@ -972,8 +995,8 @@ export default function HubScreen({
                 <div style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, animation: "fadeIn 0.2s ease" }} onClick={() => setShowExpenseModal(false)}>
                     <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: "#0E0E10", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 22, animation: "fadeSlideUp 0.3s ease" }}>
                         <div style={{ fontSize: 17, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 16 }}>Log an Expense</div>
-                        <input value={expenseLabel} onChange={e => setExpenseLabel(e.target.value)} placeholder="What was it for?" style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'DM Sans', sans-serif", marginBottom: 10, boxSizing: "border-box" }} />
-                        <input value={expenseAmount} onChange={e => setExpenseAmount(e.target.value)} placeholder="Amount ($)" type="number" style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'DM Sans', sans-serif", marginBottom: 10, boxSizing: "border-box" }} />
+                        <input value={expenseLabel} onChange={e => setExpenseLabel(e.target.value)} placeholder="What was it for?" style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", marginBottom: 10, boxSizing: "border-box" }} />
+                        <input value={expenseAmount} onChange={e => setExpenseAmount(e.target.value)} placeholder="Amount ($)" type="number" style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", marginBottom: 10, boxSizing: "border-box" }} />
                         <div style={{ fontSize: 11, color: "#666", marginBottom: 6, letterSpacing: "0.08em", textTransform: "uppercase" }}>Frequency</div>
                         <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
                             {(["one-time", "monthly", "yearly"] as const).map(f => (
@@ -983,7 +1006,7 @@ export default function HubScreen({
                         {expenseFrequency !== "one-time" && (
                             <>
                                 <div style={{ fontSize: 11, color: "#666", marginBottom: 6, letterSpacing: "0.08em", textTransform: "uppercase" }}>Next Renewal Date</div>
-                                <input type="date" value={expenseRenewalDate} onChange={e => setExpenseRenewalDate(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'DM Sans', sans-serif", marginBottom: 10, boxSizing: "border-box", colorScheme: "dark" }} />
+                                <input type="date" value={expenseRenewalDate} onChange={e => setExpenseRenewalDate(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", marginBottom: 10, boxSizing: "border-box", colorScheme: "dark" }} />
                             </>
                         )}
                         <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
@@ -999,8 +1022,8 @@ export default function HubScreen({
                 <div style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, animation: "fadeIn 0.2s ease" }} onClick={() => setShowIncomeModal(false)}>
                     <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: "#0E0E10", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 22, animation: "fadeSlideUp 0.3s ease" }}>
                         <div style={{ fontSize: 17, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 16 }}>Log Income</div>
-                        <input value={incomeLabel} onChange={e => setIncomeLabel(e.target.value)} placeholder="Source of income?" style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'DM Sans', sans-serif", marginBottom: 10, boxSizing: "border-box" }} />
-                        <input value={incomeAmount} onChange={e => setIncomeAmount(e.target.value)} placeholder="Amount ($)" type="number" style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'DM Sans', sans-serif", marginBottom: 10, boxSizing: "border-box" }} />
+                        <input value={incomeLabel} onChange={e => setIncomeLabel(e.target.value)} placeholder="Source of income?" style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", marginBottom: 10, boxSizing: "border-box" }} />
+                        <input value={incomeAmount} onChange={e => setIncomeAmount(e.target.value)} placeholder="Amount ($)" type="number" style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", marginBottom: 10, boxSizing: "border-box" }} />
                         <div style={{ fontSize: 11, color: "#666", marginBottom: 6, letterSpacing: "0.08em", textTransform: "uppercase" }}>Frequency</div>
                         <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
                             {(["one-time", "monthly", "yearly"] as const).map(f => (
@@ -1010,7 +1033,7 @@ export default function HubScreen({
                         {incomeFrequency !== "one-time" && (
                             <>
                                 <div style={{ fontSize: 11, color: "#666", marginBottom: 6, letterSpacing: "0.08em", textTransform: "uppercase" }}>Next Renewal Date</div>
-                                <input type="date" value={incomeRenewalDate} onChange={e => setIncomeRenewalDate(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'DM Sans', sans-serif", marginBottom: 10, boxSizing: "border-box", colorScheme: "dark" }} />
+                                <input type="date" value={incomeRenewalDate} onChange={e => setIncomeRenewalDate(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", marginBottom: 10, boxSizing: "border-box", colorScheme: "dark" }} />
                             </>
                         )}
                         <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
@@ -1054,7 +1077,7 @@ export default function HubScreen({
                             value={budgetEditAmount}
                             onChange={e => setBudgetEditAmount(e.target.value)}
                             placeholder="Exact amount available right now"
-                            style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'DM Sans', sans-serif", marginBottom: 16, boxSizing: "border-box" }}
+                            style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", marginBottom: 16, boxSizing: "border-box" }}
                         />
                         <div style={{ display: "flex", gap: 8 }}>
                             <button onClick={() => setShowBudgetModal(false)} style={{ flex: 1, padding: "10px", background: "transparent", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#555", fontSize: 12, cursor: "pointer" }}>Cancel</button>

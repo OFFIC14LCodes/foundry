@@ -1,6 +1,8 @@
 // ─────────────────────────────────────────────────────────────
 // MILESTONES PANEL
 // ─────────────────────────────────────────────────────────────
+import { STAGES_DATA } from "../constants/stages";
+
 export default function MilestonesPanel({
     stage,
     completedMilestones,

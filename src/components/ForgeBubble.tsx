@@ -4,6 +4,8 @@ import { callForgeAPI, streamForgeAPI } from "../lib/forgeApi";
 import { processFile, buildMessageContent, type AttachedFile } from "../lib/fileAttach";
 import { FORGE_SYSTEM_PROMPT } from "../constants/prompts";
 import { saveConversationSummary } from "../db";
+import { parseArchiveSummaryPayload } from "../lib/archiveSummary";
+import { applyFoundryBookCitations, buildFoundryBookContext } from "../lib/foundryBook";
 import ForgeAvatar from "./ForgeAvatar";
 import TypingDots from "./TypingDots";
 import Logo from "./Logo";
@@ -142,11 +144,17 @@ export default function ForgeBubble({ profile, userId, currentScreen, onBubbleSu
         }
     }, [open]);
 
-    const buildContext = () => {
+    const buildContext = (currentPrompt: string) => {
         const screenLabel = SCREEN_LABELS[currentScreen] || currentScreen;
         const now = new Date();
         const dateStr = now.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
-        return `
+        const bookContext = buildFoundryBookContext(
+            Number(profile.currentStage) || 1,
+            [...messages.slice(-4).map((message) => message.text), currentPrompt],
+            2
+        );
+        return {
+            context: `
 Current date: ${dateStr}
 The founder is currently viewing ${screenLabel}.
 Founder: ${profile.name} | Business: ${profile.businessName || profile.idea || "Idea stage"} (${profile.industry || "Early Stage"})
@@ -154,7 +162,10 @@ Strategy: ${profile.strategyLabel || profile.strategy} | Current Stage: ${profil
 Budget: $${(profile.budget?.remaining || 0).toLocaleString()} remaining of $${(profile.budget?.total || 0).toLocaleString()} | Spent: $${(profile.budget?.spent || 0).toLocaleString()}
 
 You are in a quick-access floating chat bubble. The founder is asking a quick question or needs help with what they're looking at. Be helpful, warm, and concise — this is a quick-assist context, not a deep coaching session. You are still Forge — same personality, same expertise — just more conversational. You can help them understand what they see on the screen, navigate the app, or think through a quick question.
-        `.trim();
+${bookContext.context ? `\n\n${bookContext.context}` : ""}
+        `.trim(),
+            bookMatches: bookContext.matches,
+        };
     };
 
     const send = async () => {
@@ -182,7 +193,7 @@ You are in a quick-access floating chat bubble. The founder is asking a quick qu
         setLoading(true);
 
         try {
-            const ctx = buildContext();
+            const ctx = buildContext(text);
             const apiMsgs = [
                 ...currentMessages.slice(0, -1).map(m => ({
                     role: m.role === "forge" ? "assistant" : "user",
@@ -196,9 +207,10 @@ You are in a quick-access floating chat bubble. The founder is asking a quick qu
 
             await streamForgeAPI(
                 apiMsgs,
-                FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", ctx),
+                FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", ctx.context),
                 (chunk) => {
-                    setMessages(prev => prev.map(m => m.id === forgeMsg.id ? { ...m, text: chunk } : m));
+                    const { cleanText } = applyFoundryBookCitations(chunk, ctx.bookMatches);
+                    setMessages(prev => prev.map(m => m.id === forgeMsg.id ? { ...m, text: cleanText } : m));
                 }
             );
         } catch {
@@ -237,13 +249,9 @@ You are in a quick-access floating chat bubble. The founder is asking a quick qu
                 "You write clean business conversation summaries. Return only valid JSON."
             );
 
-            let title = `Quick Chat · ${displayDate}`;
-            let summary = raw;
-            try {
-                const parsed = JSON.parse(raw);
-                title = parsed.title?.trim() || title;
-                summary = parsed.summary?.trim() || raw;
-            } catch { /* use raw fallbacks */ }
+            const parsed = parseArchiveSummaryPayload(raw, `Quick Chat · ${displayDate}`);
+            const title = parsed.title;
+            const summary = parsed.summary;
 
             const saved = await saveConversationSummary(userId, summaryStageId, dateKey, title, summary, msgsToArchive.length);
             if (saved && onBubbleSummaryAdded) {
@@ -279,7 +287,7 @@ You are in a quick-access floating chat bubble. The founder is asking a quick qu
                         flexDirection: "column",
                         boxShadow: "0 24px 64px rgba(0,0,0,0.65), 0 8px 24px rgba(0,0,0,0.4)",
                         overflow: "hidden",
-                        fontFamily: "'DM Sans', sans-serif",
+                        fontFamily: "'Lora', Georgia, serif",
                         animation: "bubbleSlideUp 0.22s cubic-bezier(0.34,1.56,0.64,1)",
                     }}
                 >
@@ -543,7 +551,7 @@ You are in a quick-access floating chat bubble. The founder is asking a quick qu
                                     padding: "8px 11px",
                                     color: "#F0EDE8",
                                     fontSize: 12.5,
-                                    fontFamily: "'DM Sans', sans-serif",
+                                    fontFamily: "'Lora', Georgia, serif",
                                     resize: "none",
                                     outline: "none",
                                     lineHeight: 1.5,

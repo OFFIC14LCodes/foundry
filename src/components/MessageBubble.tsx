@@ -6,6 +6,7 @@ function getAnimatedDisplayText(text) {
     return cleanAIText(text || "")
         .replace(/\[STAGE_REF:\d+\]/g, "")
         .replace(/\[\/STAGE_REF\]/g, "")
+        .replace(/\[CONCEPT\](.*?)\[\/CONCEPT\]/gs, "$1")
         .replace(/\*\*/g, "");
 }
 
@@ -13,7 +14,7 @@ function splitAnimatedLine(line) {
     return line.split(/(\s+)/).filter((token) => token.length > 0);
 }
 
-function AnimatedForgeText({ text, renderWithBold, onStageRef, onGlossaryTap, createdAt }) {
+function AnimatedForgeText({ text, renderWithBold, onStageRef, onGlossaryTap, onConceptTap, createdAt }) {
     const displayText = useMemo(() => getAnimatedDisplayText(text), [text]);
     const isFreshMessage = createdAt ? (Date.now() - new Date(createdAt).getTime()) < 20000 : true;
     const [visibleCount, setVisibleCount] = useState(isFreshMessage ? 0 : displayText.length);
@@ -54,7 +55,7 @@ function AnimatedForgeText({ text, renderWithBold, onStageRef, onGlossaryTap, cr
     }, [displayText.length, isFreshMessage, lastMutationAt, visibleCount]);
 
     if (settled) {
-        return renderWithBold(text, onStageRef, onGlossaryTap);
+        return renderWithBold(text, onStageRef, onGlossaryTap, onConceptTap);
     }
 
     const visibleText = displayText.slice(0, visibleCount);
@@ -62,7 +63,7 @@ function AnimatedForgeText({ text, renderWithBold, onStageRef, onGlossaryTap, cr
     let charIndex = 0;
 
     return (
-        <>
+        <div style={{ textAlign: "left", width: "100%" }}>
             <style>{`
                 @keyframes forgeLetterCool {
                     0% {
@@ -82,7 +83,7 @@ function AnimatedForgeText({ text, renderWithBold, onStageRef, onGlossaryTap, cr
             {paragraphs.map((para, pIdx) => {
                 const lines = para.split("\n");
                 return (
-                    <p key={`anim-p-${pIdx}`} style={{ margin: pIdx === 0 ? 0 : "10px 0 0 0" }}>
+                    <p key={`anim-p-${pIdx}`} style={{ margin: pIdx === 0 ? 0 : "10px 0 0 0", textAlign: "left" }}>
                         {lines.map((line, lIdx) => (
                             <span key={`anim-p-${pIdx}-l-${lIdx}`}>
                                 {lIdx > 0 && <br />}
@@ -129,11 +130,11 @@ function AnimatedForgeText({ text, renderWithBold, onStageRef, onGlossaryTap, cr
                     </p>
                 );
             })}
-        </>
+        </div>
     );
 }
 
-export default function MessageBubble({ msg, onStageRef, onGlossaryTap, renderWithBold, userName = "You", onAction = null }) {
+export default function MessageBubble({ msg, onStageRef, onGlossaryTap, onConceptTap, renderWithBold, userName = "You", onAction = null }) {
     const isForge = msg.role === "forge" || msg.role === "assistant";
     const senderName = isForge ? "Forge" : userName;
 
@@ -163,7 +164,7 @@ export default function MessageBubble({ msg, onStageRef, onGlossaryTap, renderWi
                         marginBottom: 6,
                         color: isForge ? "#8E867D" : "rgba(240,237,232,0.72)",
                         letterSpacing: "0.04em",
-                        fontFamily: "'DM Sans', sans-serif",
+                        fontFamily: "'Lora', Georgia, serif",
                     }}
                 >
                     {senderName}
@@ -177,9 +178,10 @@ export default function MessageBubble({ msg, onStageRef, onGlossaryTap, renderWi
                             : "linear-gradient(135deg, #E8622A, #c9521e)",
                         border: isForge ? "1px solid rgba(255,255,255,0.07)" : "none",
                         fontSize: isForge ? 14 : 13,
-                        fontFamily: isForge ? "'Lora', Georgia, serif" : "'DM Sans', sans-serif",
+                        fontFamily: isForge ? "'Lora', Georgia, serif" : "'Lora', Georgia, serif",
                         lineHeight: 1.75,
                         color: isForge ? "#D8D4CE" : "#fff",
+                        textAlign: "left",
                     }}
                 >
                     {isForge ? (
@@ -188,6 +190,7 @@ export default function MessageBubble({ msg, onStageRef, onGlossaryTap, renderWi
                             renderWithBold={renderWithBold}
                             onStageRef={onStageRef}
                             onGlossaryTap={onGlossaryTap}
+                            onConceptTap={onConceptTap}
                             createdAt={msg.createdAt}
                         />
                     ) : (

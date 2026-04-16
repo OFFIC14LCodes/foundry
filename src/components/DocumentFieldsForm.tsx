@@ -21,7 +21,7 @@ function FieldInput({ field, value, error, onChange }: {
         padding: "10px 12px",
         color: "#F0EDE8",
         fontSize: 13,
-        fontFamily: "'DM Sans', sans-serif",
+        fontFamily: "'Lora', Georgia, serif",
         lineHeight: 1.55,
         boxSizing: "border-box" as const,
         outline: "none",

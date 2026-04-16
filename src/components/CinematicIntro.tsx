@@ -32,8 +32,8 @@ export default function CinematicIntro({ onComplete }) {
                 }}
             />
             <div style={{ opacity: phase >= 2 ? 1 : 0, transform: phase >= 2 ? "translateY(0)" : "translateY(12px)", transition: "all 0.9s cubic-bezier(0.16, 1, 0.3, 1)", textAlign: "center", marginBottom: 40 }}>
-                <div style={{ fontSize: "clamp(36px, 11vw, 52px)", fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, color: "#F0EDE8", letterSpacing: "-1px", lineHeight: 1 }}>Foundry</div>
-                <div style={{ fontSize: 11, fontFamily: "'DM Sans', sans-serif", color: "#E8622A", letterSpacing: "0.25em", textTransform: "uppercase", marginTop: 8 }}>Build Something Real</div>
+                <div style={{ fontSize: "clamp(36px, 11vw, 52px)", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", letterSpacing: "-1px", lineHeight: 1 }}>Foundry</div>
+                <div style={{ fontSize: 11, fontFamily: "'Lora', Georgia, serif", color: "#E8622A", letterSpacing: "0.25em", textTransform: "uppercase", marginTop: 8 }}>Build Something Real</div>
             </div>
             <div style={{ opacity: phase >= 3 ? 1 : 0, transform: phase >= 3 ? "translateY(0)" : "translateY(8px)", transition: "all 0.8s ease", textAlign: "center", maxWidth: 380, padding: "0 32px" }}>
                 <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", color: "rgba(240,237,232,0.5)", lineHeight: 1.7 }}>"Every great business started with one person who decided to try."</div>

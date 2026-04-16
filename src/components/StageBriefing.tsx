@@ -40,7 +40,7 @@ export default function StageBriefing({ stage, stageId, onStart }) {
                 <h2
                     style={{
                         fontSize: 26,
-                        fontFamily: "'Cormorant Garamond', Georgia, serif",
+                        fontFamily: "'Playfair Display', Georgia, serif",
                         fontWeight: 700,
                         color: "#F0EDE8",
                         letterSpacing: "-0.5px",

@@ -247,7 +247,7 @@ export async function loadConversationSummaries(userId: string) {
         .from("daily_chat_summaries")
         .select("*")
         .eq("user_id", userId)
-        .order("summary_date", { ascending: false });
+        .order("created_at", { ascending: false });
 
     if (error) {
         if (isMissingRelationError(error, "daily_chat_summaries")) {
@@ -285,7 +285,7 @@ export async function saveConversationSummary(
 
     const { data, error } = await supabase
         .from("daily_chat_summaries")
-        .upsert({
+        .insert({
             user_id: userId,
             stage_id: stageId,
             summary_date: summaryDate,
@@ -293,7 +293,7 @@ export async function saveConversationSummary(
             summary,
             message_count: messageCount,
             updated_at: new Date().toISOString(),
-        }, { onConflict: "user_id,stage_id,summary_date" })
+        })
         .select()
         .single();
 
@@ -318,6 +318,82 @@ export async function saveConversationSummary(
         createdAt: data.created_at,
         updatedAt: data.updated_at,
     };
+}
+
+export async function updateConversationSummary(
+    userId: string,
+    summaryId: string,
+    updates: {
+        stageId?: number;
+        summaryDate?: string;
+        title?: string;
+        summary?: string;
+        messageCount?: number;
+    }
+) {
+    if (dailyChatSummariesAvailable === false) return null;
+
+    const payload: Record<string, any> = {
+        updated_at: new Date().toISOString(),
+    };
+
+    if (typeof updates.stageId === "number") payload.stage_id = updates.stageId;
+    if (typeof updates.summaryDate === "string") payload.summary_date = updates.summaryDate;
+    if (typeof updates.title === "string") payload.title = updates.title;
+    if (typeof updates.summary === "string") payload.summary = updates.summary;
+    if (typeof updates.messageCount === "number") payload.message_count = updates.messageCount;
+
+    const { data, error } = await supabase
+        .from("daily_chat_summaries")
+        .update(payload)
+        .eq("id", summaryId)
+        .eq("user_id", userId)
+        .select()
+        .single();
+
+    if (error) {
+        if (isMissingRelationError(error, "daily_chat_summaries")) {
+            dailyChatSummariesAvailable = false;
+            return null;
+        }
+        console.error("updateConversationSummary error:", error.message);
+        return null;
+    }
+
+    dailyChatSummariesAvailable = true;
+    return {
+        id: data.id,
+        userId: data.user_id,
+        stageId: data.stage_id,
+        date: data.summary_date,
+        title: data.title,
+        summary: data.summary,
+        messageCount: data.message_count ?? 0,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+    };
+}
+
+export async function deleteConversationSummary(userId: string, summaryId: string) {
+    if (dailyChatSummariesAvailable === false) return false;
+
+    const { error } = await supabase
+        .from("daily_chat_summaries")
+        .delete()
+        .eq("id", summaryId)
+        .eq("user_id", userId);
+
+    if (error) {
+        if (isMissingRelationError(error, "daily_chat_summaries")) {
+            dailyChatSummariesAvailable = false;
+            return false;
+        }
+        console.error("deleteConversationSummary error:", error.message);
+        return false;
+    }
+
+    dailyChatSummariesAvailable = true;
+    return true;
 }
 
 export async function deleteJournalEntry(userId: string, entryId: string) {

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabase';
 import { FORGE_SYSTEM_PROMPT } from '../constants/prompts';
 import { streamForgeAPI } from '../lib/forgeApi';
+import { applyFoundryBookCitations, buildFoundryBookContext } from '../lib/foundryBook';
 import { Icons } from '../icons';
 import ForgeAvatar from './ForgeAvatar';
 import type {
@@ -254,6 +255,12 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
         };
         setMessages(prev => [...prev, placeholder]);
 
+        const bookContext = buildFoundryBookContext(
+            Number(profile.currentStage) || 1,
+            contextMessages.slice(-8).map((message) => message.content),
+            2
+        );
+
         const teamCtx = [
             `You are responding in the shared team workspace chat for ${team.business_name}.`,
             ``,
@@ -261,6 +268,7 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
             ...members.map(m => `- ${m.display_name} (${m.role})`),
             ``,
             `This is a group conversation between the founding team. You were mentioned with @forge. Respond as Forge — direct, useful, invested. No preamble. Get right to what matters for this team.`,
+            ...(bookContext.context ? ['', bookContext.context] : []),
         ].join('\n');
 
         const apiMsgs = contextMessages.slice(-25).map(m => ({
@@ -276,9 +284,9 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
                 apiMsgs,
                 FORGE_SYSTEM_PROMPT.replace('{CONTEXT}', teamCtx),
                 (chunk) => {
-                    fullReply = chunk;
+                    fullReply = applyFoundryBookCitations(chunk, bookContext.matches).cleanText;
                     setMessages(prev => prev.map(m =>
-                        m.id === placeholderId ? { ...m, content: chunk } : m
+                        m.id === placeholderId ? { ...m, content: fullReply } : m
                     ));
                 }
             );
@@ -322,7 +330,7 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
         fontSize: 13,
         fontWeight: 600,
         cursor: 'pointer',
-        fontFamily: "'DM Sans', sans-serif",
+        fontFamily: "'Lora', Georgia, serif",
     } as const;
 
     const btnSecondary = {
@@ -333,7 +341,7 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
         color: '#C8C4BE',
         fontSize: 13,
         cursor: 'pointer',
-        fontFamily: "'DM Sans', sans-serif",
+        fontFamily: "'Lora', Georgia, serif",
     } as const;
 
     // ── Loading ──────────────────────────────────────────────────
@@ -345,7 +353,7 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
                 display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16,
             }}>
                 <Icons.sidebar.cofounder size={28} />
-                <div style={{ fontSize: 12, color: '#444', fontFamily: "'DM Sans', sans-serif", letterSpacing: '0.08em' }}>
+                <div style={{ fontSize: 12, color: '#444', fontFamily: "'Lora', Georgia, serif", letterSpacing: '0.08em' }}>
                     Loading workspace...
                 </div>
             </div>
@@ -357,7 +365,7 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
     if (inviteInfo) {
         return (
             <div style={{
-                position: 'fixed', inset: 0, background: '#080809', fontFamily: "'DM Sans', sans-serif",
+                position: 'fixed', inset: 0, background: '#080809', fontFamily: "'Lora', Georgia, serif",
                 color: '#F0EDE8', display: 'flex', flexDirection: 'column',
             }}>
                 <div style={{
@@ -381,7 +389,7 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
                             <Icons.sidebar.cofounder size={24} />
                         </div>
 
-                        <div style={{ fontSize: 22, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, marginBottom: 6 }}>
+                        <div style={{ fontSize: 22, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 6 }}>
                             Join {inviteInfo.teamName}
                         </div>
                         <div style={{ fontSize: 13, color: '#666', fontFamily: "'Lora', Georgia, serif", fontStyle: 'italic', lineHeight: 1.6 }}>
@@ -418,7 +426,7 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
                                             background: joiningRole === r ? `${roleColor(r)}22` : 'transparent',
                                             color: joiningRole === r ? roleColor(r) : '#666',
                                             cursor: 'pointer',
-                                            fontFamily: "'DM Sans', sans-serif",
+                                            fontFamily: "'Lora', Georgia, serif",
                                             outline: joiningRole === r ? `1px solid ${roleColor(r)}55` : 'none',
                                             transition: 'all 0.15s',
                                         }}
@@ -447,7 +455,7 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
     if (!team || !currentMember) {
         return (
             <div style={{
-                position: 'fixed', inset: 0, background: '#080809', fontFamily: "'DM Sans', sans-serif",
+                position: 'fixed', inset: 0, background: '#080809', fontFamily: "'Lora', Georgia, serif",
                 color: '#F0EDE8', display: 'flex', flexDirection: 'column',
             }}>
                 <div style={{
@@ -471,7 +479,7 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
                             <Icons.sidebar.cofounder size={24} />
                         </div>
 
-                        <div style={{ fontSize: 22, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, marginBottom: 8 }}>
+                        <div style={{ fontSize: 22, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 8 }}>
                             Start Your Team Workspace
                         </div>
                         <div style={{ fontSize: 13, color: '#666', fontFamily: "'Lora', Georgia, serif", fontStyle: 'italic', lineHeight: 1.7 }}>
@@ -495,7 +503,7 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
                                 width: '100%', background: 'rgba(255,255,255,0.04)',
                                 border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10,
                                 padding: '11px 14px', color: '#F0EDE8', fontSize: 14,
-                                fontFamily: "'DM Sans', sans-serif", boxSizing: 'border-box',
+                                fontFamily: "'Lora', Georgia, serif", boxSizing: 'border-box',
                                 outline: 'none',
                             }}
                         />
@@ -542,7 +550,7 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
     return (
         <div style={{
             position: 'fixed', inset: 0, background: '#080809',
-            fontFamily: "'DM Sans', sans-serif", color: '#F0EDE8',
+            fontFamily: "'Lora', Georgia, serif", color: '#F0EDE8',
             display: 'flex', flexDirection: 'column',
         }}>
             {/* Header */}
@@ -604,7 +612,7 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
                             color: activeTab === tab ? '#F0EDE8' : '#555',
                             fontSize: 12, fontWeight: activeTab === tab ? 600 : 400,
                             cursor: 'pointer', transition: 'all 0.15s',
-                            fontFamily: "'DM Sans', sans-serif",
+                            fontFamily: "'Lora', Georgia, serif",
                         }}
                     >
                         {tab === 'chat' ? 'Team Chat' : 'Team & Invite'}
@@ -882,7 +890,7 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
                                         flex: 1, resize: 'none', background: 'rgba(255,255,255,0.04)',
                                         border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12,
                                         padding: '9px 12px', color: '#F0EDE8', fontSize: 13,
-                                        fontFamily: "'DM Sans', sans-serif", lineHeight: 1.5,
+                                        fontFamily: "'Lora', Georgia, serif", lineHeight: 1.5,
                                         outline: 'none', maxHeight: 120, overflowY: 'auto',
                                     }}
                                 />
@@ -973,7 +981,7 @@ function ChatMessage({ msg, isOwn }: { msg: CofounderMessage; isOwn: boolean }) 
                     </div>
                     <div style={{
                         maxWidth: '75%', padding: '9px 13px', fontSize: 13,
-                        fontFamily: "'DM Sans', sans-serif", lineHeight: 1.6, whiteSpace: 'pre-wrap',
+                        fontFamily: "'Lora', Georgia, serif", lineHeight: 1.6, whiteSpace: 'pre-wrap',
                         borderRadius: isOwn ? '14px 4px 14px 14px' : '4px 14px 14px 14px',
                         background: isOwn
                             ? `linear-gradient(135deg, ${color}22, ${color}18)`

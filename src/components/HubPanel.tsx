@@ -13,11 +13,11 @@ export default function HubPanel({ profile, currentStage, completedByStage, open
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                             <Logo variant="flame" style={{ width: 16, height: 16, objectFit: "contain" }} />
-                            <span style={{ fontSize: 15, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>Hub</span>
+                            <span style={{ fontSize: 15, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>Hub</span>
                         </div>
                         <button onClick={onClose} style={{ background: "rgba(255,255,255,0.06)", border: "none", borderRadius: 6, padding: "6px 12px", color: "#666", fontSize: 11, cursor: "pointer" }}>✕</button>
                     </div>
-                    <div style={{ fontSize: 16, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, color: "#F0EDE8", lineHeight: 1.2 }}>{profile.businessName || (profile.idea?.slice(0, 28) + "...") || "Your Business"}</div>
+                    <div style={{ fontSize: 16, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", lineHeight: 1.2 }}>{profile.businessName || (profile.idea?.slice(0, 28) + "...") || "Your Business"}</div>
                     <div style={{ fontSize: 11, color: "#555", marginTop: 3 }}>{profile.strategyLabel}</div>
                 </div>
                 <div style={{ padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>

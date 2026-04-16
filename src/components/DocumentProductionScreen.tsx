@@ -118,7 +118,7 @@ function ChipRow({ options, selected, onSelect }: { options: string[]; selected:
                         fontWeight: selected === opt ? 600 : 400,
                         cursor: "pointer",
                         transition: "all 0.15s",
-                        fontFamily: "'DM Sans', sans-serif",
+                        fontFamily: "'Lora', Georgia, serif",
                     }}
                 >
                     {opt}
@@ -159,13 +159,13 @@ function ScreenHeader({
                         display: "flex", alignItems: "center", gap: 5,
                         background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
                         borderRadius: 8, padding: "6px 12px", color: "#888", fontSize: 12, cursor: "pointer",
-                        fontFamily: "'DM Sans', sans-serif",
+                        fontFamily: "'Lora', Georgia, serif",
                     }}
                 >
                     <ArrowLeft size={12} /> {backLabel}
                 </button>
                 <div>
-                    <div style={{ fontSize: 15, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, lineHeight: 1.2 }}>{title}</div>
+                    <div style={{ fontSize: 15, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, lineHeight: 1.2 }}>{title}</div>
                     {subtitle && <div style={{ fontSize: 10, color: "#555" }}>{subtitle}</div>}
                 </div>
             </div>
@@ -184,7 +184,7 @@ function StateAwareBadge() {
             padding: "2px 7px", borderRadius: 10,
             background: "rgba(234,179,8,0.1)", border: "1px solid rgba(234,179,8,0.3)",
             fontSize: 9, color: "#EAB308", fontWeight: 600, letterSpacing: "0.04em",
-            fontFamily: "'DM Sans', sans-serif", whiteSpace: "nowrap", flexShrink: 0,
+            fontFamily: "'Lora', Georgia, serif", whiteSpace: "nowrap", flexShrink: 0,
         }}>
             <MapPin size={8} weight="fill" /> State-Aware
         </span>
@@ -198,7 +198,7 @@ function PopularBadge() {
             padding: "2px 7px", borderRadius: 10,
             background: "rgba(232,98,42,0.1)", border: "1px solid rgba(232,98,42,0.25)",
             fontSize: 9, color: "#E8622A", fontWeight: 600,
-            fontFamily: "'DM Sans', sans-serif", whiteSpace: "nowrap", flexShrink: 0,
+            fontFamily: "'Lora', Georgia, serif", whiteSpace: "nowrap", flexShrink: 0,
         }}>
             <Star size={8} weight="fill" /> Most Popular
         </span>
@@ -495,7 +495,7 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
     // ═══════════════════════════════════════════════════════════
     if (phase === "categories") {
         return (
-            <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'DM Sans', sans-serif", color: "#F0EDE8" }}>
+            <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8" }}>
                 {/* Header */}
                 <div style={{
                     padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px",
@@ -515,7 +515,7 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
                         <ArrowLeft size={12} /> Hub
                     </button>
                     <div>
-                        <div style={{ fontSize: 16, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700 }}>Document Production</div>
+                        <div style={{ fontSize: 16, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>Document Production</div>
                         <div style={{ fontSize: 10, color: "#555" }}>Professional document studio · {DOC_CATEGORIES.reduce((n, c) => n + c.documents.length, 0)} documents</div>
                     </div>
                 </div>
@@ -523,7 +523,7 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
                 <div style={{ maxWidth: 600, margin: "0 auto", padding: "24px 16px 80px" }}>
                     {/* Intro */}
                     <div style={{ marginBottom: 28, animation: "fadeSlideUp 0.4s ease both", textAlign: "center" }}>
-                        <div style={{ fontSize: 22, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, marginBottom: 6, lineHeight: 1.25 }}>
+                        <div style={{ fontSize: 22, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 6, lineHeight: 1.25 }}>
                             What do you need?
                         </div>
                         <div style={{ fontSize: 13, color: "#666", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", lineHeight: 1.7 }}>
@@ -549,7 +549,7 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
                                                 width: "100%", padding: "10px 13px", borderRadius: 10, textAlign: "left",
                                                 border: "1px solid rgba(255,255,255,0.07)",
                                                 background: "rgba(255,255,255,0.025)",
-                                                cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                                                cursor: "pointer", fontFamily: "'Lora', Georgia, serif",
                                             }}
                                         >
                                             <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 2 }}>
@@ -586,7 +586,7 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
                                     cursor: "pointer", width: "100%",
                                     transition: "all 0.15s",
                                     animation: `fadeSlideUp 0.4s ease ${0.03 + index * 0.02}s both`,
-                                    fontFamily: "'DM Sans', sans-serif",
+                                    fontFamily: "'Lora', Georgia, serif",
                                 }}
                             >
                                 {/* Icon */}
@@ -628,7 +628,7 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
     // ═══════════════════════════════════════════════════════════
     if (phase === "documents" && selectedCategory) {
         return (
-            <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'DM Sans', sans-serif", color: "#F0EDE8" }}>
+            <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8" }}>
                 <ScreenHeader
                     onBack={() => setPhase("categories")}
                     backLabel="Categories"
@@ -672,7 +672,7 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
                                     cursor: "pointer", width: "100%",
                                     transition: "all 0.15s",
                                     animation: `fadeSlideUp 0.35s ease ${0.05 + index * 0.02}s both`,
-                                    fontFamily: "'DM Sans', sans-serif",
+                                    fontFamily: "'Lora', Georgia, serif",
                                 }}
                             >
                                 {/* Name + badges */}
@@ -703,7 +703,7 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
         const canGenerate = currentValidation.valid;
 
         return (
-            <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'DM Sans', sans-serif", color: "#F0EDE8" }}>
+            <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8" }}>
                 <ScreenHeader
                     onBack={() => setPhase("documents")}
                     backLabel={selectedCategory.name}
@@ -842,7 +842,7 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
                                         border: request.includes(p) ? "1px solid rgba(232,98,42,0.4)" : "1px solid rgba(255,255,255,0.08)",
                                         background: request.includes(p) ? "rgba(232,98,42,0.08)" : "rgba(255,255,255,0.025)",
                                         color: request.includes(p) ? "#E8622A" : "#777",
-                                        fontSize: 11, cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                                        fontSize: 11, cursor: "pointer", fontFamily: "'Lora', Georgia, serif",
                                         transition: "all 0.15s",
                                     }}
                                 >
@@ -860,7 +860,7 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
                                 width: "100%", background: "rgba(255,255,255,0.03)",
                                 border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12,
                                 padding: "12px 14px", color: "#F0EDE8", fontSize: 13,
-                                fontFamily: "'DM Sans', sans-serif", lineHeight: 1.6, boxSizing: "border-box",
+                                fontFamily: "'Lora', Georgia, serif", lineHeight: 1.6, boxSizing: "border-box",
                             }}
                         />
                     </div>
@@ -875,7 +875,7 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
                             border: "none", borderRadius: 14,
                             color: canGenerate ? "#fff" : "#444",
                             fontSize: 15, fontWeight: 700, cursor: generating ? "not-allowed" : "pointer",
-                            fontFamily: "'DM Sans', sans-serif",
+                            fontFamily: "'Lora', Georgia, serif",
                             animation: "fadeSlideUp 0.3s ease 0.18s both",
                             transition: "all 0.15s",
                         }}
@@ -891,7 +891,7 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
     // SCREEN 4 — STUDIO (preview + refine)
     // ═══════════════════════════════════════════════════════════
     return (
-        <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'DM Sans', sans-serif", color: "#F0EDE8", display: "flex", flexDirection: "column" }}>
+        <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8", display: "flex", flexDirection: "column" }}>
             {/* Studio Header */}
             <div style={{
                 padding: "max(12px, calc(6px + env(safe-area-inset-top))) 16px 12px",
@@ -912,7 +912,7 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
                         <ArrowLeft size={12} /> Hub
                     </button>
                     <div>
-                        <div style={{ fontSize: 14, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, lineHeight: 1.2 }}>Document Studio</div>
+                        <div style={{ fontSize: 14, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, lineHeight: 1.2 }}>Document Studio</div>
                         <div style={{ fontSize: 10, color: "#555" }}>
                             {docType} · {audience} · {tone}{docState ? ` · ${docState}` : ""}{saveLabel ? ` · ${saveLabel}` : ""}
                         </div>
@@ -938,7 +938,7 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
                             color: activeTab === tab ? "#E8622A" : "#555",
                             fontSize: 12, fontWeight: activeTab === tab ? 600 : 400,
                             cursor: "pointer", textTransform: "capitalize", transition: "all 0.15s",
-                            fontFamily: "'DM Sans', sans-serif",
+                            fontFamily: "'Lora', Georgia, serif",
                         }}
                     >
                         {tab === "preview" ? "Document Preview" : `Refine${history.length > 1 ? ` (${history.length - 1})` : ""}`}
@@ -975,7 +975,7 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
                                     {generating && (
                                         <div style={{ position: "absolute", top: 12, right: 12, display: "flex", alignItems: "center", gap: 5, background: "rgba(232,98,42,0.1)", border: "1px solid rgba(232,98,42,0.3)", borderRadius: 20, padding: "3px 10px" }}>
                                             <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#E8622A", animation: "forgePulse 1.2s infinite" }} />
-                                            <span style={{ fontSize: 10, color: "#E8622A", fontFamily: "'DM Sans', sans-serif" }}>Writing</span>
+                                            <span style={{ fontSize: 10, color: "#E8622A", fontFamily: "'Lora', Georgia, serif" }}>Writing</span>
                                         </div>
                                     )}
 
@@ -988,7 +988,7 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
                                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 24, animation: "fadeSlideUp 0.3s ease 0.1s both" }}>
                                         <button
                                             onClick={handleCopy}
-                                            style={{ flex: 1, minWidth: 80, padding: "10px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: copied ? "#4CAF8A" : "#C8C4BE", fontSize: 12, cursor: "pointer", transition: "all 0.2s", fontFamily: "'DM Sans', sans-serif" }}
+                                            style={{ flex: 1, minWidth: 80, padding: "10px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: copied ? "#4CAF8A" : "#C8C4BE", fontSize: 12, cursor: "pointer", transition: "all 0.2s", fontFamily: "'Lora', Georgia, serif" }}
                                         >
                                             {copied ? "✓ Copied" : "Copy"}
                                         </button>
@@ -996,7 +996,7 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
                                             onClick={() => printStyledPdf(currentDoc, exportMeta)}
                                             disabled={!canExportOfficialDocument}
                                             title={!canExportOfficialDocument ? "Legal Business Name is required before export." : undefined}
-                                            style={{ flex: 1, minWidth: 110, padding: "10px 14px", background: canExportOfficialDocument ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: canExportOfficialDocument ? "#C8C4BE" : "#555", fontSize: 12, cursor: canExportOfficialDocument ? "pointer" : "not-allowed", fontFamily: "'DM Sans', sans-serif" }}
+                                            style={{ flex: 1, minWidth: 110, padding: "10px 14px", background: canExportOfficialDocument ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: canExportOfficialDocument ? "#C8C4BE" : "#555", fontSize: 12, cursor: canExportOfficialDocument ? "pointer" : "not-allowed", fontFamily: "'Lora', Georgia, serif" }}
                                         >
                                             Download PDF
                                         </button>
@@ -1004,7 +1004,7 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
                                             onClick={() => downloadStyledDocx(currentDoc, exportMeta)}
                                             disabled={!canExportOfficialDocument}
                                             title={!canExportOfficialDocument ? "Legal Business Name is required before export." : undefined}
-                                            style={{ flex: 1, minWidth: 120, padding: "10px 14px", background: canExportOfficialDocument ? "rgba(232,98,42,0.08)" : "rgba(255,255,255,0.025)", border: canExportOfficialDocument ? "1px solid rgba(232,98,42,0.2)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: canExportOfficialDocument ? "#E8622A" : "#555", fontSize: 12, cursor: canExportOfficialDocument ? "pointer" : "not-allowed", fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}
+                                            style={{ flex: 1, minWidth: 120, padding: "10px 14px", background: canExportOfficialDocument ? "rgba(232,98,42,0.08)" : "rgba(255,255,255,0.025)", border: canExportOfficialDocument ? "1px solid rgba(232,98,42,0.2)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: canExportOfficialDocument ? "#E8622A" : "#555", fontSize: 12, cursor: canExportOfficialDocument ? "pointer" : "not-allowed", fontWeight: 600, fontFamily: "'Lora', Georgia, serif" }}
                                         >
                                             Download DOCX
                                         </button>
@@ -1012,7 +1012,7 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
                                             onClick={() => downloadStyledHtml(currentDoc, exportMeta)}
                                             disabled={!canExportOfficialDocument}
                                             title={!canExportOfficialDocument ? "Legal Business Name is required before export." : undefined}
-                                            style={{ flex: 1, minWidth: 110, padding: "10px 14px", background: canExportOfficialDocument ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: canExportOfficialDocument ? "#C8C4BE" : "#555", fontSize: 12, cursor: canExportOfficialDocument ? "pointer" : "not-allowed", fontFamily: "'DM Sans', sans-serif" }}
+                                            style={{ flex: 1, minWidth: 110, padding: "10px 14px", background: canExportOfficialDocument ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: canExportOfficialDocument ? "#C8C4BE" : "#555", fontSize: 12, cursor: canExportOfficialDocument ? "pointer" : "not-allowed", fontFamily: "'Lora', Georgia, serif" }}
                                         >
                                             Styled HTML
                                         </button>
@@ -1049,7 +1049,7 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
                                 <button
                                     key={chip}
                                     onClick={() => setRefineInput(chip)}
-                                    style={{ padding: "5px 12px", borderRadius: 20, border: "1px solid rgba(255,255,255,0.07)", background: refineInput === chip ? "rgba(232,98,42,0.1)" : "rgba(255,255,255,0.02)", color: refineInput === chip ? "#E8622A" : "#666", fontSize: 11, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s" }}
+                                    style={{ padding: "5px 12px", borderRadius: 20, border: "1px solid rgba(255,255,255,0.07)", background: refineInput === chip ? "rgba(232,98,42,0.1)" : "rgba(255,255,255,0.02)", color: refineInput === chip ? "#E8622A" : "#666", fontSize: 11, cursor: "pointer", fontFamily: "'Lora', Georgia, serif", transition: "all 0.15s" }}
                                 >
                                     {chip}
                                 </button>
@@ -1064,7 +1064,7 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
                             placeholder="Or describe your own refinement instruction..."
                             rows={4}
                             disabled={refining}
-                            style={{ width: "100%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "12px 14px", color: "#F0EDE8", fontSize: 13, fontFamily: "'DM Sans', sans-serif", lineHeight: 1.6, boxSizing: "border-box", opacity: refining ? 0.5 : 1, marginBottom: 10, animation: "fadeSlideUp 0.3s ease 0.1s both" }}
+                            style={{ width: "100%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "12px 14px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", lineHeight: 1.6, boxSizing: "border-box", opacity: refining ? 0.5 : 1, marginBottom: 10, animation: "fadeSlideUp 0.3s ease 0.1s both" }}
                         />
 
                         <div style={{ display: "flex", gap: 8, animation: "fadeSlideUp 0.3s ease 0.15s both" }}>
@@ -1077,7 +1077,7 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
                             <button
                                 onClick={refine}
                                 disabled={!refineInput.trim() || refining}
-                                style={{ flex: 2, padding: "12px", background: refineInput.trim() && !refining ? "linear-gradient(135deg, #E8622A, #c9521e)" : "rgba(255,255,255,0.06)", border: "none", borderRadius: 10, color: refineInput.trim() && !refining ? "#fff" : "#444", fontSize: 13, fontWeight: 600, cursor: refineInput.trim() && !refining ? "pointer" : "not-allowed", transition: "all 0.15s", fontFamily: "'DM Sans', sans-serif" }}
+                                style={{ flex: 2, padding: "12px", background: refineInput.trim() && !refining ? "linear-gradient(135deg, #E8622A, #c9521e)" : "rgba(255,255,255,0.06)", border: "none", borderRadius: 10, color: refineInput.trim() && !refining ? "#fff" : "#444", fontSize: 13, fontWeight: 600, cursor: refineInput.trim() && !refining ? "pointer" : "not-allowed", transition: "all 0.15s", fontFamily: "'Lora', Georgia, serif" }}
                             >
                                 {refining ? "Refining..." : "Refine Document"}
                             </button>

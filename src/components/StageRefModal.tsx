@@ -166,7 +166,7 @@ export default function StageRefModal({ stageId, messages, profile, onClose }) {
                                                 marginBottom: 6,
                                                 color: isForge ? "#8E867D" : "rgba(240,237,232,0.72)",
                                                 letterSpacing: "0.04em",
-                                                fontFamily: "'DM Sans', sans-serif",
+                                                fontFamily: "'Lora', Georgia, serif",
                                             }}
                                         >
                                             {senderName}
@@ -186,7 +186,7 @@ export default function StageRefModal({ stageId, messages, profile, onClose }) {
                                                 fontSize: isForge ? 13 : 12,
                                                 fontFamily: isForge
                                                     ? "'Lora', Georgia, serif"
-                                                    : "'DM Sans', sans-serif",
+                                                    : "'Lora', Georgia, serif",
                                                 lineHeight: 1.7,
                                                 color: isForge ? "#C8C4BE" : "#fff",
                                             }}

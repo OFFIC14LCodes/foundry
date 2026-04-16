@@ -188,7 +188,7 @@ export default function ChatInput({
                         border: "none",
                         color: "#F0EDE8",
                         fontSize: 13,
-                        fontFamily: "'DM Sans', sans-serif",
+                        fontFamily: "'Lora', Georgia, serif",
                         lineHeight: 1.5,
                         height: "auto",
                         minHeight: 20,

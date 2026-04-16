@@ -41,7 +41,7 @@ export default function GlossaryModal({
                 <div style={{ width: 36, height: 3, background: "rgba(255,255,255,0.12)", borderRadius: 2, margin: "0 auto 20px" }} />
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 18 }}>
                     <div>
-                        <div style={{ fontSize: 26, fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 700, color: "#F0EDE8", letterSpacing: "-0.5px", lineHeight: 1.1, marginBottom: 6 }}>{term.charAt(0).toUpperCase() + term.slice(1)}</div>
+                        <div style={{ fontSize: 26, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", letterSpacing: "-0.5px", lineHeight: 1.1, marginBottom: 6 }}>{term.charAt(0).toUpperCase() + term.slice(1)}</div>
                         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                             <div style={{ fontSize: 10, color: stageColor, background: `${stageColor}18`, border: `1px solid ${stageColor}30`, borderRadius: 20, padding: "2px 9px", fontWeight: 500 }}>Stage {entry.stage} — {STAGES_DATA[entry.stage - 1]?.label}</div>
                             {alreadyLearned && <div style={{ fontSize: 10, color: "#4CAF8A", background: "rgba(76,175,138,0.1)", borderRadius: 20, padding: "2px 9px" }}>✓ Learned</div>}
