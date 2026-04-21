@@ -179,13 +179,15 @@ export default function AuthScreen({
                     borderRadius: "50%",
                     background: "rgba(232,98,42,0.12)",
                     border: "1.5px solid rgba(232,98,42,0.25)",
+                    marginTop: -20,
                     marginBottom: 14,
+                    overflow: "hidden",
                 }}>
                     <Logo
                         variant="full"
                         style={{
-                            width: "65%",
-                            height: "65%",
+                            width: "90%",
+                            height: "90%",
                             objectFit: "contain",
                         }}
                     />
