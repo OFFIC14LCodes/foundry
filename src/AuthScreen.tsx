@@ -170,28 +170,14 @@ export default function AuthScreen({
 
             {/* Logo */}
             <div style={{ textAlign: "center", marginBottom: 40, animation: "fadeSlideUp 0.6s ease" }}>
-                <div style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: "min(160px, 44vw)",
-                    height: "min(160px, 44vw)",
-                    borderRadius: "50%",
-                    background: "rgba(232,98,42,0.12)",
-                    border: "1.5px solid rgba(232,98,42,0.25)",
-                    marginTop: -20,
-                    marginBottom: 14,
-                    overflow: "hidden",
-                }}>
-                    <Logo
-                        variant="full"
-                        style={{
-                            width: "90%",
-                            height: "90%",
-                            objectFit: "contain",
-                        }}
-                    />
-                </div>
+                <Logo
+                    variant="full"
+                    style={{
+                        width: "min(220px, 62vw)",
+                        height: "auto",
+                        marginBottom: 14,
+                    }}
+                />
                 <div style={{
                     fontSize: "clamp(26px, 7vw, 34px)",
                     color: "#F0EDE8",
