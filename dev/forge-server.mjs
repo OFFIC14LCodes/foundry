@@ -21,6 +21,8 @@ if (!apiKey) {
 }
 
 const server = http.createServer(async (req, res) => {
+  enhanceResponse(res);
+
   if (!req.url) {
     res.writeHead(400, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Missing request URL" }));
@@ -182,4 +184,39 @@ function stripWrappingQuotes(value) {
     return value.slice(1, -1);
   }
   return value;
+}
+
+function enhanceResponse(res) {
+  if (typeof res.status !== "function") {
+    res.status = (code) => {
+      res.statusCode = code;
+      return res;
+    };
+  }
+
+  if (typeof res.json !== "function") {
+    res.json = (payload) => {
+      if (!res.headersSent && !res.getHeader("Content-Type")) {
+        res.setHeader("Content-Type", "application/json");
+      }
+      res.end(JSON.stringify(payload));
+      return res;
+    };
+  }
+
+  if (typeof res.send !== "function") {
+    res.send = (payload) => {
+      if (Buffer.isBuffer(payload) || payload instanceof Uint8Array) {
+        res.end(payload);
+        return res;
+      }
+
+      if (typeof payload === "object" && payload !== null) {
+        return res.json(payload);
+      }
+
+      res.end(payload ?? "");
+      return res;
+    };
+  }
 }

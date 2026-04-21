@@ -31,11 +31,10 @@ const Stripe = require('stripe');
 const { Resend } = require('resend');
 
 // ── Config ────────────────────────────────────────────────────
-const TO_ADDRESS = 'foundryandforge.app@gmail.com';
-// Update FROM_ADDRESS once you verify a sending domain in Resend.
-// Until then, Resend only allows sending to your own verified email in test mode.
-const FROM_ADDRESS = 'Foundry <noreply@foundryandforge.app>';
-const ADMIN_EMAIL = 'foundryandforge.app@gmail.com';
+const TO_ADDRESS = process.env.RESEND_TO_ADDRESS || 'foundryandforge.app@gmail.com';
+// Until your sending domain is verified in Resend, keep this on onboarding@resend.dev
+// and send only to your own verified inbox for testing.
+const FROM_ADDRESS = process.env.RESEND_FROM_ADDRESS || 'Foundry <onboarding@resend.dev>';
 
 const STAGE_NAMES = { 1: 'Idea', 2: 'Plan', 3: 'Legal', 4: 'Finance', 5: 'Launch', 6: 'Grow' };
 
