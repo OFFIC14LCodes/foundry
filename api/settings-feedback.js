@@ -1,7 +1,7 @@
-const { Resend } = require("resend");
+import { Resend } from "resend";
 
 const SUPPORT_EMAIL = "foundryandforge.app@gmail.com";
-const FROM_ADDRESS = "Foundry <noreply@foundryandforge.app>";
+const FROM_ADDRESS = process.env.RESEND_FROM_ADDRESS || "Foundry <onboarding@resend.dev>";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -62,7 +62,7 @@ export default async function handler(req, res) {
       </div>
     `;
 
-    await resend.emails.send({
+    const result = await resend.emails.send({
       from: FROM_ADDRESS,
       to: SUPPORT_EMAIL,
       replyTo: user?.email || undefined,
@@ -70,9 +70,14 @@ export default async function handler(req, res) {
       html,
     });
 
+    if (result?.error) {
+      throw createError(500, result.error.message || "Resend could not send the email.");
+    }
+
     res.status(200).json({ ok: true });
   } catch (error) {
     const statusCode = error?.statusCode || 500;
+    console.error("settings-feedback error:", error);
     res.status(statusCode).json({
       error: error instanceof Error ? error.message : "Unable to send message",
     });
