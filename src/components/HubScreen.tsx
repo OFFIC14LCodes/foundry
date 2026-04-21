@@ -1271,63 +1271,107 @@ export default function HubScreen({
 
 function BusinessHealthDonut({ health }) {
     const size = 212;
-    const stroke = 13;
-    const radius = (size - stroke) / 2;
-    const circumference = 2 * Math.PI * radius;
-    const segCount = health.segments.length;
-    const gap = circumference * 0.026;
-    const slice = circumference / segCount;
-    const available = slice - gap;
+    const cx = size / 2;
+    const cy = size / 2;
+    const maxR = 70;
+    const labelR = 90;
+    const n = health.segments.length;
+    const rings = [0.2, 0.4, 0.6, 0.8, 1.0];
+
+    const angle = (i: number) => -Math.PI / 2 + (2 * Math.PI * i) / n;
+    const pt = (r: number, i: number) => ({
+        x: cx + r * Math.cos(angle(i)),
+        y: cy + r * Math.sin(angle(i)),
+    });
+    const polyStr = (r: number) =>
+        Array.from({ length: n }, (_, i) => pt(r, i)).map(p => `${p.x},${p.y}`).join(" ");
+
+    const dataPts = health.segments.map((seg, i) => pt((seg.value / 100) * maxR, i));
+    const dataPolyStr = dataPts.map(p => `${p.x},${p.y}`).join(" ");
+
+    const anchor = (i: number) => {
+        const cos = Math.cos(angle(i));
+        return cos > 0.25 ? "start" : cos < -0.25 ? "end" : "middle";
+    };
 
     const scoreColor = health.overallScore >= 62 ? "#4CAF8A" : health.overallScore >= 45 ? "#D9B15D" : "#E8622A";
 
     return (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10 }}>
-            <div style={{ position: "relative", width: size, height: size }}>
-                <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: "rotate(-90deg)" }}>
-                    {health.segments.map((segment, i) => {
-                        const startOffset = -(i * slice);
-                        const filledLength = available * (segment.value / 100);
+            <svg
+                width={size} height={size}
+                viewBox={`0 0 ${size} ${size}`}
+                style={{ overflow: "visible" }}
+            >
+                {/* Grid rings */}
+                {rings.map((r, ri) => (
+                    <polygon
+                        key={ri}
+                        points={polyStr(r * maxR)}
+                        fill={ri === rings.length - 1 ? "rgba(255,255,255,0.018)" : "none"}
+                        stroke="rgba(255,255,255,0.07)"
+                        strokeWidth={0.75}
+                    />
+                ))}
 
-                        return (
-                            <g key={segment.key}>
-                                <circle
-                                    cx={size / 2} cy={size / 2} r={radius}
-                                    fill="none"
-                                    stroke={segment.color}
-                                    strokeWidth={stroke}
-                                    strokeLinecap="butt"
-                                    strokeDasharray={`${available} ${circumference - available}`}
-                                    strokeDashoffset={startOffset}
-                                    opacity={0.1}
-                                />
-                                <circle
-                                    cx={size / 2} cy={size / 2} r={radius}
-                                    fill="none"
-                                    stroke={segment.color}
-                                    strokeWidth={stroke}
-                                    strokeLinecap="butt"
-                                    strokeDasharray={`${filledLength} ${circumference - filledLength}`}
-                                    strokeDashoffset={startOffset}
-                                    opacity={0.9}
-                                />
-                            </g>
-                        );
-                    })}
-                </svg>
+                {/* Axis spokes */}
+                {health.segments.map((_, i) => {
+                    const outer = pt(maxR, i);
+                    return (
+                        <line key={i} x1={cx} y1={cy} x2={outer.x} y2={outer.y}
+                            stroke="rgba(255,255,255,0.07)" strokeWidth={0.75} />
+                    );
+                })}
 
-                <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: 24 }}>
-                    <div style={{ fontSize: 9, color: "#5B5650", letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 6 }}>
-                        Overall
-                    </div>
-                    <div style={{ fontSize: 38, lineHeight: 1, color: "#F0EDE8", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>
-                        {health.overallScore}
-                    </div>
-                    <div style={{ fontSize: 11, color: scoreColor, marginTop: 7, letterSpacing: "0.03em" }}>
-                        {health.statusLabel}
-                    </div>
-                </div>
-            </div>
+                {/* Shaded data polygon */}
+                <polygon
+                    points={dataPolyStr}
+                    fill="rgba(255,255,255,0.05)"
+                    stroke="rgba(255,255,255,0.22)"
+                    strokeWidth={1.2}
+                    strokeLinejoin="round"
+                />
+
+                {/* Colored dots */}
+                {health.segments.map((seg, i) => {
+                    const p = dataPts[i];
+                    return (
+                        <g key={seg.key}>
+                            <circle cx={p.x} cy={p.y} r={6.5} fill={seg.color} opacity={0.16} />
+                            <circle cx={p.x} cy={p.y} r={4} fill={seg.color} />
+                        </g>
+                    );
+                })}
+
+                {/* Axis labels */}
+                {health.segments.map((seg, i) => {
+                    const lp = pt(labelR, i);
+                    return (
+                        <text key={seg.key} x={lp.x} y={lp.y}
+                            textAnchor={anchor(i)} dominantBaseline="middle"
+                            fill={seg.color} fontSize={8.5}
+                            fontFamily="'DM Sans', sans-serif" fontWeight="600"
+                            letterSpacing="0.07em" opacity={0.85}
+                        >
+                            {seg.label.toUpperCase()}
+                        </text>
+                    );
+                })}
+
+                {/* Center score */}
+                <text x={cx} y={cy - 8} textAnchor="middle" dominantBaseline="auto"
+                    fill="#F0EDE8" fontSize={26}
+                    fontFamily="'Playfair Display', Georgia, serif" fontWeight="700"
+                >
+                    {health.overallScore}
+                </text>
+                <text x={cx} y={cy + 10} textAnchor="middle" dominantBaseline="hanging"
+                    fill={scoreColor} fontSize={7.5}
+                    fontFamily="'DM Sans', sans-serif" fontWeight="600" letterSpacing="0.14em"
+                >
+                    {health.statusLabel.toUpperCase()}
+                </text>
+            </svg>
             <div style={{ fontSize: 11, color: "#5B5650", lineHeight: 1.6, textAlign: "center", maxWidth: 260 }}>
                 A founder-facing view of how the business is holding up across execution, capital, clarity, market strength, and upside.
             </div>
