@@ -303,7 +303,18 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
         }
         cancelSpeech();
         startListening(
-            (transcript) => sendMessage(transcript),
+            (transcript) => setInput(transcript.trim()),
+            () => { /* mic error — silent fail, user can try again */ }
+        );
+    };
+
+    const handleRedoVoiceInput = () => {
+        if (loading || speaking) return;
+        stopListening();
+        setInput("");
+        cancelSpeech();
+        startListening(
+            (transcript) => setInput(transcript.trim()),
             () => { /* mic error — silent fail, user can try again */ }
         );
     };
@@ -626,29 +637,105 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
             {/* Input Area */}
             <div style={{ padding: "10px 12px max(12px, calc(8px + env(safe-area-inset-bottom)))", borderTop: "1px solid rgba(255,255,255,0.05)", flexShrink: 0, background: "#080809" }}>
                 {mode === "voice" ? (
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, paddingBottom: 4 }}>
-                        <button
-                            onClick={handleMicPress}
-                            disabled={loading || speaking}
-                            style={{
-                                width: 64,
-                                height: 64,
-                                borderRadius: "50%",
-                                border: listening ? "2px solid #4CAF8A" : "2px solid rgba(232,98,42,0.4)",
-                                background: listening ? "rgba(76,175,138,0.15)" : loading || speaking ? "rgba(255,255,255,0.04)" : "rgba(232,98,42,0.1)",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                cursor: loading || speaking ? "not-allowed" : "pointer",
-                                opacity: loading || speaking ? 0.4 : 1,
-                                transition: "all 0.2s",
-                                animation: listening ? "forgePulse 1.5s infinite" : "none",
-                            }}
-                        >
-                            <Icons.sidebar.voice size={26} color={listening ? "#4CAF8A" : "#E8622A"} />
-                        </button>
-                        <div style={{ fontSize: 11, color: "#555", textAlign: "left", width: "100%" }}>
-                            {listening ? "Tap to stop" : speaking ? "Forge is speaking..." : loading ? "Thinking..." : "Tap mic to speak"}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingBottom: 4 }}>
+                        <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+                            <button
+                                onClick={handleMicPress}
+                                disabled={loading || speaking}
+                                title={listening ? "Stop recording" : "Start recording"}
+                                style={{
+                                    width: 48,
+                                    height: 48,
+                                    borderRadius: 14,
+                                    border: listening ? "2px solid #4CAF8A" : "1px solid rgba(232,98,42,0.3)",
+                                    background: listening ? "rgba(76,175,138,0.15)" : loading || speaking ? "rgba(255,255,255,0.04)" : "rgba(232,98,42,0.1)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    cursor: loading || speaking ? "not-allowed" : "pointer",
+                                    opacity: loading || speaking ? 0.4 : 1,
+                                    transition: "all 0.2s",
+                                    animation: listening ? "forgePulse 1.5s infinite" : "none",
+                                    flexShrink: 0,
+                                }}
+                            >
+                                <Icons.sidebar.voice size={22} color={listening ? "#4CAF8A" : "#E8622A"} />
+                            </button>
+
+                            <textarea
+                                ref={inputRef}
+                                value={input}
+                                onChange={e => setInput(e.target.value)}
+                                placeholder={listening ? "Listening..." : "Your transcript will appear here. Edit it before sending."}
+                                rows={2}
+                                disabled={loading}
+                                style={{
+                                    flex: 1,
+                                    background: "rgba(255,255,255,0.04)",
+                                    border: "1px solid rgba(255,255,255,0.09)",
+                                    borderRadius: 12,
+                                    padding: "10px 12px",
+                                    color: "#F0EDE8",
+                                    fontSize: 14,
+                                    fontFamily: "'Lora', Georgia, serif",
+                                    lineHeight: 1.5,
+                                    resize: "none",
+                                    outline: "none",
+                                    opacity: loading ? 0.6 : 1,
+                                    minHeight: 44,
+                                }}
+                            />
+                        </div>
+
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                            <div style={{ fontSize: 11, color: "#555", textAlign: "left", flex: 1, minWidth: 180 }}>
+                                {listening
+                                    ? "Recording... tap the mic again to stop and review the transcript."
+                                    : speaking
+                                        ? "Forge is speaking..."
+                                        : loading
+                                            ? "Thinking..."
+                                            : input.trim()
+                                                ? "Review the transcript, edit anything that is off, then send or redo."
+                                                : "Tap the mic to start recording. Nothing sends until you press Send."}
+                            </div>
+
+                            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                                <button
+                                    onClick={handleRedoVoiceInput}
+                                    disabled={loading || speaking || listening}
+                                    style={{
+                                        padding: "10px 14px",
+                                        borderRadius: 10,
+                                        border: "1px solid rgba(255,255,255,0.08)",
+                                        background: "rgba(255,255,255,0.04)",
+                                        color: "#C8C4BE",
+                                        fontSize: 12,
+                                        cursor: loading || speaking || listening ? "not-allowed" : "pointer",
+                                        opacity: loading || speaking || listening ? 0.45 : 1,
+                                    }}
+                                >
+                                    Redo
+                                </button>
+                                <button
+                                    onClick={() => sendMessage(input)}
+                                    disabled={!input.trim() || loading || listening}
+                                    style={{
+                                        padding: "10px 16px",
+                                        borderRadius: 10,
+                                        border: "none",
+                                        background: input.trim() && !loading && !listening
+                                            ? "linear-gradient(135deg, #E8622A, #c9521e)"
+                                            : "rgba(255,255,255,0.06)",
+                                        color: input.trim() && !loading && !listening ? "#fff" : "#444",
+                                        fontSize: 12,
+                                        fontWeight: 600,
+                                        cursor: input.trim() && !loading && !listening ? "pointer" : "not-allowed",
+                                    }}
+                                >
+                                    Send
+                                </button>
+                            </div>
                         </div>
                     </div>
                 ) : (

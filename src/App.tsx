@@ -1358,13 +1358,28 @@ Where do you want to start?`;
         ctxPackage.bookMatches
       );
 
+      const nextCompletedMilestones = Array.from(
+        new Set([...(completedByStage[activeStage] || []), ...completedIds])
+      );
+      const remainingMilestones = stage.milestones.filter(
+        (milestone) => !nextCompletedMilestones.includes(milestone.id)
+      );
+      const canAdvanceNow =
+        stage.milestones.length > 0 &&
+        remainingMilestones.length === 0;
+
+      const redirectedAdvanceText =
+        ar && !canAdvanceNow
+          ? `${cleanText}\n\nYou are not ready to move on yet. Finish the remaining ${remainingMilestones.length === 1 ? "goal" : "goals"} first: ${remainingMilestones.map((milestone) => `"${milestone.label}"`).join(", ")}.`
+          : cleanText;
+
       onUpdateMessages(activeStage, (msgs) =>
-        msgs.map((m) => (m.id === forgeMsg.id ? { ...m, text: cleanText } : m))
+        msgs.map((m) => (m.id === forgeMsg.id ? { ...m, text: redirectedAdvanceText } : m))
       );
 
       completedIds.forEach((id) => onMilestoneComplete(id));
 
-      if (ar) setAdvanceReady(true);
+      if (ar && canAdvanceNow) setAdvanceReady(true);
     } catch (err) {
       console.error("Forge error:", err);
       onUpdateMessages(activeStage, (msgs) =>
@@ -1378,6 +1393,14 @@ Where do you want to start?`;
   };
 
   const handleAdvance = async (newStage) => {
+    const currentCompletedMilestones = completedByStage[activeStage] || [];
+    const stageIsComplete =
+      stage.milestones.length > 0 &&
+      currentCompletedMilestones.length >= stage.milestones.length;
+    if (!stageIsComplete) {
+      setAdvanceReady(false);
+      return;
+    }
     const allowed = await onAdvance(newStage);
     if (allowed === false) return;
     setActiveStage(newStage);

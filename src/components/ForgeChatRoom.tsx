@@ -585,16 +585,17 @@ Start with a confident first lesson message that frames the topic, explains the 
                                 border: "none",
                                 cursor: "pointer",
                                 color: attachedFiles.length > 0 ? "#E8622A" : "#444",
-                                padding: "6px 2px",
+                                padding: "6px 4px",
                                 flexShrink: 0,
                                 display: "flex",
                                 alignItems: "center",
+                                justifyContent: "center",
                                 transition: "color 0.15s",
                             }}
                             onMouseEnter={e => { if (attachedFiles.length === 0) e.currentTarget.style.color = "#888"; }}
                             onMouseLeave={e => { if (attachedFiles.length === 0) e.currentTarget.style.color = "#444"; }}
                         >
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <svg width="18" height="18" viewBox="-1 -1 18 18" fill="none" style={{ overflow: "visible", display: "block" }}>
                                 <path d="M13.5 7.5L7 14c-1.657 1.657-4.343 1.657-6 0-1.657-1.657-1.657-4.343 0-6L8 1c1.105-1.105 2.895-1.105 4 0 1.105 1.105 1.105 2.895 0 4L5.5 11.5C4.948 12.052 4.052 12.052 3.5 11.5 2.948 10.948 2.948 10.052 3.5 9.5L9 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
                         </button>

@@ -38,7 +38,15 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
     const [started, setStarted] = useState(false);
     const [readyToEnter, setReadyToEnter] = useState(false);
     const [completedProfile, setCompletedProfile] = useState(null);
+    const [responsePending, setResponsePending] = useState(false);
     const scrollRef = useRef(null);
+
+    const FAST_DELIVERY = {
+        initialDelayMs: 120,
+        msPerWord: 28,
+        minDurationMs: 320,
+        maxDurationMs: 950,
+    };
 
     useEffect(() => {
         const el = scrollRef.current;
@@ -54,7 +62,7 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
             setStarted(true);
             deliverMessage(OPENER, setLoading, (text) =>
                 setMessages([{ role: "forge", text }])
-            );
+            , FAST_DELIVERY);
         }
     }, [started]);
 
@@ -66,57 +74,58 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
         addUserMsg(value);
         const p = { ...profile };
 
-        if (currentStep.id === "name") {
-            p.name = value; setProfile(p);
-            const prompt = `Respond in 2 sentences only. First: greet "${value}" — warm, natural, one sentence. Second: tell them Foundry meets founders where they actually are, and you want to find the right starting point — they'll see some options now.`;
-            try {
-                const r = await callForgeAPI([{ role: "user", content: prompt }], FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", "Onboarding."));
-                await deliverMessage(r, setLoading, addForgeMsg);
-            } catch {
-                await deliverMessage(`${value} — good to meet you. Foundry works best when we start you in the right place — tell me where you are right now.`, setLoading, addForgeMsg);
-            }
-            setStepIndex(1);
+        try {
+            if (currentStep.id === "name") {
+                p.name = value; setProfile(p);
+                const prompt = `Respond in 2 sentences only. First: greet "${value}" — warm, natural, one sentence. Second: tell them Foundry meets founders where they actually are, and you want to find the right starting point — they'll see some options now.`;
+                try {
+                    const r = await callForgeAPI([{ role: "user", content: prompt }], FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", "Onboarding."));
+                    await deliverMessage(r, setLoading, addForgeMsg, FAST_DELIVERY);
+                } catch {
+                    await deliverMessage(`${value} — good to meet you. Foundry works best when we start you in the right place — tell me where you are right now.`, setLoading, addForgeMsg, FAST_DELIVERY);
+                }
+                setStepIndex(1);
 
-        } else if (currentStep.id === "stage_assessment") {
-            const card = STAGE_ASSESSMENT_CARDS.find(c => c.id === rawId);
-            const detectedStage = card?.stage || 1;
-            p.detectedStage = detectedStage; setProfile(p);
-            const stageLabel = STAGES_DATA[detectedStage - 1]?.label || "Idea";
-            const prompt = `Respond in 2 sentences only. First: acknowledge "${card?.label || value}" in a way that shows you understand where they are in the journey — be specific, not generic. Second: ask what their business idea or current business is.`;
-            try {
-                const r = await callForgeAPI([{ role: "user", content: prompt }], FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", `Onboarding. Founder: ${p.name}. Starting stage: ${detectedStage} (${stageLabel}).`));
-                await deliverMessage(r, setLoading, addForgeMsg);
-            } catch {
-                await deliverMessage(`Stage ${detectedStage} — ${stageLabel}. That's where we'll start.\n\nWhat's the business? Tell me what you're building.`, setLoading, addForgeMsg);
-            }
-            setStepIndex(2);
+            } else if (currentStep.id === "stage_assessment") {
+                const card = STAGE_ASSESSMENT_CARDS.find(c => c.id === rawId);
+                const detectedStage = card?.stage || 1;
+                p.detectedStage = detectedStage; setProfile(p);
+                const stageLabel = STAGES_DATA[detectedStage - 1]?.label || "Idea";
+                const prompt = `Respond in 2 sentences only. First: acknowledge "${card?.label || value}" in a way that shows you understand where they are in the journey — be specific, not generic. Second: ask what their business idea or current business is.`;
+                try {
+                    const r = await callForgeAPI([{ role: "user", content: prompt }], FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", `Onboarding. Founder: ${p.name}. Starting stage: ${detectedStage} (${stageLabel}).`));
+                    await deliverMessage(r, setLoading, addForgeMsg, FAST_DELIVERY);
+                } catch {
+                    await deliverMessage(`Stage ${detectedStage} — ${stageLabel}. That's where we'll start.\n\nWhat's the business? Tell me what you're building.`, setLoading, addForgeMsg, FAST_DELIVERY);
+                }
+                setStepIndex(2);
 
-        } else if (currentStep.id === "idea") {
-            p.idea = value; setProfile(p);
-            const prompt = `Respond in 2 sentences only. First: react to "${value}" specifically — one genuine observation about this type of business, not generic encouragement. Second: tell them you want to understand their background before going further, and that they'll see some options to pick from.`;
-            try {
-                const r = await callForgeAPI([{ role: "user", content: prompt }], FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", `Onboarding. Founder: ${p.name}. Idea: ${p.idea}.`));
-                await deliverMessage(r, setLoading, addForgeMsg);
-            } catch {
-                await deliverMessage(`A meal prep business — there's real demand there, especially with how time-strapped people are. How much experience do you have in business or in this industry?`, setLoading, addForgeMsg);
-            }
-            setStepIndex(3);
+            } else if (currentStep.id === "idea") {
+                p.idea = value; setProfile(p);
+                const prompt = `Respond in 2 sentences only. First: react to "${value}" specifically — one genuine observation about this type of business, not generic encouragement. Second: tell them you want to understand their background before going further, and that they'll see some options to pick from.`;
+                try {
+                    const r = await callForgeAPI([{ role: "user", content: prompt }], FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", `Onboarding. Founder: ${p.name}. Idea: ${p.idea}.`));
+                    await deliverMessage(r, setLoading, addForgeMsg, FAST_DELIVERY);
+                } catch {
+                    await deliverMessage(`A meal prep business — there's real demand there, especially with how time-strapped people are. How much experience do you have in business or in this industry?`, setLoading, addForgeMsg, FAST_DELIVERY);
+                }
+                setStepIndex(3);
 
-        } else if (currentStep.id === "experience") {
-            p.experience = value; setProfile(p);
-            const prompt = `Respond in 2 sentences only. First: acknowledge "${value}" in one specific sentence that shows you understand what that experience level means for building a business — not generic. Second: ask how much money they actually have available to invest right now, in a casual but direct way.`;
-            try {
-                const r = await callForgeAPI([{ role: "user", content: prompt }], FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", `Onboarding. ${p.name}. Idea: ${p.idea}. Experience: ${p.experience}.`));
-                await deliverMessage(r, setLoading, addForgeMsg);
-            } catch {
-                await deliverMessage(`Got it — that combination of industry knowledge without formal business experience is actually common for strong founders. Now give me the real number: **how much money do you actually have available to invest right now?**`, setLoading, addForgeMsg);
-            }
-            setStepIndex(4);
+            } else if (currentStep.id === "experience") {
+                p.experience = value; setProfile(p);
+                const prompt = `Respond in 2 sentences only. First: acknowledge "${value}" in one specific sentence that shows you understand what that experience level means for building a business — not generic. Second: ask how much money they actually have available to invest right now, in a casual but direct way.`;
+                try {
+                    const r = await callForgeAPI([{ role: "user", content: prompt }], FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", `Onboarding. ${p.name}. Idea: ${p.idea}. Experience: ${p.experience}.`));
+                    await deliverMessage(r, setLoading, addForgeMsg, FAST_DELIVERY);
+                } catch {
+                    await deliverMessage(`Got it — that combination of industry knowledge without formal business experience is actually common for strong founders. Now give me the real number: **how much money do you actually have available to invest right now?**`, setLoading, addForgeMsg, FAST_DELIVERY);
+                }
+                setStepIndex(4);
 
-        } else if (currentStep.id === "budget_exact") {
+            } else if (currentStep.id === "budget_exact") {
             const parsedAmount = parseBudgetInput(value);
             if (!parsedAmount) {
-                await deliverMessage(`Give me the actual number you'd be comfortable planning around right now — something like **2500** or **$2,500**. If you do not know the exact number yet, give me your best current estimate.`, setLoading, addForgeMsg);
+                await deliverMessage(`Give me the actual number you'd be comfortable planning around right now — something like **2500** or **$2,500**. If you do not know the exact number yet, give me your best current estimate.`, setLoading, addForgeMsg, FAST_DELIVERY);
                 return;
             }
 
@@ -126,57 +135,62 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
             const prompt = `Respond in 2 sentences only. First: acknowledge that "${formatCurrency(parsedAmount)}" is the working budget in a practical, founder-focused way. Second: tell them the last question is about how they want to approach building this, and they'll see options now.`;
             try {
                 const r = await callForgeAPI([{ role: "user", content: prompt }], FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", `Onboarding. ${p.name}. Idea: ${p.idea}. Exact budget amount: ${parsedAmount}.`));
-                await deliverMessage(r, setLoading, addForgeMsg);
+                await deliverMessage(r, setLoading, addForgeMsg, FAST_DELIVERY);
             } catch {
-                await deliverMessage(`${formatCurrency(parsedAmount)} is enough to plan around honestly. Good. Last question: how do you want to approach building this?`, setLoading, addForgeMsg);
+                await deliverMessage(`${formatCurrency(parsedAmount)} is enough to plan around honestly. Good. Last question: how do you want to approach building this?`, setLoading, addForgeMsg, FAST_DELIVERY);
             }
             setStepIndex(5);
 
-        } else if (currentStep.id === "strategy") {
-            const card = STRATEGY_CARDS.find(c => c.id === rawId);
-            p.strategy = rawId || value;
-            p.strategyLabel = card?.label || value;
-            setProfile(p);
+            } else if (currentStep.id === "strategy") {
+                const card = STRATEGY_CARDS.find(c => c.id === rawId);
+                p.strategy = rawId || value;
+                p.strategyLabel = card?.label || value;
+                setProfile(p);
 
-            const budgetLabel = p.exactBudgetAmount ? `${formatCurrency(p.exactBudgetAmount)} available` : "Budget still being clarified";
-            const context = `Founder: ${p.name} | Idea: ${p.idea} | Experience: ${p.experience} | Exact budget: ${budgetLabel} | Strategy: ${p.strategyLabel} | Starting Stage: ${p.detectedStage || 1} (${STAGES_DATA[(p.detectedStage || 1) - 1]?.label})`;
-            const startStage = p.detectedStage || 1;
-            const startStageLabel = STAGES_DATA[startStage - 1]?.label || "Idea";
-            const prompt = `Onboarding is complete. Give a personalized opening assessment in 3-4 short paragraphs. Reference their specific idea, budget, experience level, strategy mode, and the fact that we're starting them at Stage ${startStage}: ${startStageLabel}. Be direct and specific — not generic. If there's real potential in what they're building, name it specifically. If there's a common pitfall for this type of idea or stage, call it out. Explain in one sentence why Stage ${startStage} is the right starting point for them given where they are. Use **bold** on 2-3 key words. End with just the word "Ready?" on its own line — nothing after it.`;
+                const budgetLabel = p.exactBudgetAmount ? `${formatCurrency(p.exactBudgetAmount)} available` : "Budget still being clarified";
+                const context = `Founder: ${p.name} | Idea: ${p.idea} | Experience: ${p.experience} | Exact budget: ${budgetLabel} | Strategy: ${p.strategyLabel} | Starting Stage: ${p.detectedStage || 1} (${STAGES_DATA[(p.detectedStage || 1) - 1]?.label})`;
+                const startStage = p.detectedStage || 1;
+                const startStageLabel = STAGES_DATA[startStage - 1]?.label || "Idea";
+                const prompt = `Onboarding is complete. Give a personalized opening assessment in 3-4 short paragraphs. Reference their specific idea, budget, experience level, strategy mode, and the fact that we're starting them at Stage ${startStage}: ${startStageLabel}. Be direct and specific — not generic. If there's real potential in what they're building, name it specifically. If there's a common pitfall for this type of idea or stage, call it out. Explain in one sentence why Stage ${startStage} is the right starting point for them given where they are. Use **bold** on 2-3 key words. End with just the word "Ready?" on its own line — nothing after it.`;
 
-            try {
-                const r = await callForgeAPI([{ role: "user", content: prompt }], FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", context));
-                await deliverMessage(r, setLoading, addForgeMsg);
-            } catch {
-                await deliverMessage(`Alright ${p.name} — we have what we need. Let's build something real.\n\nReady?`, setLoading, addForgeMsg);
+                try {
+                    const r = await callForgeAPI([{ role: "user", content: prompt }], FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", context));
+                    await deliverMessage(r, setLoading, addForgeMsg, FAST_DELIVERY);
+                } catch {
+                    await deliverMessage(`Alright ${p.name} — we have what we need. Let's build something real.\n\nReady?`, setLoading, addForgeMsg, FAST_DELIVERY);
+                }
+
+                setStepIndex(7);
+                setCompletedProfile({
+                    ...p,
+                    businessName: "",
+                    currentStage: p.detectedStage || 1,
+                    exactBudgetAmount: p.exactBudgetAmount,
+                    budget: {
+                        total: p.exactBudgetAmount,
+                        spent: 0,
+                        remaining: p.exactBudgetAmount,
+                        runway: "calculating...",
+                        income: [{ source: "Starting budget", amount: p.exactBudgetAmount }],
+                        expenses: [],
+                    },
+                    decisions: [],
+                });
+                setReadyToEnter(true);
             }
-
-            setStepIndex(7);
-            setCompletedProfile({
-                ...p,
-                businessName: "",
-                currentStage: p.detectedStage || 1,
-                exactBudgetAmount: p.exactBudgetAmount,
-                budget: {
-                    total: p.exactBudgetAmount,
-                    spent: 0,
-                    remaining: p.exactBudgetAmount,
-                    runway: "calculating...",
-                    income: [{ source: "Starting budget", amount: p.exactBudgetAmount }],
-                    expenses: [],
-                },
-                decisions: [],
-            });
-            setReadyToEnter(true);
+        } finally {
+            setResponsePending(false);
         }
     };
 
     const handleSubmit = async () => {
-        if (!input.trim() || loading) return;
+        if (!input.trim() || loading || responsePending || currentStep?.cards) return;
         const val = input.trim();
+        setResponsePending(true);
         if (currentStep?.id === "budget_exact" && !parseBudgetInput(val)) {
             setInput("");
-            await deliverMessage(`Give me the actual number you'd be comfortable planning around right now — something like **2500** or **$2,500**. If you do not know the exact number yet, give me your best current estimate.`, setLoading, addForgeMsg);
+            await deliverMessage(`Give me the actual number you'd be comfortable planning around right now — something like **2500** or **$2,500**. If you do not know the exact number yet, give me your best current estimate.`, setLoading, addForgeMsg, FAST_DELIVERY);
+            setResponsePending(false);
             return;
         }
         setInput("");
@@ -184,17 +198,19 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
     };
 
     const handleCard = async (cardId) => {
-        if (loading) return;
+        if (loading || responsePending) return;
+        setResponsePending(true);
         setCardSelection(cardId);
         const label =
             currentStep.id === "stage_assessment" ? STAGE_ASSESSMENT_CARDS.find(c => c.id === cardId)?.label || cardId
                 : currentStep.id === "experience" ? EXPERIENCE_CARDS.find(c => c.id === cardId)?.label || cardId
                     : STRATEGY_CARDS.find(c => c.id === cardId)?.label || cardId;
-        setTimeout(() => { setCardSelection(null); processInput(label, cardId); }, 350);
+        setCardSelection(null);
+        await processInput(label, cardId);
     };
 
-    const showCards = currentStep?.cards && !loading && !readyToEnter;
-    const showInput = !currentStep?.cards && stepIndex < 7 && !readyToEnter;
+    const showCards = currentStep?.cards && !loading && !readyToEnter && !responsePending;
+    const showInput = !currentStep?.cards && stepIndex < 7 && !readyToEnter && !responsePending;
 
     return (
         <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8", display: "flex", flexDirection: "column" }}>

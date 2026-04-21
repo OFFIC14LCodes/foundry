@@ -53,11 +53,20 @@ export default function HubScreen({
     const [incomeRenewalDate, setIncomeRenewalDate] = useState("");
     const [budgetEditAmount, setBudgetEditAmount] = useState("");
     const [budgetEditRange, setBudgetEditRange] = useState(profile.budgetRange || "");
+    const [resetConfirmationCode, setResetConfirmationCode] = useState("");
+    const [resetError, setResetError] = useState<string | null>(null);
 
     useEffect(() => {
         const timer = setTimeout(() => setMounted(true), 100);
         return () => clearTimeout(timer);
     }, []);
+
+    useEffect(() => {
+        if (!showResetModal) {
+            setResetConfirmationCode("");
+            setResetError(null);
+        }
+    }, [showResetModal]);
 
     useEffect(() => {
         console.debug("[AdminHub] HubScreen props", {
@@ -182,6 +191,18 @@ export default function HubScreen({
         setBudgetEditAmount(String(profile.exactBudgetAmount ?? profile.budget?.total ?? 0));
         setBudgetEditRange(profile.budgetRange || "");
         setShowBudgetModal(true);
+    };
+
+    const confirmReset = async () => {
+        if (resetConfirmationCode.trim() !== "12345") {
+            setResetError("Type 12345 exactly to confirm the reset.");
+            return;
+        }
+
+        setResetError(null);
+        setShowResetModal(false);
+        setSidebarOpen(false);
+        await onReset();
     };
 
     const saveBudget = () => {
@@ -564,12 +585,10 @@ export default function HubScreen({
             </div>
 
             <div
+                className="hub-topbar"
                 style={{
                     padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px",
                     borderBottom: "1px solid rgba(255,255,255,0.05)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
                     position: "sticky",
                     top: 0,
                     background: "rgba(8,8,9,0.95)",
@@ -577,7 +596,7 @@ export default function HubScreen({
                     zIndex: 10,
                 }}
             >
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div className="hub-topbar__identity">
                     <button
                         onClick={() => setSidebarOpen(true)}
                         style={{
@@ -632,7 +651,7 @@ export default function HubScreen({
                 </button>
             </div>
 
-            <div style={{ padding: "16px", maxWidth: 680, margin: "0 auto", paddingBottom: 60 }}>
+            <div className="hub-content">
                 <div
                     style={{
                         marginBottom: 16,
@@ -675,14 +694,7 @@ export default function HubScreen({
                         animation: "fadeSlideUp 0.5s ease 0.1s both",
                     }}
                 >
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            marginBottom: 12,
-                        }}
-                    >
+                    <div className="hub-section-header" style={{ marginBottom: 12 }}>
                         <div
                             style={{
                                 fontSize: 15,
@@ -806,7 +818,7 @@ export default function HubScreen({
 
                 {accessSummary && (
                     <div style={{ background: "linear-gradient(180deg, rgba(232,98,42,0.08), rgba(255,255,255,0.02))", border: "1px solid rgba(232,98,42,0.16)", borderRadius: 16, padding: "14px 16px", marginBottom: 14, animation: "fadeSlideUp 0.5s ease 0.18s both" }}>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 8 }}>
+                        <div className="hub-section-header" style={{ marginBottom: 8 }}>
                             <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>
                                 Access
                             </div>
@@ -829,9 +841,9 @@ export default function HubScreen({
                 )}
                 {/* Budget */}
                 <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "14px 16px", marginBottom: 14, animation: "fadeSlideUp 0.5s ease 0.25s both" }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                    <div className="hub-section-header" style={{ marginBottom: 14 }}>
                         <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>Budget</div>
-                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        <div className="foundry-inline-actions">
                             <button onClick={openBudgetModal} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "4px 12px", color: "#F0EDE8", fontSize: 11, cursor: "pointer", fontWeight: 500 }}>Customize</button>
                             <button onClick={() => setShowIncomeModal(true)} style={{ background: "rgba(76,175,138,0.1)", border: "1px solid rgba(76,175,138,0.25)", borderRadius: 8, padding: "4px 12px", color: "#4CAF8A", fontSize: 11, cursor: "pointer", fontWeight: 500 }}>+ Income</button>
                             <button onClick={() => setShowExpenseModal(true)} style={{ background: "rgba(232,98,42,0.1)", border: "1px solid rgba(232,98,42,0.25)", borderRadius: 8, padding: "4px 12px", color: "#E8622A", fontSize: 11, cursor: "pointer", fontWeight: 500 }}>+ Expense</button>
@@ -843,7 +855,7 @@ export default function HubScreen({
                             <div>{profile.budgetIsEstimated ? "Using provisional amount" : "Exact budget confirmed"}</div>
                         </div>
                     )}
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8, marginBottom: 14 }}>
+                    <div className="hub-budget-grid" style={{ marginBottom: 14 }}>
                         {[
                             { label: "Budget", value: formatCurrency(profile.budget?.total || 0), color: "#F0EDE8" },
                             { label: "Income", value: formatCurrency(profile.budget?.totalIncome || 0), color: "#4CAF8A" },
@@ -914,7 +926,7 @@ export default function HubScreen({
                 {/* Glossary learned */}
                 {(profile.glossaryLearned || []).length > 0 && (
                     <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "14px 16px", marginBottom: 12, animation: "fadeSlideUp 0.5s ease 0.32s both" }}>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                        <div className="hub-section-header" style={{ marginBottom: 14 }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                                 <Icons.glossary.book size={14} />
                                 <span>Your Glossary</span>
@@ -973,8 +985,8 @@ export default function HubScreen({
 
                 {/* Decisions */}
                 <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "14px 16px", animation: "fadeSlideUp 0.5s ease 0.3s both" }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                        <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>Decisions</div>
+                        <div className="hub-section-header" style={{ marginBottom: 14 }}>
+                            <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>Decisions</div>
                         <button onClick={() => setShowDecisionModal(true)} style={{ background: "rgba(232,98,42,0.1)", border: "1px solid rgba(232,98,42,0.25)", borderRadius: 8, padding: "4px 12px", color: "#E8622A", fontSize: 11, cursor: "pointer", fontWeight: 500 }}>+ Log Decision</button>
                     </div>
                     {(!profile.decisions || profile.decisions.length === 0) ? (
@@ -1166,6 +1178,25 @@ export default function HubScreen({
                         <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.6, marginBottom: 16 }}>
                             Resetting your account will make Foundry and Forge both completely restart and forget any progress you&apos;ve made. This cannot be undone.
                         </div>
+                        <div style={{ fontSize: 11, color: "#666", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>
+                            Confirmation code
+                        </div>
+                        <div style={{ fontSize: 13, color: "#C8C4BE", lineHeight: 1.7, marginBottom: 10 }}>
+                            To avoid accidental resets, type <span style={{ color: "#F0EDE8", fontWeight: 700 }}>12345</span> to continue.
+                        </div>
+                        <input
+                            type="text"
+                            inputMode="numeric"
+                            value={resetConfirmationCode}
+                            onChange={(e) => setResetConfirmationCode(e.target.value)}
+                            placeholder="Type 12345"
+                            style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", marginBottom: 16, boxSizing: "border-box" }}
+                        />
+                        {resetError && (
+                            <div style={{ fontSize: 12, color: "#D28B76", lineHeight: 1.6, marginBottom: 16 }}>
+                                {resetError}
+                            </div>
+                        )}
                         <div style={{ display: "flex", gap: 8 }}>
                             <button
                                 onClick={() => setShowResetModal(false)}
@@ -1174,11 +1205,7 @@ export default function HubScreen({
                                 Cancel
                             </button>
                             <button
-                                onClick={() => {
-                                    setShowResetModal(false);
-                                    setSidebarOpen(false);
-                                    onReset();
-                                }}
+                                onClick={confirmReset}
                                 style={{ flex: 2, padding: "10px", background: "linear-gradient(135deg, #A63B24, #842B1A)", border: "none", borderRadius: 10, color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}
                             >
                                 Yes, reset everything

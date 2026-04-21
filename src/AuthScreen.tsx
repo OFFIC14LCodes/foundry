@@ -142,23 +142,23 @@ export default function AuthScreen({
 
     const inputStyle: React.CSSProperties = {
         width: "100%",
-        padding: "12px 14px",
+        padding: "13px 14px",
         marginBottom: 10,
         background: "rgba(255,255,255,0.04)",
         border: "1px solid rgba(255,255,255,0.08)",
         borderRadius: 10,
         color: "#F0EDE8",
-        fontSize: 13,
+        fontSize: 16,
         fontFamily: "'Lora', Georgia, serif",
         boxSizing: "border-box",
     };
 
     return (
-        <div style={{
-            position: "fixed", inset: 0, background: "#080809",
+        <div className="foundry-auth-shell" style={{
+            background: "#080809",
             display: "flex", flexDirection: "column", alignItems: "center",
             justifyContent: "center", fontFamily: "'Lora', Georgia, serif",
-            padding: "24px", zIndex: 200
+            zIndex: 200
         }}>
 
             {/* Glow */}
@@ -193,8 +193,7 @@ export default function AuthScreen({
             </div>
 
             {/* Card */}
-            <div style={{
-                width: "100%", maxWidth: 400,
+            <div className="foundry-auth-card" style={{
                 background: "rgba(255,255,255,0.02)",
                 border: "1px solid rgba(255,255,255,0.08)",
                 borderRadius: 20, padding: "28px 24px",
@@ -470,7 +469,7 @@ export default function AuthScreen({
                 )}
             </div>
 
-            <div style={{ fontSize: 11, color: "#333", marginTop: 20, textAlign: "center", maxWidth: 300 }}>
+            <div className="foundry-auth-footer" style={{ fontSize: 11, color: "#333" }}>
                 By continuing you agree to Foundry's Terms of Service and Privacy Policy
             </div>
         </div>

@@ -176,7 +176,7 @@ export default function SettingsScreen({
                                         padding: "8px 12px",
                                         outline: "none",
                                         width: 220,
-                                        textAlign: "center",
+                                        textAlign: "left",
                                     }}
                                 />
                             }
@@ -198,7 +198,7 @@ export default function SettingsScreen({
                                         padding: "8px 12px",
                                         outline: "none",
                                         width: 220,
-                                        textAlign: "center",
+                                        textAlign: "left",
                                     }}
                                 />
                             }
@@ -220,12 +220,12 @@ export default function SettingsScreen({
                                         padding: "8px 12px",
                                         outline: "none",
                                         width: 260,
-                                        textAlign: "center",
+                                        textAlign: "left",
                                     }}
                                 />
                             }
                         />
-                        <div style={{ paddingTop: 14, display: "flex", justifyContent: "center", gap: 10, alignItems: "center" }}>
+                        <div className="foundry-inline-actions" style={{ paddingTop: 14, justifyContent: "flex-start" }}>
                             <SettingsButton
                                 tone="primary"
                                 onClick={handleProfileSave}
@@ -264,7 +264,7 @@ export default function SettingsScreen({
                     </SettingsCard>
                 </SettingsSection>
 
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 18 }}>
+                <div className="foundry-grid-2">
                     <SettingsSection title="Privacy Policy" description="How account, workspace, and AI-processed data are handled.">
                         <SettingsCard>
                             <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.7, marginBottom: 14 }}>
@@ -284,7 +284,7 @@ export default function SettingsScreen({
                     </SettingsSection>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 18 }}>
+                <div className="foundry-grid-2">
                     <SettingsSection title="End User License Agreement" description="The EULA governing your license to use the Foundry platform.">
                         <SettingsCard>
                             <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.7, marginBottom: 14 }}>
@@ -304,7 +304,7 @@ export default function SettingsScreen({
                     </SettingsSection>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 18 }}>
+                <div className="foundry-grid-2">
                     <SettingsSection title="Disclaimer" description="Important disclaimers regarding the use of Foundry.">
                         <SettingsCard>
                             <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.7, marginBottom: 14 }}>
@@ -315,7 +315,7 @@ export default function SettingsScreen({
                     </SettingsSection>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 18 }}>
+                <div className="foundry-grid-2">
                     <SettingsSection title="Notifications / Preferences" description="Delivery preferences and product-level personalizations.">
                         <SettingsCard>
                             <SettingsRow
@@ -374,7 +374,7 @@ export default function SettingsScreen({
                     </SettingsSection>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 18 }}>
+                <div className="foundry-grid-2">
                     <SettingsSection title="Support Ticket" description="Send a message inside the app when you need help with billing, access, or product issues.">
                         <SettingsCard>
                             <div style={{ display: "grid", gap: 12 }}>
@@ -401,7 +401,7 @@ export default function SettingsScreen({
                                         boxSizing: "border-box",
                                     }}
                                 />
-                                <div style={{ display: "flex", justifyContent: "center", gap: 10, alignItems: "center" }}>
+                                <div className="foundry-inline-actions">
                                     <SettingsButton tone="primary" onClick={handleSupportSubmit} disabled={supportSubmitting || !supportMessage.trim()}>
                                         {supportSubmitting ? "Sending..." : "Submit Support Ticket"}
                                     </SettingsButton>
@@ -441,7 +441,7 @@ export default function SettingsScreen({
                                         boxSizing: "border-box",
                                     }}
                                 />
-                                <div style={{ display: "flex", justifyContent: "center", gap: 10, alignItems: "center" }}>
+                                <div className="foundry-inline-actions">
                                     <SettingsButton tone="primary" onClick={handleSuggestionSubmit} disabled={suggestionSubmitting || !suggestionMessage.trim()}>
                                         {suggestionSubmitting ? "Sending..." : "Submit Suggestion"}
                                     </SettingsButton>
@@ -458,7 +458,7 @@ export default function SettingsScreen({
 
                 <SettingsSection title="Log Out" description="End the current session and return to sign in.">
                     <SettingsCard>
-                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, flexWrap: "wrap", textAlign: "center" }}>
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", gap: 16, flexWrap: "wrap", textAlign: "left" }}>
                             <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.7, maxWidth: 620 }}>
                                 Signing out clears local Foundry state for this session and routes you back to the sign-in screen.
                             </div>
@@ -476,10 +476,10 @@ export default function SettingsScreen({
                         ) : (
                             <div style={{ display: "grid", gap: 10 }}>
                                 {notifications.slice(0, 5).map((notification) => (
-                                    <div key={notification.id} style={{ paddingBottom: 10, borderBottom: "1px solid rgba(255,255,255,0.05)", textAlign: "center" }}>
-                                        <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 8, marginBottom: 6, alignItems: "center" }}>
+                                    <div key={notification.id} style={{ paddingBottom: 10, borderBottom: "1px solid rgba(255,255,255,0.05)", textAlign: "left" }}>
+                                        <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 8, marginBottom: 6, alignItems: "flex-start" }}>
                                             <div style={{ fontSize: 13, color: "#F0EDE8", fontWeight: 600 }}>{notification.title}</div>
-                                            <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+                                            <div className="foundry-inline-actions">
                                                 <div style={{ fontSize: 10, color: notification.readAt ? "#666" : "#E8622A", textTransform: "uppercase", letterSpacing: "0.08em" }}>
                                                     {notification.readAt ? "Read" : "Unread"}
                                                 </div>

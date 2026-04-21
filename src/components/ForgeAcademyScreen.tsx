@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Archive } from "lucide-react";
 import { STAGES_DATA } from "../constants/stages";
 import {
     buildYoutubeEmbedUrl,
@@ -719,7 +720,8 @@ function AcademyShell({ children, onBack, onOpenArchive }: { children: ReactNode
                         onClick={onOpenArchive}
                         style={{ background: "rgba(232,98,42,0.08)", border: "1px solid rgba(232,98,42,0.2)", borderRadius: 9, padding: "7px 12px", color: "#E8622A", fontSize: 11, fontFamily: "'DM Sans', sans-serif", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}
                     >
-                        📁 Archive
+                        <Archive size={14} />
+                        Archive
                     </button>
                 )}
             </div>

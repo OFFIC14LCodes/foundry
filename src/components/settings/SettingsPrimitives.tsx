@@ -18,12 +18,13 @@ export function SettingsScreenShell({
     return (
         <div style={{ minHeight: "100vh", background: "#080809", color: "#F0EDE8", fontFamily: "'Lora', Georgia, serif" }}>
             <div style={{ position: "sticky", top: 0, zIndex: 20, background: "rgba(8,8,9,0.94)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                <div style={{ maxWidth: 1100, margin: "0 auto", padding: "max(18px, calc(10px + env(safe-area-inset-top))) 20px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
-                    <div style={{ flex: 1, textAlign: "center" }}>
+                <div className="foundry-page settings-shell__header" style={{ paddingTop: "max(18px, calc(10px + env(safe-area-inset-top)))", paddingBottom: 18 }}>
+                    <div className="settings-shell__title">
                         <div style={{ fontSize: 24, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>{title}</div>
                         {subtitle && <div style={{ margin: "4px auto 0", fontSize: 13, color: "#7C7770", maxWidth: 680 }}>{subtitle}</div>}
                     </div>
                     <button
+                        className="settings-shell__back"
                         onClick={onBack}
                         style={{ padding: "9px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)", color: "#C8C4BE", fontSize: 12, cursor: "pointer" }}
                     >
@@ -32,7 +33,7 @@ export function SettingsScreenShell({
                 </div>
             </div>
 
-            <div style={{ maxWidth: 1100, margin: "0 auto", padding: "28px 20px 48px" }}>
+            <div className="foundry-page" style={{ paddingTop: 28, paddingBottom: 48 }}>
                 {children}
                 {footer && <div style={{ marginTop: 26 }}>{footer}</div>}
             </div>
@@ -49,7 +50,7 @@ type SettingsSectionProps = {
 export function SettingsSection({ title, description, children }: SettingsSectionProps) {
     return (
         <section style={{ marginBottom: 18 }}>
-            <div style={{ marginBottom: 10, textAlign: "center" }}>
+            <div className="settings-section-heading">
                 <div style={{ fontSize: 16, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>{title}</div>
                 {description && <div style={{ marginTop: 3, fontSize: 12, color: "#6B665F", lineHeight: 1.6 }}>{description}</div>}
             </div>
@@ -64,7 +65,7 @@ type SettingsCardProps = {
 
 export function SettingsCard({ children }: SettingsCardProps) {
     return (
-        <div style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02))", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 18, padding: 18, textAlign: "center" }}>
+        <div className="settings-card" style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02))", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 18, padding: 18 }}>
             {children}
         </div>
     );
@@ -79,12 +80,12 @@ type SettingsRowProps = {
 
 export function SettingsRow({ label, value, hint, action }: SettingsRowProps) {
     return (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, padding: "14px 0", borderBottom: "1px solid rgba(255,255,255,0.05)", textAlign: "center" }}>
-            <div style={{ flex: 1 }}>
+        <div className="settings-row">
+            <div className="settings-row__copy">
                 <div style={{ fontSize: 13, color: "#F0EDE8", fontWeight: 500 }}>{label}</div>
                 {hint && <div style={{ marginTop: 4, fontSize: 12, color: "#6B665F", lineHeight: 1.6 }}>{hint}</div>}
             </div>
-            <div style={{ flexShrink: 0, textAlign: "center" }}>
+            <div className="settings-row__value">
                 {action ?? <div style={{ fontSize: 13, color: "#C8C4BE" }}>{value ?? "Not set"}</div>}
             </div>
         </div>
