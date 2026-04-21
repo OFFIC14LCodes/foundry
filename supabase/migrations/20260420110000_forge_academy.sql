@@ -54,15 +54,7 @@ create table if not exists public.academy_content (
     status text not null default 'draft' check (status in ('draft', 'published', 'hidden')),
     published_at timestamptz,
     created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now(),
-    constraint academy_content_stage_ids_check
-        check (
-            not exists (
-                select 1
-                from unnest(stage_ids) as stage_id
-                where stage_id < 1 or stage_id > 6
-            )
-        )
+    updated_at timestamptz not null default now()
 );
 
 create table if not exists public.academy_content_tags (
@@ -89,15 +81,7 @@ create table if not exists public.academy_series (
     cover_image_url text,
     published_at timestamptz,
     created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now(),
-    constraint academy_series_stage_ids_check
-        check (
-            not exists (
-                select 1
-                from unnest(stage_ids) as stage_id
-                where stage_id < 1 or stage_id > 6
-            )
-        )
+    updated_at timestamptz not null default now()
 );
 
 create table if not exists public.academy_series_items (
