@@ -1,5 +1,5 @@
 import { useState, type ComponentType, type CSSProperties, type ReactNode } from "react";
-import { Archive, ArrowRight, Flame, Menu, Rocket, Settings, Target } from "lucide-react";
+import { Archive, ArrowRight, Flame, Menu, Rocket, Settings } from "lucide-react";
 import { Icons } from "../icons";
 import Logo from "./Logo";
 
@@ -42,10 +42,10 @@ const TOUR_STEPS: GuideStep[] = [
     id: "hub",
     kind: "hub",
     eyebrow: "The Hub",
-    title: "This is your command center.",
-    body: "Track stage progress, budget, milestones, and decisions from one place before jumping into execution.",
-    location: "You land here after onboarding, and you can always come back here as your home base.",
-    useFor: "Use it when you want the big-picture view of your business instead of a single conversation or tool.",
+    title: "Your full business picture in one place.",
+    body: "See your stage progress through Your Journey, track Business Health across key areas, and monitor your Budget — all without opening a single conversation.",
+    location: "You land here after onboarding and can always return as your home base.",
+    useFor: "Use it when you want the big-picture view of where your business stands before jumping into a coaching session or tool.",
     accent: "#48BB78",
   },
   {
@@ -330,29 +330,111 @@ function WelcomeSlide({ name }: { name?: string }) {
 }
 
 function HubGuideSlide({ step }: { step: GuideStep }) {
+  const r = 22;
+  const circumference = 2 * Math.PI * r;
+  const score = 72;
+  const filled = (score / 100) * circumference;
+
+  const stages = [
+    { label: "Idea", done: true },
+    { label: "Plan", current: true },
+    { label: "Legal", future: true },
+    { label: "Finance", future: true },
+    { label: "Launch", future: true },
+    { label: "Growth", future: true },
+  ];
+
+  const segments = [
+    { label: "Concept", value: 78, color: "#E8622A" },
+    { label: "Market", value: 58, color: "#D9B15D" },
+    { label: "Finance", value: 81, color: "#4CAF8A" },
+  ];
+
+  const budgetItems = [
+    { label: "Budget", value: "$5k", color: "#F0EDE8" },
+    { label: "Income", value: "+$600", color: "#4CAF8A" },
+    { label: "Spent", value: "$1.2k", color: "#E8622A" },
+    { label: "Left", value: "$4.4k", color: "#4CAF8A" },
+  ];
+
   return (
     <GuidedLayout
       accent={step.accent!}
       preview={(
         <div style={mockWindowStyle}>
           <MockWindowHeader title="Hub" />
-          <div style={{ padding: 18, display: "grid", gap: 12 }}>
-            <div style={{ ...mockCardStyle, borderColor: "rgba(76,175,138,0.32)", background: "rgba(76,175,138,0.08)" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                <div style={{ fontSize: 12, color: "#F0EDE8", fontWeight: 600 }}>Current Stage</div>
-                <Target size={15} color="#48BB78" />
-              </div>
-              <div style={{ fontSize: 20, color: "#F0EDE8", fontFamily: "'Playfair Display', Georgia, serif" }}>Stage 2</div>
-              <div style={{ fontSize: 12, color: "#9CA39A", marginTop: 6 }}>Planning • 3 of 5 milestones complete</div>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              <div style={mockCardStyle}><div style={mockLabelStyle}>Budget</div><div style={mockValueStyle}>$4,800</div></div>
-              <div style={mockCardStyle}><div style={mockLabelStyle}>Runway</div><div style={mockValueStyle}>14 weeks</div></div>
-            </div>
+          <div style={{ padding: "14px 16px", display: "grid", gap: 10 }}>
+
+            {/* Your Journey */}
             <div style={mockCardStyle}>
-              <div style={mockLabelStyle}>Recent Decision</div>
-              <div style={{ fontSize: 13, color: "#DAD4CB", lineHeight: 1.6 }}>Focus launch on local meal-prep subscriptions before adding corporate orders.</div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                <div style={mockLabelStyle}>Your Journey</div>
+                <div style={{ fontSize: 10, color: "#E8622A" }}>Stage 2 of 6</div>
+              </div>
+              <div style={{ display: "flex", gap: 4 }}>
+                {stages.map((s, i) => (
+                  <div key={i} style={{ flex: 1, textAlign: "center" }}>
+                    <div style={{
+                      width: 26, height: 26, borderRadius: "50%", margin: "0 auto 4px",
+                      background: s.done ? "rgba(76,175,138,0.18)" : s.current ? "rgba(232,98,42,0.14)" : "rgba(255,255,255,0.04)",
+                      border: `1.5px solid ${s.done ? "#4CAF8A" : s.current ? "#E8622A" : "rgba(255,255,255,0.1)"}`,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 10, color: s.done ? "#4CAF8A" : s.current ? "#E8622A" : "#444",
+                      fontWeight: 600,
+                    }}>
+                      {s.done ? "✓" : i + 1}
+                    </div>
+                    <div style={{ fontSize: 8, color: s.done ? "#4CAF8A" : s.current ? "#E8622A" : "#3A3530", letterSpacing: "0.02em" }}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
             </div>
+
+            {/* Business Health */}
+            <div style={mockCardStyle}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                <div style={mockLabelStyle}>Business Health</div>
+                <div style={{ fontSize: 10, color: "#4CAF8A" }}>Solid Foundation</div>
+              </div>
+              <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                <svg width="62" height="62" viewBox="0 0 60 60" style={{ flexShrink: 0 }}>
+                  <circle cx="30" cy="30" r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="7" />
+                  <circle
+                    cx="30" cy="30" r={r} fill="none" stroke="#4CAF8A" strokeWidth="7"
+                    strokeDasharray={`${filled} ${circumference - filled}`}
+                    strokeLinecap="round" transform="rotate(-90 30 30)"
+                  />
+                  <text x="30" y="35" textAnchor="middle" fill="#F0EDE8" fontSize="13" fontWeight="700" fontFamily="Georgia, serif">{score}</text>
+                </svg>
+                <div style={{ flex: 1, display: "grid", gap: 7 }}>
+                  {segments.map(seg => (
+                    <div key={seg.label}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                        <span style={{ fontSize: 10, color: "#888" }}>{seg.label}</span>
+                        <span style={{ fontSize: 10, color: seg.color, fontWeight: 700 }}>{seg.value}</span>
+                      </div>
+                      <div style={{ height: 4, background: "rgba(255,255,255,0.05)", borderRadius: 999, overflow: "hidden" }}>
+                        <div style={{ width: `${seg.value}%`, height: "100%", background: seg.color, borderRadius: 999 }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Budget */}
+            <div style={mockCardStyle}>
+              <div style={mockLabelStyle}>Budget</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
+                {budgetItems.map(item => (
+                  <div key={item.label} style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, padding: "7px 4px", textAlign: "center" }}>
+                    <div style={{ fontSize: 12, color: item.color, fontWeight: 700, fontFamily: "'Lora', Georgia, serif", lineHeight: 1 }}>{item.value}</div>
+                    <div style={{ fontSize: 9, color: "#555", marginTop: 3, textTransform: "uppercase", letterSpacing: "0.06em" }}>{item.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
           </div>
         </div>
       )}

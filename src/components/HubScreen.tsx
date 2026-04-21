@@ -1271,62 +1271,64 @@ export default function HubScreen({
 
 function BusinessHealthDonut({ health }) {
     const size = 212;
-    const stroke = 16;
+    const stroke = 13;
     const radius = (size - stroke) / 2;
     const circumference = 2 * Math.PI * radius;
-    const gap = circumference * 0.018;
-    const slice = circumference / health.segments.length;
-    let offset = 0;
+    const segCount = health.segments.length;
+    const gap = circumference * 0.026;
+    const slice = circumference / segCount;
+    const available = slice - gap;
+
+    const scoreColor = health.overallScore >= 62 ? "#4CAF8A" : health.overallScore >= 45 ? "#D9B15D" : "#E8622A";
 
     return (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10 }}>
             <div style={{ position: "relative", width: size, height: size }}>
                 <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: "rotate(-90deg)" }}>
-                    <circle
-                        cx={size / 2}
-                        cy={size / 2}
-                        r={radius}
-                        fill="none"
-                        stroke="rgba(255,255,255,0.06)"
-                        strokeWidth={stroke}
-                    />
-                    {health.segments.map((segment) => {
-                        const visibleLength = Math.max((slice - gap) * (0.38 + (segment.value / 100) * 0.62), 10);
-                        const dashArray = `${visibleLength} ${circumference - visibleLength}`;
-                        const dashOffset = -offset;
-                        offset += slice;
+                    {health.segments.map((segment, i) => {
+                        const startOffset = -(i * slice);
+                        const filledLength = available * (segment.value / 100);
 
                         return (
-                            <circle
-                                key={segment.key}
-                                cx={size / 2}
-                                cy={size / 2}
-                                r={radius}
-                                fill="none"
-                                stroke={segment.color}
-                                strokeWidth={stroke}
-                                strokeLinecap="round"
-                                strokeDasharray={dashArray}
-                                strokeDashoffset={dashOffset}
-                                opacity={0.55 + (segment.value / 100) * 0.45}
-                            />
+                            <g key={segment.key}>
+                                <circle
+                                    cx={size / 2} cy={size / 2} r={radius}
+                                    fill="none"
+                                    stroke={segment.color}
+                                    strokeWidth={stroke}
+                                    strokeLinecap="butt"
+                                    strokeDasharray={`${available} ${circumference - available}`}
+                                    strokeDashoffset={startOffset}
+                                    opacity={0.1}
+                                />
+                                <circle
+                                    cx={size / 2} cy={size / 2} r={radius}
+                                    fill="none"
+                                    stroke={segment.color}
+                                    strokeWidth={stroke}
+                                    strokeLinecap="butt"
+                                    strokeDasharray={`${filledLength} ${circumference - filledLength}`}
+                                    strokeDashoffset={startOffset}
+                                    opacity={0.9}
+                                />
+                            </g>
                         );
                     })}
                 </svg>
 
                 <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: 24 }}>
-                    <div style={{ fontSize: 10, color: "#777169", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6 }}>
+                    <div style={{ fontSize: 9, color: "#5B5650", letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 6 }}>
                         Overall
                     </div>
-                    <div style={{ fontSize: 40, lineHeight: 1, color: "#F0EDE8", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>
+                    <div style={{ fontSize: 38, lineHeight: 1, color: "#F0EDE8", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>
                         {health.overallScore}
                     </div>
-                    <div style={{ fontSize: 12, color: "#B7B0A7", marginTop: 8 }}>
+                    <div style={{ fontSize: 11, color: scoreColor, marginTop: 7, letterSpacing: "0.03em" }}>
                         {health.statusLabel}
                     </div>
                 </div>
             </div>
-            <div style={{ fontSize: 11, color: "#777169", lineHeight: 1.6, textAlign: "center", maxWidth: 260 }}>
+            <div style={{ fontSize: 11, color: "#5B5650", lineHeight: 1.6, textAlign: "center", maxWidth: 260 }}>
                 A founder-facing view of how the business is holding up across execution, capital, clarity, market strength, and upside.
             </div>
         </div>
