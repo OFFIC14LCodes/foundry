@@ -1,14 +1,15 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getArchivePreviewText, parseArchiveSummaryPayload } from "../lib/archiveSummary";
-import { cleanAIText } from "../lib/cleanAIText";
 import { callForgeAPI, streamForgeAPI } from "../lib/forgeApi";
 import { processFile, buildMessageContent, type AttachedFile } from "../lib/fileAttach";
 import { FORGE_SYSTEM_PROMPT } from "../constants/prompts";
 import { saveConversationSummary, updateConversationSummary } from "../db";
 import { applyFoundryBookCitations, buildFoundryBookContext } from "../lib/foundryBook";
+import type { AcademyTopicLaunch } from "../lib/academy";
 import ForgeAvatar from "./ForgeAvatar";
 import TypingDots from "./TypingDots";
 import Logo from "./Logo";
+import { AnimatedChatText, renderText, MessageActions } from "./AnimatedChatText";
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -26,12 +27,19 @@ interface ForgeChatRoomProps {
     onBack: () => void;
     onArchiveSaved?: (entry: any) => void;
     initialArchive?: any | null;
+    academyEntry?: AcademyTopicLaunch | null;
 }
 
 // ─────────────────────────────────────────────────────────────
 // Context for Forge in this chat room
 // ─────────────────────────────────────────────────────────────
-function buildChatRoomContext(profile: any, inputs: string[], archiveSummary?: string | null, archiveTitle?: string | null) {
+function buildChatRoomContext(
+    profile: any,
+    inputs: string[],
+    archiveSummary?: string | null,
+    archiveTitle?: string | null,
+    academyEntry?: AcademyTopicLaunch | null,
+) {
     const now = new Date();
     const dateStr = now.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
     const bookContext = buildFoundryBookContext(Number(profile.currentStage) || 1, inputs, 3);
@@ -51,6 +59,8 @@ That said, don't turn every exchange into a lesson. Match their energy. If they 
 
 Be the knowledgeable business partner they can talk to freely — about their business, about business in general, about an idea they have, about something that's worrying them, about something that excited them. This is a safe space to think out loud without worrying about what step they're on.
 ${archiveSummary ? `\n\nARCHIVE CONTEXT:\nThe founder is continuing a prior archived conversation titled "${archiveTitle || "Saved conversation"}". Use this summary as prior context for the current discussion. Build on it naturally and answer follow-up questions as a continuation, not as a fresh topic.\n\n${archiveSummary}` : ""}
+${academyEntry ? `\n\nACADEMY ENTRY CONTEXT:\nThe founder opened this conversation from Forge Academy.\nTopic: ${academyEntry.title}\nCategory: ${academyEntry.categoryTitle || "Forge Academy"}\nLearning goal: ${academyEntry.learningGoal || "Help the founder understand the topic deeply and practically."}\nWho this is for: ${academyEntry.whoThisIsFor || "A first-time founder who needs a more grounded understanding before the stakes get higher."}\nWhen this matters: ${academyEntry.whenThisMatters || "Before the founder drifts into weak assumptions or avoidable execution mistakes."}\nCommon mistake: ${academyEntry.commonMistake || "Founders often treat this as obvious until they are forced to make a real decision under pressure."}\nWhy this matters: ${academyEntry.whyThisMatters || "Teach the founder why this topic matters before they need it."}\nWhat to watch for: ${academyEntry.whatToWatchFor || "Surface the subtle mistakes and weak thinking patterns that matter here."}\nConcept tags: ${academyEntry.tags.join(", ") || "None"}\nRelevant stages: ${academyEntry.stageIds.length > 0 ? academyEntry.stageIds.join(", ") : "General"}\nSupporting context: ${academyEntry.forgeContext || "None provided"}\n\nBecause the founder clicked into this Academy topic, this is a guided lesson entry point. Do not wait for them to ask a smart question first. Open with a confident teaching message that:\n1. frames the topic cleanly\n2. explains why it matters now\n3. names a common founder mistake or weak assumption\n4. gives the founder one practical lens or mental model they can use immediately\n5. ends by inviting them into the lesson naturally, not with a generic \"what would you like to know?\"` : ""}
+${academyEntry ? `\n\nACADEMY ENTRY CONTEXT:\nThe founder opened this conversation from Forge Academy.\nTopic: ${academyEntry.title}\nCategory: ${academyEntry.categoryTitle || "Forge Academy"}\nLearning goal: ${academyEntry.learningGoal || "Help the founder understand the topic deeply and practically."}\nWho this is for: ${academyEntry.whoThisIsFor || "A first-time founder who needs a more grounded understanding before the stakes get higher."}\nWhen this matters: ${academyEntry.whenThisMatters || "Before the founder drifts into weak assumptions or avoidable execution mistakes."}\nCommon mistake: ${academyEntry.commonMistake || "Founders often treat this as obvious until they are forced to make a real decision under pressure."}\nWhy this matters: ${academyEntry.whyThisMatters || "Teach the founder why this topic matters before they need it."}\nWhat to watch for: ${academyEntry.whatToWatchFor || "Surface the subtle mistakes and weak thinking patterns that matter here."}\nConcept tags: ${academyEntry.tags.join(", ") || "None"}\nRelevant stages: ${academyEntry.stageIds.length > 0 ? academyEntry.stageIds.join(", ") : "General"}\nSupporting context: ${academyEntry.forgeContext || "None provided"}\n\nBecause the founder clicked into this Academy topic, this is a guided lesson entry point. Do not wait for them to ask a smart question first. Start from broadly true founder intelligence before narrowing into the founder's situation. Use this flow:\n1. hook: challenge the default way founders usually think about this\n2. realization: name what most founders miss\n3. reframe: offer a cleaner mental model\n4. application: show where this appears in real business situations\n5. personal bridge: only then connect it back to the founder if useful\n\nDo not sound like a textbook or lecturer. Sound like a sharp thinking partner who sees the blind spot early and can walk the founder into clearer judgment.` : ""}
 ${bookContext.context ? `\n\n${bookContext.context}` : ""}
     `.trim(),
         bookMatches: bookContext.matches,
@@ -58,284 +68,13 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
 }
 
 // ─────────────────────────────────────────────────────────────
-// Text rendering
+// Text rendering — see AnimatedChatText.tsx
 // ─────────────────────────────────────────────────────────────
-function getDisplayText(text: string) {
-    return cleanAIText(text || "")
-        .replace(/\[CONCEPT\](.*?)\[\/CONCEPT\]/gs, "$1")
-        .replace(/\[TERM\](.*?)\[\/TERM\]/gs, "$1")
-        .replace(/\[STAGE_REF:\d+\](.*?)\[\/STAGE_REF\]/gs, "$1");
-}
-
-function renderInline(text: string, keyPrefix: string) {
-    return text.split(/(\*\*.*?\*\*)/g).map((part, index) => {
-        if (part.startsWith("**") && part.endsWith("**")) {
-            return (
-                <strong key={`${keyPrefix}-b-${index}`} style={{ color: "#F0EDE8", fontWeight: 700 }}>
-                    {part.slice(2, -2)}
-                </strong>
-            );
-        }
-
-        return part.split("\n").map((line, lineIndex) => (
-            <span key={`${keyPrefix}-t-${index}-${lineIndex}`}>
-                {lineIndex > 0 && <br />}
-                {line}
-            </span>
-        ));
-    });
-}
-
-function renderText(text: string) {
-    const cleaned = getDisplayText(text);
-    if (!cleaned) return null;
-
-    const lines = cleaned.split("\n");
-    const blocks: ReactNode[] = [];
-    let paragraphLines: string[] = [];
-    let i = 0;
-
-    const flushParagraph = () => {
-        if (paragraphLines.length === 0) return;
-        const content = paragraphLines.join("\n").trim();
-        if (!content) {
-            paragraphLines = [];
-            return;
-        }
-
-        blocks.push(
-            <p key={`p-${blocks.length}`} style={{ margin: blocks.length === 0 ? 0 : "12px 0 0 0", textAlign: "left" }}>
-                {renderInline(content, `p-${blocks.length}`)}
-            </p>
-        );
-        paragraphLines = [];
-    };
-
-    while (i < lines.length) {
-        const line = lines[i];
-        const headingTwoMatch = line.match(/^##\s+(.*)$/);
-        const headingThreeMatch = line.match(/^###\s+(.*)$/);
-
-        if (!line.trim()) {
-            flushParagraph();
-            i++;
-            continue;
-        }
-
-        if (headingTwoMatch) {
-            flushParagraph();
-            blocks.push(
-                <div
-                    key={`h2-${blocks.length}`}
-                    style={{
-                        margin: blocks.length === 0 ? 0 : "14px 0 0 0",
-                        fontSize: 15.5,
-                        lineHeight: 1.35,
-                        fontWeight: 700,
-                        color: "#F0EDE8",
-                        textAlign: "left",
-                    }}
-                >
-                    {renderInline(headingTwoMatch[1], `h2-${blocks.length}`)}
-                </div>
-            );
-            i++;
-            continue;
-        }
-
-        if (headingThreeMatch) {
-            flushParagraph();
-            blocks.push(
-                <div
-                    key={`h3-${blocks.length}`}
-                    style={{
-                        margin: blocks.length === 0 ? 0 : "12px 0 0 0",
-                        fontSize: 13.5,
-                        lineHeight: 1.4,
-                        fontWeight: 700,
-                        color: "#F0EDE8",
-                        textAlign: "left",
-                    }}
-                >
-                    {renderInline(headingThreeMatch[1], `h3-${blocks.length}`)}
-                </div>
-            );
-            i++;
-            continue;
-        }
-
-        const bulletMatch = line.match(/^[-*]\s+(.*)$/);
-        const numberedMatch = line.match(/^(\d+)\.\s+(.*)$/);
-
-        if (bulletMatch) {
-            flushParagraph();
-            const items: string[] = [];
-            while (i < lines.length) {
-                const match = lines[i].match(/^[-*]\s+(.*)$/);
-                if (!match) break;
-                items.push(match[1]);
-                i++;
-            }
-            blocks.push(
-                <ul key={`ul-${blocks.length}`} style={{ margin: blocks.length === 0 ? "0 0 0 18px" : "12px 0 0 18px", padding: 0, textAlign: "left" }}>
-                    {items.map((item, index) => (
-                        <li key={`ul-item-${index}`} style={{ marginBottom: 6 }}>
-                            {renderInline(item, `ul-${index}`)}
-                        </li>
-                    ))}
-                </ul>
-            );
-            continue;
-        }
-
-        if (numberedMatch) {
-            flushParagraph();
-            const items: { value: number; content: string }[] = [];
-            while (i < lines.length) {
-                const match = lines[i].match(/^(\d+)\.\s+(.*)$/);
-                if (!match) break;
-                items.push({ value: Number(match[1]), content: match[2] });
-                i++;
-            }
-            blocks.push(
-                <ol key={`ol-${blocks.length}`} start={items[0]?.value || 1} style={{ margin: blocks.length === 0 ? "0 0 0 18px" : "12px 0 0 18px", padding: 0, textAlign: "left" }}>
-                    {items.map((item, index) => (
-                        <li key={`ol-item-${index}`} style={{ marginBottom: 6 }}>
-                            {renderInline(item.content, `ol-${index}`)}
-                        </li>
-                    ))}
-                </ol>
-            );
-            continue;
-        }
-
-        paragraphLines.push(line);
-        i++;
-    }
-
-    flushParagraph();
-    return <div style={{ textAlign: "left", width: "100%" }}>{blocks}</div>;
-}
-
-function splitAnimatedLine(line: string) {
-    return line.split(/(\s+)/).filter((token) => token.length > 0);
-}
-
-function AnimatedChatText({ text, createdAt }: { text: string; createdAt?: string }) {
-    const displayText = getDisplayText(text);
-    const isFreshMessage = createdAt ? (Date.now() - new Date(createdAt).getTime()) < 20000 : true;
-    const [visibleCount, setVisibleCount] = useState(isFreshMessage ? 0 : displayText.length);
-    const [settled, setSettled] = useState(!isFreshMessage);
-    const [lastMutationAt, setLastMutationAt] = useState(Date.now());
-
-    useEffect(() => {
-        if (!isFreshMessage) {
-            setVisibleCount(displayText.length);
-            setSettled(true);
-            return;
-        }
-
-        setSettled(false);
-        setLastMutationAt(Date.now());
-    }, [displayText, isFreshMessage]);
-
-    useEffect(() => {
-        if (settled || visibleCount >= displayText.length) return;
-
-        const timer = window.setTimeout(() => {
-            setVisibleCount((count) => Math.min(displayText.length, count + 2));
-        }, 14);
-
-        return () => window.clearTimeout(timer);
-    }, [displayText.length, settled, visibleCount]);
-
-    useEffect(() => {
-        if (!isFreshMessage || visibleCount < displayText.length) return;
-
-        const settleTimer = window.setTimeout(() => {
-            if (Date.now() - lastMutationAt >= 700) {
-                setSettled(true);
-            }
-        }, 760);
-
-        return () => window.clearTimeout(settleTimer);
-    }, [displayText.length, isFreshMessage, lastMutationAt, visibleCount]);
-
-    if (settled) {
-        return renderText(text);
-    }
-
-    const visibleText = displayText.slice(0, visibleCount);
-    const paragraphs = visibleText.split(/\n\n+/);
-    let charIndex = 0;
-
-    return (
-        <div style={{ textAlign: "left", width: "100%" }}>
-            <style>{`
-                @keyframes forgeLetterCool {
-                    0% {
-                        color: #ff6a3d;
-                        text-shadow: 0 0 10px rgba(232,98,42,0.42), 0 0 18px rgba(245,168,67,0.18);
-                    }
-                    35% {
-                        color: #f59a69;
-                        text-shadow: 0 0 7px rgba(232,98,42,0.24);
-                    }
-                    100% {
-                        color: #d8d4ce;
-                        text-shadow: none;
-                    }
-                }
-            `}</style>
-            {paragraphs.map((para, pIdx) => {
-                const lines = para.split("\n");
-                return (
-                    <p key={`anim-p-${pIdx}`} style={{ margin: pIdx === 0 ? 0 : "10px 0 0 0", textAlign: "left" }}>
-                        {lines.map((line, lIdx) => (
-                            <span key={`anim-p-${pIdx}-l-${lIdx}`}>
-                                {lIdx > 0 && <br />}
-                                {splitAnimatedLine(line).map((token, tokenIdx) => {
-                                    if (/^\s+$/.test(token)) {
-                                        return (
-                                            <span key={`anim-space-${pIdx}-${lIdx}-${tokenIdx}`} style={{ whiteSpace: "pre-wrap" }}>
-                                                {token}
-                                            </span>
-                                        );
-                                    }
-
-                                    return (
-                                        <span key={`anim-word-${pIdx}-${lIdx}-${tokenIdx}`} style={{ display: "inline-flex", whiteSpace: "nowrap" }}>
-                                            {Array.from(token).map((char) => {
-                                                const currentIndex = charIndex++;
-                                                return (
-                                                    <span
-                                                        key={`anim-char-${currentIndex}`}
-                                                        style={{
-                                                            color: "#D8D4CE",
-                                                            animation: "forgeLetterCool 1s ease forwards",
-                                                            display: "inline-block",
-                                                        }}
-                                                    >
-                                                        {char}
-                                                    </span>
-                                                );
-                                            })}
-                                        </span>
-                                    );
-                                })}
-                            </span>
-                        ))}
-                    </p>
-                );
-            })}
-        </div>
-    );
-}
 
 // ─────────────────────────────────────────────────────────────
 // Component
 // ─────────────────────────────────────────────────────────────
-export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved, initialArchive = null }: ForgeChatRoomProps) {
+export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved, initialArchive = null, academyEntry = null }: ForgeChatRoomProps) {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
@@ -346,6 +85,7 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
     const scrollRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const academyBootstrappedRef = useRef(false);
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -357,12 +97,24 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
         setTimeout(() => inputRef.current?.focus(), 150);
     }, []);
 
+    useEffect(() => {
+        if (!academyEntry || initialArchive || academyBootstrappedRef.current) return;
+        academyBootstrappedRef.current = true;
+        void sendAcademyKickoff();
+    }, [academyEntry?.id, initialArchive?.id]);
+
     const openSaveArchiveModal = () => {
-        const defaultTitle = initialArchive?.title || `Chat with Forge — ${new Date().toLocaleDateString("en-US", {
+        const defaultTitle = initialArchive?.title || (academyEntry
+            ? `${academyEntry.title} — ${new Date().toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+            })}`
+            : `Chat with Forge — ${new Date().toLocaleDateString("en-US", {
             month: "short",
             day: "numeric",
             year: "numeric",
-        })}`;
+        })}`);
         setArchiveTitleInput(defaultTitle);
         setSaveArchiveModalOpen(true);
     };
@@ -370,7 +122,7 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
     const handleSaveArchive = async () => {
         if (savingArchive || messages.length === 0) return;
 
-        const title = archiveTitleInput.trim() || "Chat with Forge";
+        const title = archiveTitleInput.trim() || academyEntry?.title || "Chat with Forge";
         const transcript = messages
             .map((msg) => `${msg.role === "forge" ? "Forge" : profile.name}: ${msg.text}`)
             .join("\n");
@@ -443,7 +195,8 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
                 profile,
                 [...messages.slice(-6).map((message) => message.text), text],
                 initialArchive?.summary || null,
-                initialArchive?.title || null
+                initialArchive?.title || null,
+                academyEntry
             );
             const apiMsgs = [
                 ...history.slice(0, -1).map(m => ({
@@ -473,6 +226,57 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
         setLoading(false);
     };
 
+    const sendAcademyKickoff = async () => {
+        if (!academyEntry || loading) return;
+
+        const starterPrompt = academyEntry.starterPrompt?.trim()
+            || `Open a guided Forge Academy lesson on "${academyEntry.title}".
+
+Teach it like a serious founder educator, not a generic assistant.
+Learning goal: ${academyEntry.learningGoal || "Help the founder get practical clarity."}
+Who this is for: ${academyEntry.whoThisIsFor || "A first-time founder building judgment."}
+When this matters: ${academyEntry.whenThisMatters || "Before avoidable mistakes compound."}
+Common mistake: ${academyEntry.commonMistake || "Founders often miss the real issue underneath the surface topic."}
+Why this matters: ${academyEntry.whyThisMatters || "The founder needs stronger intuition here before they are under pressure."}
+What to watch for: ${academyEntry.whatToWatchFor || "Surface the hidden traps and weak assumptions."}
+
+Start with a confident first lesson message that frames the topic, explains the stakes, names what founders usually get wrong, and gives one practical lens the founder can use right away.`;
+
+        const forgeMsg: ChatMessage = { id: `f-${Date.now()}`, role: "forge", text: "", createdAt: new Date().toISOString() };
+        setMessages([forgeMsg]);
+        setLoading(true);
+
+        try {
+            const ctx = buildChatRoomContext(
+                profile,
+                [starterPrompt],
+                null,
+                null,
+                academyEntry
+            );
+
+            await streamForgeAPI(
+                [{ role: "user", content: starterPrompt }],
+                FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", ctx.context),
+                (chunk) => {
+                    const { cleanText } = applyFoundryBookCitations(chunk, ctx.bookMatches);
+                    setMessages((prev) => prev.map((message) => (
+                        message.id === forgeMsg.id ? { ...message, text: cleanText } : message
+                    )));
+                }
+            );
+        } catch (error) {
+            console.error("academy kickoff error:", error);
+            setMessages((prev) => prev.map((message) => (
+                message.id === forgeMsg.id
+                    ? { ...message, text: "Something went wrong opening this Academy conversation. Try again." }
+                    : message
+            )));
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
@@ -481,6 +285,8 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
     };
 
     const hasMessages = messages.length > 0;
+    const chatTitle = academyEntry ? `Forge Academy · ${academyEntry.title}` : "Chat with Forge";
+    const chatSubtitle = academyEntry ? "Guided Academy conversation" : "Ask anything · learn freely";
 
     return (
         <div style={{
@@ -528,10 +334,10 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
                 <ForgeAvatar size={30} />
                 <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 15, fontWeight: 600, color: "#F0EDE8", fontFamily: "'Lora', Georgia, serif" }}>
-                        Chat with Forge
+                        {chatTitle}
                     </div>
                     <div style={{ fontSize: 11, color: "#4CAF8A", marginTop: 1 }}>
-                        Ask anything · learn freely
+                        {chatSubtitle}
                     </div>
                 </div>
                 {hasMessages && (
@@ -636,19 +442,30 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
                         </div>
                         <div>
                             <div style={{ fontSize: 20, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 8 }}>
-                                What's on your mind?
+                                {academyEntry ? academyEntry.title : "What's on your mind?"}
                             </div>
                             <div style={{ fontSize: 13, color: "#555", lineHeight: 1.7, maxWidth: 380 }}>
-                                This is your open space to talk through anything — business questions, ideas, concepts you're learning, or things you're unsure about. No agenda. Just a conversation.
+                                {academyEntry
+                                    ? academyEntry.learningGoal || "Forge is opening this Academy topic with context already loaded. Keep going by asking follow-up questions, pressure-testing the ideas, or applying them directly to your business."
+                                    : "This is your open space to talk through anything — business questions, ideas, concepts you're learning, or things you're unsure about. No agenda. Just a conversation."}
                             </div>
                         </div>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", marginTop: 8 }}>
-                            {[
-                                "What's the difference between revenue and profit?",
-                                "How do I know if my idea is worth pursuing?",
-                                "What makes a pitch deck compelling?",
-                                "Explain unit economics simply",
-                            ].map(prompt => (
+                            {(
+                                academyEntry
+                                    ? [
+                                        "Give me the high-level founder version first",
+                                        "What do founders usually get wrong here?",
+                                        "Apply this to my business specifically",
+                                        "What should I do next with this?",
+                                    ]
+                                    : [
+                                        "What's the difference between revenue and profit?",
+                                        "How do I know if my idea is worth pursuing?",
+                                        "What makes a pitch deck compelling?",
+                                        "Explain unit economics simply",
+                                    ]
+                            ).map(prompt => (
                                 <button
                                     key={prompt}
                                     onClick={() => { setInput(prompt); setTimeout(() => inputRef.current?.focus(), 50); }}
@@ -673,7 +490,7 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
                     </div>
                 )}
 
-                {messages.map(msg => (
+                {messages.filter(msg => !(msg.role === "forge" && !msg.text)).map(msg => (
                     <div
                         key={msg.id}
                         style={{
@@ -684,26 +501,28 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
                         }}
                     >
                         {msg.role === "forge" && <ForgeAvatar size={28} />}
-                        <div style={{
-                            maxWidth: "78%",
-                            padding: "11px 15px",
-                            borderRadius: msg.role === "user"
-                                ? "16px 4px 16px 16px"
-                                : "4px 16px 16px 16px",
-                            background: msg.role === "user"
-                                ? "rgba(232,98,42,0.12)"
-                                : "rgba(255,255,255,0.04)",
-                            border: msg.role === "user"
-                                ? "1px solid rgba(232,98,42,0.2)"
-                                : "1px solid rgba(255,255,255,0.07)",
-                            fontSize: 13.5,
-                            color: msg.role === "user" ? "#F0EDE8" : "#C8C4BE",
-                            lineHeight: 1.7,
-                            textAlign: "left",
-                        }}>
-                            {msg.role === "forge"
-                                ? <AnimatedChatText text={msg.text} createdAt={msg.createdAt} />
-                                : renderText(msg.text)}
+                        <div style={{ display: "flex", flexDirection: "column", maxWidth: "78%" }}>
+                            <div style={{
+                                padding: "11px 15px",
+                                borderRadius: msg.role === "user"
+                                    ? "16px 4px 16px 16px"
+                                    : "4px 16px 16px 16px",
+                                background: msg.role === "user"
+                                    ? "rgba(232,98,42,0.12)"
+                                    : "rgba(255,255,255,0.04)",
+                                border: msg.role === "user"
+                                    ? "1px solid rgba(232,98,42,0.2)"
+                                    : "1px solid rgba(255,255,255,0.07)",
+                                fontSize: 13.5,
+                                color: msg.role === "user" ? "#F0EDE8" : "#C8C4BE",
+                                lineHeight: 1.7,
+                                textAlign: "left",
+                            }}>
+                                {msg.role === "forge"
+                                    ? <AnimatedChatText text={msg.text} createdAt={msg.createdAt} />
+                                    : renderText(msg.text)}
+                            </div>
+                            {msg.role === "forge" && <MessageActions text={msg.text} />}
                         </div>
                     </div>
                 ))}
@@ -862,6 +681,9 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
                     </div>
                     <div style={{ fontSize: 10, color: "#333", textAlign: "center" }}>
                         Shift + Enter for new line
+                    </div>
+                    <div style={{ fontSize: 10, color: "#2b2b2b", textAlign: "center" }}>
+                        Forge is an AI. Always verify important information before acting on it.
                     </div>
                 </div>
             </div>

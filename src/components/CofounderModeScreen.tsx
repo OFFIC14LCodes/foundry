@@ -5,6 +5,7 @@ import { streamForgeAPI } from '../lib/forgeApi';
 import { applyFoundryBookCitations, buildFoundryBookContext } from '../lib/foundryBook';
 import { Icons } from '../icons';
 import ForgeAvatar from './ForgeAvatar';
+import { MessageActions } from './AnimatedChatText';
 import type {
     CofounderTeam,
     CofounderMember,
@@ -907,6 +908,9 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
                                     Send
                                 </button>
                             </div>
+                            <div style={{ fontSize: 10, color: '#2b2b2b', textAlign: 'center' }}>
+                                Forge is an AI. Always verify important information before acting on it.
+                            </div>
                         </div>
                     </div>
                 </>
@@ -953,6 +957,7 @@ function ChatMessage({ msg, isOwn }: { msg: CofounderMessage; isOwn: boolean }) 
                         }}>
                             {renderMessageText(msg.content)}
                         </div>
+                        <MessageActions text={msg.content} />
                     </div>
                 </>
             ) : (

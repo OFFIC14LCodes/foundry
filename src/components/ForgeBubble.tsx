@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { cleanAIText } from "../lib/cleanAIText";
 import { callForgeAPI, streamForgeAPI } from "../lib/forgeApi";
+import { AnimatedChatText, renderText, MessageActions } from "./AnimatedChatText";
 import { processFile, buildMessageContent, type AttachedFile } from "../lib/fileAttach";
 import { FORGE_SYSTEM_PROMPT } from "../constants/prompts";
 import { saveConversationSummary } from "../db";
@@ -17,10 +17,18 @@ interface BubbleMessage {
     createdAt: string;
 }
 
+interface DocContext {
+    phase: string;
+    categoryName: string | null;
+    documentName: string | null;
+    documentContent: string | null;
+}
+
 interface ForgeBubbleProps {
     profile: any;
     userId: string;
     currentScreen: string;
+    screenContext?: DocContext | null;
     onBubbleSummaryAdded?: (summary: any) => void;
 }
 
@@ -37,21 +45,13 @@ const SCREEN_LABELS: Record<string, string> = {
     chatRoom: "the Chat Room (open-ended learning and conversation with Forge)",
 };
 
-function renderBubbleText(text: string) {
-    if (!text) return null;
-    return cleanAIText(text).split(/\n\n+/).map((para, pi) => (
-        <p key={pi} style={{ margin: pi === 0 ? 0 : "8px 0 0 0" }}>
-            {para.split(/(\*\*.*?\*\*)/).map((part, i) => {
-                if (part.startsWith("**") && part.endsWith("**")) {
-                    return <strong key={i} style={{ color: "#F0EDE8", fontWeight: 700 }}>{part.slice(2, -2)}</strong>;
-                }
-                return part.split("\n").map((line, j) => (
-                    <span key={`${i}-${j}`}>{j > 0 && <br />}{line}</span>
-                ));
-            })}
-        </p>
-    ));
-}
+const DOC_PHASE_LABELS: Record<string, string> = {
+    categories: "browsing document categories",
+    documents: "browsing documents within a category",
+    configure: "configuring document settings before generation",
+    studio: "viewing or refining a produced document in the Studio",
+};
+
 
 const BUBBLE_SIZE = 56;
 const BUBBLE_STORAGE_KEY = "forge-bubble-pos";
@@ -71,7 +71,7 @@ function loadSavedPos(): { bottom: number; right: number } {
     return { bottom: 24, right: 24 };
 }
 
-export default function ForgeBubble({ profile, userId, currentScreen, onBubbleSummaryAdded }: ForgeBubbleProps) {
+export default function ForgeBubble({ profile, userId, currentScreen, screenContext, onBubbleSummaryAdded }: ForgeBubbleProps) {
     const [open, setOpen] = useState(false);
     const [messages, setMessages] = useState<BubbleMessage[]>([]);
     const [input, setInput] = useState("");
@@ -145,7 +145,6 @@ export default function ForgeBubble({ profile, userId, currentScreen, onBubbleSu
     }, [open]);
 
     const buildContext = (currentPrompt: string) => {
-        const screenLabel = SCREEN_LABELS[currentScreen] || currentScreen;
         const now = new Date();
         const dateStr = now.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
         const bookContext = buildFoundryBookContext(
@@ -153,6 +152,22 @@ export default function ForgeBubble({ profile, userId, currentScreen, onBubbleSu
             [...messages.slice(-4).map((message) => message.text), currentPrompt],
             2
         );
+
+        let screenLabel = SCREEN_LABELS[currentScreen] || currentScreen;
+        let documentSection = "";
+
+        if (currentScreen === "documents" && screenContext) {
+            const phaseLabel = DOC_PHASE_LABELS[screenContext.phase] || screenContext.phase;
+            const parts: string[] = [`the Document Production screen — currently ${phaseLabel}`];
+            if (screenContext.categoryName) parts.push(`Category: ${screenContext.categoryName}`);
+            if (screenContext.documentName) parts.push(`Document: ${screenContext.documentName}`);
+            screenLabel = parts.join(" | ");
+
+            if (screenContext.documentContent) {
+                documentSection = `\n\nCURRENT PRODUCED DOCUMENT ("${screenContext.documentName ?? "Document"}"):\nThe founder has produced the following document and may be asking about it, requesting changes, or seeking clarification. Read it carefully before responding.\n\n${screenContext.documentContent}`;
+            }
+        }
+
         return {
             context: `
 Current date: ${dateStr}
@@ -161,7 +176,7 @@ Founder: ${profile.name} | Business: ${profile.businessName || profile.idea || "
 Strategy: ${profile.strategyLabel || profile.strategy} | Current Stage: ${profile.currentStage} | Experience: ${profile.experience || "Not specified"}
 Budget: $${(profile.budget?.remaining || 0).toLocaleString()} remaining of $${(profile.budget?.total || 0).toLocaleString()} | Spent: $${(profile.budget?.spent || 0).toLocaleString()}
 
-You are in a quick-access floating chat bubble. The founder is asking a quick question or needs help with what they're looking at. Be helpful, warm, and concise — this is a quick-assist context, not a deep coaching session. You are still Forge — same personality, same expertise — just more conversational. You can help them understand what they see on the screen, navigate the app, or think through a quick question.
+You are in a quick-access floating chat bubble. The founder is asking a quick question or needs help with what they're looking at. Be helpful, warm, and concise — this is a quick-assist context, not a deep coaching session. You are still Forge — same personality, same expertise — just more conversational. You can help them understand what they see on the screen, navigate the app, or think through a quick question.${documentSection}
 ${bookContext.context ? `\n\n${bookContext.context}` : ""}
         `.trim(),
             bookMatches: bookContext.matches,
@@ -250,8 +265,7 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
             );
 
             const parsed = parseArchiveSummaryPayload(raw, `Quick Chat · ${displayDate}`);
-            const title = parsed.title;
-            const summary = parsed.summary;
+            const { title, summary } = parsed;
 
             const saved = await saveConversationSummary(userId, summaryStageId, dateKey, title, summary, msgsToArchive.length);
             if (saved && onBubbleSummaryAdded) {
@@ -394,7 +408,7 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
                             </div>
                         )}
 
-                        {messages.map((msg) => (
+                        {messages.filter(msg => !(msg.role === "forge" && !msg.text)).map((msg) => (
                             <div
                                 key={msg.id}
                                 style={{
@@ -405,25 +419,30 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
                                 }}
                             >
                                 {msg.role === "forge" && <ForgeAvatar size={24} />}
-                                <div
-                                    style={{
-                                        maxWidth: "82%",
-                                        padding: "9px 12px",
-                                        borderRadius: msg.role === "user"
-                                            ? "14px 4px 14px 14px"
-                                            : "4px 14px 14px 14px",
-                                        background: msg.role === "user"
-                                            ? "rgba(232,98,42,0.14)"
-                                            : "rgba(255,255,255,0.04)",
-                                        border: msg.role === "user"
-                                            ? "1px solid rgba(232,98,42,0.22)"
-                                            : "1px solid rgba(255,255,255,0.07)",
-                                        fontSize: 12.5,
-                                        color: msg.role === "user" ? "#F0EDE8" : "#C8C4BE",
-                                        lineHeight: 1.65,
-                                    }}
-                                >
-                                    {renderBubbleText(msg.text)}
+                                <div style={{ display: "flex", flexDirection: "column", maxWidth: "82%" }}>
+                                    <div
+                                        style={{
+                                            padding: "9px 12px",
+                                            borderRadius: msg.role === "user"
+                                                ? "14px 4px 14px 14px"
+                                                : "4px 14px 14px 14px",
+                                            background: msg.role === "user"
+                                                ? "rgba(232,98,42,0.14)"
+                                                : "rgba(255,255,255,0.04)",
+                                            border: msg.role === "user"
+                                                ? "1px solid rgba(232,98,42,0.22)"
+                                                : "1px solid rgba(255,255,255,0.07)",
+                                            fontSize: 12.5,
+                                            color: msg.role === "user" ? "#F0EDE8" : "#C8C4BE",
+                                            lineHeight: 1.65,
+                                            textAlign: "left",
+                                        }}
+                                    >
+                                        {msg.role === "forge"
+                                            ? <AnimatedChatText text={msg.text} createdAt={msg.createdAt} />
+                                            : renderText(msg.text)}
+                                    </div>
+                                    {msg.role === "forge" && <MessageActions text={msg.text} />}
                                 </div>
                             </div>
                         ))}
@@ -583,6 +602,9 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
                                     <path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
                             </button>
+                        </div>
+                        <div style={{ fontSize: 9.5, color: "#252525", textAlign: "center" }}>
+                            Forge is an AI. Always verify important information before acting on it.
                         </div>
                     </div>
                 </div>

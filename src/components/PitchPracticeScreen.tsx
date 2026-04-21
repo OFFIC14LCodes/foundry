@@ -7,6 +7,7 @@ import { buildPitchSystemPrompt, buildFeedbackSystemPrompt } from "../constants/
 import TypingDots from "./TypingDots";
 import ForgeAvatar from "./ForgeAvatar";
 import Logo from "./Logo";
+import { MessageActions } from "./AnimatedChatText";
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -571,24 +572,26 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
                                 <ForgeAvatar size={28} />
                             </div>
                         )}
-                        <div
-                            style={{
-                                maxWidth: "78%",
-                                padding: "10px 14px",
-                                borderRadius: msg.role === "user" ? "16px 16px 4px 16px" : "4px 16px 16px 16px",
-                                background: msg.role === "user" ? "rgba(232,98,42,0.12)" : "rgba(255,255,255,0.04)",
-                                border: msg.role === "user" ? "1px solid rgba(232,98,42,0.2)" : "1px solid rgba(255,255,255,0.06)",
-                                fontSize: 13,
-                                lineHeight: 1.65,
-                                color: msg.role === "user" ? "#F0EDE8" : "#C8C4BE",
-                            }}
-                        >
-                            {msg.text
-                                ? msg.role === "forge"
-                                    ? <StructuredPitchText text={msg.text} />
-                                    : <div style={{ whiteSpace: "pre-wrap" }}>{msg.text}</div>
-                                : (msg.id ? <TypingDots /> : null)
-                            }
+                        <div style={{ display: "flex", flexDirection: "column", maxWidth: "78%" }}>
+                            <div
+                                style={{
+                                    padding: "10px 14px",
+                                    borderRadius: msg.role === "user" ? "16px 16px 4px 16px" : "4px 16px 16px 16px",
+                                    background: msg.role === "user" ? "rgba(232,98,42,0.12)" : "rgba(255,255,255,0.04)",
+                                    border: msg.role === "user" ? "1px solid rgba(232,98,42,0.2)" : "1px solid rgba(255,255,255,0.06)",
+                                    fontSize: 13,
+                                    lineHeight: 1.65,
+                                    color: msg.role === "user" ? "#F0EDE8" : "#C8C4BE",
+                                }}
+                            >
+                                {msg.text
+                                    ? msg.role === "forge"
+                                        ? <StructuredPitchText text={msg.text} />
+                                        : <div style={{ whiteSpace: "pre-wrap" }}>{msg.text}</div>
+                                    : (msg.id ? <TypingDots /> : null)
+                                }
+                            </div>
+                            {msg.role === "forge" && msg.text && <MessageActions text={msg.text} />}
                         </div>
                     </div>
                 ))}
@@ -649,6 +652,7 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
                         </div>
                     </div>
                 ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
                         <textarea
                             ref={inputRef}
@@ -696,6 +700,10 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
                         >
                             →
                         </button>
+                    </div>
+                    <div style={{ fontSize: 10, color: "#2b2b2b", textAlign: "center" }}>
+                        Forge is an AI. Always verify important information before acting on it.
+                    </div>
                     </div>
                 )}
             </div>

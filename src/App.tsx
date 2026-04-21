@@ -54,6 +54,7 @@ import MarketIntelligenceScreen from "./components/MarketIntelligenceScreen";
 import CofounderModeScreen from "./components/CofounderModeScreen";
 import ForgeChatRoom from "./components/ForgeChatRoom";
 import AdminHubScreen from "./components/AdminHubScreen";
+import ForgeAcademyScreen from "./components/ForgeAcademyScreen";
 import SettingsScreen from "./components/settings/SettingsScreen";
 import PrivacyPolicyScreen from "./components/settings/PrivacyPolicyScreen";
 import EulaScreen from "./components/settings/EulaScreen";
@@ -82,6 +83,7 @@ import {
   type AppNotification,
   type UserNotificationPreferences,
 } from "./lib/notifications";
+import type { AcademyTopicLaunch } from "./lib/academy";
 import { STORAGE_KEYS, clearFoundryClientStorage, createEmptyMessagesByStage, createEmptyStageProgress } from "./lib/session";
 
 // callForgeAPI and streamForgeAPI are imported from ./lib/forgeApi
@@ -2187,6 +2189,9 @@ Where do you want to start?`;
               attachedFiles={attachedFiles}
               onFilesChange={setAttachedFiles}
             />
+            <div style={{ fontSize: 10, color: "#2b2b2b", textAlign: "center", marginTop: 4 }}>
+              Forge is an AI. Always verify important information before acting on it.
+            </div>
           </div>
         )
       }
@@ -2245,8 +2250,10 @@ export default function FoundryApp() {
   const [showBriefings, setShowBriefings] = useState(false);
   const [showPitchPractice, setShowPitchPractice] = useState(false);
   const [showDocuments, setShowDocuments] = useState(false);
+  const [documentContext, setDocumentContext] = useState<import("./components/DocumentProductionScreen").DocumentScreenContext | null>(null);
   const [showMarketIntel, setShowMarketIntel] = useState(false);
   const [showCofounder, setShowCofounder] = useState(false);
+  const [showAcademy, setShowAcademy] = useState(false);
   const [showChatRoom, setShowChatRoom] = useState(false);
   const [settingsView, setSettingsView] = useState<null | "settings" | "privacy" | "eula" | "termsAndConditions" | "acceptableUse" | "disclaimer">(null);
   const [showAdminHub, setShowAdminHub] = useState(false);
@@ -2264,6 +2271,7 @@ export default function FoundryApp() {
   const [paywallStage, setPaywallStage] = useState<number | null>(null);
   const [bubbleSummaries, setBubbleSummaries] = useState<any[]>([]);
   const [chatRoomArchive, setChatRoomArchive] = useState<any | null>(null);
+  const [academyConversationEntry, setAcademyConversationEntry] = useState<AcademyTopicLaunch | null>(null);
   const [archiveMutationTick, setArchiveMutationTick] = useState(0);
 
   const getPersistedPostAuthScreen = (setupCompleted: boolean) => {
@@ -2292,6 +2300,8 @@ export default function FoundryApp() {
     setShowDocuments(false);
     setShowMarketIntel(false);
     setShowCofounder(false);
+    setShowChatRoom(false);
+    setShowAcademy(false);
     setSettingsView(null);
     setShowAdminHub(false);
     setUserTeamId(null);
@@ -2307,6 +2317,8 @@ export default function FoundryApp() {
     setMarketReport(null);
     setPaywallStage(null);
     setBubbleSummaries([]);
+    setChatRoomArchive(null);
+    setAcademyConversationEntry(null);
     setDataLoaded(false);
     clearFoundryClientStorage();
   };
@@ -2668,14 +2680,38 @@ export default function FoundryApp() {
     setShowMarketIntel(true);
   };
 
+  const openAcademy = () => {
+    markMeaningfulActivity();
+    setAcademyConversationEntry(null);
+    setShowAcademy(true);
+  };
+
+  const openAcademyAskForgeAnything = () => {
+    markMeaningfulActivity();
+    setAcademyConversationEntry(null);
+    setShowAcademy(false);
+    setChatRoomArchive(null);
+    setShowChatRoom(true);
+  };
+
   const openChatRoom = () => {
     markMeaningfulActivity();
+    setAcademyConversationEntry(null);
     setChatRoomArchive(null);
+    setShowChatRoom(true);
+  };
+
+  const launchAcademyConversation = (entry: AcademyTopicLaunch) => {
+    markMeaningfulActivity(true);
+    setAcademyConversationEntry(entry);
+    setChatRoomArchive(null);
+    setShowAcademy(false);
     setShowChatRoom(true);
   };
 
   const continueArchiveInChatRoom = (entry: any) => {
     markMeaningfulActivity();
+    setAcademyConversationEntry(null);
     setChatRoomArchive(entry);
     setShowChatRoom(true);
   };
@@ -2922,7 +2958,7 @@ export default function FoundryApp() {
             onOpenDocuments={openDocuments}
             onOpenMarketIntel={openMarketIntel}
             onOpenCofounder={openCofounder}
-            onOpenChatRoom={openChatRoom}
+            onOpenAcademy={openAcademy}
             onOpenSettings={openSettings}
             onOpenAdminHub={() => setShowAdminHub(true)}
             isAdmin={canOpenAdminHub}
@@ -2982,6 +3018,7 @@ export default function FoundryApp() {
             userId={(user as any).id}
             profile={profile}
             onBack={() => setShowDocuments(false)}
+            onContextChange={setDocumentContext}
           />
         </div>
       )}
@@ -3012,13 +3049,23 @@ export default function FoundryApp() {
           completedByStage={completedByStage}
         />
       )}
+      {showAcademy && profile && user && (
+        <ForgeAcademyScreen
+          userId={(user as any).id}
+          profile={profile}
+          onBack={() => setShowAcademy(false)}
+          onLaunchForgeConversation={launchAcademyConversation}
+          onOpenAskForgeAnything={openAcademyAskForgeAnything}
+        />
+      )}
       {showChatRoom && profile && (
         <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "#080809" }}>
           <ForgeChatRoom
             userId={(user as any).id}
             profile={profile}
             initialArchive={chatRoomArchive}
-            onBack={() => { setShowChatRoom(false); setChatRoomArchive(null); }}
+            academyEntry={academyConversationEntry}
+            onBack={() => { setShowChatRoom(false); setChatRoomArchive(null); setAcademyConversationEntry(null); }}
             onArchiveSaved={(saved) => {
               setBubbleSummaries((prev) => {
                 const exists = prev.some((item) => item.id === saved.id);
@@ -3124,10 +3171,12 @@ export default function FoundryApp() {
                   : showJournal ? "journal"
                     : showBriefings ? "briefings"
                       : showCofounder ? "cofounder"
+                        : showAcademy ? "academy"
                         : showChatRoom ? "chatRoom"
                           : settingsView ? "settings"
                             : screen
           }
+          screenContext={showDocuments ? documentContext : null}
           onBubbleSummaryAdded={(summary) => setBubbleSummaries(prev => [summary, ...prev])}
         />
       )}

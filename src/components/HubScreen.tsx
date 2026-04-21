@@ -25,7 +25,7 @@ export default function HubScreen({
     onOpenCofounder,
     onOpenSettings,
     onOpenAdminHub,
-    onOpenChatRoom,
+    onOpenAcademy,
     isAdmin = false,
     completedByStage,
     furthestStageReached = 1,
@@ -221,12 +221,12 @@ export default function HubScreen({
             available: true,
         }] : []),
         {
-            icon: Icons.sidebar.chatRoom,
-            label: "Chat with Forge",
-            sub: "Open-ended learning & questions",
+            icon: Icons.sidebar.academy,
+            label: "Forge Academy",
+            sub: "Deep founder learning hub",
             action: () => {
                 setSidebarOpen(false);
-                onOpenChatRoom?.();
+                onOpenAcademy?.();
             },
             available: true,
         },

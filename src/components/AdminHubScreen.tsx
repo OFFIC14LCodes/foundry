@@ -3,6 +3,8 @@ import { Icons } from "../icons";
 import type { AdminNotificationSettings } from "../lib/notifications";
 import { loadAdminTtsUsage, type TtsUsageSnapshot } from "../lib/ttsUsage";
 import AdminDashboard from "./AdminDashboard";
+import AdminAcademyManager from "./AdminAcademyManager";
+import AdminFounderAccounts from "./AdminFounderAccounts";
 
 interface Props {
     userId: string;
@@ -12,6 +14,20 @@ interface Props {
 }
 
 const ADMIN_SECTIONS = [
+    {
+        title: "Founder Accounts",
+        description: "Browse all registered founders, view per-user stage progress, archive summaries, subscription status, and generate a Forge-powered account overview.",
+        accent: "#E8622A",
+        cta: "Open Founder Accounts",
+        action: "accounts",
+    },
+    {
+        title: "Forge Academy",
+        description: "Manage Academy categories, topic conversations, lesson series, and YouTube-backed learning content from one workspace.",
+        accent: "#F5A843",
+        cta: "Open Academy manager",
+        action: "academy",
+    },
     {
         title: "User Management",
         description: "Review accounts, inspect workspace history, and manage user operations directly from the Admin Hub as this control surface expands.",
@@ -153,7 +169,7 @@ export default function AdminHubScreen({
     notificationSettings,
     onNotificationSettingsChange,
 }: Props) {
-    const [activeView, setActiveView] = useState<"overview" | "dashboard">("overview");
+    const [activeView, setActiveView] = useState<"overview" | "dashboard" | "accounts" | "academy">("overview");
     const [ttsUsage, setTtsUsage] = useState<TtsUsageSnapshot | null>(null);
     const [ttsUsageLoading, setTtsUsageLoading] = useState(true);
     const [ttsUsageError, setTtsUsageError] = useState<string | null>(null);
@@ -181,6 +197,14 @@ export default function AdminHubScreen({
 
     if (activeView === "dashboard") {
         return <AdminDashboard userId={userId} onBack={() => setActiveView("overview")} />;
+    }
+
+    if (activeView === "accounts") {
+        return <AdminFounderAccounts onBack={() => setActiveView("overview")} />;
+    }
+
+    if (activeView === "academy") {
+        return <AdminAcademyManager userId={userId} onBack={() => setActiveView("overview")} />;
     }
 
     return (
@@ -391,7 +415,12 @@ export default function AdminHubScreen({
                                 description={section.description}
                                 accent={section.accent}
                                 cta={section.cta}
-                                onClick={section.action === "dashboard" ? () => setActiveView("dashboard") : undefined}
+                                onClick={
+                            section.action === "dashboard" ? () => setActiveView("dashboard") :
+                            section.action === "accounts" ? () => setActiveView("accounts") :
+                            section.action === "academy" ? () => setActiveView("academy") :
+                            undefined
+                        }
                             />
                         ))}
                     </div>

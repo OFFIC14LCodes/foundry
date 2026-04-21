@@ -31,6 +31,7 @@ import {
     ArrowRight,
     ShieldCheck,
     Settings,
+    GraduationCap,
 } from "lucide-react";
 
 import {
@@ -73,6 +74,7 @@ export const Icons = {
         admin: ShieldCheck,
         settings: Settings,
         chatRoom: ChatsCircle,
+        academy: GraduationCap,
     },
 
     hub: {

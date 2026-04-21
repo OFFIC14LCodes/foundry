@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import ForgeAvatar from "./ForgeAvatar";
 import { cleanAIText } from "../lib/cleanAIText";
+import { MessageActions } from "./AnimatedChatText";
 
 function getAnimatedDisplayText(text) {
     return cleanAIText(text || "")
@@ -197,6 +198,7 @@ export default function MessageBubble({ msg, onStageRef, onGlossaryTap, onConcep
                         <div style={{ whiteSpace: "pre-wrap" }}>{msg.text}</div>
                     )}
                 </div>
+                {isForge && <MessageActions text={msg.text} />}
                 {isForge && Array.isArray(msg.actions) && msg.actions.length > 0 && (
                     <div
                         style={{

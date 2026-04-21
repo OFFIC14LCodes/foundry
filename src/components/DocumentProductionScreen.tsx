@@ -208,7 +208,14 @@ function PopularBadge() {
 // ─────────────────────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────────────────────
-export default function DocumentProductionScreen({ userId, profile, onBack }: { userId: string; profile: any; onBack: () => void }) {
+export interface DocumentScreenContext {
+    phase: string;
+    categoryName: string | null;
+    documentName: string | null;
+    documentContent: string | null;
+}
+
+export default function DocumentProductionScreen({ userId, profile, onBack, onContextChange }: { userId: string; profile: any; onBack: () => void; onContextChange?: (ctx: DocumentScreenContext) => void }) {
     // ── Navigation ──────────────────────────────────────────
     const [phase, setPhase] = useState<Phase>("categories");
     const [selectedCategory, setSelectedCategory] = useState<DocCategory | null>(null);
@@ -245,6 +252,15 @@ export default function DocumentProductionScreen({ userId, profile, onBack }: { 
     useEffect(() => {
         previewRef.current?.scrollTo({ top: 0, behavior: "smooth" });
     }, [currentDoc]);
+
+    useEffect(() => {
+        onContextChange?.({
+            phase,
+            categoryName: selectedCategory?.name ?? null,
+            documentName: selectedDoc?.name ?? null,
+            documentContent: currentDoc || null,
+        });
+    }, [phase, selectedCategory, selectedDoc, currentDoc]);
 
     useEffect(() => {
         let cancelled = false;
