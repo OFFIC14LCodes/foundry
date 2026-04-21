@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { getElevenLabsUsage, synthesizeSpeech, verifyAdminRequest } from "../api/_lib/tts.js";
+import settingsFeedbackHandler from "../api/settings-feedback.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -36,9 +37,24 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (req.url !== "/api/forge" && req.url !== "/api/tts" && req.url !== "/api/tts-usage") {
+  if (req.url !== "/api/forge" && req.url !== "/api/tts" && req.url !== "/api/tts-usage" && req.url !== "/api/settings-feedback") {
     res.writeHead(404, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Not found" }));
+    return;
+  }
+
+  if (req.url === "/api/settings-feedback") {
+    try {
+      const bodyText = req.method === "POST" ? await readBody(req) : "";
+      req.body = bodyText ? JSON.parse(bodyText) : {};
+      await settingsFeedbackHandler(req, res);
+    } catch (error) {
+      const statusCode = typeof error?.statusCode === "number" ? error.statusCode : 500;
+      res.writeHead(statusCode, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({
+        error: error instanceof Error ? error.message : "Unable to handle settings feedback",
+      }));
+    }
     return;
   }
 

@@ -105,11 +105,7 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
 
     const openSaveArchiveModal = () => {
         const defaultTitle = initialArchive?.title || (academyEntry
-            ? `${academyEntry.title} — ${new Date().toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-            })}`
+            ? `Academy — ${academyEntry.title}`
             : `Chat with Forge — ${new Date().toLocaleDateString("en-US", {
             month: "short",
             day: "numeric",
@@ -519,7 +515,7 @@ Start with a confident first lesson message that frames the topic, explains the 
                                 textAlign: "left",
                             }}>
                                 {msg.role === "forge"
-                                    ? <AnimatedChatText text={msg.text} createdAt={msg.createdAt} />
+                                    ? (msg.text ? <AnimatedChatText text={msg.text} createdAt={msg.createdAt} /> : <TypingDots />)
                                     : renderText(msg.text)}
                             </div>
                             {msg.role === "forge" && <MessageActions text={msg.text} />}
@@ -527,19 +523,6 @@ Start with a confident first lesson message that frames the topic, explains the 
                     </div>
                 ))}
 
-                {loading && (
-                    <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-                        <ForgeAvatar size={28} />
-                        <div style={{
-                            padding: "10px 14px",
-                            borderRadius: "4px 16px 16px 16px",
-                            background: "rgba(255,255,255,0.04)",
-                            border: "1px solid rgba(255,255,255,0.07)",
-                        }}>
-                            <TypingDots />
-                        </div>
-                    </div>
-                )}
             </div>
 
             {/* Input Area */}

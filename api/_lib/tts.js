@@ -91,6 +91,24 @@ export async function getElevenLabsUsage() {
     throw createTtsError(503, "ElevenLabs is not configured");
   }
 
+  const baseUsage = {
+    provider: "elevenlabs",
+    tier: "unknown",
+    status: "configured",
+    usedCredits: 0,
+    totalCredits: 0,
+    remainingCredits: 0,
+    billingPeriod: null,
+    resetAtUnix: null,
+    currentVoiceName: config.elevenlabsVoiceName || config.elevenlabsVoiceId || null,
+    voiceSlotsUsed: null,
+    voiceLimit: null,
+    recentCreditUsage: [],
+    recentUsageTimestamps: [],
+    usageAccessLimited: false,
+    usageAccessMessage: null,
+  };
+
   const [subscriptionRes, creditUsageRes] = await Promise.all([
     fetch("https://api.elevenlabs.io/v1/user/subscription", {
       headers: { "xi-api-key": config.elevenlabsApiKey },
@@ -102,6 +120,14 @@ export async function getElevenLabsUsage() {
 
   if (!subscriptionRes.ok) {
     const detail = await subscriptionRes.text();
+    if (subscriptionRes.status === 403 && /missing_permissions|user_read/i.test(detail || "")) {
+      return {
+        ...baseUsage,
+        status: "voice ready",
+        usageAccessLimited: true,
+        usageAccessMessage: "Voice playback is configured, but usage metrics are unavailable because this ElevenLabs API key is missing the user_read permission.",
+      };
+    }
     throw createTtsError(subscriptionRes.status, detail || "Unable to load ElevenLabs subscription usage");
   }
 
@@ -111,7 +137,7 @@ export async function getElevenLabsUsage() {
   const totalCredits = Number(subscription.character_limit ?? 0);
 
   return {
-    provider: "elevenlabs",
+    ...baseUsage,
     tier: subscription.tier ?? "unknown",
     status: subscription.status ?? "unknown",
     usedCredits,
@@ -119,7 +145,6 @@ export async function getElevenLabsUsage() {
     remainingCredits: Math.max(totalCredits - usedCredits, 0),
     billingPeriod: subscription.billing_period ?? null,
     resetAtUnix: subscription.next_character_count_reset_unix ?? null,
-    currentVoiceName: config.elevenlabsVoiceName || null,
     voiceSlotsUsed: subscription.voice_slots_used ?? null,
     voiceLimit: subscription.voice_limit ?? null,
     recentCreditUsage: Array.isArray(creditUsage?.usage?.All) ? creditUsage.usage.All : [],

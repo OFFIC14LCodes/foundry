@@ -3,6 +3,7 @@ import type { BillingSubscription } from "../../lib/accessGate";
 import { roleLabel } from "../../lib/roles";
 import { getReengagementThresholdCopy, type AppNotification, type UserNotificationPreferences } from "../../lib/notifications";
 import { REFUND_POLICY, SUPPORT_EMAIL } from "../../config/pricing";
+import { submitSettingsFeedback } from "../../lib/settingsFeedback";
 import {
     SettingsButton,
     SettingsCard,
@@ -34,7 +35,7 @@ type SettingsScreenProps = {
     onOpenManageSubscription: () => void;
     billingActionMessage: string | null;
     billingPortalLoading: boolean;
-    onProfileSave: (updates: { displayName: string; businessName: string }) => Promise<void>;
+    onProfileSave: (updates: { displayName: string; businessName: string; marketFocus: string }) => Promise<void>;
     onLogout: () => void;
 };
 
@@ -63,16 +64,69 @@ export default function SettingsScreen({
 
     const [displayName, setDisplayName] = useState(profile?.name ?? "");
     const [businessName, setBusinessName] = useState(profile?.businessName ?? "");
+    const [marketFocus, setMarketFocus] = useState(profile?.industry ?? "");
     const [profileSaving, setProfileSaving] = useState(false);
     const [profileSaved, setProfileSaved] = useState(false);
+    const [supportMessage, setSupportMessage] = useState("");
+    const [supportSubmitting, setSupportSubmitting] = useState(false);
+    const [supportStatus, setSupportStatus] = useState<string | null>(null);
+    const [suggestionMessage, setSuggestionMessage] = useState("");
+    const [suggestionSubmitting, setSuggestionSubmitting] = useState(false);
+    const [suggestionStatus, setSuggestionStatus] = useState<string | null>(null);
 
     const handleProfileSave = async () => {
         setProfileSaving(true);
         setProfileSaved(false);
-        await onProfileSave({ displayName: displayName.trim(), businessName: businessName.trim() });
+        await onProfileSave({
+            displayName: displayName.trim(),
+            businessName: businessName.trim(),
+            marketFocus: marketFocus.trim(),
+        });
         setProfileSaving(false);
         setProfileSaved(true);
         setTimeout(() => setProfileSaved(false), 2500);
+    };
+
+    const handleSupportSubmit = async () => {
+        if (!supportMessage.trim() || supportSubmitting) return;
+        setSupportSubmitting(true);
+        setSupportStatus(null);
+        try {
+            await submitSettingsFeedback({
+                kind: "support",
+                message: supportMessage.trim(),
+                profileName: displayName.trim() || profile?.name || "",
+                businessName: businessName.trim() || profile?.businessName || "",
+                marketFocus: marketFocus.trim() || profile?.industry || "",
+            });
+            setSupportMessage("");
+            setSupportStatus("Support ticket sent.");
+        } catch (error) {
+            setSupportStatus(error instanceof Error ? error.message : "Unable to send support ticket.");
+        } finally {
+            setSupportSubmitting(false);
+        }
+    };
+
+    const handleSuggestionSubmit = async () => {
+        if (!suggestionMessage.trim() || suggestionSubmitting) return;
+        setSuggestionSubmitting(true);
+        setSuggestionStatus(null);
+        try {
+            await submitSettingsFeedback({
+                kind: "suggestion",
+                message: suggestionMessage.trim(),
+                profileName: displayName.trim() || profile?.name || "",
+                businessName: businessName.trim() || profile?.businessName || "",
+                marketFocus: marketFocus.trim() || profile?.industry || "",
+            });
+            setSuggestionMessage("");
+            setSuggestionStatus("Suggestion sent.");
+        } catch (error) {
+            setSuggestionStatus(error instanceof Error ? error.message : "Unable to send suggestion.");
+        } finally {
+            setSuggestionSubmitting(false);
+        }
     };
 
     const planName = accessSummary?.planName ?? "Free";
@@ -100,7 +154,7 @@ export default function SettingsScreen({
             <div style={{ display: "grid", gap: 18 }}>
                 <SettingsSection
                     title="Account Details"
-                    description="Core account identity and profile metadata. Editable profile fields can expand here later."
+                    description="Core account identity and the business context Foundry uses across the workspace."
                 >
                     <SettingsCard>
                         <SettingsRow label="Signed-in email" value={email} />
@@ -144,6 +198,28 @@ export default function SettingsScreen({
                                         padding: "8px 12px",
                                         outline: "none",
                                         width: 220,
+                                        textAlign: "center",
+                                    }}
+                                />
+                            }
+                        />
+                        <SettingsRow
+                            label="Business / market"
+                            hint="Auto-filled from onboarding. Update this whenever your business focus or market changes."
+                            action={
+                                <input
+                                    value={marketFocus}
+                                    onChange={(e) => setMarketFocus(e.target.value)}
+                                    placeholder="Example: B2B SaaS for law firms"
+                                    style={{
+                                        background: "rgba(255,255,255,0.04)",
+                                        border: "1px solid rgba(255,255,255,0.1)",
+                                        borderRadius: 8,
+                                        color: "#F0EDE8",
+                                        fontSize: 13,
+                                        padding: "8px 12px",
+                                        outline: "none",
+                                        width: 260,
                                         textAlign: "center",
                                     }}
                                 />
@@ -296,28 +372,86 @@ export default function SettingsScreen({
                             />
                         </SettingsCard>
                     </SettingsSection>
-
-                    <SettingsSection title="Security" description="Authentication controls and account protection.">
-                        <SettingsCard>
-                            <SettingsRow label="Password / auth controls" value="Placeholder" />
-                            <SettingsRow label="Session review" value="Coming soon" />
-                            <SettingsRow label="Two-factor authentication" value="Planned" />
-                        </SettingsCard>
-                    </SettingsSection>
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 18 }}>
-                    <SettingsSection title="Support / Contact" description="Foundry support and account assistance.">
+                    <SettingsSection title="Support Ticket" description="Send a message inside the app when you need help with billing, access, or product issues.">
                         <SettingsCard>
-                            <SettingsRow label="Contact" value={SUPPORT_EMAIL} />
-                            <SettingsRow label="Support portal" value="Billing and account help via email" />
-                            <SettingsRow label="Priority support" value="Available through the Pro plan and direct support workflows" />
+                            <div style={{ display: "grid", gap: 12 }}>
+                                <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.7 }}>
+                                    This sends an email directly to {SUPPORT_EMAIL}. Include what happened, what screen you were on, and what you expected instead.
+                                </div>
+                                <textarea
+                                    value={supportMessage}
+                                    onChange={(event) => setSupportMessage(event.target.value)}
+                                    placeholder="Tell us what you need help with..."
+                                    rows={6}
+                                    style={{
+                                        width: "100%",
+                                        resize: "vertical",
+                                        background: "rgba(255,255,255,0.04)",
+                                        border: "1px solid rgba(255,255,255,0.1)",
+                                        borderRadius: 12,
+                                        color: "#F0EDE8",
+                                        fontSize: 13,
+                                        lineHeight: 1.7,
+                                        padding: 14,
+                                        outline: "none",
+                                        fontFamily: "inherit",
+                                        boxSizing: "border-box",
+                                    }}
+                                />
+                                <div style={{ display: "flex", justifyContent: "center", gap: 10, alignItems: "center" }}>
+                                    <SettingsButton tone="primary" onClick={handleSupportSubmit} disabled={supportSubmitting || !supportMessage.trim()}>
+                                        {supportSubmitting ? "Sending..." : "Submit Support Ticket"}
+                                    </SettingsButton>
+                                    {supportStatus && (
+                                        <span style={{ fontSize: 12, color: supportStatus === "Support ticket sent." ? "#4CAF8A" : "#D28B76" }}>
+                                            {supportStatus}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
                         </SettingsCard>
                     </SettingsSection>
 
-                    <SettingsSection title="Danger Zone" description="Reserved for destructive account actions and irreversible controls.">
+                    <SettingsSection title="Suggestions" description="Tell us what would make Foundry more useful from a founder's perspective.">
                         <SettingsCard>
-                            <SettingsRow label="Delete account" value="Placeholder" hint="Account deletion is not implemented yet. This section is intentionally isolated for future destructive actions." />
+                            <div style={{ display: "grid", gap: 12 }}>
+                                <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.7 }}>
+                                    If there is a feature, workflow, or improvement you want in Foundry, send it here.
+                                </div>
+                                <textarea
+                                    value={suggestionMessage}
+                                    onChange={(event) => setSuggestionMessage(event.target.value)}
+                                    placeholder="What would be a strong addition to Foundry?"
+                                    rows={6}
+                                    style={{
+                                        width: "100%",
+                                        resize: "vertical",
+                                        background: "rgba(255,255,255,0.04)",
+                                        border: "1px solid rgba(255,255,255,0.1)",
+                                        borderRadius: 12,
+                                        color: "#F0EDE8",
+                                        fontSize: 13,
+                                        lineHeight: 1.7,
+                                        padding: 14,
+                                        outline: "none",
+                                        fontFamily: "inherit",
+                                        boxSizing: "border-box",
+                                    }}
+                                />
+                                <div style={{ display: "flex", justifyContent: "center", gap: 10, alignItems: "center" }}>
+                                    <SettingsButton tone="primary" onClick={handleSuggestionSubmit} disabled={suggestionSubmitting || !suggestionMessage.trim()}>
+                                        {suggestionSubmitting ? "Sending..." : "Submit Suggestion"}
+                                    </SettingsButton>
+                                    {suggestionStatus && (
+                                        <span style={{ fontSize: 12, color: suggestionStatus === "Suggestion sent." ? "#4CAF8A" : "#D28B76" }}>
+                                            {suggestionStatus}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
                         </SettingsCard>
                     </SettingsSection>
                 </div>

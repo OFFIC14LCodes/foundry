@@ -194,6 +194,7 @@ export default function AdminHubScreen({
     const usagePercent = ttsUsage?.totalCredits
         ? Math.min(100, Math.round((ttsUsage.usedCredits / ttsUsage.totalCredits) * 100))
         : 0;
+    const ttsUsageLimited = Boolean(ttsUsage?.usageAccessLimited);
 
     if (activeView === "dashboard") {
         return <AdminDashboard userId={userId} onBack={() => setActiveView("overview")} />;
@@ -309,27 +310,47 @@ export default function AdminHubScreen({
                             </div>
                         ) : ttsUsage ? (
                             <div style={{ display: "grid", gap: 14 }}>
-                                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
-                                    <ControlCard label="Current voice" hint="Resolved server-side for TTS playback." control={<ValuePill value={ttsUsage.currentVoiceName || "Not set"} accent="#F5A843" />} />
-                                    <ControlCard label="Plan / status" hint="Current ElevenLabs subscription state." control={<ValuePill value={`${ttsUsage.tier} · ${ttsUsage.status}`} accent="#63B3ED" />} />
-                                    <ControlCard label="Credits remaining" hint="Remaining monthly credits in the active cycle." control={<ValuePill value={formatNumber(ttsUsage.remainingCredits)} accent="#4CAF8A" />} />
-                                    <ControlCard label="Credits used" hint="Credits consumed this billing cycle." control={<ValuePill value={`${formatNumber(ttsUsage.usedCredits)} / ${formatNumber(ttsUsage.totalCredits)}`} accent="#E8622A" />} />
-                                </div>
-
-                                <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: 16 }}>
-                                    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 10, flexWrap: "wrap" }}>
-                                        <div style={{ fontSize: 13, color: "#F0EDE8", fontWeight: 600 }}>Usage this cycle</div>
-                                        <div style={{ fontSize: 11, color: "#888" }}>
-                                            Reset: {formatResetDate(ttsUsage.resetAtUnix)}
+                                {ttsUsageLimited && (
+                                    <div style={{
+                                        background: "rgba(245,168,67,0.08)",
+                                        border: "1px solid rgba(245,168,67,0.18)",
+                                        borderRadius: 16,
+                                        padding: 14,
+                                        display: "grid",
+                                        gap: 6,
+                                    }}>
+                                        <div style={{ fontSize: 12, color: "#F5A843", fontWeight: 700 }}>
+                                            Voice is configured. Usage visibility is limited.
+                                        </div>
+                                        <div style={{ fontSize: 12, color: "#C8C4BE", lineHeight: 1.7 }}>
+                                            {ttsUsage.usageAccessMessage || "The current ElevenLabs API key can generate voice, but it cannot read usage details."}
                                         </div>
                                     </div>
-                                    <div style={{ height: 10, borderRadius: 999, background: "rgba(255,255,255,0.05)", overflow: "hidden", marginBottom: 8 }}>
-                                        <div style={{ width: `${usagePercent}%`, height: "100%", background: "linear-gradient(90deg, #E8622A, #F5A843)" }} />
-                                    </div>
-                                    <div style={{ fontSize: 11, color: "#888", lineHeight: 1.7 }}>
-                                        {usagePercent}% of the current credit allocation has been used. Voice slots: {ttsUsage.voiceSlotsUsed ?? 0}/{ttsUsage.voiceLimit ?? 0}.
-                                    </div>
+                                )}
+
+                                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
+                                    <ControlCard label="Current voice" hint="Resolved server-side for TTS playback." control={<ValuePill value={ttsUsage.currentVoiceName || "Not set"} accent="#F5A843" />} />
+                                    <ControlCard label={ttsUsageLimited ? "Connection" : "Plan / status"} hint={ttsUsageLimited ? "Voice generation is configured, but usage metrics are blocked by API-key permissions." : "Current ElevenLabs subscription state."} control={<ValuePill value={ttsUsageLimited ? ttsUsage.status : `${ttsUsage.tier} · ${ttsUsage.status}`} accent="#63B3ED" />} />
+                                    <ControlCard label="Credits remaining" hint={ttsUsageLimited ? "Unavailable until the API key includes usage-read permissions." : "Remaining monthly credits in the active cycle."} control={<ValuePill value={ttsUsageLimited ? "Unavailable" : formatNumber(ttsUsage.remainingCredits)} accent="#4CAF8A" />} />
+                                    <ControlCard label="Credits used" hint={ttsUsageLimited ? "Unavailable until the API key includes usage-read permissions." : "Credits consumed this billing cycle."} control={<ValuePill value={ttsUsageLimited ? "Unavailable" : `${formatNumber(ttsUsage.usedCredits)} / ${formatNumber(ttsUsage.totalCredits)}`} accent="#E8622A" />} />
                                 </div>
+
+                                {!ttsUsageLimited && (
+                                    <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: 16 }}>
+                                        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 10, flexWrap: "wrap" }}>
+                                            <div style={{ fontSize: 13, color: "#F0EDE8", fontWeight: 600 }}>Usage this cycle</div>
+                                            <div style={{ fontSize: 11, color: "#888" }}>
+                                                Reset: {formatResetDate(ttsUsage.resetAtUnix)}
+                                            </div>
+                                        </div>
+                                        <div style={{ height: 10, borderRadius: 999, background: "rgba(255,255,255,0.05)", overflow: "hidden", marginBottom: 8 }}>
+                                            <div style={{ width: `${usagePercent}%`, height: "100%", background: "linear-gradient(90deg, #E8622A, #F5A843)" }} />
+                                        </div>
+                                        <div style={{ fontSize: 11, color: "#888", lineHeight: 1.7 }}>
+                                            {usagePercent}% of the current credit allocation has been used. Voice slots: {ttsUsage.voiceSlotsUsed ?? 0}/{ttsUsage.voiceLimit ?? 0}.
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div>
                                     <button

@@ -37,6 +37,7 @@ type ForgeAcademyScreenProps = {
     onLaunchForgeConversation: (entry: AcademyTopicLaunch) => void;
     onOpenAskForgeAnything: () => void;
     onContextChange?: (ctx: AcademyScreenContext) => void;
+    onOpenArchive?: () => void;
 };
 
 const surface = "rgba(255,255,255,0.03)";
@@ -51,6 +52,7 @@ export default function ForgeAcademyScreen({
     onLaunchForgeConversation,
     onOpenAskForgeAnything,
     onContextChange,
+    onOpenArchive,
 }: ForgeAcademyScreenProps) {
     const [workspace, setWorkspace] = useState<AcademyWorkspace>({
         categories: [],
@@ -307,7 +309,7 @@ export default function ForgeAcademyScreen({
 
     if (loading) {
         return (
-            <AcademyShell onBack={onBack}>
+            <AcademyShell onBack={onBack} onOpenArchive={onOpenArchive}>
                 <CenteredState
                     title="Loading Forge Academy"
                     body="Pulling together the current curriculum, learning history, and founder progress."
@@ -318,7 +320,7 @@ export default function ForgeAcademyScreen({
 
     if (error) {
         return (
-            <AcademyShell onBack={onBack}>
+            <AcademyShell onBack={onBack} onOpenArchive={onOpenArchive}>
                 <CenteredState
                     title="Forge Academy is unavailable"
                     body={error}
@@ -329,7 +331,7 @@ export default function ForgeAcademyScreen({
     }
 
     return (
-        <AcademyShell onBack={onBack}>
+        <AcademyShell onBack={onBack} onOpenArchive={onOpenArchive}>
             <div style={{ maxWidth: 1180, margin: "0 auto", display: "grid", gap: 18 }}>
                 <div style={{
                     background: "linear-gradient(180deg, rgba(232,98,42,0.07), rgba(255,255,255,0.025))",
@@ -698,7 +700,7 @@ export default function ForgeAcademyScreen({
     );
 }
 
-function AcademyShell({ children, onBack }: { children: ReactNode; onBack: () => void }) {
+function AcademyShell({ children, onBack, onOpenArchive }: { children: ReactNode; onBack: () => void; onOpenArchive?: () => void }) {
     return (
         <div style={{ position: "fixed", inset: 0, zIndex: 110, background: "#080809", color: "#F0EDE8", display: "flex", flexDirection: "column", fontFamily: "'Lora', Georgia, serif" }}>
             <div style={{ padding: "max(14px, calc(10px + env(safe-area-inset-top))) 18px 12px", borderBottom: border, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(16px)", display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
@@ -708,10 +710,18 @@ function AcademyShell({ children, onBack }: { children: ReactNode; onBack: () =>
                 <div style={{ width: 34, height: 34, borderRadius: 12, background: "rgba(232,98,42,0.12)", border: "1px solid rgba(232,98,42,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <Logo variant="forge" style={{ width: 18, height: 18, objectFit: "contain" }} />
                 </div>
-                <div>
+                <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 15, fontWeight: 600 }}>Forge Academy</div>
                     <div style={{ fontSize: 11, color: "#6E675F" }}>Curated founder education</div>
                 </div>
+                {onOpenArchive && (
+                    <button
+                        onClick={onOpenArchive}
+                        style={{ background: "rgba(232,98,42,0.08)", border: "1px solid rgba(232,98,42,0.2)", borderRadius: 9, padding: "7px 12px", color: "#E8622A", fontSize: 11, fontFamily: "'DM Sans', sans-serif", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}
+                    >
+                        📁 Archive
+                    </button>
+                )}
             </div>
             <div style={{ flex: 1, overflowY: "auto", padding: "22px 18px 36px" }}>
                 {children}

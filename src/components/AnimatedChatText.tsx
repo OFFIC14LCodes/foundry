@@ -1,6 +1,27 @@
 import { type ReactNode, useEffect, useState, useCallback } from "react";
 import { cleanAIText } from "../lib/cleanAIText";
 
+// ── Bold segment parser ───────────────────────────────────────
+// Splits text on ** markers, toggling bold on each pair.
+// Incomplete opening ** (no closing yet) treats following text
+// as bold immediately, so bold appears as the stream arrives.
+export function parseBoldSegments(text: string): Array<{ text: string; bold: boolean }> {
+    const segments: Array<{ text: string; bold: boolean }> = [];
+    let remaining = text;
+    let bold = false;
+    while (remaining.length > 0) {
+        const idx = remaining.indexOf("**");
+        if (idx === -1) {
+            if (remaining.length > 0) segments.push({ text: remaining, bold });
+            break;
+        }
+        if (idx > 0) segments.push({ text: remaining.slice(0, idx), bold });
+        bold = !bold;
+        remaining = remaining.slice(idx + 2);
+    }
+    return segments.filter((s) => s.text.length > 0);
+}
+
 export function getDisplayText(text: string) {
     return cleanAIText(text || "")
         .replace(/\[CONCEPT\](.*?)\[\/CONCEPT\]/gs, "$1")
@@ -235,34 +256,40 @@ export function AnimatedChatText({ text, createdAt }: { text: string; createdAt?
                         {lines.map((line, lIdx) => (
                             <span key={`anim-p-${pIdx}-l-${lIdx}`}>
                                 {lIdx > 0 && <br />}
-                                {splitAnimatedLine(line).map((token, tokenIdx) => {
-                                    if (/^\s+$/.test(token)) {
+                                {parseBoldSegments(line).map((seg, segIdx) => {
+                                    const tokens = splitAnimatedLine(seg.text);
+                                    const renderedTokens = tokens.map((token, tokenIdx) => {
+                                        if (/^\s+$/.test(token)) {
+                                            return (
+                                                <span key={`anim-space-${pIdx}-${lIdx}-${segIdx}-${tokenIdx}`} style={{ whiteSpace: "pre-wrap" }}>
+                                                    {token}
+                                                </span>
+                                            );
+                                        }
                                         return (
-                                            <span key={`anim-space-${pIdx}-${lIdx}-${tokenIdx}`} style={{ whiteSpace: "pre-wrap" }}>
-                                                {token}
+                                            <span key={`anim-word-${pIdx}-${lIdx}-${segIdx}-${tokenIdx}`} style={{ display: "inline-flex", whiteSpace: "nowrap" }}>
+                                                {Array.from(token).map((char) => {
+                                                    const currentIndex = charIndex++;
+                                                    return (
+                                                        <span
+                                                            key={`anim-char-${currentIndex}`}
+                                                            style={{
+                                                                color: seg.bold ? "#F0EDE8" : "#D8D4CE",
+                                                                fontWeight: seg.bold ? 700 : undefined,
+                                                                animation: "forgeLetterCool 1s ease forwards",
+                                                                display: "inline-block",
+                                                            }}
+                                                        >
+                                                            {char}
+                                                        </span>
+                                                    );
+                                                })}
                                             </span>
                                         );
-                                    }
-
-                                    return (
-                                        <span key={`anim-word-${pIdx}-${lIdx}-${tokenIdx}`} style={{ display: "inline-flex", whiteSpace: "nowrap" }}>
-                                            {Array.from(token).map((char) => {
-                                                const currentIndex = charIndex++;
-                                                return (
-                                                    <span
-                                                        key={`anim-char-${currentIndex}`}
-                                                        style={{
-                                                            color: "#D8D4CE",
-                                                            animation: "forgeLetterCool 1s ease forwards",
-                                                            display: "inline-block",
-                                                        }}
-                                                    >
-                                                        {char}
-                                                    </span>
-                                                );
-                                            })}
-                                        </span>
-                                    );
+                                    });
+                                    return seg.bold
+                                        ? <strong key={`anim-seg-${pIdx}-${lIdx}-${segIdx}`} style={{ color: "#F0EDE8", fontWeight: 700 }}>{renderedTokens}</strong>
+                                        : <span key={`anim-seg-${pIdx}-${lIdx}-${segIdx}`}>{renderedTokens}</span>;
                                 })}
                             </span>
                         ))}

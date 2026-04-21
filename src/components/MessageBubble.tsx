@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import ForgeAvatar from "./ForgeAvatar";
+import TypingDots from "./TypingDots";
 import { cleanAIText } from "../lib/cleanAIText";
-import { MessageActions } from "./AnimatedChatText";
+import { MessageActions, parseBoldSegments } from "./AnimatedChatText";
 
 function getAnimatedDisplayText(text) {
     return cleanAIText(text || "")
         .replace(/\[STAGE_REF:\d+\]/g, "")
         .replace(/\[\/STAGE_REF\]/g, "")
-        .replace(/\[CONCEPT\](.*?)\[\/CONCEPT\]/gs, "$1")
-        .replace(/\*\*/g, "");
+        .replace(/\[CONCEPT\](.*?)\[\/CONCEPT\]/gs, "$1");
 }
 
 function splitAnimatedLine(line) {
@@ -88,43 +88,46 @@ function AnimatedForgeText({ text, renderWithBold, onStageRef, onGlossaryTap, on
                         {lines.map((line, lIdx) => (
                             <span key={`anim-p-${pIdx}-l-${lIdx}`}>
                                 {lIdx > 0 && <br />}
-                                {splitAnimatedLine(line).map((token, tokenIdx) => {
-                                    if (/^\s+$/.test(token)) {
+                                {parseBoldSegments(line).map((seg, segIdx) => {
+                                    const tokens = splitAnimatedLine(seg.text);
+                                    const renderedTokens = tokens.map((token, tokenIdx) => {
+                                        if (/^\s+$/.test(token)) {
+                                            return (
+                                                <span
+                                                    key={`anim-space-${pIdx}-${lIdx}-${segIdx}-${tokenIdx}`}
+                                                    style={{ whiteSpace: "pre-wrap" }}
+                                                >
+                                                    {token}
+                                                </span>
+                                            );
+                                        }
                                         return (
                                             <span
-                                                key={`anim-space-${pIdx}-${lIdx}-${tokenIdx}`}
-                                                style={{ whiteSpace: "pre-wrap" }}
+                                                key={`anim-word-${pIdx}-${lIdx}-${segIdx}-${tokenIdx}`}
+                                                style={{ display: "inline-flex", whiteSpace: "nowrap" }}
                                             >
-                                                {token}
+                                                {Array.from(token).map((char) => {
+                                                    const currentIndex = charIndex++;
+                                                    return (
+                                                        <span
+                                                            key={`anim-char-${currentIndex}`}
+                                                            style={{
+                                                                color: seg.bold ? "#F0EDE8" : "#D8D4CE",
+                                                                fontWeight: seg.bold ? 700 : undefined,
+                                                                animation: "forgeLetterCool 1s ease forwards",
+                                                                display: "inline-block",
+                                                            }}
+                                                        >
+                                                            {char}
+                                                        </span>
+                                                    );
+                                                })}
                                             </span>
                                         );
-                                    }
-
-                                    return (
-                                        <span
-                                            key={`anim-word-${pIdx}-${lIdx}-${tokenIdx}`}
-                                            style={{
-                                                display: "inline-flex",
-                                                whiteSpace: "nowrap",
-                                            }}
-                                        >
-                                            {Array.from(token).map((char) => {
-                                                const currentIndex = charIndex++;
-                                                return (
-                                                    <span
-                                                        key={`anim-char-${currentIndex}`}
-                                                        style={{
-                                                            color: "#D8D4CE",
-                                                            animation: "forgeLetterCool 1s ease forwards",
-                                                            display: "inline-block",
-                                                        }}
-                                                    >
-                                                        {char}
-                                                    </span>
-                                                );
-                                            })}
-                                        </span>
-                                    );
+                                    });
+                                    return seg.bold
+                                        ? <strong key={`anim-seg-${pIdx}-${lIdx}-${segIdx}`} style={{ color: "#F0EDE8", fontWeight: 700 }}>{renderedTokens}</strong>
+                                        : <span key={`anim-seg-${pIdx}-${lIdx}-${segIdx}`}>{renderedTokens}</span>;
                                 })}
                             </span>
                         ))}
@@ -186,6 +189,7 @@ export default function MessageBubble({ msg, onStageRef, onGlossaryTap, onConcep
                     }}
                 >
                     {isForge ? (
+                        !msg.text ? <TypingDots /> : (
                         <AnimatedForgeText
                             text={msg.text}
                             renderWithBold={renderWithBold}
@@ -194,6 +198,7 @@ export default function MessageBubble({ msg, onStageRef, onGlossaryTap, onConcep
                             onConceptTap={onConceptTap}
                             createdAt={msg.createdAt}
                         />
+                        )
                     ) : (
                         <div style={{ whiteSpace: "pre-wrap" }}>{msg.text}</div>
                     )}

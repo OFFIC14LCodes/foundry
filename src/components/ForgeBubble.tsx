@@ -289,10 +289,11 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
                 "You write clean business conversation summaries. Return only valid JSON."
             );
 
-            const parsed = parseArchiveSummaryPayload(raw, `Quick Chat · ${displayDate}`);
+            const parsed = parseArchiveSummaryPayload(raw, `Quick Chat — ${displayDate}`);
             const { title, summary } = parsed;
+            const prefixedTitle = title.startsWith("Quick Chat") ? title : `Quick Chat — ${title}`;
 
-            const saved = await saveConversationSummary(userId, summaryStageId, dateKey, title, summary, msgsToArchive.length);
+            const saved = await saveConversationSummary(userId, summaryStageId, dateKey, prefixedTitle, summary, msgsToArchive.length);
             if (saved && onBubbleSummaryAdded) {
                 onBubbleSummaryAdded(saved);
             }

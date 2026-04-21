@@ -14,6 +14,8 @@ export interface TtsUsageSnapshot {
     voiceLimit: number | null;
     recentCreditUsage: number[];
     recentUsageTimestamps: number[];
+    usageAccessLimited: boolean;
+    usageAccessMessage: string | null;
 }
 
 export async function loadAdminTtsUsage(): Promise<TtsUsageSnapshot> {

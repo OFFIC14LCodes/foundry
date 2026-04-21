@@ -55,6 +55,8 @@ import CofounderModeScreen from "./components/CofounderModeScreen";
 import ForgeChatRoom from "./components/ForgeChatRoom";
 import AdminHubScreen from "./components/AdminHubScreen";
 import ForgeAcademyScreen from "./components/ForgeAcademyScreen";
+import AppTourScreen from "./components/AppTourScreen";
+import ArchivePanel from "./components/ArchivePanel";
 import SettingsScreen from "./components/settings/SettingsScreen";
 import PrivacyPolicyScreen from "./components/settings/PrivacyPolicyScreen";
 import EulaScreen from "./components/settings/EulaScreen";
@@ -635,6 +637,7 @@ function ForgeScreen({
   const [deletingSummaryId, setDeletingSummaryId] = useState<string | null>(null);
   const [archiveMenuOpenId, setArchiveMenuOpenId] = useState<string | null>(null);
   const [summaryModalMenuOpen, setSummaryModalMenuOpen] = useState(false);
+  const [archiveFilter, setArchiveFilter] = useState<"all" | "forge" | "chatroom" | "academy" | "bubble">("all");
 
   useEffect(() => {
     if (!summaryModal) {
@@ -900,15 +903,10 @@ Where do you want to start?`;
     if (archiveSession?.entry?.id === entry.id) setArchiveSession(null);
   };
 
-  const isChatStyleArchive = (entry: any) => {
-    const title = String(entry?.title || "");
-    return title.startsWith("Chat with Forge") || title.startsWith("Quick Chat");
-  };
-
-  const isChatRoomArchive = (entry: any) => {
-    const title = String(entry?.title || "");
-    return title.startsWith("Chat with Forge");
-  };
+  const isAcademyArchive = (entry: any) => String(entry?.title || "").startsWith("Academy —");
+  const isChatRoomArchive = (entry: any) => String(entry?.title || "").startsWith("Chat with Forge");
+  const isQuickChatArchive = (entry: any) => String(entry?.title || "").startsWith("Quick Chat");
+  const isChatStyleArchive = (entry: any) => isChatRoomArchive(entry) || isQuickChatArchive(entry);
 
   const handleContinueArchive = () => {
     if (!summaryModal) return;
@@ -1134,36 +1132,43 @@ Where do you want to start?`;
     );
   };
 
-  const renderArchiveCard = (
-    entry: any,
-    options?: {
-      accentColor?: string;
-      accentLabel?: string;
-      background?: string;
-      border?: string;
-      fallbackTitle?: string;
-      dateLabel?: string;
-    }
-  ) => {
-    const accentColor = options?.accentColor || "#E8622A";
-    const accentLabel = options?.accentLabel || "Saved";
-    const background = options?.background || "rgba(255,255,255,0.03)";
-    const border = options?.border || "1px solid rgba(255,255,255,0.06)";
-    const dateLabel = options?.dateLabel || getArchiveDisplayDate(entry.date);
-    const fallbackTitle = options?.fallbackTitle || `Saved Archive · ${getArchiveDisplayDate(entry.date)}`;
+  type ArchiveSourceType = "forge" | "chatroom" | "academy" | "bubble";
+
+  const ARCHIVE_SOURCE_CONFIG: Record<ArchiveSourceType, { label: string; color: string; bg: string; borderColor: string }> = {
+    forge:    { label: "Forge Session",  color: "#E8622A", bg: "rgba(232,98,42,0.06)",   borderColor: "rgba(232,98,42,0.28)" },
+    chatroom: { label: "Chat with Forge",color: "#4CAF8A", bg: "rgba(76,175,138,0.06)",  borderColor: "rgba(76,175,138,0.28)" },
+    academy:  { label: "Academy",        color: "#9B8DE8", bg: "rgba(155,141,232,0.06)", borderColor: "rgba(155,141,232,0.28)" },
+    bubble:   { label: "Quick Chat",     color: "#63B3ED", bg: "rgba(99,179,237,0.06)",  borderColor: "rgba(99,179,237,0.28)" },
+  };
+
+  const getEntrySourceType = (entry: any): ArchiveSourceType => {
+    if (isQuickChatArchive(entry)) return "bubble";
+    if (isChatRoomArchive(entry)) return "chatroom";
+    if (isAcademyArchive(entry)) return "academy";
+    return "forge";
+  };
+
+  const renderArchiveCard = (entry: any) => {
+    const sourceType = getEntrySourceType(entry);
+    const cfg = ARCHIVE_SOURCE_CONFIG[sourceType];
+    const dateLabel = getArchiveDisplayDate(entry.date);
+    const fallbackTitle = `${cfg.label} · ${dateLabel}`;
+    const stageData = sourceType === "forge" ? STAGES_DATA.find((s) => s.id === Number(entry.stageId)) : null;
 
     return (
       <div
         key={entry.id || `${entry.stageId}-${entry.date}`}
         style={{
-          background,
-          border,
+          background: cfg.bg,
+          border: `1px solid ${cfg.borderColor}`,
+          borderLeft: `4px solid ${cfg.color}`,
           borderRadius: 14,
           color: "#F0EDE8",
           position: "relative",
+          overflow: "hidden",
         }}
       >
-        <div style={{ position: "absolute", top: 12, right: 12 }}>
+        <div style={{ position: "absolute", top: 12, right: 12, zIndex: 2 }}>
           {renderArchiveActionsMenu(entry, "card")}
         </div>
         <button
@@ -1179,13 +1184,46 @@ Where do you want to start?`;
             cursor: "pointer",
           }}
         >
-          <div style={{ fontSize: 10, color: accentColor, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6 }}>
-            {accentLabel} · {dateLabel}
+          {/* Source badge row */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
+            <span style={{
+              fontSize: 9,
+              fontFamily: "’DM Sans’, sans-serif",
+              fontWeight: 700,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: cfg.color,
+              background: `${cfg.color}18`,
+              border: `1px solid ${cfg.color}30`,
+              borderRadius: 5,
+              padding: "2px 7px",
+            }}>
+              {cfg.label}
+            </span>
+            {stageData && (
+              <span style={{
+                fontSize: 9,
+                fontFamily: "’DM Sans’, sans-serif",
+                fontWeight: 600,
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                color: stageData.color,
+                background: `${stageData.color}15`,
+                border: `1px solid ${stageData.color}28`,
+                borderRadius: 5,
+                padding: "2px 7px",
+              }}>
+                Stage {stageData.id} — {stageData.label}
+              </span>
+            )}
+            <span style={{ fontSize: 10, color: "rgba(240,237,232,0.3)", fontFamily: "’DM Sans’, sans-serif", marginLeft: "auto" }}>
+              {dateLabel}
+            </span>
           </div>
-          <div style={{ fontSize: 15, fontFamily: "’Playfair Display’, Georgia, serif", fontWeight: 700, marginBottom: 4 }}>
+          <div style={{ fontSize: 15, fontFamily: "’Playfair Display’, Georgia, serif", fontWeight: 700, marginBottom: 5, lineHeight: 1.3 }}>
             {getArchiveDisplayTitle(entry.title, entry.summary, fallbackTitle)}
           </div>
-          <div style={{ fontSize: 12, color: "#666", lineHeight: 1.7 }}>
+          <div style={{ fontSize: 12, color: "rgba(240,237,232,0.45)", lineHeight: 1.7 }}>
             {getSummaryPreview(entry.summary)}
           </div>
         </button>
@@ -1840,7 +1878,7 @@ Where do you want to start?`;
               );
             })}
 
-            {loading && (
+            {loading && messages[messages.length - 1]?.role !== "forge" && messages[messages.length - 1]?.role !== "assistant" && (
               <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                 <ForgeAvatar size={30} />
                 <div
@@ -1925,92 +1963,92 @@ Where do you want to start?`;
           />
         )}
 
-        {activeTab === "summaries" && (
-          <div style={{ position: "absolute", inset: 0, overflowY: "auto", padding: "16px", maxWidth: 720, width: "100%", margin: "0 auto" }}>
-            <div style={{ fontSize: 18, fontFamily: "’Playfair Display’, Georgia, serif", fontWeight: 700, marginBottom: 4 }}>
-              Full Archive
-            </div>
-            <div style={{ fontSize: 12, color: "#666", marginBottom: 18, lineHeight: 1.6 }}>
-              Save named snapshots of your Forge chats here whenever you want. Forge carries this history with you no matter which stage you’re in.
-            </div>
+        {activeTab === "summaries" && (() => {
+          // Build a unified, date-sorted list of all archive entries tagged with source type
+          const allForgeEntries: any[] = Object.values(summariesByStage).flat();
+          const allEntries = [
+            ...allForgeEntries,
+            ...bubbleSummaries,
+          ].sort((a, b) => {
+            const aTime = new Date(a.createdAt || `${a.date}T12:00:00`).getTime();
+            const bTime = new Date(b.createdAt || `${b.date}T12:00:00`).getTime();
+            return bTime - aTime;
+          });
 
-            {STAGES_DATA.some((s) => ((summariesByStage[s.id] || []).filter((entry) => !isChatRoomArchive(entry))).length > 0) && (
-              <div style={{ marginBottom: 28 }}>
-                <div style={{ fontSize: 10, color: "#E8622A", letterSpacing: "0.12em", textTransform: "uppercase", fontWeight: 700, marginBottom: 12 }}>
-                  Forge Progress Chats
-                </div>
-                {STAGES_DATA.map((s) => {
-                  const entries = (summariesByStage[s.id] || []).filter((entry) => !isChatRoomArchive(entry));
-                  if (entries.length === 0) return null;
-                  const SIcon = s.icon;
-                  return (
-                    <div key={s.id} style={{ marginBottom: 24 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                        <SIcon size={12} color={s.color} />
-                        <div style={{ fontSize: 10, color: s.color, letterSpacing: "0.12em", textTransform: "uppercase", fontWeight: 700 }}>
-                          Stage {s.id} — {s.label}
-                        </div>
-                      </div>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                        {entries.map((entry) => renderArchiveCard(entry, {
-                          accentColor: "#E8622A",
-                          accentLabel: "Forge Progress",
-                          background: "rgba(255,255,255,0.03)",
-                          border: "1px solid rgba(255,255,255,0.06)",
-                          fallbackTitle: `Saved Archive · ${getArchiveDisplayDate(entry.date)}`,
-                        }))}
-                      </div>
-                    </div>
-                  );
-                })}
+          const hasForge    = allEntries.some((e) => getEntrySourceType(e) === "forge");
+          const hasChatroom = allEntries.some((e) => getEntrySourceType(e) === "chatroom");
+          const hasAcademy  = allEntries.some((e) => getEntrySourceType(e) === "academy");
+          const hasBubble   = allEntries.some((e) => getEntrySourceType(e) === "bubble");
+
+          const filteredEntries = archiveFilter === "all"
+            ? allEntries
+            : allEntries.filter((e) => getEntrySourceType(e) === archiveFilter);
+
+          type FilterOption = { key: typeof archiveFilter; label: string; color: string; show: boolean };
+          const filterOptions: FilterOption[] = [
+            { key: "all",      label: "All",             color: "#F0EDE8", show: true },
+            { key: "forge",    label: "Forge Sessions",  color: ARCHIVE_SOURCE_CONFIG.forge.color,    show: hasForge },
+            { key: "chatroom", label: "Chat with Forge", color: ARCHIVE_SOURCE_CONFIG.chatroom.color, show: hasChatroom },
+            { key: "academy",  label: "Academy",         color: ARCHIVE_SOURCE_CONFIG.academy.color,  show: hasAcademy },
+            { key: "bubble",   label: "Quick Chat",      color: ARCHIVE_SOURCE_CONFIG.bubble.color,   show: hasBubble },
+          ].filter((o) => o.show);
+
+          return (
+            <div style={{ position: "absolute", inset: 0, overflowY: "auto", padding: "16px", maxWidth: 720, width: "100%", margin: "0 auto" }}>
+              <div style={{ fontSize: 18, fontFamily: "’Playfair Display’, Georgia, serif", fontWeight: 700, marginBottom: 4 }}>
+                Full Archive
               </div>
-            )}
+              <div style={{ fontSize: 12, color: "#666", marginBottom: 16, lineHeight: 1.6 }}>
+                Saved snapshots of your Forge conversations, chat sessions, and Academy lessons — all in one place.
+              </div>
 
-            {Object.values(summariesByStage).flat().some((entry: any) => isChatRoomArchive(entry)) && (
-              <div style={{ marginBottom: 28 }}>
-                <div style={{ fontSize: 10, color: "#4CAF8A", letterSpacing: "0.12em", textTransform: "uppercase", fontWeight: 700, marginBottom: 12 }}>
-                  Chat with Forge Conversations
+              {/* Filter chips */}
+              {allEntries.length > 0 && filterOptions.length > 1 && (
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
+                  {filterOptions.map((opt) => {
+                    const active = archiveFilter === opt.key;
+                    return (
+                      <button
+                        key={opt.key}
+                        onClick={() => setArchiveFilter(opt.key)}
+                        style={{
+                          background: active ? `${opt.color}20` : "rgba(255,255,255,0.04)",
+                          border: `1px solid ${active ? opt.color + "50" : "rgba(255,255,255,0.1)"}`,
+                          borderRadius: 20,
+                          color: active ? opt.color : "rgba(240,237,232,0.45)",
+                          fontSize: 11,
+                          fontFamily: "’DM Sans’, sans-serif",
+                          fontWeight: active ? 700 : 500,
+                          padding: "5px 13px",
+                          cursor: "pointer",
+                          letterSpacing: "0.02em",
+                          transition: "all 0.15s ease",
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
                 </div>
+              )}
+
+              {/* Card list */}
+              {filteredEntries.length > 0 ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {Object.values(summariesByStage)
-                    .flat()
-                    .filter((entry: any) => isChatRoomArchive(entry))
-                    .map((entry: any) => renderArchiveCard(entry, {
-                      accentColor: "#4CAF8A",
-                      accentLabel: "Chat with Forge",
-                      background: "rgba(76,175,138,0.05)",
-                      border: "1px solid rgba(76,175,138,0.15)",
-                      fallbackTitle: `Chat with Forge · ${getArchiveDisplayDate(entry.date)}`,
-                    }))}
+                  {filteredEntries.map((entry) => renderArchiveCard(entry))}
                 </div>
-              </div>
-            )}
-
-            {Object.values(summariesByStage).every((arr) => arr.length === 0) && (
-              <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "18px 16px", color: "#888", fontSize: 13, lineHeight: 1.7 }}>
-                No saved archives yet. Use Save Chat from the chat tab whenever you want to store a named snapshot.
-              </div>
-            )}
-
-            {bubbleSummaries.length > 0 && (
-              <div style={{ marginBottom: 24 }}>
-                <div style={{ fontSize: 10, color: "#63B3ED", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 700, marginBottom: 10 }}>
-                  Quick Chat / Bubble
+              ) : allEntries.length === 0 ? (
+                <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "18px 16px", color: "#888", fontSize: 13, lineHeight: 1.7 }}>
+                  No saved archives yet. Use Save Chat from the chat tab whenever you want to store a named snapshot.
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {bubbleSummaries.map((entry) => renderArchiveCard(entry, {
-                    accentColor: "#63B3ED",
-                    accentLabel: "Quick Chat",
-                    background: "rgba(99,179,237,0.06)",
-                    border: "1px solid rgba(99,179,237,0.18)",
-                    fallbackTitle: `Quick Chat · ${getArchiveDisplayDate(entry.date)}`,
-                    dateLabel: new Date(`${entry.date}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-                  }))}
+              ) : (
+                <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "18px 16px", color: "#888", fontSize: 13, lineHeight: 1.7 }}>
+                  No {filterOptions.find((o) => o.key === archiveFilter)?.label} archives saved yet.
                 </div>
-              </div>
-            )}
-          </div>
-        )}
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       {summaryModal && (
@@ -2258,6 +2296,8 @@ export default function FoundryApp() {
   const [showChatRoom, setShowChatRoom] = useState(false);
   const [settingsView, setSettingsView] = useState<null | "settings" | "privacy" | "eula" | "termsAndConditions" | "acceptableUse" | "disclaimer">(null);
   const [showAdminHub, setShowAdminHub] = useState(false);
+  const [showAppTour, setShowAppTour] = useState(false);
+  const [showArchivePanel, setShowArchivePanel] = useState(false);
   const [userTeamId, setUserTeamId] = useState<string | null>(null);
   const [accountAccess, setAccountAccess] = useState<AccountAccess | null>(null);
   const [billingSubscription, setBillingSubscription] = useState<BillingSubscription | null>(null);
@@ -2626,9 +2666,9 @@ export default function FoundryApp() {
     markMeaningfulActivity(true);
   };
 
-  const handleProfileSave = async (updates: { displayName: string; businessName: string }) => {
+  const handleProfileSave = async (updates: { displayName: string; businessName: string; marketFocus: string }) => {
     if (!user?.id) return;
-    const next = { ...profile, name: updates.displayName, businessName: updates.businessName };
+    const next = { ...profile, name: updates.displayName, businessName: updates.businessName, industry: updates.marketFocus };
     setProfile(next);
     await saveProfile(user.id, next);
     markMeaningfulActivity(true);
@@ -2937,6 +2977,7 @@ export default function FoundryApp() {
               if ((p.detectedStage || 1) > 1) {
                 setPendingUpgradeStage(p.detectedStage);
               }
+              setShowAppTour(true);
             }}
             callForgeAPI={callForgeAPI}
             renderWithBold={renderWithBold}
@@ -2965,6 +3006,7 @@ export default function FoundryApp() {
             isAdmin={canOpenAdminHub}
             accessSummary={accessSummary}
             onOpenUpgrade={() => requestUpgrade(Math.max(2, profile.currentStage || 2))}
+            onOpenArchive={() => setShowArchivePanel(true)}
           />
         )}
         {screen === "forge" && profile && (
@@ -3002,6 +3044,22 @@ export default function FoundryApp() {
           />
         )}
       </div>
+      {showAppTour && (
+        <AppTourScreen
+          profileName={profile?.name}
+          onComplete={() => setShowAppTour(false)}
+        />
+      )}
+      {showArchivePanel && user && (
+        <ArchivePanel
+          userId={(user as any).id}
+          onBack={() => setShowArchivePanel(false)}
+          onContinueChatEntry={(entry) => {
+            setShowArchivePanel(false);
+            continueArchiveInChatRoom(entry);
+          }}
+        />
+      )}
       {showMarketIntel && profile && user && (
         <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "#080809", overflowY: "auto" }}>
           <MarketIntelligenceScreen
@@ -3058,6 +3116,7 @@ export default function FoundryApp() {
           onLaunchForgeConversation={launchAcademyConversation}
           onOpenAskForgeAnything={openAcademyAskForgeAnything}
           onContextChange={setAcademyContext}
+          onOpenArchive={() => setShowArchivePanel(true)}
         />
       )}
       {showChatRoom && profile && (

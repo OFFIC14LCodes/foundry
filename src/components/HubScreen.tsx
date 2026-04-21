@@ -4,6 +4,7 @@ import { STAGE_COLORS } from "../constants/glossary";
 import { BUDGET_CARDS } from "../constants/onboarding";
 import { TAG_COLORS } from "../constants/styles";
 import { Icons } from "../icons";
+import { Archive } from "lucide-react";
 import { formatCurrency, getBudgetRangeLabel, parseBudgetInput } from "../lib/budget";
 import { summarizeBusinessIdea } from "../lib/businessSummary";
 import Logo from "./Logo";
@@ -26,6 +27,7 @@ export default function HubScreen({
     onOpenSettings,
     onOpenAdminHub,
     onOpenAcademy,
+    onOpenArchive,
     isAdmin = false,
     completedByStage,
     furthestStageReached = 1,
@@ -227,6 +229,16 @@ export default function HubScreen({
             action: () => {
                 setSidebarOpen(false);
                 onOpenAcademy?.();
+            },
+            available: true,
+        },
+        {
+            icon: Archive,
+            label: "Archive",
+            sub: "Saved conversation snapshots",
+            action: () => {
+                setSidebarOpen(false);
+                onOpenArchive?.();
             },
             available: true,
         },
@@ -943,6 +955,21 @@ export default function HubScreen({
                         )}
                     </div>
                 )}
+
+                {/* Archive quick-access */}
+                <button
+                    onClick={() => onOpenArchive?.()}
+                    style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderLeft: "4px solid rgba(232,98,42,0.4)", borderRadius: 16, padding: "14px 16px", marginBottom: 14, animation: "fadeSlideUp 0.5s ease 0.28s both", cursor: "pointer", textAlign: "left" }}
+                >
+                    <div style={{ width: 40, height: 40, borderRadius: 11, background: "rgba(232,98,42,0.1)", border: "1px solid rgba(232,98,42,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <Archive size={18} color="#E8622A" />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 2 }}>Archive</div>
+                        <div style={{ fontSize: 11, color: "#666", fontFamily: "'Lora', Georgia, serif" }}>Browse saved conversation snapshots</div>
+                    </div>
+                    <span style={{ fontSize: 12, color: "#555" }}>→</span>
+                </button>
 
                 {/* Decisions */}
                 <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "14px 16px", animation: "fadeSlideUp 0.5s ease 0.3s both" }}>
