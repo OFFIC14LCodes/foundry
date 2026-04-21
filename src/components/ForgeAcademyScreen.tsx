@@ -26,6 +26,9 @@ import {
     upsertAcademySeriesItemProgress,
 } from "../lib/academyDb";
 import Logo from "./Logo";
+import type { AcademyBubbleContext } from "./ForgeBubble";
+
+export type AcademyScreenContext = AcademyBubbleContext;
 
 type ForgeAcademyScreenProps = {
     userId: string;
@@ -33,6 +36,7 @@ type ForgeAcademyScreenProps = {
     onBack: () => void;
     onLaunchForgeConversation: (entry: AcademyTopicLaunch) => void;
     onOpenAskForgeAnything: () => void;
+    onContextChange?: (ctx: AcademyScreenContext) => void;
 };
 
 const surface = "rgba(255,255,255,0.03)";
@@ -46,6 +50,7 @@ export default function ForgeAcademyScreen({
     onBack,
     onLaunchForgeConversation,
     onOpenAskForgeAnything,
+    onContextChange,
 }: ForgeAcademyScreenProps) {
     const [workspace, setWorkspace] = useState<AcademyWorkspace>({
         categories: [],
@@ -63,6 +68,33 @@ export default function ForgeAcademyScreen({
     const [selectedContent, setSelectedContent] = useState<AcademyContent | null>(null);
     const [selectedSeries, setSelectedSeries] = useState<AcademySeries | null>(null);
     const [busyKey, setBusyKey] = useState<string | null>(null);
+    const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 900);
+
+    useEffect(() => {
+        const onResize = () => setIsMobile(window.innerWidth <= 900);
+        window.addEventListener("resize", onResize);
+        return () => window.removeEventListener("resize", onResize);
+    }, []);
+
+    useEffect(() => {
+        if (!onContextChange) return;
+        const categoryLabel = selectedCategoryId === "all"
+            ? "all"
+            : workspace.categories.find((c) => c.id === selectedCategoryId)?.title ?? selectedCategoryId;
+        onContextChange({
+            screen: "ForgeAcademy",
+            activeLesson: selectedContent
+                ? {
+                    title: selectedContent.title,
+                    discipline: selectedContent.category?.title ?? getAcademyContentTypeLabel(selectedContent.contentType),
+                    description: selectedContent.shortDescription ?? "",
+                    whyItMatters: selectedContent.whyThisMatters ?? "",
+                }
+                : null,
+            currentFilter: categoryLabel,
+            stage: Number(profile?.currentStage) || 1,
+        });
+    }, [selectedContent, selectedCategoryId, workspace.categories, profile?.currentStage]);
 
     const refreshWorkspace = async () => {
         setLoading(true);
@@ -106,7 +138,11 @@ export default function ForgeAcademyScreen({
         });
     }, [selectedCategoryId, selectedStageId, workspace.series]);
 
-    const featuredTopics = filteredContent.filter((entry) => entry.contentType === "topic" && entry.featured).slice(0, 6);
+    const featuredTopics = filteredContent.filter((entry) => {
+        if (entry.contentType !== "topic" || !entry.featured) return false;
+        const status = contentProgressById.get(entry.id)?.status;
+        return status !== "in_progress" && status !== "completed";
+    }).slice(0, 6);
     const lessonSeries = filteredSeries.slice(0, 6);
     const videos = filteredContent.filter((entry) => entry.contentType === "video").slice(0, 6);
     const resources = filteredContent.filter((entry) => entry.contentType === "resource").slice(0, 6);
@@ -132,31 +168,13 @@ export default function ForgeAcademyScreen({
         .slice(0, 4);
 
     const completedContentCount = workspace.contentProgress.filter((entry) => entry.status === "completed").length;
+    const totalLessonsCount = workspace.content.length;
     const completedSeriesItems = workspace.seriesItemProgress.filter((entry) => entry.status === "completed").length;
-    const activeSeriesCount = workspace.series.filter((entry) =>
-        entry.items.some((item) => {
-            const status = seriesItemProgressById.get(item.id)?.status;
-            return status === "completed" || status === "in_progress";
-        })
-    ).length;
     const recentHistory = workspace.history.slice(0, 4);
     const nextSeriesUp = lessonSeries
         .map((series) => ({ series, nextItem: getNextSeriesItem(series, seriesItemProgressById) }))
         .filter((entry) => entry.nextItem)
         .slice(0, 3);
-    const momentumContent = continueLearning[0] ?? featuredTopics[0] ?? mindset[0] ?? videos[0] ?? resources[0] ?? filteredContent[0] ?? null;
-    const momentumSeries = nextSeriesUp[0]?.series ?? lessonSeries[0] ?? null;
-    const founderStageLabel = STAGES_DATA[(profile?.currentStage || 1) - 1]?.label || "Foundry";
-    const startHereTitle = continueLearning.length > 0
-        ? "Pick up momentum where your thinking is already warm"
-        : momentumContent
-            ? `A strong place to begin in ${founderStageLabel}`
-            : "Start with one sharp idea, not ten tabs";
-    const startHereBody = continueLearning.length > 0
-        ? "The fastest way back into growth is not starting over. Re-enter one lesson that already has your attention and let it compound."
-        : momentumContent
-            ? "You do not need to browse perfectly. Start with one idea that will make your next founder decision cleaner, stronger, or more confident."
-            : "Forge Academy becomes alive the moment you open something that stretches your judgment. One serious lesson is enough to get movement back.";
 
     const openContent = async (content: AcademyContent, action: "viewed" | "started_video" = "viewed") => {
         setSelectedSeries(null);
@@ -314,129 +332,54 @@ export default function ForgeAcademyScreen({
         <AcademyShell onBack={onBack}>
             <div style={{ maxWidth: 1180, margin: "0 auto", display: "grid", gap: 18 }}>
                 <div style={{
-                    background: "radial-gradient(circle at top left, rgba(232,98,42,0.24), transparent 30%), radial-gradient(circle at 78% 22%, rgba(99,179,237,0.14), transparent 24%), linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))",
+                    background: "linear-gradient(180deg, rgba(232,98,42,0.07), rgba(255,255,255,0.025))",
                     border,
                     borderRadius: 28,
-                    padding: "30px 26px 26px",
-                    position: "relative",
-                    overflow: "hidden",
+                    padding: "28px 26px 24px",
                 }}>
-                    <div style={{ position: "absolute", inset: "auto -80px -120px auto", width: 320, height: 320, borderRadius: "50%", background: "radial-gradient(circle, rgba(232,98,42,0.12), transparent 64%)", pointerEvents: "none" }} />
-                    <div style={{ display: "grid", gap: 20, gridTemplateColumns: "minmax(0, 1.7fr) minmax(280px, 1fr)" }}>
-                        <div style={{ minWidth: 0 }}>
-                            <div style={{ fontSize: 11, color: "#E8622A", letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 10 }}>
-                                Growth Environment
-                            </div>
-                            <div style={{ fontSize: "clamp(34px, 6vw, 54px)", lineHeight: 0.95, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 14 }}>
-                                Forge Academy
-                            </div>
-                            <div style={{ maxWidth: 720, fontSize: 16, color: "#D7D1CA", lineHeight: 1.9, marginBottom: 14 }}>
-                                Step into the part of Foundry where you sharpen yourself. Explore ideas that make you clearer, steadier, and more dangerous in the moments that actually matter.
-                            </div>
-                            <div style={{ maxWidth: 690, fontSize: 14, color: "#BDAFA2", lineHeight: 1.85, marginBottom: 20 }}>
-                                This is not homework. It is where first-time founders build better instincts before the pressure shows up.
-                            </div>
-                            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 18 }}>
-                                <InlineButton onClick={momentumContent ? () => void openContent(momentumContent, momentumContent.contentType === "video" ? "started_video" : "viewed") : onOpenAskForgeAnything}>
-                                    {momentumContent ? "Start somewhere sharp" : "Open Forge Academy"}
-                                </InlineButton>
-                                <InlineButton tone="muted" onClick={() => window.scrollTo({ top: 720, behavior: "smooth" })}>
-                                    See what pulls you in
-                                </InlineButton>
-                            </div>
-                            <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                                <HeroPill label={`${workspace.content.length} curated lessons`} />
-                                <HeroPill label={`${workspace.series.length} structured series`} />
-                                <HeroPill label={`${completedContentCount} completed`} />
-                                <HeroPill label={`${activeSeriesCount} active learning tracks`} />
-                            </div>
+                    <div style={{ display: "grid", gap: 18, maxWidth: 780, margin: "0 auto", textAlign: "center" }}>
+                        <div style={{ fontSize: 11, color: "#E8622A", letterSpacing: "0.16em", textTransform: "uppercase" }}>
+                            Forge Academy
                         </div>
-                        <div style={{ minWidth: 0, display: "grid", gap: 12 }}>
-                            <SummaryTile label="Founder stage" value={`Stage ${profile?.currentStage || 1}`} hint={`Right now you are building through ${founderStageLabel}. Academy is tuned to help you think one level sharper from here.`} />
-                            <SummaryTile label="Momentum" value={continueLearning.length > 0 ? `${continueLearning.length} active` : "Ready"} hint={continueLearning.length > 0 ? "You already have lessons in motion. The easiest way to build momentum is to step back into one of them." : "Nothing is in progress yet, which makes this a clean moment to choose one strong entry point."} />
-                            <SummaryTile label="Why Academy matters" value="Sharpen first" hint="The founders who win are not only productive. They notice sooner, decide cleaner, and learn faster." />
+                        <div style={{ fontSize: "clamp(30px, 5vw, 48px)", lineHeight: 0.97, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
+                            Sharpen your thinking before the stakes get real
                         </div>
-                    </div>
-                </div>
-
-                <div style={{
-                    background: "linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))",
-                    border,
-                    borderRadius: 24,
-                    padding: 20,
-                    display: "grid",
-                    gap: 16,
-                    gridTemplateColumns: "minmax(0, 1.35fr) minmax(280px, 0.95fr)",
-                }}>
-                    <div style={{ minWidth: 0, display: "grid", gap: 10 }}>
-                        <div style={{ fontSize: 10, color: "#E8622A", letterSpacing: "0.16em", textTransform: "uppercase" }}>
-                            Start Here
+                        <div style={{ fontSize: 15, color: "#BDAFA2", lineHeight: 1.85, fontStyle: "italic" }}>
+                            Where founders build better instincts — before the market charges tuition for the lessons.
                         </div>
-                        <div style={{ fontSize: 28, lineHeight: 1.05, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
-                            {startHereTitle}
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
+                            <HeroPill label={`${totalLessonsCount} lessons available`} />
+                            <HeroPill label={`${workspace.series.length} series`} />
+                            <HeroPill label={`${completedContentCount} completed`} />
                         </div>
-                        <div style={{ fontSize: 14, color: "#C8C4BE", lineHeight: 1.85, maxWidth: 700 }}>
-                            {startHereBody}
-                        </div>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 4 }}>
-                            {momentumContent && (
-                                <InlineButton onClick={() => void openContent(momentumContent, momentumContent.contentType === "video" ? "started_video" : "viewed")}>
-                                    {continueLearning.length > 0 ? "Continue this lesson" : "Open recommended lesson"}
-                                </InlineButton>
-                            )}
-                            {momentumSeries && (
-                                <InlineButton tone="muted" onClick={() => void openSeries(momentumSeries)}>
-                                    Explore a learning path
-                                </InlineButton>
-                            )}
-                        </div>
-                    </div>
-                    <div style={{ minWidth: 0 }}>
-                        {momentumContent ? (
-                            <button
-                                onClick={() => void openContent(momentumContent, momentumContent.contentType === "video" ? "started_video" : "viewed")}
-                                style={{
-                                    width: "100%",
-                                    background: "linear-gradient(145deg, rgba(232,98,42,0.14), rgba(99,179,237,0.08), rgba(255,255,255,0.03))",
-                                    border,
-                                    borderRadius: 20,
-                                    padding: 18,
-                                    textAlign: "left",
-                                    cursor: "pointer",
-                                    display: "grid",
-                                    gap: 10,
-                                }}
-                            >
-                                <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
-                                    <Pill tone={momentumContent.contentType === "mindset" ? "warm" : "orange"}>
-                                        {continueLearning.length > 0 ? "In motion" : "Recommended next"}
-                                    </Pill>
-                                    <ProgressPill status={contentProgressById.get(momentumContent.id)?.status} />
-                                </div>
-                                <div style={{ fontSize: 20, lineHeight: 1.08, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
-                                    {momentumContent.title}
-                                </div>
-                                <div style={{ fontSize: 13, color: "#D4CEC8", lineHeight: 1.8 }}>
-                                    {momentumContent.shortDescription}
-                                </div>
-                                <div style={{ fontSize: 12, color: "#E7C5B2", lineHeight: 1.7 }}>
-                                    {momentumContent.whyThisMatters || "A strong entry point because it will make your next decision cleaner."}
-                                </div>
-                            </button>
-                        ) : (
-                            <AliveEmptyState
-                                title="Your first sharp lesson is waiting"
-                                body="The moment content lands here, this becomes the easiest place in Foundry to get pulled into something useful."
-                            />
+                        {continueLearning.length > 0 && (
+                            <div style={{ fontSize: 13, color: "#9D978E" }}>
+                                You have {continueLearning.length} lesson{continueLearning.length !== 1 ? "s" : ""} in progress —{" "}
+                                <button
+                                    onClick={() => document.getElementById("continue-learning")?.scrollIntoView({ behavior: "smooth" })}
+                                    style={{ background: "none", border: "none", color: "#E8622A", fontSize: 13, cursor: "pointer", padding: 0, fontFamily: "inherit", textDecoration: "underline" }}
+                                >
+                                    {continueLearning[0].title}
+                                </button>
+                            </div>
                         )}
+                        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
+                            <InlineButton onClick={() => document.getElementById("featured-topics")?.scrollIntoView({ behavior: "smooth" })}>
+                                Start with Featured Topics
+                            </InlineButton>
+                            <InlineButton tone="muted" onClick={() => document.getElementById("filter-row")?.scrollIntoView({ behavior: "smooth" })}>
+                                Browse by Discipline
+                            </InlineButton>
+                        </div>
                     </div>
                 </div>
 
-                <div style={{ display: "grid", gap: 12 }}>
+                <div id="filter-row" style={{ display: "grid", gap: 12 }}>
                     <SectionHeader
                         eyebrow="Explore the room"
-                        title="Follow what your business needs or what your curiosity keeps circling"
-                        description="You do not need a perfect plan to get value here. Narrow the room by stage or discipline when you want direction, or leave it open when you want to discover something worth thinking about."
+                        title="Follow what matters now, or what you keep avoiding"
+                        description="You do not need a perfect plan. Filter by stage or discipline when you want direction, or leave it open and pick the thing that feels relevant, difficult, or overdue."
+                        align="center"
                     />
                     <div style={{ background: surface, border, borderRadius: 22, padding: 16, display: "grid", gap: 14 }}>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -465,56 +408,70 @@ export default function ForgeAcademyScreen({
                     </div>
                 </div>
 
-                <div style={{ display: "grid", gap: 18, gridTemplateColumns: "minmax(0, 1.6fr) minmax(280px, 0.9fr)" }}>
-                    <div style={{ minWidth: 0, display: "grid", gap: 18 }}>
-                        <AcademySection
-                            eyebrow="Continue Learning"
-                            title="Pick back up where the spark already started"
-                            description="The easiest way to keep growing is to re-enter an idea that already has your attention. Academy keeps that door open."
-                            items={continueLearning}
-                            emptyTitle="Your momentum starts with one strong click"
-                            emptyBody="Open any lesson that feels relevant or intriguing. Academy will turn that first move into a path you can come back to."
-                            tone="ember"
-                            renderItem={(entry) => (
-                                <ContentCard
-                                    key={entry.id}
-                                    content={entry}
-                                    progress={contentProgressById.get(entry.id)}
-                                    onOpen={() => void openContent(entry, entry.contentType === "video" ? "started_video" : "viewed")}
-                                    onLaunchForge={() => void handleLaunchForge(entry)}
-                                    busy={busyKey === `forge-${entry.id}`}
-                                    emphasis={entry.contentType === "mindset" ? "mindset" : "default"}
-                                />
-                            )}
-                        />
-
-                        <AcademySection
-                            eyebrow="Featured Topics"
-                            title="Ideas that make founders sharper fast"
-                            description="These are the strongest guided entry points in Academy: concepts worth opening before the market forces you to learn them the hard way."
-                            items={featuredTopics}
-                            emptyTitle="The next sharp idea will land here"
-                            emptyBody="Featured topics are reserved for the lessons most worth opening first. When one appears, it should feel hard to ignore."
-                            tone="glow"
-                            renderItem={(entry) => (
-                                <ContentCard
-                                    key={entry.id}
-                                    content={entry}
-                                    progress={contentProgressById.get(entry.id)}
-                                    onOpen={() => void openContent(entry)}
-                                    onLaunchForge={() => void handleLaunchForge(entry)}
-                                    busy={busyKey === `forge-${entry.id}`}
-                                />
-                            )}
-                        />
-
+                {(() => {
+                    const sectionContinueLearning = (
+                        <div id="continue-learning">
+                            <AcademySection
+                                eyebrow="Continue Learning"
+                                title="Pick back up where the spark already started"
+                                description="The easiest way to keep moving is to reopen something that already got under your skin."
+                                items={continueLearning}
+                                emptyTitle="Your momentum starts with one strong click"
+                                emptyBody="Open one lesson that feels relevant or uncomfortable. Academy will remember it and give you a way back in."
+                                tone="ember"
+                                renderItem={(entry) => (
+                                    <ContentCard
+                                        key={entry.id}
+                                        content={entry}
+                                        progress={contentProgressById.get(entry.id)}
+                                        onOpen={() => void openContent(entry, entry.contentType === "video" ? "started_video" : "viewed")}
+                                        onLaunchForge={() => void handleLaunchForge(entry)}
+                                        busy={busyKey === `forge-${entry.id}`}
+                                        emphasis={entry.contentType === "mindset" ? "mindset" : "default"}
+                                        continueLearning
+                                    />
+                                )}
+                            />
+                        </div>
+                    );
+                    const sectionDivider = (
+                        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                            <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.07)" }} />
+                            <div style={{ fontSize: 10, color: "#E8622A", letterSpacing: "0.16em", textTransform: "uppercase", fontWeight: 700, whiteSpace: "nowrap" }}>Featured Topics</div>
+                            <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.07)" }} />
+                        </div>
+                    );
+                    const sectionFeaturedTopics = (
+                        <div id="featured-topics">
+                            <AcademySection
+                                eyebrow=""
+                                title="Ideas that make founders sharper fast"
+                                description="These are strong starting points. Open them before the market teaches the lesson in a more expensive way."
+                                items={featuredTopics}
+                                emptyTitle="The next sharp idea will land here"
+                                emptyBody="Featured topics are meant to feel hard to ignore. When one lands here, it should earn the click."
+                                tone="glow"
+                                renderItem={(entry) => (
+                                    <ContentCard
+                                        key={entry.id}
+                                        content={entry}
+                                        progress={contentProgressById.get(entry.id)}
+                                        onOpen={() => void openContent(entry)}
+                                        onLaunchForge={() => void handleLaunchForge(entry)}
+                                        busy={busyKey === `forge-${entry.id}`}
+                                    />
+                                )}
+                            />
+                        </div>
+                    );
+                    const sectionLessonSeries = (
                         <AcademySection
                             eyebrow="Lesson Series"
                             title="Developmental paths that build on themselves"
-                            description="Series are for when you want more than a good idea. Move through them in sequence and let your founder judgment compound."
+                            description="Series are for when one good idea is not enough. Move through them in order and let the thinking stack."
                             items={lessonSeries}
                             emptyTitle="A structured path is coming into view"
-                            emptyBody="When a series belongs in your orbit, it should feel like a guided climb, not a playlist."
+                            emptyBody="When a series belongs here, it should feel like a real progression, not a playlist."
                             tone="blue"
                             renderItem={(entry) => (
                                 <SeriesCard
@@ -525,14 +482,15 @@ export default function ForgeAcademyScreen({
                                 />
                             )}
                         />
-
+                    );
+                    const sectionRecentlyViewed = recentlyViewed.length > 0 ? (
                         <AcademySection
                             eyebrow="Recently Viewed"
                             title="Things that caught your attention recently"
-                            description="Good founder learning is rarely linear. Return to what pulled you in and see it with fresher eyes."
+                            description="Founder learning is rarely neat. Come back to what grabbed you and see it again with better eyes."
                             items={recentlyViewed}
                             emptyTitle="Your trail will start to form here"
-                            emptyBody="As soon as you start exploring, Academy will keep the most interesting doors from disappearing on you."
+                            emptyBody="As soon as you start opening things, Academy will keep the useful doors from disappearing on you."
                             tone="neutral"
                             renderItem={(entry) => (
                                 <ContentCard
@@ -546,14 +504,15 @@ export default function ForgeAcademyScreen({
                                 />
                             )}
                         />
-
+                    ) : null;
+                    const sectionVideos = (
                         <AcademySection
                             eyebrow="Videos"
                             title="Practical insight you can sit with for ten minutes"
-                            description="Videos in Academy are not here to fill space. They are here to give you a sharper lens before the next real-world move."
+                            description="These videos earn their place by making the next real-world move clearer."
                             items={videos}
                             emptyTitle="The right watch is better than more noise"
-                            emptyBody="When a video earns a place here, it should leave you more grounded, more alert, and more capable than before you pressed play."
+                            emptyBody="When a video earns a place here, it should leave you clearer, not just more informed."
                             tone="blue"
                             renderItem={(entry) => (
                                 <ContentCard
@@ -566,14 +525,15 @@ export default function ForgeAcademyScreen({
                                 />
                             )}
                         />
-
+                    );
+                    const sectionResources = (
                         <AcademySection
                             eyebrow="Resources"
                             title="Frameworks you will be glad to revisit"
-                            description="These are the steady tools. Come here when you need structure, language, or a cleaner frame for a messy decision."
+                            description="These are the steady tools. Open them when your thinking is messy and you need structure fast."
                             items={resources}
                             emptyTitle="Your dependable tools will gather here"
-                            emptyBody="This section is for the pieces you return to when the business gets noisy and you need something solid to lean on."
+                            emptyBody="This is where the useful tools live when the business gets noisy and you need something solid."
                             tone="stone"
                             renderItem={(entry) => (
                                 <ContentCard
@@ -586,14 +546,15 @@ export default function ForgeAcademyScreen({
                                 />
                             )}
                         />
-
+                    );
+                    const sectionMindset = (
                         <AcademySection
                             eyebrow="Winner's Mindset"
                             title="The deeper work underneath founder performance"
-                            description="This is where Academy gets more personal: identity, uncertainty, resilience, rejection, and the internal patterns that quietly shape everything else."
+                            description="This is the inner work: identity, uncertainty, rejection, hesitation, and the patterns that quietly run the founder."
                             items={mindset}
                             emptyTitle="The inner game has a place here too"
-                            emptyBody="When these lessons show up, they should feel like someone finally naming the things that make founders hesitate, hide, or hold back."
+                            emptyBody="When these lessons land, they should name the thing you have been carrying but not saying clearly."
                             tone="mindset"
                             renderItem={(entry) => (
                                 <ContentCard
@@ -607,106 +568,45 @@ export default function ForgeAcademyScreen({
                                 />
                             )}
                         />
-                    </div>
-
-                    <div style={{ minWidth: 0, display: "grid", gap: 18, alignContent: "start" }}>
-                        <AsideCard
-                            eyebrow="Ask Forge"
-                            title="Need a sharper thought partner right now?"
-                            description="Guided lessons stay primary, but freeform Forge is here when your real question does not fit neatly inside a topic yet."
-                            tone="ember"
-                        >
+                    );
+                    const cardAskForge = (
+                        <AsideCard eyebrow="Ask Forge" title="Need a sharper thought partner right now?" description="Guided lessons stay primary. Freeform Forge is for the question that does not fit neatly anywhere yet." tone="ember">
                             <div style={{ display: "grid", gap: 10 }}>
-                                <div style={{ fontSize: 13, color: "#C8C4BE", lineHeight: 1.8 }}>
-                                    Bring the messy question, the edge-case founder moment, or the half-formed thought you want help turning into something useful.
-                                </div>
+                                <div style={{ fontSize: 13, color: "#C8C4BE", lineHeight: 1.8 }}>Bring the messy question, the edge case, or the half-formed thought you want turned into something useful.</div>
                                 <InlineButton onClick={onOpenAskForgeAnything}>Ask Forge Anything</InlineButton>
                             </div>
                         </AsideCard>
-
-                        <AsideCard
-                            eyebrow="Learning History"
-                            title="Your trail through Academy"
-                            description="This is not a passive log. It is a reminder of what has already started changing how you think."
-                            tone="stone"
-                        >
-                            {recentHistory.length === 0 ? (
-                                <div style={{ fontSize: 13, color: "#777", lineHeight: 1.7 }}>
-                                    The moment you open your first real lesson, your trail starts here.
-                                </div>
-                            ) : (
-                                <div style={{ display: "grid", gap: 10 }}>
-                                    {recentHistory.map((entry) => (
-                                        <HistoryRow
-                                            key={entry.id}
-                                            entry={entry}
-                                            content={workspace.content.find((content) => content.id === entry.contentId) ?? null}
-                                            series={workspace.series.find((series) => series.id === entry.seriesId) ?? null}
-                                        />
-                                    ))}
-                                </div>
-                            )}
-                        </AsideCard>
-
-                        <AsideCard
-                            eyebrow="Progress"
-                            title="How your edge is building"
-                            description="This only matters if it changes how you notice, decide, and move. Use the numbers as momentum, not as decoration."
-                            tone="glow"
-                        >
+                    );
+                    const cardProgress = (
+                        <AsideCard eyebrow="Progress" title="How your edge is building" description="This only matters if it changes how you notice, decide, and move. Use the numbers as momentum, not wallpaper." tone="glow">
                             <MetricRow label="Completed content" value={String(completedContentCount)} />
                             <MetricRow label="Completed series items" value={String(completedSeriesItems)} />
                             <MetricRow label="In-progress lessons" value={String(continueLearning.length)} />
                             <MetricRow label="Featured topics available" value={String(featuredTopics.length)} />
                             <MetricRow label="Mindset lessons available" value={String(mindset.length)} />
                         </AsideCard>
-
-                        <AsideCard
-                            eyebrow="Next Up"
-                            title="When you want an obvious next move"
-                            description="These are the paths where the next step is already visible, so you can spend your energy learning instead of deciding what to click."
-                            tone="blue"
-                        >
+                    );
+                    const cardNextUp = (
+                        <AsideCard eyebrow="Next Up" title="When you want an obvious next move" description="These are the paths where the next step is obvious, so you can spend your energy learning instead of deciding what to click." tone="blue">
                             {nextSeriesUp.length === 0 ? (
-                                <div style={{ fontSize: 13, color: "#777", lineHeight: 1.7 }}>
-                                    Start a lesson series and Academy will show the next recommended step here.
-                                </div>
+                                <div style={{ fontSize: 13, color: "#777", lineHeight: 1.7 }}>Start a lesson series and the next recommended step shows up here.</div>
                             ) : (
                                 <div style={{ display: "grid", gap: 10 }}>
                                     {nextSeriesUp.map(({ series, nextItem }) => (
-                                        <button
-                                            key={series.id}
-                                            onClick={() => void openSeries(series)}
-                                            style={{ background: "linear-gradient(135deg, rgba(99,179,237,0.10), rgba(255,255,255,0.03))", border, borderRadius: 16, padding: 14, textAlign: "left", cursor: "pointer", display: "grid", gap: 6 }}
-                                        >
-                                            <div style={{ fontSize: 11, color: "#63B3ED", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                                                {series.title}
-                                            </div>
-                                            <div style={{ fontSize: 14, color: "#F0EDE8", fontWeight: 700 }}>
-                                                Continue with {getSeriesItemTitle(nextItem!)}
-                                            </div>
-                                            <div style={{ fontSize: 12, color: "#9D978E", lineHeight: 1.7 }}>
-                                                Lesson {nextItem?.position} of {series.items.length}
-                                            </div>
+                                        <button key={series.id} onClick={() => void openSeries(series)} style={{ background: "linear-gradient(135deg, rgba(99,179,237,0.10), rgba(255,255,255,0.03))", border, borderRadius: 16, padding: 14, textAlign: "left", cursor: "pointer", display: "grid", gap: 6 }}>
+                                            <div style={{ fontSize: 11, color: "#63B3ED", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>{series.title}</div>
+                                            <div style={{ fontSize: 14, color: "#F0EDE8", fontWeight: 700 }}>Continue with {getSeriesItemTitle(nextItem!)}</div>
+                                            <div style={{ fontSize: 12, color: "#9D978E", lineHeight: 1.7 }}>Lesson {nextItem?.position} of {series.items.length}</div>
                                         </button>
                                     ))}
                                 </div>
                             )}
                         </AsideCard>
-
-                        <AsideCard
-                            eyebrow="Use Academy well"
-                            title="A simple rhythm that works"
-                            description="The point is not to consume more. It is to let one useful idea change how you operate this week."
-                            tone="mindset"
-                        >
+                    );
+                    const cardUseWell = (
+                        <AsideCard eyebrow="Use Academy well" title="A simple rhythm that works" description="The point is not to consume more. It is to let one useful idea change how you operate this week." tone="mindset">
                             <div style={{ display: "grid", gap: 10 }}>
-                                {[
-                                    "Open one topic before you think you need it.",
-                                    "Use Forge conversations to convert theory into your actual situation.",
-                                    "Treat mindset entries like operating discipline, not motivation.",
-                                    "Revisit resources when a decision starts to feel noisy.",
-                                ].map((item) => (
+                                {["Open one topic before you think you need it.", "Use Forge conversations to convert theory into your actual situation.", "Treat mindset entries like operating discipline, not motivation.", "Revisit resources when a decision starts to feel noisy."].map((item) => (
                                     <div key={item} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
                                         <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#E8622A", marginTop: 7, flexShrink: 0 }} />
                                         <div style={{ fontSize: 13, color: "#C8C4BE", lineHeight: 1.7 }}>{item}</div>
@@ -714,8 +614,63 @@ export default function ForgeAcademyScreen({
                                 ))}
                             </div>
                         </AsideCard>
-                    </div>
-                </div>
+                    );
+                    const cardHistory = (
+                        <AsideCard eyebrow="Learning History" title="Your trail through Academy" description="Not a passive log. More like a reminder of what has already started shifting how you think." tone="stone">
+                            {recentHistory.length === 0 ? (
+                                <div style={{ fontSize: 13, color: "#777", lineHeight: 1.7 }}>Open one real lesson and the trail starts here.</div>
+                            ) : (
+                                <div style={{ display: "grid", gap: 10 }}>
+                                    {recentHistory.map((entry) => (
+                                        <HistoryRow key={entry.id} entry={entry} content={workspace.content.find((c) => c.id === entry.contentId) ?? null} series={workspace.series.find((s) => s.id === entry.seriesId) ?? null} />
+                                    ))}
+                                </div>
+                            )}
+                        </AsideCard>
+                    );
+
+                    if (isMobile) {
+                        return (
+                            <div style={{ display: "grid", gap: 18 }}>
+                                {cardAskForge}
+                                {sectionContinueLearning}
+                                {sectionDivider}
+                                {sectionFeaturedTopics}
+                                {sectionLessonSeries}
+                                {sectionVideos}
+                                {sectionResources}
+                                {sectionMindset}
+                                {sectionRecentlyViewed}
+                                {cardProgress}
+                                {cardNextUp}
+                                {cardUseWell}
+                                {cardHistory}
+                            </div>
+                        );
+                    }
+
+                    return (
+                        <div style={{ display: "grid", gap: 18, gridTemplateColumns: "minmax(0, 1.6fr) minmax(280px, 0.9fr)" }}>
+                            <div style={{ minWidth: 0, display: "grid", gap: 18 }}>
+                                {sectionContinueLearning}
+                                {sectionDivider}
+                                {sectionFeaturedTopics}
+                                {sectionLessonSeries}
+                                {sectionRecentlyViewed}
+                                {sectionVideos}
+                                {sectionResources}
+                                {sectionMindset}
+                            </div>
+                            <div style={{ minWidth: 0, display: "grid", gap: 18, alignContent: "start" }}>
+                                {cardAskForge}
+                                {cardHistory}
+                                {cardProgress}
+                                {cardNextUp}
+                                {cardUseWell}
+                            </div>
+                        </div>
+                    );
+                })()}
             </div>
 
             {selectedContent && (
@@ -769,18 +724,20 @@ function SectionHeader({
     eyebrow,
     title,
     description,
+    align = "left",
 }: {
     eyebrow: string;
     title: string;
     description: string;
+    align?: "left" | "center";
 }) {
     return (
-        <div>
-            <div style={{ fontSize: 10, color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 10 }}>{eyebrow}</div>
+        <div style={{ textAlign: align }}>
+            {eyebrow && <div style={{ fontSize: 10, color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 10 }}>{eyebrow}</div>}
             <div style={{ fontSize: 28, lineHeight: 1.05, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 8 }}>
                 {title}
             </div>
-            <div style={{ fontSize: 13, color: textMuted, lineHeight: 1.8, maxWidth: 760 }}>
+            <div style={{ fontSize: 13, color: textMuted, lineHeight: 1.8, maxWidth: 760, margin: align === "center" ? "0 auto" : undefined }}>
                 {description}
             </div>
         </div>
@@ -858,6 +815,7 @@ function ContentCard({
     onLaunchForge,
     busy,
     emphasis = "default",
+    continueLearning: isContinueLearning = false,
 }: {
     content: AcademyContent;
     progress?: AcademyUserContentProgress;
@@ -865,9 +823,9 @@ function ContentCard({
     onLaunchForge: () => void;
     busy: boolean;
     emphasis?: "default" | "mindset";
+    continueLearning?: boolean;
 }) {
     const stageLabels = getAcademyStageLabels(content.stageIds);
-    const progressLabel = getAcademyProgressLabel(progress?.status);
     const thumbnailUrl = content.thumbnailUrl || buildYoutubeThumbnailUrl(content.youtubeVideoId);
 
     return (
@@ -876,10 +834,10 @@ function ContentCard({
                 background: emphasis === "mindset"
                     ? "linear-gradient(180deg, rgba(199,107,75,0.14), rgba(255,255,255,0.03))"
                     : "linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))",
-                border,
+                border: isContinueLearning ? "1px solid rgba(99,179,237,0.22)" : border,
+                borderLeft: isContinueLearning ? "3px solid rgba(99,179,237,0.4)" : undefined,
                 borderRadius: 22,
                 padding: 18,
-                textAlign: "left",
                 display: "grid",
                 gap: 14,
                 minHeight: 262,
@@ -888,67 +846,65 @@ function ContentCard({
                     : "0 12px 28px rgba(0,0,0,0.16)",
             }}
         >
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <div style={{ display: "grid", justifyItems: "center", gap: 10 }}>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
                     <Pill tone={emphasis === "mindset" ? "warm" : "orange"}>{content.category?.title ?? getAcademyContentTypeLabel(content.contentType)}</Pill>
                     {content.difficultyLabel && <Pill>{content.difficultyLabel}</Pill>}
                 </div>
-                <ProgressPill status={progress?.status} />
+                <ProgressPill status={progress?.status} compact={!isContinueLearning} />
             </div>
 
             <div
                 style={{
                     borderRadius: 18,
-                    minHeight: 118,
+                    minHeight: 110,
                     overflow: "hidden",
                     border: "1px solid rgba(255,255,255,0.06)",
                     background: thumbnailUrl
-                        ? `linear-gradient(180deg, rgba(8,8,9,0.04), rgba(8,8,9,0.28)), url(${thumbnailUrl}) center/cover`
+                        ? `linear-gradient(180deg, rgba(8,8,9,0.18), rgba(8,8,9,0.62)), url(${thumbnailUrl}) center/cover`
                         : emphasis === "mindset"
                             ? "linear-gradient(135deg, rgba(199,107,75,0.28), rgba(12,12,14,0.84))"
                             : "linear-gradient(135deg, rgba(232,98,42,0.24), rgba(99,179,237,0.16), rgba(12,12,14,0.88))",
                     display: "flex",
-                    alignItems: "flex-end",
-                    padding: 14,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "12px 14px",
                 }}
             >
-                <div style={{ fontSize: 11, color: "#F0EDE8", letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 700 }}>
-                    {progressLabel}
+                <div style={{ fontSize: 18, lineHeight: 1.12, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", textShadow: "0 1px 6px rgba(0,0,0,0.5)", textAlign: "center" }}>
+                    {content.title}
                 </div>
             </div>
 
-            <div>
-                <div style={{ fontSize: 22, lineHeight: 1.05, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 10 }}>
-                    {content.title}
-                </div>
-                <div style={{ fontSize: 13, color: "#B8B1A8", lineHeight: 1.8 }}>
+            <div style={{ display: "grid", gap: 10, justifyItems: "center" }}>
+                <div style={{ fontSize: 13, color: "#B8B1A8", lineHeight: 1.8, maxWidth: 320 }}>
                     {content.shortDescription}
                 </div>
             </div>
 
             <div style={{ display: "grid", gap: 8 }}>
                 {content.whyThisMatters && (
-                    <div style={{ fontSize: 12, color: "#E9C7B8", lineHeight: 1.7 }}>
+                    <div style={{ fontSize: 12, color: "#E9C7B8", lineHeight: 1.7, textAlign: "left" }}>
                         <span style={{ color: "#E8622A", fontWeight: 700 }}>Why this matters:</span> {content.whyThisMatters}
                     </div>
                 )}
                 {content.commonMistake && (
-                    <div style={{ fontSize: 12, color: "#BFB7AE", lineHeight: 1.7 }}>
+                    <div style={{ fontSize: 12, color: "#BFB7AE", lineHeight: 1.7, textAlign: "left" }}>
                         <span style={{ color: "#C8A96E", fontWeight: 700 }}>Common mistake:</span> {content.commonMistake}
                     </div>
                 )}
                 {stageLabels.length > 0 && (
-                    <div style={{ fontSize: 11, color: "#8D857C", lineHeight: 1.6 }}>
+                    <div style={{ fontSize: 11, color: "#8D857C", lineHeight: 1.6, textAlign: "center" }}>
                         {stageLabels.join(" · ")}
                     </div>
                 )}
             </div>
 
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginTop: "auto" }}>
+            <div style={{ display: "grid", justifyItems: "center", gap: 12, marginTop: "auto" }}>
                 <div style={{ fontSize: 11, color: "#6E675F" }}>
                     {content.estimatedMinutes ? `${content.estimatedMinutes} min` : "Deep dive"}
                 </div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
                     <button type="button" onClick={onOpen} style={{ background: "rgba(255,255,255,0.04)", border, borderRadius: 999, padding: "8px 12px", color: "#C8C4BE", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
                         Step inside
                     </button>
@@ -1001,7 +957,7 @@ function SeriesCard({
                 border,
                 borderRadius: 22,
                 padding: 18,
-                textAlign: "left",
+                textAlign: "center",
                 cursor: "pointer",
                 display: "grid",
                 gap: 14,
@@ -1009,22 +965,22 @@ function SeriesCard({
                 boxShadow: "0 12px 28px rgba(0,0,0,0.16)",
             }}
         >
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <div style={{ display: "grid", justifyItems: "center", gap: 10 }}>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
                     <Pill tone="blue">{series.category?.title ?? "Lesson series"}</Pill>
                     {series.difficultyLabel && <Pill>{series.difficultyLabel}</Pill>}
                 </div>
-                <ProgressPill status={seriesStatus} />
+                <ProgressPill status={seriesStatus} compact />
             </div>
-            <div>
+            <div style={{ display: "grid", gap: 10, justifyItems: "center" }}>
                 <div style={{ fontSize: 22, lineHeight: 1.05, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 10 }}>
                     {series.title}
                 </div>
-                <div style={{ fontSize: 13, color: "#B8B1A8", lineHeight: 1.8 }}>
+                <div style={{ fontSize: 13, color: "#B8B1A8", lineHeight: 1.8, maxWidth: 320 }}>
                     {series.shortDescription}
                 </div>
             </div>
-            <div>
+            <div style={{ display: "grid", gap: 8, justifyItems: "center" }}>
                 <div style={{ height: 8, borderRadius: 999, background: "rgba(255,255,255,0.06)", overflow: "hidden", marginBottom: 8 }}>
                     <div style={{ width: `${progress}%`, height: "100%", background: "linear-gradient(90deg, #63B3ED, #E8622A)" }} />
                 </div>
@@ -1401,18 +1357,26 @@ function AliveEmptyState({ title, body }: { title: string; body: string }) {
     );
 }
 
-function ProgressPill({ status }: { status: AcademyUserContentProgress["status"] | null | undefined }) {
+function ProgressPill({
+    status,
+    compact = false,
+}: {
+    status: AcademyUserContentProgress["status"] | null | undefined;
+    compact?: boolean;
+}) {
     const normalized = status ?? "not_started";
     const tone = normalized === "completed" ? "success" : normalized === "in_progress" ? "blue" : "neutral";
-    return <Pill tone={tone}>{getAcademyProgressLabel(normalized)}</Pill>;
+    return <Pill tone={tone} compact={compact}>{getAcademyProgressLabel(normalized)}</Pill>;
 }
 
 function Pill({
     children,
     tone = "neutral",
+    compact = false,
 }: {
     children: ReactNode;
     tone?: "neutral" | "orange" | "blue" | "success" | "warm";
+    compact?: boolean;
 }) {
     const tones: Record<string, { background: string; borderColor: string; color: string }> = {
         neutral: { background: "rgba(255,255,255,0.05)", borderColor: "rgba(255,255,255,0.08)", color: "#C8C4BE" },
@@ -1423,7 +1387,22 @@ function Pill({
     };
     const theme = tones[tone];
     return (
-        <div style={{ padding: "7px 10px", borderRadius: 999, background: theme.background, border: `1px solid ${theme.borderColor}`, color: theme.color, fontSize: 11, fontWeight: 700 }}>
+        <div
+            style={{
+                padding: compact ? "4px 8px" : "7px 10px",
+                borderRadius: 999,
+                background: theme.background,
+                border: `1px solid ${theme.borderColor}`,
+                color: theme.color,
+                fontSize: compact ? 9 : 13,
+                fontWeight: 700,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                lineHeight: 1.1,
+                whiteSpace: "nowrap",
+            }}
+        >
             {children}
         </div>
     );

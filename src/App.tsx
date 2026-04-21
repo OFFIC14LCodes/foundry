@@ -2254,6 +2254,7 @@ export default function FoundryApp() {
   const [showMarketIntel, setShowMarketIntel] = useState(false);
   const [showCofounder, setShowCofounder] = useState(false);
   const [showAcademy, setShowAcademy] = useState(false);
+  const [academyContext, setAcademyContext] = useState<import("./components/ForgeAcademyScreen").AcademyScreenContext | null>(null);
   const [showChatRoom, setShowChatRoom] = useState(false);
   const [settingsView, setSettingsView] = useState<null | "settings" | "privacy" | "eula" | "termsAndConditions" | "acceptableUse" | "disclaimer">(null);
   const [showAdminHub, setShowAdminHub] = useState(false);
@@ -3056,6 +3057,7 @@ export default function FoundryApp() {
           onBack={() => setShowAcademy(false)}
           onLaunchForgeConversation={launchAcademyConversation}
           onOpenAskForgeAnything={openAcademyAskForgeAnything}
+          onContextChange={setAcademyContext}
         />
       )}
       {showChatRoom && profile && (
@@ -3176,7 +3178,7 @@ export default function FoundryApp() {
                           : settingsView ? "settings"
                             : screen
           }
-          screenContext={showDocuments ? documentContext : null}
+          screenContext={showDocuments ? documentContext : showAcademy ? academyContext : null}
           onBubbleSummaryAdded={(summary) => setBubbleSummaries(prev => [summary, ...prev])}
         />
       )}

@@ -24,11 +24,23 @@ interface DocContext {
     documentContent: string | null;
 }
 
+export interface AcademyBubbleContext {
+    screen: "ForgeAcademy";
+    activeLesson: {
+        title: string;
+        discipline: string;
+        description: string;
+        whyItMatters: string;
+    } | null;
+    currentFilter: string;
+    stage: number;
+}
+
 interface ForgeBubbleProps {
     profile: any;
     userId: string;
     currentScreen: string;
-    screenContext?: DocContext | null;
+    screenContext?: DocContext | AcademyBubbleContext | null;
     onBubbleSummaryAdded?: (summary: any) => void;
 }
 
@@ -43,6 +55,7 @@ const SCREEN_LABELS: Record<string, string> = {
     marketIntel: "the Market Intelligence screen",
     cofounder: "the Co-Founder Mode screen",
     chatRoom: "the Chat Room (open-ended learning and conversation with Forge)",
+    academy: "Forge Academy (the curated founder education section)",
 };
 
 const DOC_PHASE_LABELS: Record<string, string> = {
@@ -156,15 +169,27 @@ export default function ForgeBubble({ profile, userId, currentScreen, screenCont
         let screenLabel = SCREEN_LABELS[currentScreen] || currentScreen;
         let documentSection = "";
 
-        if (currentScreen === "documents" && screenContext) {
-            const phaseLabel = DOC_PHASE_LABELS[screenContext.phase] || screenContext.phase;
+        if (currentScreen === "documents" && screenContext && "phase" in screenContext) {
+            const docCtx = screenContext as DocContext;
+            const phaseLabel = DOC_PHASE_LABELS[docCtx.phase] || docCtx.phase;
             const parts: string[] = [`the Document Production screen — currently ${phaseLabel}`];
-            if (screenContext.categoryName) parts.push(`Category: ${screenContext.categoryName}`);
-            if (screenContext.documentName) parts.push(`Document: ${screenContext.documentName}`);
+            if (docCtx.categoryName) parts.push(`Category: ${docCtx.categoryName}`);
+            if (docCtx.documentName) parts.push(`Document: ${docCtx.documentName}`);
             screenLabel = parts.join(" | ");
 
-            if (screenContext.documentContent) {
-                documentSection = `\n\nCURRENT PRODUCED DOCUMENT ("${screenContext.documentName ?? "Document"}"):\nThe founder has produced the following document and may be asking about it, requesting changes, or seeking clarification. Read it carefully before responding.\n\n${screenContext.documentContent}`;
+            if (docCtx.documentContent) {
+                documentSection = `\n\nCURRENT PRODUCED DOCUMENT ("${docCtx.documentName ?? "Document"}"):\nThe founder has produced the following document and may be asking about it, requesting changes, or seeking clarification. Read it carefully before responding.\n\n${docCtx.documentContent}`;
+            }
+        }
+
+        if (currentScreen === "academy" && screenContext && "screen" in screenContext) {
+            const ctx = screenContext as AcademyBubbleContext;
+            const filterLabel = ctx.currentFilter === "all" ? "all disciplines" : ctx.currentFilter;
+            if (ctx.activeLesson) {
+                screenLabel = `Forge Academy — currently studying: "${ctx.activeLesson.title}" (${ctx.activeLesson.discipline})`;
+                documentSection = `\n\nACTIVE ACADEMY LESSON:\nThe founder has this lesson open in Forge Academy. They may be asking about it or want to go deeper.\nTitle: ${ctx.activeLesson.title}\nDiscipline: ${ctx.activeLesson.discipline}\nDescription: ${ctx.activeLesson.description}\nWhy it matters: ${ctx.activeLesson.whyItMatters}\n\nBecause the founder has this lesson open, ground your response in this topic. Do not wait for them to ask a perfectly formed question — if they seem stuck, help them connect the lesson to their actual business situation.`;
+            } else {
+                screenLabel = `Forge Academy — browsing ${filterLabel}, Stage ${ctx.stage}`;
             }
         }
 
