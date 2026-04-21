@@ -193,9 +193,22 @@ This founder is part of a team. The following is from their shared team chat. Us
 
 ${cofoundersContext}` : "";
 
+  const onboardingReviewSection = profile?.nameNeedsReview || profile?.ideaNeedsReview ? `
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ONBOARDING REVIEW NOTE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Some onboarding answers were likely jokes or placeholders and need to be re-confirmed naturally in conversation.
+${profile?.nameNeedsReview ? `- The founder did not give a serious name during onboarding. Current placeholder name: ${profile.name || "Founder"}.` : ""}
+${profile?.ideaNeedsReview ? `- The founder did not give a serious business description during onboarding. Current placeholder business: ${profile.idea || "Still being clarified"}.` : ""}
+Do not make this awkward or repetitive. Reassess naturally when it fits the conversation, then continue normally.` : "";
+
+  const safeProfileName = profile?.nameNeedsReview ? "Founder" : profile.name;
+  const safeBusinessName = profile?.ideaNeedsReview ? "Still being clarified" : (profile.businessName || profile.idea || "Idea stage");
+
   const context = `
 Current date & time: ${dateStr}, ${timeStr}
-Founder: ${profile.name} | Business: ${profile.businessName || profile.idea || "Idea stage"} (${profile.industry || "Early Stage"})
+Founder: ${safeProfileName} | Business: ${safeBusinessName} (${profile.industry || "Early Stage"})
 Strategy: ${profile.strategyLabel || profile.strategy} | Experience: ${profile.experience || "Not specified"}
 Budget: $${(profile.budget?.remaining || 0).toLocaleString()} remaining of $${(profile.budget?.total || 0).toLocaleString()} | Spent: $${(profile.budget?.spent || 0).toLocaleString()} | Runway: ${profile.budget?.runway || "TBD"}
 
@@ -216,7 +229,7 @@ ${expenses}
 ${memorySections.length > 0 ? `CROSS-STAGE MEMORY (prior stage work):
 ${memorySections.join("\n\n")}` : ""}
 
-STAGE REFERENCES: When referencing work from another stage, wrap it like [STAGE_REF:N]text[/STAGE_REF]. Use naturally when prior work is relevant — not on every mention.${cofounderSection}${methodSection}
+STAGE REFERENCES: When referencing work from another stage, wrap it like [STAGE_REF:N]text[/STAGE_REF]. Use naturally when prior work is relevant — not on every mention.${onboardingReviewSection}${cofounderSection}${methodSection}
   `.trim();
 
   return {
@@ -640,7 +653,7 @@ function ForgeScreen({
   const [deletingSummaryId, setDeletingSummaryId] = useState<string | null>(null);
   const [archiveMenuOpenId, setArchiveMenuOpenId] = useState<string | null>(null);
   const [summaryModalMenuOpen, setSummaryModalMenuOpen] = useState(false);
-  const [archiveFilter, setArchiveFilter] = useState<"all" | "forge" | "chatroom" | "academy" | "bubble">("all");
+  const [archiveFilter, setArchiveFilter] = useState<"all" | "forge" | "chatroom" | "academy" | "bubble" | "pitchpractice">("all");
 
   useEffect(() => {
     if (!summaryModal) {
@@ -786,20 +799,26 @@ function ForgeScreen({
 
     const runGreeting = async () => {
       let greetingPrompt = "";
+      const safeName = profile.nameNeedsReview ? "Founder" : profile.name;
+      const safeIdea = profile.ideaNeedsReview ? "still being clarified" : profile.idea;
+      const onboardingReviewNote = [
+        profile.nameNeedsReview ? "Their real name was not confirmed during onboarding." : "",
+        profile.ideaNeedsReview ? "Their real business idea was not confirmed during onboarding." : "",
+      ].filter(Boolean).join(" ");
 
       if (isFirstVisit && pendingUpgradeStage && activeStage === pendingUpgradeStage) {
-        greetingPrompt = `${profile.name} just finished onboarding and wants to start at Stage ${activeStage}: ${stageData.label}. Their idea: "${profile.idea}". Experience: ${profile.experience}. Budget: $${profile.budget?.total?.toLocaleString() || "unknown"}. Strategy: ${profile.strategyLabel}.
+        greetingPrompt = `${safeName} just finished onboarding and wants to start at Stage ${activeStage}: ${stageData.label}. Their idea: "${safeIdea}". Experience: ${profile.experience}. Budget: $${profile.budget?.total?.toLocaleString() || "unknown"}. Strategy: ${profile.strategyLabel}. ${onboardingReviewNote}
 
 Write a 2-3 paragraph welcome. First: recap what they shared during onboarding — the idea, experience, budget, and strategy — in a natural, specific way, not a form readback. Second: briefly describe what Stage ${activeStage} is about and why it fits where they are. Third (short): let them know Stage ${activeStage} requires a Starter or Pro plan to access — they can upgrade now to jump straight in, or step back and explore Stage 1 for free first. Keep the tone warm and direct. Use **bold** on 2-3 key words. Do NOT end with a question — end after the payment note.`;
       } else if (isFirstVisit && activeStage === 1) {
-        greetingPrompt = `${profile.name} just finished onboarding and is entering Stage 1 for the first time. Their idea: "${profile.idea}". Experience: ${profile.experience}. Budget: $${profile.budget?.total?.toLocaleString() || "unknown"}. Strategy: ${profile.strategyLabel}.
+        greetingPrompt = `${safeName} just finished onboarding and is entering Stage 1 for the first time. Their idea: "${safeIdea}". Experience: ${profile.experience}. Budget: $${profile.budget?.total?.toLocaleString() || "unknown"}. Strategy: ${profile.strategyLabel}. ${onboardingReviewNote}
 
 Start with a short recap of what they told Foundry during onboarding: the business idea, their experience level, their budget, and their strategy. Make it sound natural and specific, not like a form readback. Then pivot immediately to Stage 1's core question: is the problem real. End with one sharp, concrete question that gets the conversation moving. Use **bold** on 2-3 key words. Keep it to 2-3 tight paragraphs.`;
       } else if (isLongAbsence && activeStage > 0) {
         const hoursText = hoursSince ? `about ${Math.round(hoursSince)} hours` : "a while";
-        greetingPrompt = `${profile.name} is returning to Stage ${activeStage}: ${stageData.label} after ${hoursText} away. Welcome them back briefly and warmly — 1 sentence, not more. Reference where they are in this stage and what matters most right now. Then ask one sharp forward-moving question. 3-4 paragraphs max. Use **bold** on 2-3 key words.`;
+        greetingPrompt = `${safeName} is returning to Stage ${activeStage}: ${stageData.label} after ${hoursText} away. Welcome them back briefly and warmly — 1 sentence, not more. Reference where they are in this stage and what matters most right now. Then ask one sharp forward-moving question. 3-4 paragraphs max. Use **bold** on 2-3 key words. ${onboardingReviewNote}`;
       } else {
-        greetingPrompt = `${profile.name} just opened Stage ${activeStage}: ${stageData.label}. Introduce the mission for this stage in a way that feels personal to their specific situation. Reference what makes this stage matter. Then ask the first sharp question to get started. Use **bold** on 2-3 key words. 3-4 paragraphs max.`;
+        greetingPrompt = `${safeName} just opened Stage ${activeStage}: ${stageData.label}. Introduce the mission for this stage in a way that feels personal to their specific situation. Reference what makes this stage matter. Then ask the first sharp question to get started. Use **bold** on 2-3 key words. 3-4 paragraphs max. ${onboardingReviewNote}`;
       }
 
       const ctxPackage = appendMarketContext(await buildRichContext(
@@ -831,15 +850,15 @@ Start with a short recap of what they told Foundry during onboarding: the busine
       } catch {
         const fallback =
           isFirstVisit && activeStage === 1
-            ? `${profile.name} — welcome to Foundry.
+            ? `${safeName} — welcome to Foundry.
 
-You came in with **${profile.idea || "a new business idea"}**, a ${profile.experience || "founder"} background, a budget of **$${profile.budget?.total?.toLocaleString() || "unknown"}**, and a **${profile.strategyLabel || profile.strategy || "focused"}** approach. That's enough to start pressure-testing this the right way.
+You came in with **${safeIdea || "a new business idea"}**, a ${profile.experience || "founder"} background, a budget of **$${profile.budget?.total?.toLocaleString() || "unknown"}**, and a **${profile.strategyLabel || profile.strategy || "focused"}** approach. That's enough to start pressure-testing this the right way.
 
 Stage 1 is about one thing: making sure a real person has a real problem worth solving.
 
 Who, specifically, is the first person you believe feels this problem often enough to want a better solution?`
             : isFirstVisit && pendingUpgradeStage && activeStage === pendingUpgradeStage
-              ? `${profile.name} — Stage ${activeStage}: ${stageData.label}.
+              ? `${safeName} — Stage ${activeStage}: ${stageData.label}.
 
 You came in wanting to start here, which makes sense based on what you shared. This stage is where the work gets more concrete and more consequential.
 
@@ -909,7 +928,8 @@ Where do you want to start?`;
   const isAcademyArchive = (entry: any) => String(entry?.title || "").startsWith("Academy —");
   const isChatRoomArchive = (entry: any) => String(entry?.title || "").startsWith("Chat with Forge");
   const isQuickChatArchive = (entry: any) => String(entry?.title || "").startsWith("Quick Chat");
-  const isChatStyleArchive = (entry: any) => isChatRoomArchive(entry) || isQuickChatArchive(entry);
+  const isPitchPracticeArchive = (entry: any) => String(entry?.title || "").startsWith("Pitch Practice —");
+  const isChatStyleArchive = (entry: any) => isChatRoomArchive(entry) || isQuickChatArchive(entry) || isPitchPracticeArchive(entry);
 
   const handleContinueArchive = () => {
     if (!summaryModal) return;
@@ -1135,16 +1155,18 @@ Where do you want to start?`;
     );
   };
 
-  type ArchiveSourceType = "forge" | "chatroom" | "academy" | "bubble";
+  type ArchiveSourceType = "forge" | "chatroom" | "academy" | "bubble" | "pitchpractice";
 
   const ARCHIVE_SOURCE_CONFIG: Record<ArchiveSourceType, { label: string; color: string; bg: string; borderColor: string }> = {
     forge:    { label: "Forge Session",  color: "#E8622A", bg: "rgba(232,98,42,0.06)",   borderColor: "rgba(232,98,42,0.28)" },
     chatroom: { label: "Chat with Forge",color: "#4CAF8A", bg: "rgba(76,175,138,0.06)",  borderColor: "rgba(76,175,138,0.28)" },
     academy:  { label: "Academy",        color: "#9B8DE8", bg: "rgba(155,141,232,0.06)", borderColor: "rgba(155,141,232,0.28)" },
     bubble:   { label: "Quick Chat",     color: "#63B3ED", bg: "rgba(99,179,237,0.06)",  borderColor: "rgba(99,179,237,0.28)" },
+    pitchpractice: { label: "Pitch Practice", color: "#D9B15D", bg: "rgba(217,177,93,0.08)", borderColor: "rgba(217,177,93,0.28)" },
   };
 
   const getEntrySourceType = (entry: any): ArchiveSourceType => {
+    if (isPitchPracticeArchive(entry)) return "pitchpractice";
     if (isQuickChatArchive(entry)) return "bubble";
     if (isChatRoomArchive(entry)) return "chatroom";
     if (isAcademyArchive(entry)) return "academy";
@@ -2015,6 +2037,7 @@ Where do you want to start?`;
           const hasChatroom = allEntries.some((e) => getEntrySourceType(e) === "chatroom");
           const hasAcademy  = allEntries.some((e) => getEntrySourceType(e) === "academy");
           const hasBubble   = allEntries.some((e) => getEntrySourceType(e) === "bubble");
+          const hasPitchPractice = allEntries.some((e) => getEntrySourceType(e) === "pitchpractice");
 
           const filteredEntries = archiveFilter === "all"
             ? allEntries
@@ -2027,6 +2050,7 @@ Where do you want to start?`;
             { key: "chatroom", label: "Chat with Forge", color: ARCHIVE_SOURCE_CONFIG.chatroom.color, show: hasChatroom },
             { key: "academy",  label: "Academy",         color: ARCHIVE_SOURCE_CONFIG.academy.color,  show: hasAcademy },
             { key: "bubble",   label: "Quick Chat",      color: ARCHIVE_SOURCE_CONFIG.bubble.color,   show: hasBubble },
+            { key: "pitchpractice", label: "Pitch Practice", color: ARCHIVE_SOURCE_CONFIG.pitchpractice.color, show: hasPitchPractice },
           ].filter((o) => o.show);
 
           return (
@@ -3033,6 +3057,7 @@ export default function FoundryApp() {
         {screen === "hub" && profile && (
           <HubScreen
             profile={profile}
+            marketReport={marketReport}
             onUpdateProfile={updateProfile}
             onEnterStage={id => openForge(id)}
             onOpenForge={() => openForge(null)}
@@ -3131,6 +3156,7 @@ export default function FoundryApp() {
       {showPitchPractice && profile && (
         <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "#080809", overflowY: "auto" }}>
           <PitchPracticeScreen
+            userId={(user as any).id}
             profile={profile}
             onBack={() => setShowPitchPractice(false)}
           />

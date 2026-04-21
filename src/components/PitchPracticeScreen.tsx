@@ -5,6 +5,7 @@ import { useConversationalTts } from "../hooks/useConversationalTts";
 import { streamForgeAPI, callForgeAPI } from "../lib/forgeApi";
 import { getLanguageWarning, moderateUserText } from "../lib/languageModeration";
 import { buildPitchSystemPrompt, buildFeedbackSystemPrompt } from "../constants/pitchPrompt";
+import { saveConversationSummary } from "../db";
 import TypingDots from "./TypingDots";
 import ForgeAvatar from "./ForgeAvatar";
 import Logo from "./Logo";
@@ -154,7 +155,7 @@ function StructuredPitchText({ text }: { text: string }) {
 // ─────────────────────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────────────────────
-export default function PitchPracticeScreen({ profile, onBack }: { profile: any; onBack: () => void }) {
+export default function PitchPracticeScreen({ userId, profile, onBack }: { userId: string; profile: any; onBack: () => void }) {
     const [phase, setPhase] = useState<Phase>("setup");
     const [mode, setMode] = useState<Mode>("text");
     const [scenario, setScenario] = useState<Scenario>("investor");
@@ -162,6 +163,8 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
     const [feedback, setFeedback] = useState<string | null>(null);
+    const [archiveSaved, setArchiveSaved] = useState(false);
+    const [archiveSaving, setArchiveSaving] = useState(false);
     const [forgeVoiceOn, setForgeVoiceOn] = useState(true);
     const [sessionTime, setSessionTime] = useState(0);
     const [languageWarning, setLanguageWarning] = useState<string | null>(null);
@@ -302,10 +305,33 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
                 systemPrompt
             );
             setFeedback(result);
+            await savePitchFeedback(result);
         } catch {
-            setFeedback("Something went wrong generating your feedback. Review the conversation above and note what felt unclear or unconvincing — that's your starting point.");
+            const fallback = "Something went wrong generating your feedback. Review the conversation above and note what felt unclear or unconvincing — that's your starting point.";
+            setFeedback(fallback);
+            await savePitchFeedback(fallback);
         }
         setLoading(false);
+    };
+
+    const savePitchFeedback = async (summaryText: string) => {
+        if (!summaryText || archiveSaving) return;
+        setArchiveSaving(true);
+        try {
+            const saved = await saveConversationSummary(
+                userId,
+                Number(profile?.currentStage) || 1,
+                new Date().toISOString().slice(0, 10),
+                `Pitch Practice — ${scenarioLabel}`,
+                summaryText,
+                messages.length
+            );
+            setArchiveSaved(!!saved);
+        } catch {
+            setArchiveSaved(false);
+        } finally {
+            setArchiveSaving(false);
+        }
     };
 
     // ── Voice input handler ──
@@ -339,6 +365,8 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
         stopListening();
         setMessages([]);
         setFeedback(null);
+        setArchiveSaved(false);
+        setArchiveSaving(false);
         setSessionTime(0);
         setPhase("setup");
     };
@@ -528,6 +556,13 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
                             <div style={{ marginBottom: 20, animation: "fadeSlideUp 0.4s ease both", textAlign: "left" }}>
                                 <div style={{ fontSize: 22, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 4 }}>Coaching Feedback</div>
                                 <div style={{ fontSize: 12, color: "#555" }}>From your {scenarioLabel.toLowerCase()} · {formatTime(sessionTime)}</div>
+                                <div style={{ fontSize: 11, color: archiveSaved ? "#4CAF8A" : archiveSaving ? "#D9B15D" : "#666", marginTop: 8, lineHeight: 1.6 }}>
+                                    {archiveSaved
+                                        ? "Saved to Archive. You can recap it with Forge, rename it, or delete it from the Archive."
+                                        : archiveSaving
+                                            ? "Saving this feedback to Archive..."
+                                            : "This full feedback will be stored in Archive as a Pitch Practice card."}
+                                </div>
                             </div>
 
                             <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "20px 18px", marginBottom: 16, animation: "fadeSlideUp 0.4s ease 0.05s both" }}>

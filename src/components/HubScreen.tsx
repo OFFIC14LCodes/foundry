@@ -6,11 +6,13 @@ import { TAG_COLORS } from "../constants/styles";
 import { Icons } from "../icons";
 import { Archive } from "lucide-react";
 import { formatCurrency, getBudgetRangeLabel, parseBudgetInput } from "../lib/budget";
+import { getBusinessHealth } from "../lib/businessHealth";
 import { summarizeBusinessIdea } from "../lib/businessSummary";
 import Logo from "./Logo";
 
 export default function HubScreen({
     profile,
+    marketReport,
     onUpdateProfile,
     onEnterStage,
     onOpenForge,
@@ -231,6 +233,7 @@ export default function HubScreen({
     const spentPct = profile.budget?.total
         ? Math.min((profile.budget.spent / profile.budget.total) * 100, 100)
         : 0;
+    const businessHealth = getBusinessHealth(profile, completedByStage, marketReport);
 
     const NAV_ITEMS = [
         ...(isAdmin ? [{
@@ -816,6 +819,53 @@ export default function HubScreen({
                     )}
                 </div>
 
+                <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "16px", marginBottom: 14, animation: "fadeSlideUp 0.5s ease 0.14s both" }}>
+                    <div className="hub-section-header" style={{ marginBottom: 14 }}>
+                        <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>
+                            Business Health
+                        </div>
+                        <div className="foundry-inline-actions">
+                            <div style={{ fontSize: 11, color: businessHealth.overallScore >= 62 ? "#4CAF8A" : businessHealth.overallScore >= 45 ? "#D9B15D" : "#E8622A" }}>
+                                {businessHealth.statusLabel}
+                            </div>
+                            <button
+                                onClick={() => onOpenMarketIntel?.()}
+                                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "4px 12px", color: "#C8C4BE", fontSize: 11, cursor: "pointer", fontWeight: 500 }}
+                            >
+                                Market Intel
+                            </button>
+                        </div>
+                    </div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "minmax(220px, 280px) minmax(0, 1fr)", gap: 18, alignItems: "center" }}>
+                        <BusinessHealthDonut health={businessHealth} />
+                        <div style={{ display: "grid", gap: 10 }}>
+                            {businessHealth.segments.map((segment) => (
+                                <div key={segment.key} style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: "10px 12px" }}>
+                                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 7 }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                                            <span style={{ width: 9, height: 9, borderRadius: 999, background: segment.color, flexShrink: 0 }} />
+                                            <span style={{ fontSize: 12, color: "#F0EDE8", fontWeight: 600 }}>{segment.label}</span>
+                                        </div>
+                                        <span style={{ fontSize: 12, color: segment.color, fontWeight: 700 }}>{segment.value}</span>
+                                    </div>
+                                    <div style={{ height: 5, background: "rgba(255,255,255,0.05)", borderRadius: 999, overflow: "hidden", marginBottom: 8 }}>
+                                        <div style={{ width: `${segment.value}%`, height: "100%", background: segment.color, borderRadius: 999, transition: "width 0.6s ease" }} />
+                                    </div>
+                                    <div style={{ fontSize: 11, color: "#787169", lineHeight: 1.6 }}>
+                                        {segment.note}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div style={{ marginTop: 14, fontSize: 11, color: "#666", lineHeight: 1.7 }}>
+                        This is a directional founder health view built from your stage progress, financial position, decision history, and latest market intelligence.
+                        {!businessHealth.hasMarketReport && " Generate a market report to sharpen the Market and Growth scores."}
+                    </div>
+                </div>
+
                 {accessSummary && (
                     <div style={{ background: "linear-gradient(180deg, rgba(232,98,42,0.08), rgba(255,255,255,0.02))", border: "1px solid rgba(232,98,42,0.16)", borderRadius: 16, padding: "14px 16px", marginBottom: 14, animation: "fadeSlideUp 0.5s ease 0.18s both" }}>
                         <div className="hub-section-header" style={{ marginBottom: 8 }}>
@@ -1217,4 +1267,68 @@ export default function HubScreen({
         </div>
 
     )
+}
+
+function BusinessHealthDonut({ health }) {
+    const size = 212;
+    const stroke = 16;
+    const radius = (size - stroke) / 2;
+    const circumference = 2 * Math.PI * radius;
+    const gap = circumference * 0.018;
+    const slice = circumference / health.segments.length;
+    let offset = 0;
+
+    return (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10 }}>
+            <div style={{ position: "relative", width: size, height: size }}>
+                <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: "rotate(-90deg)" }}>
+                    <circle
+                        cx={size / 2}
+                        cy={size / 2}
+                        r={radius}
+                        fill="none"
+                        stroke="rgba(255,255,255,0.06)"
+                        strokeWidth={stroke}
+                    />
+                    {health.segments.map((segment) => {
+                        const visibleLength = Math.max((slice - gap) * (0.38 + (segment.value / 100) * 0.62), 10);
+                        const dashArray = `${visibleLength} ${circumference - visibleLength}`;
+                        const dashOffset = -offset;
+                        offset += slice;
+
+                        return (
+                            <circle
+                                key={segment.key}
+                                cx={size / 2}
+                                cy={size / 2}
+                                r={radius}
+                                fill="none"
+                                stroke={segment.color}
+                                strokeWidth={stroke}
+                                strokeLinecap="round"
+                                strokeDasharray={dashArray}
+                                strokeDashoffset={dashOffset}
+                                opacity={0.55 + (segment.value / 100) * 0.45}
+                            />
+                        );
+                    })}
+                </svg>
+
+                <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: 24 }}>
+                    <div style={{ fontSize: 10, color: "#777169", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6 }}>
+                        Overall
+                    </div>
+                    <div style={{ fontSize: 40, lineHeight: 1, color: "#F0EDE8", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>
+                        {health.overallScore}
+                    </div>
+                    <div style={{ fontSize: 12, color: "#B7B0A7", marginTop: 8 }}>
+                        {health.statusLabel}
+                    </div>
+                </div>
+            </div>
+            <div style={{ fontSize: 11, color: "#777169", lineHeight: 1.6, textAlign: "center", maxWidth: 260 }}>
+                A founder-facing view of how the business is holding up across execution, capital, clarity, market strength, and upside.
+            </div>
+        </div>
+    );
 }

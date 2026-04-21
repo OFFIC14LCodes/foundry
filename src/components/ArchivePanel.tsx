@@ -15,7 +15,7 @@ import {
 // ─────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────
-type SourceType = "forge" | "chatroom" | "academy" | "bubble";
+type SourceType = "forge" | "chatroom" | "academy" | "bubble" | "pitchpractice";
 type FilterKey = "all" | SourceType;
 
 const SOURCE_CONFIG: Record<SourceType, { label: string; color: string; bg: string; borderColor: string }> = {
@@ -23,10 +23,12 @@ const SOURCE_CONFIG: Record<SourceType, { label: string; color: string; bg: stri
     chatroom: { label: "Chat with Forge", color: "#4CAF8A", bg: "rgba(76,175,138,0.06)",  borderColor: "rgba(76,175,138,0.28)" },
     academy:  { label: "Academy",         color: "#9B8DE8", bg: "rgba(155,141,232,0.06)", borderColor: "rgba(155,141,232,0.28)" },
     bubble:   { label: "Quick Chat",      color: "#63B3ED", bg: "rgba(99,179,237,0.06)",  borderColor: "rgba(99,179,237,0.28)" },
+    pitchpractice: { label: "Pitch Practice", color: "#D9B15D", bg: "rgba(217,177,93,0.08)", borderColor: "rgba(217,177,93,0.28)" },
 };
 
 function getSourceType(entry: any): SourceType {
     const t = String(entry?.title || "");
+    if (t.startsWith("Pitch Practice —")) return "pitchpractice";
     if (t.startsWith("Quick Chat")) return "bubble";
     if (t.startsWith("Chat with Forge")) return "chatroom";
     if (t.startsWith("Academy —")) return "academy";
@@ -100,6 +102,7 @@ export default function ArchivePanel({
         ...(hasType("chatroom") ? [{ key: "chatroom" as FilterKey, label: "Chat with Forge", color: SOURCE_CONFIG.chatroom.color }] : []),
         ...(hasType("academy")  ? [{ key: "academy"  as FilterKey, label: "Academy",         color: SOURCE_CONFIG.academy.color }]  : []),
         ...(hasType("bubble")   ? [{ key: "bubble"   as FilterKey, label: "Quick Chat",      color: SOURCE_CONFIG.bubble.color }]   : []),
+        ...(hasType("pitchpractice") ? [{ key: "pitchpractice" as FilterKey, label: "Pitch Practice", color: SOURCE_CONFIG.pitchpractice.color }] : []),
     ];
 
     // ── Actions ─────────────────────────────────────────────

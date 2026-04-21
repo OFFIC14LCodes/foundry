@@ -9,6 +9,7 @@ import {
 import { FORGE_SYSTEM_PROMPT } from "../constants/prompts";
 import { STAGES_DATA } from "../constants/stages";
 import { formatCurrency, parseBudgetInput } from "../lib/budget";
+import { summarizeBusinessIdea } from "../lib/businessSummary";
 import MessageBubble from "./MessageBubble";
 import ForgeAvatar from "./ForgeAvatar";
 import TypingDots from "./TypingDots";
@@ -33,12 +34,15 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
         strategy: "",
         strategyLabel: "",
         detectedStage: 1,
+        nameNeedsReview: false,
+        ideaNeedsReview: false,
     });
     const [cardSelection, setCardSelection] = useState(null);
     const [started, setStarted] = useState(false);
     const [readyToEnter, setReadyToEnter] = useState(false);
     const [completedProfile, setCompletedProfile] = useState(null);
     const [responsePending, setResponsePending] = useState(false);
+    const [playfulRetryCount, setPlayfulRetryCount] = useState({ name: 0, idea: 0 });
     const scrollRef = useRef(null);
 
     const FAST_DELIVERY = {
@@ -70,12 +74,83 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
     const addUserMsg = (text) => setMessages(m => [...m, { role: "user", text }]);
     const currentStep = ONBOARDING_STEPS[stepIndex];
 
+    const deriveMarketFocus = async (idea: string) => {
+        const fallback = summarizeBusinessIdea("", idea, 4);
+        if (!idea || idea === "Still being clarified") return "Still being clarified";
+
+        try {
+            const label = await callForgeAPI(
+                [{
+                    role: "user",
+                    content: `Summarize this business idea into a directional business/market label in 2 to 4 words only.\n\nRules:\n- No sentence\n- No punctuation unless essential\n- No explanation\n- No quotes\n- Make it sound like a category or business type\n\nIdea: ${idea}`
+                }],
+                "You convert founder business ideas into concise business category labels. Return only the short label.",
+                40
+            );
+
+            const normalized = String(label || "")
+                .replace(/["'.:,!?]/g, "")
+                .replace(/\s+/g, " ")
+                .trim();
+
+            if (!normalized) return fallback;
+            return normalized.split(" ").slice(0, 4).join(" ");
+        } catch {
+            return fallback;
+        }
+    };
+
+    const normalizeValue = (value: string) => value.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+
+    const NAME_JOKE_PATTERNS = [
+        /\b(deez nuts|your mom|ur mom|big daddy|daddy|batman|superman|spiderman|iron man|optimum pride|optimus prime)\b/i,
+        /\b(sexy|boob|butt|fart|poop|toilet|69|420)\b/i,
+        /\b(mclovin|elon musk|donald trump|lord farquaad)\b/i,
+    ];
+
+    const IDEA_JOKE_PATTERNS = [
+        /\b(drug cartel|money laundering|feet pics|selling feet pics|nude|onlyfans|weed empire|meth|cocaine|crack)\b/i,
+        /\b(fart|poop|butt|balls|boob|deez nuts|your mom)\b/i,
+        /\b(robbing banks|scam people|ponzi|tax fraud)\b/i,
+    ];
+
+    const isLikelyJokeName = (value: string) => {
+        const normalized = normalizeValue(value);
+        if (!normalized) return false;
+        if (normalized.length < 2) return true;
+        if (/\d{3,}/.test(normalized)) return true;
+        return NAME_JOKE_PATTERNS.some((pattern) => pattern.test(normalized));
+    };
+
+    const isLikelyJokeIdea = (value: string) => {
+        const normalized = normalizeValue(value);
+        if (!normalized) return false;
+        return IDEA_JOKE_PATTERNS.some((pattern) => pattern.test(normalized));
+    };
+
     const processInput = async (value, rawId = null) => {
         addUserMsg(value);
         const p = { ...profile };
 
         try {
             if (currentStep.id === "name") {
+                if (isLikelyJokeName(value)) {
+                    if (playfulRetryCount.name === 0) {
+                        setPlayfulRetryCount((prev) => ({ ...prev, name: 1 }));
+                        await deliverMessage(`Alright, that's at least a decent bit. Now give me the **real name** you want Forge to use.`, setLoading, addForgeMsg, FAST_DELIVERY);
+                        return;
+                    }
+
+                    p.name = "Founder";
+                    p.nameNeedsReview = true;
+                    setProfile(p);
+                    await deliverMessage(`Still dodging it. Fine — I'll call you **Founder** for now and we'll clean that up later in chat. Tell me where you are right now.`, setLoading, addForgeMsg, FAST_DELIVERY);
+                    setStepIndex(1);
+                    return;
+                }
+
+                setPlayfulRetryCount((prev) => ({ ...prev, name: 0 }));
+                p.nameNeedsReview = false;
                 p.name = value; setProfile(p);
                 const prompt = `Respond in 2 sentences only. First: greet "${value}" — warm, natural, one sentence. Second: tell them Foundry meets founders where they actually are, and you want to find the right starting point — they'll see some options now.`;
                 try {
@@ -101,6 +176,23 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                 setStepIndex(2);
 
             } else if (currentStep.id === "idea") {
+                if (isLikelyJokeIdea(value)) {
+                    if (playfulRetryCount.idea === 0) {
+                        setPlayfulRetryCount((prev) => ({ ...prev, idea: 1 }));
+                        await deliverMessage(`Funny. Now give me the **real business** or idea you're actually trying to build so I can place you correctly.`, setLoading, addForgeMsg, FAST_DELIVERY);
+                        return;
+                    }
+
+                    p.idea = "Still being clarified";
+                    p.ideaNeedsReview = true;
+                    setProfile(p);
+                    await deliverMessage(`Still not giving me the real version. That's fine — we'll keep moving and sort the business out once we're in chat. How much experience do you have in business or this industry?`, setLoading, addForgeMsg, FAST_DELIVERY);
+                    setStepIndex(3);
+                    return;
+                }
+
+                setPlayfulRetryCount((prev) => ({ ...prev, idea: 0 }));
+                p.ideaNeedsReview = false;
                 p.idea = value; setProfile(p);
                 const prompt = `Respond in 2 sentences only. First: react to "${value}" specifically — one genuine observation about this type of business, not generic encouragement. Second: tell them you want to understand their background before going further, and that they'll see some options to pick from.`;
                 try {
@@ -145,6 +237,7 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                 const card = STRATEGY_CARDS.find(c => c.id === rawId);
                 p.strategy = rawId || value;
                 p.strategyLabel = card?.label || value;
+                p.industry = await deriveMarketFocus(p.idea);
                 setProfile(p);
 
                 const budgetLabel = p.exactBudgetAmount ? `${formatCurrency(p.exactBudgetAmount)} available` : "Budget still being clarified";
@@ -164,6 +257,7 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                 setCompletedProfile({
                     ...p,
                     businessName: "",
+                    industry: p.industry,
                     currentStage: p.detectedStage || 1,
                     exactBudgetAmount: p.exactBudgetAmount,
                     budget: {

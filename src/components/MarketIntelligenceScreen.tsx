@@ -112,6 +112,20 @@ function upsertReport(history: MarketReport[], nextReport: MarketReport) {
     return next.sort((a, b) => b.date.localeCompare(a.date));
 }
 
+function getReportPreview(content: string, maxLength = 110) {
+    const cleaned = cleanAIText(content)
+        .replace(/^#{1,6}\s+/gm, "")
+        .replace(/\*\*(.*?)\*\*/g, "$1")
+        .replace(/\*(.*?)\*/g, "$1")
+        .replace(/`{1,3}/g, "")
+        .replace(/^[-*]\s+/gm, "")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    if (cleaned.length <= maxLength) return cleaned;
+    return `${cleaned.slice(0, maxLength).trim()}...`;
+}
+
 // ─────────────────────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────────────────────
@@ -449,7 +463,7 @@ export default function MarketIntelligenceScreen({
                                                 {formatReportDate(entry.date)}
                                             </div>
                                             <div style={{ fontSize: 10, color: "#666", lineHeight: 1.5 }}>
-                                                {entry.content.slice(0, 110).trim()}{entry.content.length > 110 ? "..." : ""}
+                                                {getReportPreview(entry.content)}
                                             </div>
                                         </button>
                                     );
