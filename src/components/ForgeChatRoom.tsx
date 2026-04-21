@@ -3,6 +3,7 @@ import { getArchivePreviewText, parseArchiveSummaryPayload } from "../lib/archiv
 import { callForgeAPI, streamForgeAPI } from "../lib/forgeApi";
 import { processFile, buildMessageContent, type AttachedFile } from "../lib/fileAttach";
 import { FORGE_SYSTEM_PROMPT } from "../constants/prompts";
+import { getLanguageWarning, moderateUserText } from "../lib/languageModeration";
 import { saveConversationSummary, updateConversationSummary } from "../db";
 import { applyFoundryBookCitations, buildFoundryBookContext } from "../lib/foundryBook";
 import type { AcademyTopicLaunch } from "../lib/academy";
@@ -79,6 +80,8 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
     const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
+    const [languageWarning, setLanguageWarning] = useState<string | null>(null);
+    const [confirmedProfanityInput, setConfirmedProfanityInput] = useState<string | null>(null);
     const [saveArchiveModalOpen, setSaveArchiveModalOpen] = useState(false);
     const [archiveTitleInput, setArchiveTitleInput] = useState("");
     const [savingArchive, setSavingArchive] = useState(false);
@@ -169,6 +172,16 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
         if ((!input.trim() && attachedFiles.length === 0) || loading) return;
 
         const text = input.trim();
+        const warning = getLanguageWarning(text);
+        if (warning && confirmedProfanityInput !== text) {
+            setLanguageWarning(warning);
+            setConfirmedProfanityInput(text);
+            return;
+        }
+
+        setLanguageWarning(null);
+        setConfirmedProfanityInput(null);
+        const { censoredText } = moderateUserText(text);
         const currentFiles = [...attachedFiles];
         setInput("");
         setAttachedFiles([]);
@@ -176,7 +189,7 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
         const attachmentLabel = currentFiles.length > 0
             ? `[Attached: ${currentFiles.map(f => f.name).join(", ")}]`
             : "";
-        const displayText = [attachmentLabel, text].filter(Boolean).join("\n");
+        const displayText = [attachmentLabel, censoredText].filter(Boolean).join("\n");
 
         const now = new Date().toISOString();
         const userMsg: ChatMessage = { id: `u-${Date.now()}`, role: "user", text: displayText, createdAt: now };
@@ -617,7 +630,17 @@ Start with a confident first lesson message that frames the topic, explains the 
                         <textarea
                             ref={inputRef}
                             value={input}
-                            onChange={e => setInput(e.target.value)}
+                            onChange={e => {
+                                const nextValue = e.target.value;
+                                setInput(nextValue);
+                                if (!nextValue.trim()) {
+                                    setLanguageWarning(null);
+                                    setConfirmedProfanityInput(null);
+                                } else if (confirmedProfanityInput && nextValue.trim() !== confirmedProfanityInput) {
+                                    setLanguageWarning(null);
+                                    setConfirmedProfanityInput(null);
+                                }
+                            }}
                             onKeyDown={handleKeyDown}
                             placeholder="Ask anything — business, concepts, ideas, whatever's on your mind..."
                             rows={1}
@@ -663,6 +686,11 @@ Start with a confident first lesson message that frames the topic, explains the 
                             </svg>
                         </button>
                     </div>
+                    {languageWarning && (
+                        <div style={{ fontSize: 11, color: "#D3A48D", textAlign: "center", lineHeight: 1.5 }}>
+                            {languageWarning}
+                        </div>
+                    )}
                     <div style={{ fontSize: 10, color: "#333", textAlign: "center" }}>
                         Shift + Enter for new line
                     </div>

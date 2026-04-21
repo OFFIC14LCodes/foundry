@@ -12,6 +12,7 @@ interface ChatInputProps {
     attachedFiles?: AttachedFile[];
     onFilesChange?: (files: AttachedFile[]) => void;
     allowAttachments?: boolean;
+    notice?: string | null;
 }
 
 export default function ChatInput({
@@ -24,6 +25,7 @@ export default function ChatInput({
     attachedFiles = [],
     onFilesChange,
     allowAttachments = true,
+    notice = null,
 }: ChatInputProps) {
     const textareaRef = useRef<HTMLTextAreaElement | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -226,6 +228,18 @@ export default function ChatInput({
                     ↑
                 </button>
             </div>
+            {notice && (
+                <div
+                    style={{
+                        fontSize: 11,
+                        lineHeight: 1.5,
+                        color: "#D3A48D",
+                        paddingLeft: 2,
+                    }}
+                >
+                    {notice}
+                </div>
+            )}
         </div>
     );
 }

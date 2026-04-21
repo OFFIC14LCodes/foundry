@@ -1,3 +1,5 @@
+import { applyLanguageGuidance, moderateMessageContent } from "./languageModeration";
+
 // Shared API helpers for all Forge-powered interactions.
 // Extracted here so PitchPracticeScreen and ForgeScreen can both use them
 // without duplication or coupling to App.tsx.
@@ -5,14 +7,20 @@
 type MessageContent = string | Array<Record<string, unknown>>;
 
 export async function callForgeAPI(messages: Array<{ role: string; content: MessageContent }>, systemPrompt: string, maxTokens = 1000): Promise<string> {
+    const moderatedMessages = messages.map((message) => (
+        message.role === "user"
+            ? { ...message, content: moderateMessageContent(message.content) }
+            : message
+    ));
+    const effectiveSystemPrompt = applyLanguageGuidance(systemPrompt, messages);
     const res = await fetch("/api/forge", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
             model: "claude-sonnet-4-20250514",
             max_tokens: maxTokens,
-            system: systemPrompt,
-            messages,
+            system: effectiveSystemPrompt,
+            messages: moderatedMessages,
         }),
     });
     if (!res.ok) {
@@ -29,6 +37,12 @@ export async function streamForgeAPI(
     onChunk: (text: string) => void,
     maxTokens = 1000
 ): Promise<string> {
+    const moderatedMessages = messages.map((message) => (
+        message.role === "user"
+            ? { ...message, content: moderateMessageContent(message.content) }
+            : message
+    ));
+    const effectiveSystemPrompt = applyLanguageGuidance(systemPrompt, messages);
     const res = await fetch("/api/forge", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -36,8 +50,8 @@ export async function streamForgeAPI(
             model: "claude-sonnet-4-20250514",
             max_tokens: maxTokens,
             stream: true,
-            system: systemPrompt,
-            messages,
+            system: effectiveSystemPrompt,
+            messages: moderatedMessages,
         }),
     });
     if (!res.ok) {

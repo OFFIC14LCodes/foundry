@@ -3,6 +3,7 @@ import { Icons } from "../icons";
 import { useSpeech } from "../hooks/useSpeech";
 import { useConversationalTts } from "../hooks/useConversationalTts";
 import { streamForgeAPI, callForgeAPI } from "../lib/forgeApi";
+import { getLanguageWarning, moderateUserText } from "../lib/languageModeration";
 import { buildPitchSystemPrompt, buildFeedbackSystemPrompt } from "../constants/pitchPrompt";
 import TypingDots from "./TypingDots";
 import ForgeAvatar from "./ForgeAvatar";
@@ -163,6 +164,8 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
     const [feedback, setFeedback] = useState<string | null>(null);
     const [forgeVoiceOn, setForgeVoiceOn] = useState(true);
     const [sessionTime, setSessionTime] = useState(0);
+    const [languageWarning, setLanguageWarning] = useState<string | null>(null);
+    const [confirmedProfanityInput, setConfirmedProfanityInput] = useState<string | null>(null);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -231,10 +234,21 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
     // ── Send a user message and stream Forge's reply ──
     const sendMessage = async (text: string) => {
         if (!text.trim() || loading) return;
+        const cleanText = text.trim();
+        const warning = getLanguageWarning(cleanText);
+        if (warning && confirmedProfanityInput !== cleanText) {
+            setLanguageWarning(warning);
+            setConfirmedProfanityInput(cleanText);
+            return;
+        }
+
+        setLanguageWarning(null);
+        setConfirmedProfanityInput(null);
         setInput("");
         cancelSpeech();
 
-        const userMsg: PitchMessage = { role: "user", text: text.trim() };
+        const { censoredText } = moderateUserText(cleanText);
+        const userMsg: PitchMessage = { role: "user", text: censoredText };
         const forgeId = Date.now();
         const forgeMsg: PitchMessage = { role: "forge", text: "", id: forgeId };
 
@@ -253,7 +267,7 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
                 role: m.role === "user" ? "user" : "assistant",
                 content: m.text,
             })),
-            { role: "user", content: text.trim() },
+            { role: "user", content: cleanText },
         ];
 
         const systemPrompt = buildPitchSystemPrompt(profile, scenario);
@@ -665,7 +679,17 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
                             <textarea
                                 ref={inputRef}
                                 value={input}
-                                onChange={e => setInput(e.target.value)}
+                                onChange={e => {
+                                    const nextValue = e.target.value;
+                                    setInput(nextValue);
+                                    if (!nextValue.trim()) {
+                                        setLanguageWarning(null);
+                                        setConfirmedProfanityInput(null);
+                                    } else if (confirmedProfanityInput && nextValue.trim() !== confirmedProfanityInput) {
+                                        setLanguageWarning(null);
+                                        setConfirmedProfanityInput(null);
+                                    }
+                                }}
                                 placeholder={listening ? "Listening..." : "Your transcript will appear here. Edit it before sending."}
                                 rows={2}
                                 disabled={loading}
@@ -688,8 +712,8 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
                         </div>
 
                         <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                            <div style={{ fontSize: 11, color: "#555", textAlign: "left", flex: 1, minWidth: 180 }}>
-                                {listening
+                            <div style={{ fontSize: 11, color: languageWarning ? "#D3A48D" : "#555", textAlign: "left", flex: 1, minWidth: 180, lineHeight: 1.5 }}>
+                                {languageWarning ? languageWarning : listening
                                     ? "Recording... tap the mic again to stop and review the transcript."
                                     : speaking
                                         ? "Forge is speaking..."
@@ -744,7 +768,17 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
                         <textarea
                             ref={inputRef}
                             value={input}
-                            onChange={e => setInput(e.target.value)}
+                            onChange={e => {
+                                const nextValue = e.target.value;
+                                setInput(nextValue);
+                                if (!nextValue.trim()) {
+                                    setLanguageWarning(null);
+                                    setConfirmedProfanityInput(null);
+                                } else if (confirmedProfanityInput && nextValue.trim() !== confirmedProfanityInput) {
+                                    setLanguageWarning(null);
+                                    setConfirmedProfanityInput(null);
+                                }
+                            }}
                             onKeyDown={e => {
                                 if (e.key === "Enter" && !e.shiftKey) {
                                     e.preventDefault();
@@ -788,6 +822,11 @@ export default function PitchPracticeScreen({ profile, onBack }: { profile: any;
                             →
                         </button>
                     </div>
+                    {languageWarning && (
+                        <div style={{ fontSize: 11, color: "#D3A48D", textAlign: "center", lineHeight: 1.5 }}>
+                            {languageWarning}
+                        </div>
+                    )}
                     <div style={{ fontSize: 10, color: "#2b2b2b", textAlign: "center" }}>
                         Forge is an AI. Always verify important information before acting on it.
                     </div>

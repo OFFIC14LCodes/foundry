@@ -29,6 +29,7 @@ import { applyGlossaryHighlights } from "./lib/applyGlossaryHighlights";
 import { cleanAIText } from "./lib/cleanAIText";
 import { buildMessageContent, type AttachedFile } from "./lib/fileAttach";
 import { getArchiveDisplaySummary, getArchiveDisplayTitle, getArchivePreviewText, parseArchiveSummaryPayload } from "./lib/archiveSummary";
+import { getLanguageWarning, moderateUserText } from "./lib/languageModeration";
 import {
   applyFoundryBookCitations,
   buildFoundryBookContext,
@@ -617,6 +618,8 @@ function ForgeScreen({
   const [input, setInput] = useState("");
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
   const [loading, setLoading] = useState(false);
+  const [languageWarning, setLanguageWarning] = useState<string | null>(null);
+  const [confirmedProfanityInput, setConfirmedProfanityInput] = useState<string | null>(null);
   const [hubOpen, setHubOpen] = useState(false);
   const [advanceReady, setAdvanceReady] = useState(false);
   const [showStageSelector, setShowStageSelector] = useState(false);
@@ -1294,6 +1297,16 @@ Where do you want to start?`;
     onMeaningfulActivity?.();
 
     const text = input.trim();
+    const warning = getLanguageWarning(text);
+    if (warning && confirmedProfanityInput !== text) {
+      setLanguageWarning(warning);
+      setConfirmedProfanityInput(text);
+      return;
+    }
+
+    setLanguageWarning(null);
+    setConfirmedProfanityInput(null);
+    const { censoredText } = moderateUserText(text);
     const currentFiles = [...attachedFiles];
     setInput("");
     setAttachedFiles([]);
@@ -1302,7 +1315,7 @@ Where do you want to start?`;
     const attachmentLabel = currentFiles.length > 0
       ? `[Attached: ${currentFiles.map(f => f.name).join(", ")}]`
       : "";
-    const displayText = [attachmentLabel, text].filter(Boolean).join("\n");
+    const displayText = [attachmentLabel, censoredText].filter(Boolean).join("\n");
 
     const timestamp = new Date().toISOString();
     const userMsg = { role: "user", text: displayText, id: `user-${Date.now()}`, createdAt: timestamp };
@@ -2237,7 +2250,17 @@ Where do you want to start?`;
             </div>
             <ChatInput
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                const nextValue = e.target.value;
+                setInput(nextValue);
+                if (!nextValue.trim()) {
+                  setLanguageWarning(null);
+                  setConfirmedProfanityInput(null);
+                } else if (confirmedProfanityInput && nextValue.trim() !== confirmedProfanityInput) {
+                  setLanguageWarning(null);
+                  setConfirmedProfanityInput(null);
+                }
+              }}
               onSend={send}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
@@ -2249,6 +2272,7 @@ Where do you want to start?`;
               placeholder={`Talk to Forge about Stage ${activeStage}...`}
               attachedFiles={attachedFiles}
               onFilesChange={setAttachedFiles}
+              notice={languageWarning}
             />
             <div style={{ fontSize: 10, color: "#2b2b2b", textAlign: "center", marginTop: 4 }}>
               Forge is an AI. Always verify important information before acting on it.
