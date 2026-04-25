@@ -85,6 +85,8 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
     const [saveArchiveModalOpen, setSaveArchiveModalOpen] = useState(false);
     const [archiveTitleInput, setArchiveTitleInput] = useState("");
     const [savingArchive, setSavingArchive] = useState(false);
+    const [activeArchive, setActiveArchive] = useState<any | null>(initialArchive);
+    const [activeAcademyEntry, setActiveAcademyEntry] = useState<AcademyTopicLaunch | null>(academyEntry);
     const scrollRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -101,14 +103,23 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
     }, []);
 
     useEffect(() => {
-        if (!academyEntry || initialArchive || academyBootstrappedRef.current) return;
+        setActiveArchive(initialArchive);
+    }, [initialArchive]);
+
+    useEffect(() => {
+        setActiveAcademyEntry(academyEntry);
+        academyBootstrappedRef.current = false;
+    }, [academyEntry]);
+
+    useEffect(() => {
+        if (!activeAcademyEntry || activeArchive || academyBootstrappedRef.current) return;
         academyBootstrappedRef.current = true;
         void sendAcademyKickoff();
-    }, [academyEntry?.id, initialArchive?.id]);
+    }, [activeAcademyEntry?.id, activeArchive?.id]);
 
     const openSaveArchiveModal = () => {
-        const defaultTitle = initialArchive?.title || (academyEntry
-            ? `Academy — ${academyEntry.title}`
+        const defaultTitle = activeArchive?.title || (activeAcademyEntry
+            ? `Academy — ${activeAcademyEntry.title}`
             : `Chat with Forge — ${new Date().toLocaleDateString("en-US", {
             month: "short",
             day: "numeric",
@@ -121,13 +132,13 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
     const handleSaveArchive = async () => {
         if (savingArchive || messages.length === 0) return;
 
-        const title = archiveTitleInput.trim() || academyEntry?.title || "Chat with Forge";
+        const title = archiveTitleInput.trim() || activeAcademyEntry?.title || "Chat with Forge";
         const transcript = messages
             .map((msg) => `${msg.role === "forge" ? "Forge" : profile.name}: ${msg.text}`)
             .join("\n");
 
-        const prompt = initialArchive?.id
-            ? `Update this archived Chat with Forge conversation for ${profile.name} in clear markdown.\n\nExisting archive summary:\n${initialArchive.summary}\n\nNew continuation transcript:\n${transcript}\n\nReturn valid JSON with exactly these keys:\n"title": keep exactly this title: "${title}"\n"summary": a refreshed markdown summary with these sections: Main Questions, Key Takeaways, Useful Concepts, Next Moves. Blend the prior archive context with the new continuation so this replaces the old summary cleanly.`
+        const prompt = activeArchive?.id
+            ? `Update this archived Chat with Forge conversation for ${profile.name} in clear markdown.\n\nExisting archive summary:\n${activeArchive.summary}\n\nNew continuation transcript:\n${transcript}\n\nReturn valid JSON with exactly these keys:\n"title": keep exactly this title: "${title}"\n"summary": a refreshed markdown summary with these sections: Main Questions, Key Takeaways, Useful Concepts, Next Moves. Blend the prior archive context with the new continuation so this replaces the old summary cleanly.`
             : `Summarize this Chat with Forge conversation for ${profile.name} in clear markdown.\n\nReturn valid JSON with exactly these keys:\n"title": keep exactly this title: "${title}"\n"summary": a detailed markdown summary with these sections: Main Questions, Key Takeaways, Useful Concepts, Next Moves.\n\nConversation:\n${transcript}`;
 
         setSavingArchive(true);
@@ -137,16 +148,16 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
                 "You write clean business conversation summaries. Return only valid JSON."
             );
             const parsed = parseArchiveSummaryPayload(raw, title);
-            const saved = initialArchive?.id
+            const saved = activeArchive?.id
                 ? await updateConversationSummary(
                     userId,
-                    initialArchive.id,
+                    activeArchive.id,
                     {
-                        stageId: Number(initialArchive.stageId) || Number(profile.currentStage) || 1,
+                        stageId: Number(activeArchive.stageId) || Number(profile.currentStage) || 1,
                         summaryDate: new Date().toISOString().slice(0, 10),
                         title,
                         summary: parsed.summary,
-                        messageCount: (initialArchive.messageCount || 0) + messages.length,
+                        messageCount: (activeArchive.messageCount || 0) + messages.length,
                     }
                 )
                 : await saveConversationSummary(
@@ -161,6 +172,14 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
             if (!saved) return;
             onArchiveSaved?.(saved);
             setSaveArchiveModalOpen(false);
+            setMessages([]);
+            setInput("");
+            setAttachedFiles([]);
+            setLanguageWarning(null);
+            setConfirmedProfanityInput(null);
+            setActiveArchive(null);
+            setActiveAcademyEntry(null);
+            academyBootstrappedRef.current = false;
         } catch (error) {
             console.error("chat room archive save error:", error);
         } finally {
@@ -203,9 +222,9 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
             const ctx = buildChatRoomContext(
                 profile,
                 [...messages.slice(-6).map((message) => message.text), text],
-                initialArchive?.summary || null,
-                initialArchive?.title || null,
-                academyEntry
+                activeArchive?.summary || null,
+                activeArchive?.title || null,
+                activeAcademyEntry
             );
             const apiMsgs = [
                 ...history.slice(0, -1).map(m => ({
@@ -236,18 +255,18 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
     };
 
     const sendAcademyKickoff = async () => {
-        if (!academyEntry || loading) return;
+        if (!activeAcademyEntry || loading) return;
 
-        const starterPrompt = academyEntry.starterPrompt?.trim()
-            || `Open a guided Forge Academy lesson on "${academyEntry.title}".
+        const starterPrompt = activeAcademyEntry.starterPrompt?.trim()
+            || `Open a guided Forge Academy lesson on "${activeAcademyEntry.title}".
 
 Teach it like a serious founder educator, not a generic assistant.
-Learning goal: ${academyEntry.learningGoal || "Help the founder get practical clarity."}
-Who this is for: ${academyEntry.whoThisIsFor || "A first-time founder building judgment."}
-When this matters: ${academyEntry.whenThisMatters || "Before avoidable mistakes compound."}
-Common mistake: ${academyEntry.commonMistake || "Founders often miss the real issue underneath the surface topic."}
-Why this matters: ${academyEntry.whyThisMatters || "The founder needs stronger intuition here before they are under pressure."}
-What to watch for: ${academyEntry.whatToWatchFor || "Surface the hidden traps and weak assumptions."}
+Learning goal: ${activeAcademyEntry.learningGoal || "Help the founder get practical clarity."}
+Who this is for: ${activeAcademyEntry.whoThisIsFor || "A first-time founder building judgment."}
+When this matters: ${activeAcademyEntry.whenThisMatters || "Before avoidable mistakes compound."}
+Common mistake: ${activeAcademyEntry.commonMistake || "Founders often miss the real issue underneath the surface topic."}
+Why this matters: ${activeAcademyEntry.whyThisMatters || "The founder needs stronger intuition here before they are under pressure."}
+What to watch for: ${activeAcademyEntry.whatToWatchFor || "Surface the hidden traps and weak assumptions."}
 
 Start with a confident first lesson message that frames the topic, explains the stakes, names what founders usually get wrong, and gives one practical lens the founder can use right away.`;
 
@@ -261,7 +280,7 @@ Start with a confident first lesson message that frames the topic, explains the 
                 [starterPrompt],
                 null,
                 null,
-                academyEntry
+                activeAcademyEntry
             );
 
             await streamForgeAPI(
@@ -294,8 +313,8 @@ Start with a confident first lesson message that frames the topic, explains the 
     };
 
     const hasMessages = messages.length > 0;
-    const chatTitle = academyEntry ? `Forge Academy · ${academyEntry.title}` : "Chat with Forge";
-    const chatSubtitle = academyEntry ? "Guided Academy conversation" : "Ask anything · learn freely";
+    const chatTitle = activeAcademyEntry ? `Forge Academy · ${activeAcademyEntry.title}` : "Chat with Forge";
+    const chatSubtitle = activeAcademyEntry ? "Guided Academy conversation" : "Ask anything · learn freely";
 
     return (
         <div style={{
@@ -403,7 +422,7 @@ Start with a confident first lesson message that frames the topic, explains the 
                     boxSizing: "border-box",
                 }}
             >
-                {initialArchive && (
+                {activeArchive && (
                     <div style={{
                         background: "rgba(76,175,138,0.05)",
                         border: "1px solid rgba(76,175,138,0.16)",
@@ -414,10 +433,10 @@ Start with a confident first lesson message that frames the topic, explains the 
                             Continuing Archive
                         </div>
                         <div style={{ fontSize: 18, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 8 }}>
-                            {initialArchive.title}
+                            {activeArchive.title}
                         </div>
                         <div style={{ fontSize: 12, color: "#666", lineHeight: 1.7 }}>
-                            {getArchivePreviewText(initialArchive.summary).slice(0, 220)}...
+                            {getArchivePreviewText(activeArchive.summary).slice(0, 220)}...
                         </div>
                         <div style={{ fontSize: 11, color: "#888", lineHeight: 1.6, marginTop: 10 }}>
                             Ask follow-up questions normally. Saving will update this same archive card instead of creating a new one.
@@ -451,17 +470,17 @@ Start with a confident first lesson message that frames the topic, explains the 
                         </div>
                         <div>
                             <div style={{ fontSize: 20, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 8 }}>
-                                {academyEntry ? academyEntry.title : "What's on your mind?"}
+                                {activeAcademyEntry ? activeAcademyEntry.title : "What's on your mind?"}
                             </div>
                             <div style={{ fontSize: 13, color: "#555", lineHeight: 1.7, maxWidth: 380 }}>
-                                {academyEntry
-                                    ? academyEntry.learningGoal || "Forge is opening this Academy topic with context already loaded. Keep going by asking follow-up questions, pressure-testing the ideas, or applying them directly to your business."
+                                {activeAcademyEntry
+                                    ? activeAcademyEntry.learningGoal || "Forge is opening this Academy topic with context already loaded. Keep going by asking follow-up questions, pressure-testing the ideas, or applying them directly to your business."
                                     : "This is your open space to talk through anything — business questions, ideas, concepts you're learning, or things you're unsure about. No agenda. Just a conversation."}
                             </div>
                         </div>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", marginTop: 8 }}>
                             {(
-                                academyEntry
+                                activeAcademyEntry
                                     ? [
                                         "Give me the high-level founder version first",
                                         "What do founders usually get wrong here?",
@@ -704,12 +723,12 @@ Start with a confident first lesson message that frames the topic, explains the 
                 <div style={{ position: "fixed", inset: 0, zIndex: 120, background: "rgba(4,4,5,0.84)", backdropFilter: "blur(12px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }}>
                     <div style={{ width: "min(520px, 100%)", background: "#0E0E10", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, padding: "20px 18px 18px" }}>
                         <div style={{ fontSize: 22, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 6 }}>
-                            {initialArchive?.id ? "Update Chat Archive" : "Save Chat with Forge"}
+                            {activeArchive?.id ? "Update Chat Archive" : "Save Chat with Forge"}
                         </div>
                         <div style={{ fontSize: 12, color: "#666", lineHeight: 1.6, marginBottom: 14 }}>
-                            {initialArchive?.id
+                            {activeArchive?.id
                                 ? "Update this existing archive card with the new continuation."
-                                : "Save this conversation into your archive so you can revisit the ideas later."}
+                                : "Save this conversation into your archive and clear the current chat."}
                         </div>
                         <input
                             value={archiveTitleInput}
@@ -756,7 +775,7 @@ Start with a confident first lesson message that frames the topic, explains the 
                                     fontWeight: 600,
                                 }}
                             >
-                                {savingArchive ? "Saving..." : initialArchive?.id ? "Update Archive" : "Save Archive"}
+                                {savingArchive ? "Saving..." : activeArchive?.id ? "Update Archive" : "Save Archive"}
                             </button>
                         </div>
                     </div>

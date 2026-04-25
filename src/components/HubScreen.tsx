@@ -361,7 +361,7 @@ export default function HubScreen({
                     top: 0,
                     left: 0,
                     bottom: 0,
-                    width: 280,
+                    width: "var(--foundry-hub-sidebar-width)",
                     zIndex: 50,
                     background: "#0C0C0E",
                     borderRight: "1px solid rgba(255,255,255,0.08)",
@@ -374,7 +374,7 @@ export default function HubScreen({
             >
                 <div
                     style={{
-                        padding: "max(20px, calc(14px + env(safe-area-inset-top))) 16px 16px",
+                        padding: "var(--foundry-hub-sidebar-header-padding)",
                         borderBottom: "1px solid rgba(255,255,255,0.06)",
                     }}
                 >
@@ -390,7 +390,7 @@ export default function HubScreen({
                             <Logo variant="flame" style={{ width: 18, height: 18, objectFit: "contain" }} />
                             <span
                                 style={{
-                                    fontSize: 15,
+                                    fontSize: "var(--foundry-hub-sidebar-title-font)",
                                     fontFamily: "'Playfair Display', Georgia, serif",
                                     fontWeight: 700,
                                     color: "#F0EDE8",
@@ -405,9 +405,9 @@ export default function HubScreen({
                                 background: "rgba(255,255,255,0.05)",
                                 border: "none",
                                 borderRadius: 6,
-                                padding: "5px 10px",
+                                padding: "var(--foundry-hub-sidebar-close-padding)",
                                 color: "#555",
-                                fontSize: 12,
+                                fontSize: "var(--foundry-hub-sidebar-close-font)",
                                 cursor: "pointer",
                             }}
                         >
@@ -417,7 +417,7 @@ export default function HubScreen({
 
                     <div
                         style={{
-                            fontSize: 13,
+                            fontSize: "var(--foundry-hub-sidebar-name-font)",
                             fontFamily: "'Lora', Georgia, serif",
                             color: "#C8C4BE",
                             fontWeight: 500,
@@ -427,7 +427,7 @@ export default function HubScreen({
                     </div>
                     <div
                         style={{
-                            fontSize: 11,
+                            fontSize: "var(--foundry-hub-sidebar-summary-font)",
                             color: "#555",
                             marginTop: 2,
                             fontStyle: "italic",
@@ -441,13 +441,13 @@ export default function HubScreen({
                     {accessSummary && (
                         <div style={{ padding: "0 8px 14px" }}>
                             <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "12px 12px 10px" }}>
-                                <div style={{ fontSize: 9, color: "#444", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>
+                                <div style={{ fontSize: "var(--foundry-hub-sidebar-section-label-font)", color: "#444", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>
                                     Access
                                 </div>
-                                <div style={{ fontSize: 13, color: "#F0EDE8", fontWeight: 600, marginBottom: 4 }}>
+                                <div style={{ fontSize: "var(--foundry-hub-sidebar-card-title-font)", color: "#F0EDE8", fontWeight: 600, marginBottom: 4 }}>
                                     {accessSummary.planName} · {accessSummary.statusLabel}
                                 </div>
-                                <div style={{ fontSize: 10, color: "#666", lineHeight: 1.6 }}>
+                                <div style={{ fontSize: "var(--foundry-hub-sidebar-card-copy-font)", color: "#666", lineHeight: 1.6 }}>
                                     {accessSummary.note}
                                 </div>
                                 {!accessSummary.canAccessPaidStages && (
@@ -456,7 +456,7 @@ export default function HubScreen({
                                             setSidebarOpen(false);
                                             onOpenUpgrade?.();
                                         }}
-                                        style={{ marginTop: 10, width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid rgba(232,98,42,0.22)", background: "rgba(232,98,42,0.1)", color: "#E8622A", fontSize: 11, cursor: "pointer", fontWeight: 600 }}
+                                        style={{ marginTop: 10, width: "100%", padding: "var(--foundry-hub-sidebar-card-button-padding)", borderRadius: 8, border: "1px solid rgba(232,98,42,0.22)", background: "rgba(232,98,42,0.1)", color: "#E8622A", fontSize: "var(--foundry-hub-sidebar-card-button-font)", cursor: "pointer", fontWeight: 600 }}
                                     >
                                         Unlock Stage 2
                                     </button>
@@ -467,7 +467,7 @@ export default function HubScreen({
 
                     <div
                         style={{
-                            fontSize: 9,
+                            fontSize: "var(--foundry-hub-sidebar-section-label-font)",
                             color: "#444",
                             letterSpacing: "0.12em",
                             textTransform: "uppercase",
@@ -488,8 +488,8 @@ export default function HubScreen({
                                     width: "100%",
                                     display: "flex",
                                     alignItems: "center",
-                                    gap: 12,
-                                    padding: "10px 10px",
+                                    gap: "var(--foundry-hub-sidebar-nav-gap)",
+                                    padding: "var(--foundry-hub-sidebar-nav-padding)",
                                     borderRadius: 10,
                                     border: "none",
                                     background: "transparent",
@@ -510,8 +510,8 @@ export default function HubScreen({
                             >
                                 <div
                                     style={{
-                                        width: 36,
-                                        height: 36,
+                                        width: "var(--foundry-hub-sidebar-nav-icon-box)",
+                                        height: "var(--foundry-hub-sidebar-nav-icon-box)",
                                         borderRadius: 9,
                                         background: item.available
                                             ? "rgba(232,98,42,0.12)"
@@ -526,13 +526,13 @@ export default function HubScreen({
                                         color: item.available ? "#F0EDE8" : "#888",
                                     }}
                                 >
-                                    <Icon size={16} />
+                                    <Icon size={"var(--foundry-hub-sidebar-nav-icon-size)"} />
                                 </div>
 
                                 <div style={{ flex: 1 }}>
                                     <div
                                         style={{
-                                            fontSize: 13,
+                                            fontSize: "var(--foundry-hub-sidebar-nav-title-font)",
                                             color: item.available ? "#F0EDE8" : "#666",
                                             fontWeight: 500,
                                             lineHeight: 1.2,
@@ -541,12 +541,12 @@ export default function HubScreen({
                                     >
                                         {item.label}
                                     </div>
-                                    <div style={{ fontSize: 10, color: "#444" }}>
+                                    <div style={{ fontSize: "var(--foundry-hub-sidebar-nav-sub-font)", color: "#444" }}>
                                         {item.available ? item.sub : "Coming soon"}
                                     </div>
                                 </div>
 
-                                {item.available && <span style={{ fontSize: 10, color: "#555" }}>→</span>}
+                                {item.available && <span style={{ fontSize: "var(--foundry-hub-sidebar-nav-sub-font)", color: "#555" }}>→</span>}
                             </button>
                         );
                     })}
@@ -556,12 +556,12 @@ export default function HubScreen({
                             onClick={() => setShowLogoutModal(true)}
                             style={{
                                 width: "100%",
-                                padding: "9px",
+                                padding: "var(--foundry-hub-sidebar-footer-button-padding)",
                                 background: "rgba(255,255,255,0.03)",
                                 border: "1px solid rgba(255,255,255,0.08)",
                                 borderRadius: 8,
                                 color: "#888",
-                                fontSize: 11,
+                                fontSize: "var(--foundry-hub-sidebar-footer-button-font)",
                                 cursor: "pointer",
                                 marginBottom: 8,
                             }}
@@ -572,12 +572,12 @@ export default function HubScreen({
                             onClick={() => setShowResetModal(true)}
                             style={{
                                 width: "100%",
-                                padding: "9px",
+                                padding: "var(--foundry-hub-sidebar-footer-button-padding)",
                                 background: "transparent",
                                 border: "1px solid rgba(255,255,255,0.06)",
                                 borderRadius: 8,
                                 color: "#444",
-                                fontSize: 11,
+                                fontSize: "var(--foundry-hub-sidebar-footer-button-font)",
                                 cursor: "pointer",
                             }}
                         >
@@ -606,9 +606,9 @@ export default function HubScreen({
                             background: "rgba(255,255,255,0.04)",
                             border: "1px solid rgba(255,255,255,0.08)",
                             borderRadius: 8,
-                            padding: "6px 10px",
+                            padding: "var(--foundry-hub-header-menu-padding)",
                             color: "#888",
-                            fontSize: 16,
+                            fontSize: "var(--foundry-hub-header-menu-font)",
                             cursor: "pointer",
                             display: "flex",
                             alignItems: "center",
@@ -621,7 +621,7 @@ export default function HubScreen({
                     <div>
                         <div
                             style={{
-                                fontSize: 16,
+                                fontSize: "var(--foundry-hub-header-title-font)",
                                 fontFamily: "'Playfair Display', Georgia, serif",
                                 fontWeight: 700,
                                 color: "#F0EDE8",
@@ -629,7 +629,7 @@ export default function HubScreen({
                         >
                             Foundry
                         </div>
-                        <div style={{ fontSize: 10, color: "#555" }}>Hub · {profile.name}</div>
+                        <div style={{ fontSize: "var(--foundry-hub-header-meta-font)", color: "#555" }}>Hub · {profile.name}</div>
                     </div>
                 </div>
 
@@ -639,9 +639,9 @@ export default function HubScreen({
                         background: "linear-gradient(135deg, #E8622A, #c9521e)",
                         border: "none",
                         borderRadius: 10,
-                        padding: "8px 16px",
+                        padding: "var(--foundry-hub-header-cta-padding)",
                         color: "#fff",
-                        fontSize: 12,
+                        fontSize: "var(--foundry-hub-header-cta-font)",
                         fontWeight: 600,
                         cursor: "pointer",
                         display: "flex",
@@ -650,7 +650,7 @@ export default function HubScreen({
                         fontFamily: "'Lora', Georgia, serif",
                     }}
                 >
-                    <Icons.forge.chat size={14} /> Talk to Forge
+                    <Icons.forge.chat size={"var(--foundry-hub-header-cta-icon-size)"} /> Talk to Forge
                 </button>
             </div>
 
@@ -839,20 +839,20 @@ export default function HubScreen({
 
                     <div className="hub-health-grid">
                         <BusinessHealthDonut health={businessHealth} />
-                        <div style={{ display: "grid", gap: 10 }}>
+                        <div style={{ display: "grid", gap: 8 }}>
                             {businessHealth.segments.map((segment) => (
-                                <div key={segment.key} style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: "10px 12px" }}>
-                                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 7 }}>
-                                        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-                                            <span style={{ width: 9, height: 9, borderRadius: 999, background: segment.color, flexShrink: 0 }} />
-                                            <span style={{ fontSize: 12, color: "#F0EDE8", fontWeight: 600 }}>{segment.label}</span>
+                                <div key={segment.key} style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: "8px 9px" }}>
+                                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 9, marginBottom: 5 }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+                                            <span style={{ width: 7, height: 7, borderRadius: 999, background: segment.color, flexShrink: 0 }} />
+                                            <span style={{ fontSize: 11, color: "#F0EDE8", fontWeight: 600 }}>{segment.label}</span>
                                         </div>
-                                        <span style={{ fontSize: 12, color: segment.color, fontWeight: 700 }}>{segment.value}</span>
+                                        <span style={{ fontSize: 11, color: segment.color, fontWeight: 700 }}>{segment.value}</span>
                                     </div>
-                                    <div style={{ height: 5, background: "rgba(255,255,255,0.05)", borderRadius: 999, overflow: "hidden", marginBottom: 8 }}>
+                                    <div style={{ height: 4, background: "rgba(255,255,255,0.05)", borderRadius: 999, overflow: "hidden", marginBottom: 6 }}>
                                         <div style={{ width: `${segment.value}%`, height: "100%", background: segment.color, borderRadius: 999, transition: "width 0.6s ease" }} />
                                     </div>
-                                    <div style={{ fontSize: 11, color: "#787169", lineHeight: 1.6 }}>
+                                    <div style={{ fontSize: 10, color: "#787169", lineHeight: 1.55 }}>
                                         {segment.note}
                                     </div>
                                 </div>
@@ -1270,11 +1270,11 @@ export default function HubScreen({
 }
 
 function BusinessHealthDonut({ health }) {
-    const size = 212;
+    const size = 228;
     const cx = size / 2;
     const cy = size / 2;
-    const maxR = 70;
-    const labelR = 90;
+    const maxR = 76;
+    const labelR = 98;
     const n = health.segments.length;
     const rings = [0.2, 0.4, 0.6, 0.8, 1.0];
 
@@ -1337,8 +1337,8 @@ function BusinessHealthDonut({ health }) {
                     const p = dataPts[i];
                     return (
                         <g key={seg.key}>
-                            <circle cx={p.x} cy={p.y} r={6.5} fill={seg.color} opacity={0.16} />
-                            <circle cx={p.x} cy={p.y} r={4} fill={seg.color} />
+                            <circle cx={p.x} cy={p.y} r={7} fill={seg.color} opacity={0.16} />
+                            <circle cx={p.x} cy={p.y} r={4.25} fill={seg.color} />
                         </g>
                     );
                 })}
@@ -1349,7 +1349,7 @@ function BusinessHealthDonut({ health }) {
                     return (
                         <text key={seg.key} x={lp.x} y={lp.y}
                             textAnchor={anchor(i)} dominantBaseline="middle"
-                            fill={seg.color} fontSize={8.5}
+                            fill={seg.color} fontSize={9}
                             fontFamily="'DM Sans', sans-serif" fontWeight="600"
                             letterSpacing="0.07em" opacity={0.85}
                         >
@@ -1360,13 +1360,13 @@ function BusinessHealthDonut({ health }) {
 
                 {/* Center score */}
                 <text x={cx} y={cy - 8} textAnchor="middle" dominantBaseline="auto"
-                    fill="#F0EDE8" fontSize={26}
+                    fill="#F0EDE8" fontSize={28}
                     fontFamily="'Playfair Display', Georgia, serif" fontWeight="700"
                 >
                     {health.overallScore}
                 </text>
                 <text x={cx} y={cy + 10} textAnchor="middle" dominantBaseline="hanging"
-                    fill={scoreColor} fontSize={7.5}
+                    fill={scoreColor} fontSize={8}
                     fontFamily="'DM Sans', sans-serif" fontWeight="600" letterSpacing="0.14em"
                 >
                     {health.statusLabel.toUpperCase()}

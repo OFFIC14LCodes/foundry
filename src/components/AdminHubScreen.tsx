@@ -239,21 +239,21 @@ export default function AdminHubScreen({
                         background: "rgba(255,255,255,0.05)",
                         border: "1px solid rgba(255,255,255,0.1)",
                         borderRadius: 8,
-                        padding: "7px 12px",
+                        padding: "var(--foundry-app-header-button-padding)",
                         color: "#C8C4BE",
-                        fontSize: 12,
+                        fontSize: "var(--foundry-app-header-button-font)",
                         cursor: "pointer",
                     }}
                 >
                     ←
                 </button>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <Icons.sidebar.admin size={16} />
-                    <span style={{ fontSize: 15, fontWeight: 600, color: "#F0EDE8" }}>Admin Hub</span>
+                    <Icons.sidebar.admin size={"var(--foundry-app-header-icon-size)"} />
+                    <span style={{ fontSize: "var(--foundry-app-header-title-font)", fontWeight: 600, color: "#F0EDE8" }}>Admin Hub</span>
                 </div>
             </div>
 
-            <div style={{ flex: 1, overflowY: "auto", padding: "20px 16px 32px" }}>
+            <div className="foundry-app-page__content" style={{ flex: 1, overflowY: "auto", padding: "20px 16px 32px" }}>
                 <div style={{ maxWidth: 1080, margin: "0 auto" }}>
                     <div
                         style={{

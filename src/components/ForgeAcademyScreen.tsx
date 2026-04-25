@@ -341,7 +341,7 @@ export default function ForgeAcademyScreen({
                     padding: "28px 26px 24px",
                 }}>
                     <div style={{ display: "grid", gap: 18, maxWidth: 780, margin: "0 auto", textAlign: "center" }}>
-                        <div style={{ fontSize: 11, color: "#E8622A", letterSpacing: "0.16em", textTransform: "uppercase" }}>
+                        <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#E8622A", letterSpacing: "0.16em", textTransform: "uppercase" }}>
                             Forge Academy
                         </div>
                         <div style={{ fontSize: "clamp(30px, 5vw, 48px)", lineHeight: 0.97, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
@@ -440,7 +440,7 @@ export default function ForgeAcademyScreen({
                     const sectionDivider = (
                         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                             <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.07)" }} />
-                            <div style={{ fontSize: 10, color: "#E8622A", letterSpacing: "0.16em", textTransform: "uppercase", fontWeight: 700, whiteSpace: "nowrap" }}>Featured Topics</div>
+                            <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "#E8622A", letterSpacing: "0.16em", textTransform: "uppercase", fontWeight: 700, whiteSpace: "nowrap" }}>Featured Topics</div>
                             <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.07)" }} />
                         </div>
                     );
@@ -597,9 +597,9 @@ export default function ForgeAcademyScreen({
                                 <div style={{ display: "grid", gap: 10 }}>
                                     {nextSeriesUp.map(({ series, nextItem }) => (
                                         <button key={series.id} onClick={() => void openSeries(series)} style={{ background: "linear-gradient(135deg, rgba(99,179,237,0.10), rgba(255,255,255,0.03))", border, borderRadius: 16, padding: 14, textAlign: "left", cursor: "pointer", display: "grid", gap: 6 }}>
-                                            <div style={{ fontSize: 11, color: "#63B3ED", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>{series.title}</div>
+                                            <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#63B3ED", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>{series.title}</div>
                                             <div style={{ fontSize: 14, color: "#F0EDE8", fontWeight: 700 }}>Continue with {getSeriesItemTitle(nextItem!)}</div>
-                                            <div style={{ fontSize: 12, color: "#9D978E", lineHeight: 1.7 }}>Lesson {nextItem?.position} of {series.items.length}</div>
+                                            <div style={{ fontSize: "var(--foundry-academy-md-font)", color: "#9D978E", lineHeight: 1.7 }}>Lesson {nextItem?.position} of {series.items.length}</div>
                                         </button>
                                     ))}
                                 </div>
@@ -705,27 +705,27 @@ function AcademyShell({ children, onBack, onOpenArchive }: { children: ReactNode
     return (
         <div style={{ position: "fixed", inset: 0, zIndex: 110, background: "#080809", color: "#F0EDE8", display: "flex", flexDirection: "column", fontFamily: "'Lora', Georgia, serif" }}>
             <div style={{ padding: "max(14px, calc(10px + env(safe-area-inset-top))) 18px 12px", borderBottom: border, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(16px)", display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
-                <button onClick={onBack} style={{ background: "rgba(255,255,255,0.05)", border, borderRadius: 9, padding: "8px 12px", color: "#C8C4BE", fontSize: 12, cursor: "pointer" }}>
+                <button onClick={onBack} style={{ background: "rgba(255,255,255,0.05)", border, borderRadius: 9, padding: "var(--foundry-app-header-button-padding)", color: "#C8C4BE", fontSize: "var(--foundry-app-header-button-font)", cursor: "pointer" }}>
                     ← Hub
                 </button>
                 <div style={{ width: 34, height: 34, borderRadius: 12, background: "rgba(232,98,42,0.12)", border: "1px solid rgba(232,98,42,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <Logo variant="forge" style={{ width: 18, height: 18, objectFit: "contain" }} />
+                    <Logo variant="forge" style={{ width: "var(--foundry-app-header-icon-size)", height: "var(--foundry-app-header-icon-size)", objectFit: "contain" }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 15, fontWeight: 600 }}>Forge Academy</div>
-                    <div style={{ fontSize: 11, color: "#6E675F" }}>Curated founder education</div>
+                    <div style={{ fontSize: "var(--foundry-app-header-title-font)", fontWeight: 600 }}>Forge Academy</div>
+                    <div style={{ fontSize: "var(--foundry-app-header-meta-font)", color: "#6E675F" }}>Curated founder education</div>
                 </div>
                 {onOpenArchive && (
                     <button
                         onClick={onOpenArchive}
-                        style={{ background: "rgba(232,98,42,0.08)", border: "1px solid rgba(232,98,42,0.2)", borderRadius: 9, padding: "7px 12px", color: "#E8622A", fontSize: 11, fontFamily: "'DM Sans', sans-serif", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}
+                        style={{ background: "rgba(232,98,42,0.08)", border: "1px solid rgba(232,98,42,0.2)", borderRadius: 9, padding: "var(--foundry-app-header-button-padding)", color: "#E8622A", fontSize: "var(--foundry-app-header-button-font)", fontFamily: "'DM Sans', sans-serif", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}
                     >
-                        <Archive size={14} />
+                        <Archive size={"var(--foundry-app-header-icon-size)"} />
                         Archive
                     </button>
                 )}
             </div>
-            <div style={{ flex: 1, overflowY: "auto", padding: "22px 18px 36px" }}>
+            <div className="foundry-app-page__content" style={{ flex: 1, overflowY: "auto", padding: "22px 18px 36px" }}>
                 {children}
             </div>
         </div>
@@ -745,7 +745,7 @@ function SectionHeader({
 }) {
     return (
         <div style={{ textAlign: align }}>
-            {eyebrow && <div style={{ fontSize: 10, color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 10 }}>{eyebrow}</div>}
+            {eyebrow && <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 10 }}>{eyebrow}</div>}
             <div style={{ fontSize: 28, lineHeight: 1.05, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 8 }}>
                 {title}
             </div>
@@ -850,7 +850,8 @@ function ContentCard({
                 borderLeft: isContinueLearning ? "3px solid rgba(99,179,237,0.4)" : undefined,
                 borderRadius: 22,
                 padding: 18,
-                display: "grid",
+                display: "flex",
+                flexDirection: "column",
                 gap: 14,
                 minHeight: 262,
                 boxShadow: emphasis === "mindset"
@@ -858,18 +859,16 @@ function ContentCard({
                     : "0 12px 28px rgba(0,0,0,0.16)",
             }}
         >
-            <div style={{ display: "grid", justifyItems: "center", gap: 10 }}>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center", alignItems: "center" }}>
                     <Pill tone={emphasis === "mindset" ? "warm" : "orange"}>{content.category?.title ?? getAcademyContentTypeLabel(content.contentType)}</Pill>
                     {content.difficultyLabel && <Pill>{content.difficultyLabel}</Pill>}
-                </div>
-                <ProgressPill status={progress?.status} compact={!isContinueLearning} />
+                <ProgressPill status={progress?.status} />
             </div>
 
             <div
                 style={{
                     borderRadius: 18,
-                    minHeight: 110,
+                    height: 96,
                     overflow: "hidden",
                     border: "1px solid rgba(255,255,255,0.06)",
                     background: thumbnailUrl
@@ -880,7 +879,7 @@ function ContentCard({
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    padding: "12px 14px",
+                    padding: "12px 18px",
                 }}
             >
                 <div style={{ fontSize: 18, lineHeight: 1.12, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", textShadow: "0 1px 6px rgba(0,0,0,0.5)", textAlign: "center" }}>
@@ -896,29 +895,29 @@ function ContentCard({
 
             <div style={{ display: "grid", gap: 8 }}>
                 {content.whyThisMatters && (
-                    <div style={{ fontSize: 12, color: "#E9C7B8", lineHeight: 1.7, textAlign: "left" }}>
+                    <div style={{ fontSize: "var(--foundry-academy-md-font)", color: "#E9C7B8", lineHeight: 1.7, textAlign: "left" }}>
                         <span style={{ color: "#E8622A", fontWeight: 700 }}>Why this matters:</span> {content.whyThisMatters}
                     </div>
                 )}
                 {content.commonMistake && (
-                    <div style={{ fontSize: 12, color: "#BFB7AE", lineHeight: 1.7, textAlign: "left" }}>
+                    <div style={{ fontSize: "var(--foundry-academy-md-font)", color: "#BFB7AE", lineHeight: 1.7, textAlign: "left" }}>
                         <span style={{ color: "#C8A96E", fontWeight: 700 }}>Common mistake:</span> {content.commonMistake}
                     </div>
                 )}
                 {stageLabels.length > 0 && (
-                    <div style={{ fontSize: 11, color: "#8D857C", lineHeight: 1.6, textAlign: "center" }}>
+                    <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#8D857C", lineHeight: 1.6, textAlign: "center" }}>
                         {stageLabels.join(" · ")}
                     </div>
                 )}
             </div>
 
             <div style={{ display: "grid", justifyItems: "center", gap: 12, marginTop: "auto" }}>
-                <div style={{ fontSize: 11, color: "#6E675F" }}>
+                <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#6E675F" }}>
                     {content.estimatedMinutes ? `${content.estimatedMinutes} min` : "Deep dive"}
                 </div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
-                    <button type="button" onClick={onOpen} style={{ background: "rgba(255,255,255,0.04)", border, borderRadius: 999, padding: "8px 12px", color: "#C8C4BE", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
-                        Step inside
+                    <button type="button" onClick={onOpen} style={{ background: "rgba(255,255,255,0.04)", border, borderRadius: 999, padding: "8px 12px", color: "#C8C4BE", fontSize: "var(--foundry-academy-sm-font)", fontWeight: 700, cursor: "pointer" }}>
+                        Start Learning
                     </button>
                     {canLaunchForgeFromContent(content) && (
                         <button
@@ -931,7 +930,7 @@ function ContentCard({
                                 borderRadius: 999,
                                 padding: "8px 12px",
                                 color: "#E8622A",
-                                fontSize: 11,
+                                fontSize: "var(--foundry-academy-sm-font)",
                                 fontWeight: 700,
                                 cursor: busy ? "default" : "pointer",
                             }}
@@ -996,11 +995,11 @@ function SeriesCard({
                 <div style={{ height: 8, borderRadius: 999, background: "rgba(255,255,255,0.06)", overflow: "hidden", marginBottom: 8 }}>
                     <div style={{ width: `${progress}%`, height: "100%", background: "linear-gradient(90deg, #63B3ED, #E8622A)" }} />
                 </div>
-                <div style={{ fontSize: 11, color: "#7A736B" }}>
+                <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#7A736B" }}>
                     {series.items.length} items · {series.estimatedMinutes ? `${series.estimatedMinutes} min total` : "Structured track"}
                 </div>
                 {nextItem && (
-                    <div style={{ marginTop: 8, fontSize: 12, color: "#C8C4BE", lineHeight: 1.7 }}>
+                    <div style={{ marginTop: 8, fontSize: "var(--foundry-academy-md-font)", color: "#C8C4BE", lineHeight: 1.7 }}>
                         Next lesson: <span style={{ color: "#F0EDE8", fontWeight: 700 }}>{getSeriesItemTitle(nextItem)}</span>
                     </div>
                 )}
@@ -1034,7 +1033,7 @@ function AsideCard({
 
     return (
         <div style={{ background: style.background, border: `1px solid ${style.borderColor}`, borderRadius: 22, padding: 18, display: "grid", gap: 12 }}>
-            <div style={{ fontSize: 10, color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase" }}>{eyebrow}</div>
+            <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase" }}>{eyebrow}</div>
             <div style={{ fontSize: 24, lineHeight: 1.06, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>{title}</div>
             <div style={{ fontSize: 13, color: textMuted, lineHeight: 1.8 }}>{description}</div>
             {children}
@@ -1053,10 +1052,10 @@ function HistoryRow({
 }) {
     return (
         <div style={{ display: "grid", gap: 4, paddingBottom: 10, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-            <div style={{ fontSize: 12, color: "#F0EDE8", fontWeight: 600 }}>
+            <div style={{ fontSize: "var(--foundry-academy-md-font)", color: "#F0EDE8", fontWeight: 600 }}>
                 {content?.title ?? series?.title ?? String(entry.metadata?.itemTitle ?? "Academy")}
             </div>
-            <div style={{ fontSize: 11, color: "#8D857C" }}>
+            <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#8D857C" }}>
                 {getAcademyHistoryLabel(entry.action)} · {new Date(entry.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
             </div>
         </div>
@@ -1066,10 +1065,140 @@ function HistoryRow({
 function MetricRow({ label, value }: { label: string; value: string }) {
     return (
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-            <div style={{ fontSize: 12, color: "#8D857C" }}>{label}</div>
-            <div style={{ fontSize: 12, color: "#F0EDE8", fontWeight: 700 }}>{value}</div>
+            <div style={{ fontSize: "var(--foundry-academy-md-font)", color: "#8D857C" }}>{label}</div>
+            <div style={{ fontSize: "var(--foundry-academy-md-font)", color: "#F0EDE8", fontWeight: 700 }}>{value}</div>
         </div>
     );
+}
+
+type LessonSlide = {
+    eyebrow: string;
+    title: string;
+    body: string;
+    bullets?: string[];
+    note?: string;
+    tone?: "orange" | "blue" | "warm" | "neutral";
+};
+
+function buildLessonSlides(content: AcademyContent) {
+    const stageLabels = getAcademyStageLabels(content.stageIds);
+    const slides: LessonSlide[] = [];
+
+    slides.push({
+        eyebrow: "Lesson overview",
+        title: "What this lesson covers",
+        body: content.shortDescription,
+        bullets: [
+            content.category?.title ?? getAcademyContentTypeLabel(content.contentType),
+            content.difficultyLabel ? `Difficulty: ${content.difficultyLabel}` : null,
+            content.estimatedMinutes ? `${content.estimatedMinutes} minute lesson` : "Guided deep dive",
+            stageLabels.length ? stageLabels.join(" · ") : null,
+        ].filter(Boolean) as string[],
+        note: "Move through the cards first, then take the lesson into Forge for application.",
+        tone: "orange",
+    });
+
+    if (content.learningGoal || content.whoThisIsFor) {
+        slides.push({
+            eyebrow: "What you should learn",
+            title: "The outcome this lesson should create",
+            body: content.learningGoal || "Use this lesson to sharpen how you think, decide, and execute on this topic.",
+            bullets: [
+                content.whoThisIsFor ? `Best for: ${content.whoThisIsFor}` : null,
+                content.whenThisMatters ? `Most useful when: ${content.whenThisMatters}` : null,
+            ].filter(Boolean) as string[],
+            tone: "blue",
+        });
+    }
+
+    if (content.whyThisMatters || content.whenThisMatters) {
+        slides.push({
+            eyebrow: "Strategic context",
+            title: "Why this matters right now",
+            body: content.whyThisMatters || "This topic matters because it compounds into clearer decisions and stronger execution over time.",
+            bullets: [
+                content.whenThisMatters ? `When this shows up: ${content.whenThisMatters}` : null,
+                content.category?.title ? `Discipline: ${content.category.title}` : null,
+            ].filter(Boolean) as string[],
+            tone: "warm",
+        });
+    }
+
+    if (content.whatToWatchFor || content.commonMistake) {
+        slides.push({
+            eyebrow: "Critical pattern",
+            title: "What experienced founders notice here",
+            body: content.whatToWatchFor || "Pay attention to the subtle patterns and assumptions that can distort your judgment on this topic.",
+            bullets: [
+                content.commonMistake ? `Common mistake: ${content.commonMistake}` : null,
+            ].filter(Boolean) as string[],
+            tone: "orange",
+        });
+    }
+
+    const detailSections = splitLessonTextIntoSlides(content.description);
+    detailSections.forEach((section, index) => {
+        slides.push({
+            eyebrow: `Deep dive ${index + 1}`,
+            title: section.title,
+            body: section.body,
+            tone: index % 2 === 0 ? "neutral" : "blue",
+        });
+    });
+
+    if (content.forgeContext || content.starterPrompt || content.tags.length > 0) {
+        slides.push({
+            eyebrow: "Bring it into Forge",
+            title: "Translate the lesson into your company",
+            body: content.forgeContext
+                || "You have the lesson framing. Next, use Forge to pressure-test it against your actual startup, decisions, and constraints.",
+            bullets: [
+                content.starterPrompt ? `Suggested prompt: ${content.starterPrompt}` : null,
+                content.tags.length ? `Topics: ${content.tags.map((tag) => tag.name).join(" · ")}` : null,
+            ].filter(Boolean) as string[],
+            note: "Once you finish this final card, the Forge conversation unlocks below.",
+            tone: "warm",
+        });
+    }
+
+    return slides;
+}
+
+function splitLessonTextIntoSlides(text: string | null | undefined) {
+    const source = (text ?? "").trim();
+    if (!source) return [];
+
+    const normalized = source.replace(/\r\n/g, "\n");
+    const headingMatches = Array.from(normalized.matchAll(/^#{1,6}\s+(.+)$/gm));
+
+    if (headingMatches.length > 0) {
+        return headingMatches
+            .map((match, index) => {
+                const title = match[1].trim();
+                const start = match.index! + match[0].length;
+                const end = headingMatches[index + 1]?.index ?? normalized.length;
+                const body = normalized.slice(start, end).trim();
+                return body ? { title, body } : null;
+            })
+            .filter((section): section is { title: string; body: string } => Boolean(section))
+            .slice(0, 4);
+    }
+
+    const paragraphs = normalized
+        .split(/\n\s*\n/)
+        .map((entry) => entry.trim())
+        .filter(Boolean);
+    if (!paragraphs.length) return [];
+
+    const chunks: { title: string; body: string }[] = [];
+    for (let index = 0; index < paragraphs.length; index += 2) {
+        const body = paragraphs.slice(index, index + 2).join("\n\n");
+        chunks.push({
+            title: `Lesson detail ${chunks.length + 1}`,
+            body,
+        });
+    }
+    return chunks.slice(0, 4);
 }
 
 function ContentDetailModal({
@@ -1087,10 +1216,19 @@ function ContentDetailModal({
     onLaunchForge?: () => void;
     busy: boolean;
 }) {
-    const stageLabels = getAcademyStageLabels(content.stageIds);
     const completed = progress?.status === "completed";
     const embedUrl = buildYoutubeEmbedUrl(content.youtubeVideoId);
     const thumbnailUrl = content.thumbnailUrl || buildYoutubeThumbnailUrl(content.youtubeVideoId);
+    const slides = useMemo(() => buildLessonSlides(content), [content]);
+    const [activeSlideIndex, setActiveSlideIndex] = useState(0);
+
+    useEffect(() => {
+        setActiveSlideIndex(0);
+    }, [content.id]);
+
+    const activeSlide = slides[activeSlideIndex] ?? slides[0];
+    const isLastSlide = activeSlideIndex >= slides.length - 1;
+    const canOpenForge = Boolean(onLaunchForge && isLastSlide);
 
     return (
         <ModalShell onClose={onClose}>
@@ -1106,7 +1244,7 @@ function ContentDetailModal({
                             {content.title}
                         </div>
                         <div style={{ fontSize: 14, color: "#C8C4BE", lineHeight: 1.9 }}>
-                            {content.shortDescription}
+                            Work through the lesson cards first. Forge unlocks after you finish the walkthrough.
                         </div>
                     </div>
                     <button onClick={onClose} style={{ background: "rgba(255,255,255,0.04)", border, borderRadius: 10, padding: "8px 12px", color: "#888", cursor: "pointer" }}>
@@ -1114,81 +1252,116 @@ function ContentDetailModal({
                     </button>
                 </div>
 
-                <div style={{ borderRadius: 20, overflow: "hidden", border }}>
-                    {embedUrl ? (
-                        <div style={{ position: "relative", paddingTop: "56.25%", background: "#050506" }}>
-                            <iframe
-                                src={embedUrl}
-                                title={content.title}
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }}
-                            />
+                <div style={{ display: "grid", gap: 12 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+                        <div style={{ fontSize: "var(--foundry-academy-md-font)", color: "#A8A4A0", fontWeight: 700 }}>
+                            Slide {activeSlideIndex + 1} of {slides.length}
                         </div>
-                    ) : (
-                        <div
-                            style={{
-                                minHeight: 250,
-                                background: thumbnailUrl
-                                    ? `linear-gradient(180deg, rgba(8,8,9,0.16), rgba(8,8,9,0.62)), url(${thumbnailUrl}) center/cover`
-                                    : "linear-gradient(135deg, rgba(232,98,42,0.26), rgba(99,179,237,0.18), rgba(12,12,14,0.9))",
-                                display: "grid",
-                                alignContent: "end",
-                                padding: 20,
-                            }}
-                        >
-                            <div style={{ fontSize: 11, color: "#C8A96E", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 8 }}>
-                                Guided lesson detail
-                            </div>
-                            <div style={{ fontSize: 24, color: "#F0EDE8", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 8 }}>
-                                {content.title}
-                            </div>
-                            <div style={{ fontSize: 13, color: "#D4D0CB", lineHeight: 1.8, maxWidth: 640 }}>
-                                {content.contentType === "video"
-                                    ? "This entry has not been attached to an embeddable YouTube player yet, but the Academy lesson framing is still available below."
-                                    : "This Academy entry is designed to be explored through its lesson framing and guided Forge follow-up, not only through embedded media."}
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                <div style={{ display: "grid", gap: 14, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
-                    <DetailPanel title="Why this matters" body={content.whyThisMatters || "No note added yet."} />
-                    <DetailPanel title="What to watch for" body={content.whatToWatchFor || "No watch-for guidance added yet."} />
-                    <DetailPanel title="Learning goal" body={content.learningGoal || "No explicit learning goal added yet."} />
-                    <DetailPanel title="Who this is for" body={content.whoThisIsFor || "No audience framing added yet."} />
-                    <DetailPanel title="When this matters" body={content.whenThisMatters || "No timing guidance added yet."} />
-                    <DetailPanel title="Common mistake" body={content.commonMistake || "No common mistake note added yet."} />
-                </div>
-
-                {content.description && (
-                    <div style={{ background: surface, border, borderRadius: 18, padding: 16 }}>
-                        <div style={{ fontSize: 11, color: "#C8A96E", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 10 }}>
-                            Lesson Detail
-                        </div>
-                        <div style={{ fontSize: 14, color: "#C8C4BE", lineHeight: 1.9, whiteSpace: "pre-wrap" }}>
-                            {content.description}
+                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                            {slides.map((slide, index) => (
+                                <button
+                                    key={`${slide.eyebrow}-${index}`}
+                                    type="button"
+                                    onClick={() => setActiveSlideIndex(index)}
+                                    style={{
+                                        width: 34,
+                                        height: 8,
+                                        borderRadius: 999,
+                                        border: "none",
+                                        background: index === activeSlideIndex ? "#E8622A" : "rgba(255,255,255,0.10)",
+                                        cursor: "pointer",
+                                    }}
+                                    aria-label={`Go to slide ${index + 1}`}
+                                />
+                            ))}
                         </div>
                     </div>
-                )}
 
-                <div style={{ display: "grid", gap: 10 }}>
-                    {stageLabels.length > 0 && (
-                        <div style={{ fontSize: 12, color: "#8D857C", lineHeight: 1.7 }}>
-                            {stageLabels.join(" · ")}
+                    <div style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02))", border, borderRadius: 24, overflow: "hidden" }}>
+                        {activeSlideIndex === 0 && (
+                            <div style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                                {embedUrl ? (
+                                    <div style={{ position: "relative", paddingTop: "46%", background: "#050506" }}>
+                                        <iframe
+                                            src={embedUrl}
+                                            title={content.title}
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                            allowFullScreen
+                                            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }}
+                                        />
+                                    </div>
+                                ) : (
+                                    <div
+                                        style={{
+                                            minHeight: 220,
+                                            background: thumbnailUrl
+                                                ? `linear-gradient(180deg, rgba(8,8,9,0.18), rgba(8,8,9,0.62)), url(${thumbnailUrl}) center/cover`
+                                                : "linear-gradient(135deg, rgba(232,98,42,0.26), rgba(99,179,237,0.18), rgba(12,12,14,0.9))",
+                                            display: "grid",
+                                            alignContent: "end",
+                                            padding: 20,
+                                        }}
+                                    >
+                                        <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#C8A96E", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 8 }}>
+                                            Guided lesson
+                                        </div>
+                                        <div style={{ fontSize: 13, color: "#D4D0CB", lineHeight: 1.8, maxWidth: 640 }}>
+                                            {content.contentType === "video"
+                                                ? "Use the walkthrough below to frame the lesson before jumping into a Forge conversation."
+                                                : "This lesson is now structured as a guided walkthrough before you take it into Forge."}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        <div style={{ padding: 22, display: "grid", gap: 18 }}>
+                            <div style={{ display: "grid", gap: 12 }}>
+                                <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase" }}>
+                                    {activeSlide.eyebrow}
+                                </div>
+                                <div style={{ fontSize: 30, lineHeight: 1.02, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
+                                    {activeSlide.title}
+                                </div>
+                                <div style={{ fontSize: 15, color: "#C8C4BE", lineHeight: 1.95, whiteSpace: "pre-wrap" }}>
+                                    {activeSlide.body}
+                                </div>
+                            </div>
+
+                            {activeSlide.bullets && activeSlide.bullets.length > 0 && (
+                                <div style={{ display: "grid", gap: 10 }}>
+                                    {activeSlide.bullets.map((bullet) => (
+                                        <div key={bullet} style={{ background: "rgba(255,255,255,0.04)", border, borderRadius: 16, padding: "12px 14px", fontSize: 13, color: "#D7D1CA", lineHeight: 1.8 }}>
+                                            {bullet}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {activeSlide.note && (
+                                <div style={{ background: "rgba(232,98,42,0.08)", border: "1px solid rgba(232,98,42,0.18)", borderRadius: 16, padding: "12px 14px", fontSize: 13, color: "#E7D5CA", lineHeight: 1.8 }}>
+                                    {activeSlide.note}
+                                </div>
+                            )}
+
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                                <InlineButton tone="muted" onClick={() => setActiveSlideIndex((current) => Math.max(0, current - 1))} disabled={activeSlideIndex === 0}>
+                                    Back
+                                </InlineButton>
+                                {!isLastSlide && (
+                                    <InlineButton onClick={() => setActiveSlideIndex((current) => Math.min(slides.length - 1, current + 1))}>
+                                        Next card
+                                    </InlineButton>
+                                )}
+                            </div>
                         </div>
-                    )}
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                        {content.tags.map((tag) => (
-                            <Pill key={tag.id}>{tag.name}</Pill>
-                        ))}
                     </div>
                 </div>
 
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                    {onLaunchForge && (
+                    {canOpenForge && onLaunchForge && (
                         <InlineButton onClick={onLaunchForge} disabled={busy}>
-                            {busy ? "Opening..." : "Start Forge conversation"}
+                            {busy ? "Opening..." : "Chat with Forge about this"}
                         </InlineButton>
                     )}
                     <InlineButton tone={completed ? "muted" : "success"} onClick={() => onToggleComplete(!completed)} disabled={busy}>
@@ -1199,12 +1372,18 @@ function ContentDetailModal({
                             href={content.resourceUrl}
                             target="_blank"
                             rel="noreferrer"
-                            style={{ display: "inline-flex", alignItems: "center", padding: "10px 14px", borderRadius: 999, border, background: "rgba(255,255,255,0.04)", color: "#F0EDE8", textDecoration: "none", fontSize: 12 }}
+                            style={{ display: "inline-flex", alignItems: "center", padding: "10px 14px", borderRadius: 999, border, background: "rgba(255,255,255,0.04)", color: "#F0EDE8", textDecoration: "none", fontSize: "var(--foundry-academy-md-font)" }}
                         >
                             Open resource
                         </a>
                     )}
                 </div>
+
+                {!isLastSlide && onLaunchForge && (
+                    <div style={{ fontSize: "var(--foundry-academy-md-font)", color: "#8D857C", lineHeight: 1.7 }}>
+                        Finish the full walkthrough to unlock the Forge conversation for this lesson.
+                    </div>
+                )}
             </div>
         </ModalShell>
     );
@@ -1257,7 +1436,7 @@ function SeriesDetailModal({
 
                 {nextItem && (
                     <div style={{ background: "rgba(99,179,237,0.10)", border: "1px solid rgba(99,179,237,0.18)", borderRadius: 18, padding: 16, display: "grid", gap: 6 }}>
-                        <div style={{ fontSize: 11, color: "#63B3ED", letterSpacing: "0.14em", textTransform: "uppercase" }}>
+                        <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#63B3ED", letterSpacing: "0.14em", textTransform: "uppercase" }}>
                             Recommended next step
                         </div>
                         <div style={{ fontSize: 18, color: "#F0EDE8", fontWeight: 700 }}>
@@ -1279,7 +1458,7 @@ function SeriesDetailModal({
                             <div key={item.id} style={{ background: isNext ? "rgba(99,179,237,0.08)" : "rgba(255,255,255,0.03)", border: isNext ? "1px solid rgba(99,179,237,0.18)" : border, borderRadius: 18, padding: 16, display: "grid", gap: 12 }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
                                     <div>
-                                        <div style={{ fontSize: 11, color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 8 }}>
+                                        <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 8 }}>
                                             Lesson {index + 1}
                                         </div>
                                         <div style={{ fontSize: 18, color: "#F0EDE8", fontWeight: 700, marginBottom: 6 }}>
@@ -1329,7 +1508,7 @@ function ModalShell({ children, onClose }: { children: ReactNode; onClose: () =>
 function DetailPanel({ title, body }: { title: string; body: string }) {
     return (
         <div style={{ background: surface, border, borderRadius: 18, padding: 16 }}>
-            <div style={{ fontSize: 10, color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 10 }}>{title}</div>
+            <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 10 }}>{title}</div>
             <div style={{ fontSize: 13, color: "#C8C4BE", lineHeight: 1.8 }}>{body}</div>
         </div>
     );
@@ -1337,7 +1516,7 @@ function DetailPanel({ title, body }: { title: string; body: string }) {
 
 function HeroPill({ label }: { label: string }) {
     return (
-        <div style={{ padding: "8px 12px", borderRadius: 999, background: "rgba(255,255,255,0.06)", border, fontSize: 11, color: "#DDD6CF", letterSpacing: "0.02em" }}>
+        <div style={{ padding: "8px 12px", borderRadius: 999, background: "rgba(255,255,255,0.06)", border, fontSize: "var(--foundry-academy-sm-font)", color: "#DDD6CF", letterSpacing: "0.02em", width: "fit-content", flex: "0 0 auto", alignSelf: "center" }}>
             {label}
         </div>
     );
@@ -1346,9 +1525,9 @@ function HeroPill({ label }: { label: string }) {
 function SummaryTile({ label, value, hint }: { label: string; value: string; hint: string }) {
     return (
         <div style={{ background: "rgba(255,255,255,0.045)", border, borderRadius: 18, padding: 16 }}>
-            <div style={{ fontSize: 10, color: "#9B9389", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 8 }}>{label}</div>
+            <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "#9B9389", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 8 }}>{label}</div>
             <div style={{ fontSize: 28, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 8 }}>{value}</div>
-            <div style={{ fontSize: 12, color: textMuted, lineHeight: 1.7 }}>{hint}</div>
+            <div style={{ fontSize: "var(--foundry-academy-md-font)", color: textMuted, lineHeight: 1.7 }}>{hint}</div>
         </div>
     );
 }
@@ -1356,7 +1535,7 @@ function SummaryTile({ label, value, hint }: { label: string; value: string; hin
 function AliveEmptyState({ title, body }: { title: string; body: string }) {
     return (
         <div style={{ background: "linear-gradient(140deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02))", border, borderRadius: 20, padding: 18, display: "grid", gap: 8 }}>
-            <div style={{ fontSize: 11, color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase" }}>
+            <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase" }}>
                 Forge Academy
             </div>
             <div style={{ fontSize: 20, lineHeight: 1.08, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
@@ -1371,24 +1550,20 @@ function AliveEmptyState({ title, body }: { title: string; body: string }) {
 
 function ProgressPill({
     status,
-    compact = false,
 }: {
     status: AcademyUserContentProgress["status"] | null | undefined;
-    compact?: boolean;
 }) {
     const normalized = status ?? "not_started";
     const tone = normalized === "completed" ? "success" : normalized === "in_progress" ? "blue" : "neutral";
-    return <Pill tone={tone} compact={compact}>{getAcademyProgressLabel(normalized)}</Pill>;
+    return <Pill tone={tone}>{getAcademyProgressLabel(normalized)}</Pill>;
 }
 
 function Pill({
     children,
     tone = "neutral",
-    compact = false,
 }: {
     children: ReactNode;
     tone?: "neutral" | "orange" | "blue" | "success" | "warm";
-    compact?: boolean;
 }) {
     const tones: Record<string, { background: string; borderColor: string; color: string }> = {
         neutral: { background: "rgba(255,255,255,0.05)", borderColor: "rgba(255,255,255,0.08)", color: "#C8C4BE" },
@@ -1401,18 +1576,21 @@ function Pill({
     return (
         <div
             style={{
-                padding: compact ? "4px 8px" : "7px 10px",
+                padding: "7px 10px",
                 borderRadius: 999,
                 background: theme.background,
                 border: `1px solid ${theme.borderColor}`,
                 color: theme.color,
-                fontSize: compact ? 9 : 13,
+                fontSize: 13,
                 fontWeight: 700,
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
                 lineHeight: 1.1,
                 whiteSpace: "nowrap",
+                width: "fit-content",
+                flex: "0 0 auto",
+                alignSelf: "center",
             }}
         >
             {children}
@@ -1438,9 +1616,12 @@ function FilterPill({
                 border: active ? "1px solid rgba(232,98,42,0.28)" : "1px solid rgba(255,255,255,0.08)",
                 background: active ? "rgba(232,98,42,0.14)" : "rgba(255,255,255,0.03)",
                 color: active ? "#E8622A" : "#A8A4A0",
-                fontSize: 11,
+                fontSize: "var(--foundry-academy-sm-font)",
                 fontWeight: 700,
                 cursor: "pointer",
+                width: "fit-content",
+                flex: "0 0 auto",
+                alignSelf: "center",
             }}
         >
             {children}
@@ -1485,7 +1666,7 @@ function InlineButton({
                 ...style,
                 borderRadius: 999,
                 padding: "10px 14px",
-                fontSize: 12,
+                fontSize: "var(--foundry-academy-md-font)",
                 fontWeight: 700,
                 cursor: disabled ? "default" : "pointer",
                 opacity: disabled ? 0.7 : 1,

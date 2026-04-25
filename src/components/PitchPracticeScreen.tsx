@@ -381,17 +381,17 @@ export default function PitchPracticeScreen({ userId, profile, onBack }: { userI
                 <div style={{ padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)", zIndex: 10 }}>
                     <button
                         onClick={onBack}
-                        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "6px 12px", color: "#888", fontSize: 13, cursor: "pointer" }}
+                        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "#888", fontSize: "var(--foundry-app-header-button-font)", cursor: "pointer" }}
                     >
                         ← Back
                     </button>
                     <div>
-                        <div style={{ fontSize: 16, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>Pitch Practice</div>
-                        <div style={{ fontSize: 10, color: "#555" }}>Rehearse your pitch with Forge</div>
+                        <div style={{ fontSize: "var(--foundry-app-header-title-font)", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>Pitch Practice</div>
+                        <div style={{ fontSize: "var(--foundry-app-header-meta-font)", color: "#555" }}>Rehearse your pitch with Forge</div>
                     </div>
                 </div>
 
-                <div style={{ maxWidth: 560, margin: "0 auto", padding: "28px 16px 60px" }}>
+                <div className="foundry-app-page__content" style={{ maxWidth: 560, margin: "0 auto", padding: "28px 16px 60px" }}>
                     {/* Intro */}
                     <div style={{ marginBottom: 28, animation: "fadeSlideUp 0.4s ease both", textAlign: "left" }}>
                         <div style={{ fontSize: 23, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 8, lineHeight: 1.2 }}>

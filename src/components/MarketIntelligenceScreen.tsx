@@ -262,10 +262,10 @@ export default function MarketIntelligenceScreen({
             {/* Header */}
             <div style={{ padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, position: "sticky", top: 0, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)", zIndex: 10, flexShrink: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-                    <button onClick={onBack} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "6px 12px", color: "#888", fontSize: 12, cursor: "pointer", flexShrink: 0 }}>← Hub</button>
+                    <button onClick={onBack} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "#888", fontSize: "var(--foundry-app-header-button-font)", cursor: "pointer", flexShrink: 0 }}>← Hub</button>
                     <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: 15, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Market Intelligence</div>
-                        <div style={{ fontSize: 10, color: "#555", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{industry}</div>
+                        <div style={{ fontSize: "var(--foundry-app-header-title-font)", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Market Intelligence</div>
+                        <div style={{ fontSize: "var(--foundry-app-header-meta-font)", color: "#555", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{industry}</div>
                     </div>
                 </div>
 
@@ -285,12 +285,12 @@ export default function MarketIntelligenceScreen({
             </div>
 
             {/* Content */}
-            <div style={{ flex: 1, overflowY: "auto", padding: "20px 16px 60px", maxWidth: 980, width: "100%", margin: "0 auto" }}>
+            <div className="foundry-app-page__content" style={{ flex: 1, overflowY: "auto", padding: "20px 16px 60px", maxWidth: 980, width: "100%", margin: "0 auto" }}>
 
                 {/* Mobile: horizontal history strip above main content */}
                 {isNarrow && reportHistory.length > 0 && (
                     <div style={{ marginBottom: 14 }}>
-                        <div style={{ fontSize: 10, color: "#444", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Saved Reports</div>
+                        <div style={{ fontSize: 12, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8, fontWeight: 600 }}>Saved Reports</div>
                         <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 6, WebkitOverflowScrolling: "touch" as any }}>
                             {reportHistory.map((entry) => {
                                 const selected = currentReport?.date === entry.date;
@@ -304,13 +304,13 @@ export default function MarketIntelligenceScreen({
                                             background: selected ? "rgba(232,98,42,0.12)" : "rgba(255,255,255,0.02)",
                                             border: selected ? "1px solid rgba(232,98,42,0.24)" : "1px solid rgba(255,255,255,0.06)",
                                             borderRadius: 10,
-                                            padding: "8px 12px",
+                                            padding: "10px 14px",
                                             color: "#F0EDE8",
                                             cursor: "pointer",
-                                            maxWidth: 180,
+                                            maxWidth: 220,
                                         }}
                                     >
-                                        <div style={{ fontSize: 11, fontWeight: 600, color: selected ? "#E8622A" : "#C8C4BE", whiteSpace: "nowrap" }}>
+                                        <div style={{ fontSize: 13, fontWeight: 600, color: selected ? "#E8622A" : "#C8C4BE", whiteSpace: "nowrap" }}>
                                             {formatReportDate(entry.date)}
                                         </div>
                                     </button>
@@ -438,8 +438,8 @@ export default function MarketIntelligenceScreen({
                     </div>
 
                     {!isNarrow && reportHistory.length > 0 && (
-                        <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 12px", position: "sticky", top: 78 }}>
-                            <div style={{ fontSize: 10, color: "#444", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
+                        <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "16px 14px", position: "sticky", top: 78 }}>
+                            <div style={{ fontSize: 12, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10, fontWeight: 600 }}>
                                 Saved Reports
                             </div>
                             <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: "calc(100vh - 180px)", overflowY: "auto" }}>
@@ -454,15 +454,15 @@ export default function MarketIntelligenceScreen({
                                                 background: selected ? "rgba(232,98,42,0.12)" : "rgba(255,255,255,0.02)",
                                                 border: selected ? "1px solid rgba(232,98,42,0.24)" : "1px solid rgba(255,255,255,0.06)",
                                                 borderRadius: 10,
-                                                padding: "10px 12px",
+                                                padding: "12px 14px",
                                                 color: "#F0EDE8",
                                                 cursor: "pointer",
                                             }}
                                         >
-                                            <div style={{ fontSize: 11, fontWeight: 600, color: selected ? "#E8622A" : "#C8C4BE", marginBottom: 4 }}>
+                                            <div style={{ fontSize: 14, fontWeight: 600, color: selected ? "#E8622A" : "#C8C4BE", marginBottom: 6, lineHeight: 1.35 }}>
                                                 {formatReportDate(entry.date)}
                                             </div>
-                                            <div style={{ fontSize: 10, color: "#666", lineHeight: 1.5 }}>
+                                            <div style={{ fontSize: 12, color: "#77716A", lineHeight: 1.6 }}>
                                                 {getReportPreview(entry.content)}
                                             </div>
                                         </button>

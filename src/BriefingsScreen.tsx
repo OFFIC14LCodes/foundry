@@ -203,17 +203,17 @@ export default function BriefingsScreen({ userId, profile, briefings, onBriefing
             }}>
                 <button onClick={onBack} style={{
                     background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
-                    borderRadius: 8, padding: "5px 12px", color: "#F0EDE8",
-                    fontSize: 12, fontWeight: 500, cursor: "pointer",
+                    borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "#F0EDE8",
+                    fontSize: "var(--foundry-app-header-button-font)", fontWeight: 500, cursor: "pointer",
                     display: "flex", alignItems: "center", gap: 6
-                }}><Logo variant="flame" style={{ width: 14, height: 14, objectFit: "contain" }} />Hub</button>
+                }}><Logo variant="flame" style={{ width: "var(--foundry-app-header-icon-size)", height: "var(--foundry-app-header-icon-size)", objectFit: "contain" }} />Hub</button>
 
                 <div style={{ textAlign: "left", flex: 1, marginLeft: 12 }}>
                     <div style={{
-                        fontSize: 14, fontFamily: "'Lora', Georgia, serif",
+                        fontSize: "var(--foundry-app-header-title-font)", fontFamily: "'Lora', Georgia, serif",
                         fontWeight: 600, color: "#F0EDE8"
                     }}>Monday Briefings</div>
-                    <div style={{ fontSize: 10, color: "#555" }}>
+                    <div style={{ fontSize: "var(--foundry-app-header-meta-font)", color: "#555" }}>
                         {briefings.length} {briefings.length === 1 ? "briefing" : "briefings"}
                     </div>
                 </div>
@@ -224,9 +224,9 @@ export default function BriefingsScreen({ userId, profile, briefings, onBriefing
                     style={{
                         background: generating || !canGenerate ? "rgba(255,255,255,0.04)" : "rgba(232,98,42,0.1)",
                         border: generating || !canGenerate ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(232,98,42,0.25)",
-                        borderRadius: 8, padding: "5px 12px",
+                        borderRadius: 8, padding: "var(--foundry-app-header-button-padding)",
                         color: generating || !canGenerate ? "#444" : "#E8622A",
-                        fontSize: 12, fontWeight: 500,
+                        fontSize: "var(--foundry-app-header-button-font)", fontWeight: 500,
                         cursor: generating || !canGenerate ? "default" : "pointer",
                         transition: "all 0.2s"
                     }}
@@ -239,7 +239,7 @@ export default function BriefingsScreen({ userId, profile, briefings, onBriefing
             <div style={{
                 flex: 1, overflowY: "auto", padding: "16px",
                 maxWidth: 680, width: "100%", margin: "0 auto"
-            }}>
+            }} className="foundry-app-page__content">
 
                 {/* Empty state */}
                 {briefings.length === 0 && !generating && (
@@ -314,21 +314,21 @@ export default function BriefingsScreen({ userId, profile, briefings, onBriefing
                                 >
                                     <div>
                                         <div style={{
-                                            fontSize: 12, color: isFirst ? "#E8622A" : "#888",
-                                            fontWeight: 600, marginBottom: 2
+                                            fontSize: 14, color: isFirst ? "#E8622A" : "#A8A4A0",
+                                            fontWeight: 600, lineHeight: 1.35
                                         }}>
                                             {isFirst ? "Latest" : formatDate(briefing.createdAt)}
                                         </div>
                                         {isFirst && (
-                                            <div style={{ fontSize: 10, color: "#555" }}>
+                                            <div style={{ fontSize: 12, color: "#68625C", marginTop: 3, lineHeight: 1.3 }}>
                                                 {formatDate(briefing.createdAt)}
                                             </div>
                                         )}
-                                        <div style={{ fontSize: 10, color: "#444", marginTop: 2 }}>
+                                        <div style={{ fontSize: 12, color: "#68625C", marginTop: 3, lineHeight: 1.3 }}>
                                             {formatStage(briefing.stageId)}
                                         </div>
                                     </div>
-                                    <span style={{ fontSize: 12, color: "#444", transition: "transform 0.2s", display: "inline-block", transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)" }}>▾</span>
+                                    <span style={{ fontSize: 22, color: "#5F5952", transition: "transform 0.2s", display: "inline-block", transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)" }}>▾</span>
                                 </div>
 
                                 {/* Briefing content */}

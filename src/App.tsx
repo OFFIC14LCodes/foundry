@@ -1304,9 +1304,12 @@ Where do you want to start?`;
 
       updateArchiveEntryInState(saved);
       setSaveArchiveModalOpen(false);
-      if (archiveSession?.entry?.id) {
-        setArchiveSession((prev: any) => prev ? { ...prev, entry: saved, initialMessageCount: messages.length } : prev);
-      }
+      onUpdateMessages(activeStage, []);
+      setArchiveSession(null);
+      setInput("");
+      setAttachedFiles([]);
+      setLanguageWarning(null);
+      setConfirmedProfanityInput(null);
     } catch (error) {
       console.error("manual archive save error:", error);
     } finally {
@@ -1483,9 +1486,9 @@ Where do you want to start?`;
               background: "rgba(255,255,255,0.05)",
               border: "1px solid rgba(255,255,255,0.08)",
               borderRadius: 8,
-              padding: "5px 12px",
+              padding: "var(--foundry-forge-header-button-padding)",
               color: "#F0EDE8",
-              fontSize: 12,
+              fontSize: "var(--foundry-forge-header-button-font)",
               fontWeight: 500,
               cursor: "pointer",
               display: "flex",
@@ -1493,7 +1496,7 @@ Where do you want to start?`;
               gap: 5,
             }}
           >
-            <Icons.forge.chat size={14} /> Hub
+            <Icons.forge.chat size={"var(--foundry-forge-header-icon-size)"} /> Hub
           </button>
 
           <button
@@ -1502,13 +1505,13 @@ Where do you want to start?`;
               background: "rgba(255,255,255,0.04)",
               border: "1px solid rgba(255,255,255,0.07)",
               borderRadius: 8,
-              padding: "5px 8px",
+              padding: "var(--foundry-forge-header-menu-padding)",
               color: "#666",
-              fontSize: 12,
+              fontSize: "var(--foundry-forge-header-button-font)",
               cursor: "pointer",
             }}
           >
-            <Icons.sidebar.menu size={14} />
+            <Icons.sidebar.menu size={"var(--foundry-forge-header-icon-size)"} />
           </button>
         </div>
 
@@ -1523,6 +1526,7 @@ Where do you want to start?`;
           }}
         >
           <button
+            className="forge-screen__stage-trigger"
             onClick={() => setShowStageSelector((s) => !s)}
             style={{
               background: "transparent",
@@ -1542,11 +1546,12 @@ Where do you want to start?`;
               e.currentTarget.style.background = "transparent";
             }}
           >
-            <StageIcon size={15} color={stage.color} />
-            <div style={{ textAlign: "left" }}>
+            <StageIcon size={"var(--foundry-forge-header-stage-icon-size)"} color={stage.color} />
+            <div className="forge-screen__stage-copy" style={{ textAlign: "left" }}>
               <div
+                className="forge-screen__stage-title"
                 style={{
-                  fontSize: 13,
+                  fontSize: "var(--foundry-forge-header-stage-title-font)",
                   fontFamily: "'Lora', Georgia, serif",
                   fontWeight: 600,
                   color: "#F0EDE8",
@@ -1555,11 +1560,11 @@ Where do you want to start?`;
               >
                 Stage {activeStage} — {stage.label}
               </div>
-              <div style={{ fontSize: 10, color: "#4CAF8A" }}>
+              <div className="forge-screen__stage-meta" style={{ fontSize: "var(--foundry-forge-header-stage-meta-font)", color: "#4CAF8A" }}>
                 ● Active · {completionPct}% complete
               </div>
             </div>
-            <span style={{ fontSize: 10, color: "#555", marginLeft: 2 }}><Icons.forge.chat size={16} /></span>
+            <span className="forge-screen__stage-chevron" style={{ fontSize: "var(--foundry-forge-header-stage-meta-font)", color: "#555", marginLeft: 2 }}><Icons.forge.chat size={"var(--foundry-forge-header-chevron-icon-size)"} /></span>
           </button>
 
           {showStageSelector && (
@@ -1693,7 +1698,9 @@ Where do you want to start?`;
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               style={{
-                padding: "6px 10px",
+                padding: tab.id === "chat"
+                  ? "var(--foundry-forge-header-tab-padding)"
+                  : "var(--foundry-forge-header-secondary-tab-padding)",
                 borderRadius: 6,
                 border: "none",
                 background:
@@ -1701,7 +1708,9 @@ Where do you want to start?`;
                     ? "linear-gradient(135deg, #E8622A, #c9521e)"
                     : "transparent",
                 color: activeTab === tab.id ? "#fff" : "#A8A4A0",
-                fontSize: 10,
+                fontSize: tab.id === "chat"
+                  ? "var(--foundry-forge-header-tab-font)"
+                  : "var(--foundry-forge-header-secondary-tab-font)",
                 cursor: "pointer",
                 fontWeight: activeTab === tab.id ? 600 : 400,
                 transition: "all 0.15s",
@@ -1761,6 +1770,7 @@ Where do you want to start?`;
 
         {activeTab === "chat" && !showBriefing && (
           <div
+            className="forge-screen__content"
             ref={scrollRef}
             style={{
               position: "absolute",
@@ -1771,7 +1781,7 @@ Where do you want to start?`;
               display: "flex",
               flexDirection: "column",
               gap: 14,
-              maxWidth: 720,
+              maxWidth: "var(--foundry-forge-chat-width)",
               width: "100%",
               margin: "0 auto",
             }}
@@ -2009,16 +2019,18 @@ Where do you want to start?`;
         )}
 
         {activeTab === "milestones" && (
-          <MilestonesPanel
-            stage={stage}
-            stageId={activeStage}
-            completedMilestones={completedMilestones}
-            advanceReady={advanceReady || allMilestonesComplete}
-            furthestStageReached={furthestStageReached}
-            onAdvance={handleAdvance}
-            onSwitchToChat={() => setActiveTab("chat")}
-            onClose={() => setActiveTab("chat")}
-          />
+          <div className="forge-screen__goals" style={{ position: "absolute", inset: 0 }}>
+            <MilestonesPanel
+              stage={stage}
+              stageId={activeStage}
+              completedMilestones={completedMilestones}
+              advanceReady={advanceReady || allMilestonesComplete}
+              furthestStageReached={furthestStageReached}
+              onAdvance={handleAdvance}
+              onSwitchToChat={() => setActiveTab("chat")}
+              onClose={() => setActiveTab("chat")}
+            />
+          </div>
         )}
 
         {activeTab === "summaries" && (() => {
@@ -2054,7 +2066,7 @@ Where do you want to start?`;
           ].filter((o) => o.show);
 
           return (
-            <div style={{ position: "absolute", inset: 0, overflowY: "auto", padding: "16px", maxWidth: 720, width: "100%", margin: "0 auto" }}>
+            <div className="forge-screen__archive" style={{ position: "absolute", inset: 0, overflowY: "auto", padding: "16px", maxWidth: "var(--foundry-forge-chat-width)", width: "100%", margin: "0 auto" }}>
               <div style={{ fontSize: 18, fontFamily: "’Playfair Display’, Georgia, serif", fontWeight: 700, marginBottom: 4 }}>
                 Full Archive
               </div>
@@ -2182,7 +2194,7 @@ Where do you want to start?`;
             <div style={{ fontSize: 12, color: "#666", lineHeight: 1.6, marginBottom: 14 }}>
               {archiveSession?.entry
                 ? "This updates the current archive card with the new continuation. The saved date and summary will be refreshed."
-                : `This saves the current Stage ${activeStage} chat as a named archive entry. Your live chat stays exactly where it is.`}
+                : `This saves the current Stage ${activeStage} chat as a named archive entry and clears the live chat.`}
             </div>
             <div style={{ fontSize: 10, color: "#888", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>
               Archive Name
@@ -2239,13 +2251,14 @@ Where do you want to start?`;
       {
         activeTab === "chat" && !showBriefing && !pendingUpgradeStage && (
           <div
+            className="forge-screen__composer"
             style={{
               padding: "12px 16px",
               paddingBottom: "max(20px, calc(12px + env(safe-area-inset-bottom)))",
               flexShrink: 0,
               borderTop: "1px solid rgba(255,255,255,0.05)",
               background: "rgba(8,8,9,0.95)",
-              maxWidth: 720,
+              maxWidth: "var(--foundry-forge-chat-width)",
               width: "100%",
               alignSelf: "center",
             }}

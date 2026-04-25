@@ -73,28 +73,28 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <button onClick={onBack} style={{
                         background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
-                        borderRadius: 8, padding: "5px 12px", color: "#F0EDE8", fontSize: 12,
+                        borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "#F0EDE8", fontSize: "var(--foundry-app-header-button-font)",
                         fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 6
-                    }}><Logo variant="flame" style={{ width: 14, height: 14, objectFit: "contain" }} />Hub</button>
+                    }}><Logo variant="flame" style={{ width: "var(--foundry-app-header-icon-size)", height: "var(--foundry-app-header-icon-size)", objectFit: "contain" }} />Hub</button>
                 </div>
                 <div style={{ textAlign: "left", flex: 1, marginLeft: 12 }}>
                     <div style={{
-                        fontSize: 14, fontFamily: "'Lora', Georgia, serif",
+                        fontSize: "var(--foundry-app-header-title-font)", fontFamily: "'Lora', Georgia, serif",
                         fontWeight: 600, color: "#F0EDE8"
                     }}>Founder's Journal</div>
-                    <div style={{ fontSize: 10, color: "#555" }}>
+                    <div style={{ fontSize: "var(--foundry-app-header-meta-font)", color: "#555" }}>
                         {entries.length} {entries.length === 1 ? "entry" : "entries"}
                     </div>
                 </div>
                 <button onClick={() => { setWriting(true); setDraft(""); }} style={{
                     background: "rgba(232,98,42,0.1)", border: "1px solid rgba(232,98,42,0.25)",
-                    borderRadius: 8, padding: "5px 12px", color: "#E8622A",
-                    fontSize: 12, fontWeight: 500, cursor: "pointer"
+                    borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "#E8622A",
+                    fontSize: "var(--foundry-app-header-button-font)", fontWeight: 500, cursor: "pointer"
                 }}>+ New</button>
             </div>
 
             {/* Content */}
-            <div style={{ flex: 1, overflowY: "auto", padding: "16px", maxWidth: 680, width: "100%", margin: "0 auto" }}>
+            <div className="foundry-app-page__content" style={{ flex: 1, overflowY: "auto", padding: "16px", maxWidth: 680, width: "100%", margin: "0 auto" }}>
 
                 {/* Empty state */}
                 {entries.length === 0 && !writing && (
@@ -203,15 +203,15 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                 transition: "opacity 0.2s"
                             }}>
                                 <div style={{
-                                    padding: "10px 14px",
+                                    padding: "12px 16px",
                                     borderBottom: "1px solid rgba(255,255,255,0.04)",
                                     display: "flex", alignItems: "center", justifyContent: "space-between"
                                 }}>
                                     <div>
-                                        <div style={{ fontSize: 11, color: "#888", fontWeight: 500 }}>
+                                        <div style={{ fontSize: 14, color: "#A8A4A0", fontWeight: 600, lineHeight: 1.35 }}>
                                             {formatDate(entry.createdAt)}
                                         </div>
-                                        <div style={{ fontSize: 10, color: "#444", marginTop: 1 }}>
+                                        <div style={{ fontSize: 12, color: "#68625C", marginTop: 3, lineHeight: 1.3 }}>
                                             {formatTime(entry.createdAt)}
                                         </div>
                                     </div>
@@ -220,23 +220,23 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                         disabled={deletingId === entry.id}
                                         style={{
                                             background: "transparent",
-                                            border: "none", color: "#333", fontSize: 16,
-                                            cursor: "pointer", padding: "2px 6px", borderRadius: 4,
+                                            border: "none", color: "#5F5952", fontSize: 22, fontWeight: 500,
+                                            cursor: "pointer", padding: "4px 8px", borderRadius: 8,
                                             transition: "color 0.15s"
                                         }}
                                         onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#FF6B6B"}
-                                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "#333"}
+                                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "#5F5952"}
                                     >×</button>
                                 </div>
                                 <div style={{ padding: "14px 16px" }}>
                                     <div style={{
-                                        fontSize: 13, fontFamily: "'Lora', Georgia, serif",
+                                        fontSize: 15, fontFamily: "'Lora', Georgia, serif",
                                         color: "#C8C4BE", lineHeight: 1.8, whiteSpace: "pre-wrap"
                                     }}>{preview}</div>
                                     {isLong && (
                                         <button onClick={() => setExpandedId(isExpanded ? null : entry.id)} style={{
                                             background: "transparent", border: "none",
-                                            color: "#E8622A", fontSize: 11, cursor: "pointer",
+                                            color: "#E8622A", fontSize: 13, cursor: "pointer",
                                             padding: "8px 0 0", fontFamily: "'Lora', Georgia, serif"
                                         }}>
                                             {isExpanded ? "Show less ↑" : "Read more ↓"}

@@ -49,6 +49,126 @@ function previewText(summary: string) {
     return plain.length > 140 ? `${plain.slice(0, 140)}...` : plain;
 }
 
+function renderArchiveSummary(summary: string) {
+    const text = getArchiveDisplaySummary(summary || "");
+    if (!text) return "No summary content.";
+
+    const renderInline = (segment: string, keyPrefix: string) => {
+        const boldParts = segment.split(/(\*\*.*?\*\*)/g);
+        return boldParts.map((part, index) => {
+            const key = `${keyPrefix}-${index}`;
+            if (part.startsWith("**") && part.endsWith("**")) {
+                return <strong key={key} style={{ color: "#F0EDE8", fontWeight: 700 }}>{part.slice(2, -2)}</strong>;
+            }
+            return <span key={key}>{part}</span>;
+        });
+    };
+
+    const lines = text.split("\n");
+    const blocks: JSX.Element[] = [];
+    let paragraphLines: string[] = [];
+    let blockIndex = 0;
+
+    const flushParagraph = () => {
+        if (paragraphLines.length === 0) return;
+        const paragraphText = paragraphLines.join("\n").trim();
+        if (!paragraphText) {
+            paragraphLines = [];
+            return;
+        }
+        blocks.push(
+            <p key={`p-${blockIndex++}`} style={{ margin: blocks.length === 0 ? 0 : "12px 0 0 0" }}>
+                {renderInline(paragraphText, `p-${blockIndex}`)}
+            </p>
+        );
+        paragraphLines = [];
+    };
+
+    for (let idx = 0; idx < lines.length; idx++) {
+        const line = lines[idx];
+        const headingTwoMatch = line.match(/^##\s+(.*)$/);
+        const headingThreeMatch = line.match(/^###\s+(.*)$/);
+        const bulletMatch = line.match(/^[-*]\s+(.*)$/);
+        const numberedMatch = line.match(/^(\d+)\.\s+(.*)$/);
+
+        if (!line.trim()) {
+            flushParagraph();
+            continue;
+        }
+
+        if (headingTwoMatch) {
+            flushParagraph();
+            blocks.push(
+                <div key={`h2-${blockIndex++}`} style={{ margin: blocks.length === 0 ? 0 : "14px 0 0 0", fontSize: 16, lineHeight: 1.35, fontWeight: 700, color: "#F0EDE8" }}>
+                    {renderInline(headingTwoMatch[1], `h2-${blockIndex}`)}
+                </div>
+            );
+            continue;
+        }
+
+        if (headingThreeMatch) {
+            flushParagraph();
+            blocks.push(
+                <div key={`h3-${blockIndex++}`} style={{ margin: blocks.length === 0 ? 0 : "12px 0 0 0", fontSize: 14, lineHeight: 1.4, fontWeight: 700, color: "#F0EDE8" }}>
+                    {renderInline(headingThreeMatch[1], `h3-${blockIndex}`)}
+                </div>
+            );
+            continue;
+        }
+
+        if (bulletMatch) {
+            flushParagraph();
+            const items: string[] = [];
+            let listIndex = idx;
+            while (listIndex < lines.length) {
+                const match = lines[listIndex].match(/^[-*]\s+(.*)$/);
+                if (!match) break;
+                items.push(match[1]);
+                listIndex++;
+            }
+            blocks.push(
+                <ul key={`ul-${blockIndex++}`} style={{ margin: blocks.length === 0 ? "0 0 0 20px" : "12px 0 0 20px", padding: 0 }}>
+                    {items.map((item, itemIndex) => (
+                        <li key={`ul-item-${itemIndex}`} style={{ marginBottom: 6 }}>
+                            {renderInline(item, `ul-item-${itemIndex}`)}
+                        </li>
+                    ))}
+                </ul>
+            );
+            idx = listIndex - 1;
+            continue;
+        }
+
+        if (numberedMatch) {
+            flushParagraph();
+            const items: { value: number; content: string }[] = [];
+            let listIndex = idx;
+            while (listIndex < lines.length) {
+                const match = lines[listIndex].match(/^(\d+)\.\s+(.*)$/);
+                if (!match) break;
+                items.push({ value: Number(match[1]), content: match[2] });
+                listIndex++;
+            }
+            blocks.push(
+                <ol key={`ol-${blockIndex++}`} style={{ margin: blocks.length === 0 ? "0 0 0 20px" : "12px 0 0 20px", padding: 0 }} start={items[0]?.value || 1}>
+                    {items.map((item, itemIndex) => (
+                        <li key={`ol-item-${itemIndex}`} style={{ marginBottom: 6 }}>
+                            {renderInline(item.content, `ol-item-${itemIndex}`)}
+                        </li>
+                    ))}
+                </ol>
+            );
+            idx = listIndex - 1;
+            continue;
+        }
+
+        paragraphLines.push(line);
+    }
+
+    flushParagraph();
+    return blocks;
+}
+
 // ─────────────────────────────────────────────────────────────
 // Props
 // ─────────────────────────────────────────────────────────────
@@ -319,8 +439,8 @@ export default function ArchivePanel({
                     </div>
 
                     {/* Summary content */}
-                    <div style={{ fontSize: 14, color: "rgba(240,237,232,0.7)", lineHeight: 1.8, whiteSpace: "pre-wrap", borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 16 }}>
-                        {getArchiveDisplaySummary(selectedEntry.summary) || selectedEntry.summary || "No summary content."}
+                    <div style={{ fontSize: 14, color: "rgba(240,237,232,0.7)", lineHeight: 1.8, borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 16 }}>
+                        {renderArchiveSummary(selectedEntry.summary)}
                     </div>
 
                     {/* Actions */}
@@ -350,18 +470,18 @@ export default function ArchivePanel({
             <div style={{ padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: 12, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)", flexShrink: 0 }}>
                 <button
                     onClick={onBack}
-                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "7px 10px", color: "#888", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center" }}
+                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "#888", fontSize: "var(--foundry-app-header-button-font)", cursor: "pointer", display: "flex", alignItems: "center" }}
                 >
-                    <ArrowLeft size={16} />
+                    <ArrowLeft size={"var(--foundry-app-header-icon-size)"} />
                 </button>
                 <div>
-                    <div style={{ fontSize: 16, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>Archive</div>
-                    <div style={{ fontSize: 10, color: "#555" }}>All saved conversations</div>
+                    <div style={{ fontSize: "var(--foundry-app-header-title-font)", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>Archive</div>
+                    <div style={{ fontSize: "var(--foundry-app-header-meta-font)", color: "#555" }}>All saved conversations</div>
                 </div>
             </div>
 
             {/* Scrollable list */}
-            <div style={{ flex: 1, overflowY: "auto", padding: 16, maxWidth: 720, width: "100%", margin: "0 auto" }}>
+            <div className="foundry-app-page__content" style={{ flex: 1, overflowY: "auto", padding: 16, maxWidth: 720, width: "100%", margin: "0 auto" }}>
                 {loading ? (
                     <div style={{ textAlign: "center", padding: 48, color: "#555", fontSize: 13 }}>Loading archive…</div>
                 ) : (

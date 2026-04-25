@@ -40,76 +40,79 @@ export default function MilestonesPanel({
                     flexShrink: 0,
                 }}
             >
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        marginBottom: 12,
-                    }}
-                >
+                <div style={{ maxWidth: "var(--foundry-forge-chat-width)", width: "100%", margin: "0 auto" }}>
                     <div
                         style={{
                             display: "flex",
                             alignItems: "center",
-                            gap: 8,
-                            fontSize: 15,
-                            fontFamily: "'Lora', Georgia, serif",
-                            fontWeight: 600,
-                            color: "#F0EDE8",
+                            justifyContent: "space-between",
+                            marginBottom: 12,
                         }}
                     >
-                        <StageIcon size={16} color={stage.color} />
-                        <span>Stage {stageId} Goals</span>
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                                fontSize: 15,
+                                fontFamily: "'Lora', Georgia, serif",
+                                fontWeight: 600,
+                                color: "#F0EDE8",
+                            }}
+                        >
+                            <StageIcon size={16} color={stage.color} />
+                            <span>Stage {stageId} Goals</span>
+                        </div>
+
+                        <div style={{ fontSize: 12, color: "#E8622A", fontWeight: 600 }}>
+                            {completionPct}% complete
+                        </div>
                     </div>
 
-                    <div style={{ fontSize: 12, color: "#E8622A", fontWeight: 600 }}>
-                        {completionPct}% complete
-                    </div>
-                </div>
-
-                <div
-                    style={{
-                        height: 4,
-                        background: "rgba(255,255,255,0.06)",
-                        borderRadius: 2,
-                        position: "relative",
-                        overflow: "hidden",
-                    }}
-                >
                     <div
                         style={{
-                            height: "100%",
-                            width: `${completionPct}%`,
-                            background: "linear-gradient(90deg, #E8622A, #F5A843)",
+                            height: 4,
+                            background: "rgba(255,255,255,0.06)",
                             borderRadius: 2,
-                            transition: "width 0.6s ease",
-                            boxShadow:
-                                completionPct > 0 ? "0 0 8px rgba(232,98,42,0.4)" : "none",
+                            position: "relative",
+                            overflow: "hidden",
                         }}
-                    />
-                    {stage.milestones.map((_, i) => (
+                    >
                         <div
-                            key={i}
                             style={{
-                                position: "absolute",
-                                top: 0,
-                                bottom: 0,
-                                left: `${((i + 1) / stage.milestones.length) * 100}%`,
-                                width: 1,
-                                background: "rgba(0,0,0,0.4)",
+                                height: "100%",
+                                width: `${completionPct}%`,
+                                background: "linear-gradient(90deg, #E8622A, #F5A843)",
+                                borderRadius: 2,
+                                transition: "width 0.6s ease",
+                                boxShadow:
+                                    completionPct > 0 ? "0 0 8px rgba(232,98,42,0.4)" : "none",
                             }}
                         />
-                    ))}
-                </div>
+                        {stage.milestones.map((_, i) => (
+                            <div
+                                key={i}
+                                style={{
+                                    position: "absolute",
+                                    top: 0,
+                                    bottom: 0,
+                                    left: `${((i + 1) / stage.milestones.length) * 100}%`,
+                                    width: 1,
+                                    background: "rgba(0,0,0,0.4)",
+                                }}
+                            />
+                        ))}
+                    </div>
 
-                <div style={{ fontSize: 11, color: "#555", marginTop: 6 }}>
-                    {completedMilestones.length} of {stage.milestones.length} milestones
-                    complete
+                    <div style={{ fontSize: 11, color: "#555", marginTop: 6 }}>
+                        {completedMilestones.length} of {stage.milestones.length} milestones
+                        complete
+                    </div>
                 </div>
             </div>
 
             <div style={{ flex: 1, padding: "16px 20px", overflowY: "auto" }}>
+                <div style={{ maxWidth: "var(--foundry-forge-chat-width)", width: "100%", margin: "0 auto" }}>
                 <div
                     style={{
                         display: "flex",
@@ -356,6 +359,7 @@ export default function MilestonesPanel({
                 >
                     Continue with Forge →
                 </button>
+                </div>
             </div>
         </div>
     );

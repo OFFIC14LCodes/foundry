@@ -6,6 +6,65 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  --foundry-page-width: 1120px;
+  --foundry-page-narrow-width: 720px;
+  --foundry-hub-content-width: 760px;
+  --foundry-forge-chat-width: 720px;
+  --foundry-desktop-ui-scale: 1;
+  --foundry-forge-header-button-font: 12px;
+  --foundry-forge-header-button-padding: 5px 12px;
+  --foundry-forge-header-menu-padding: 5px 8px;
+  --foundry-forge-header-stage-title-font: 13px;
+  --foundry-forge-header-stage-meta-font: 10px;
+  --foundry-forge-header-tab-font: 10px;
+  --foundry-forge-header-tab-padding: 6px 10px;
+  --foundry-forge-header-secondary-tab-font: 10px;
+  --foundry-forge-header-secondary-tab-padding: 6px 10px;
+  --foundry-forge-header-icon-size: 14px;
+  --foundry-forge-header-stage-icon-size: 15px;
+  --foundry-forge-header-chevron-icon-size: 16px;
+  --foundry-forge-tab-content-scale: 1;
+  --foundry-hub-header-menu-font: 16px;
+  --foundry-hub-header-menu-padding: 6px 10px;
+  --foundry-hub-header-title-font: 16px;
+  --foundry-hub-header-meta-font: 10px;
+  --foundry-hub-header-cta-font: 12px;
+  --foundry-hub-header-cta-padding: 8px 16px;
+  --foundry-hub-header-cta-icon-size: 14px;
+  --foundry-hub-sidebar-width: 280px;
+  --foundry-hub-sidebar-header-padding: max(20px, calc(14px + env(safe-area-inset-top))) 16px 16px;
+  --foundry-hub-sidebar-title-font: 15px;
+  --foundry-hub-sidebar-close-font: 12px;
+  --foundry-hub-sidebar-close-padding: 5px 10px;
+  --foundry-hub-sidebar-name-font: 13px;
+  --foundry-hub-sidebar-summary-font: 11px;
+  --foundry-hub-sidebar-section-label-font: 9px;
+  --foundry-hub-sidebar-card-title-font: 13px;
+  --foundry-hub-sidebar-card-copy-font: 10px;
+  --foundry-hub-sidebar-card-button-font: 11px;
+  --foundry-hub-sidebar-card-button-padding: 8px 10px;
+  --foundry-hub-sidebar-nav-padding: 10px 10px;
+  --foundry-hub-sidebar-nav-gap: 12px;
+  --foundry-hub-sidebar-nav-icon-box: 36px;
+  --foundry-hub-sidebar-nav-icon-size: 16px;
+  --foundry-hub-sidebar-nav-title-font: 13px;
+  --foundry-hub-sidebar-nav-sub-font: 10px;
+  --foundry-hub-sidebar-footer-button-font: 11px;
+  --foundry-hub-sidebar-footer-button-padding: 9px;
+  --foundry-app-header-button-font: 12px;
+  --foundry-app-header-button-padding: 6px 12px;
+  --foundry-app-header-title-font: 15px;
+  --foundry-app-header-meta-font: 10px;
+  --foundry-app-header-icon-size: 14px;
+  --foundry-app-page-content-scale: 1;
+  --foundry-academy-xs-font: 10px;
+  --foundry-academy-sm-font: 11px;
+  --foundry-academy-md-font: 12px;
+  --foundry-doc-content-width: 600px;
+  --foundry-doc-card-title-font: 13px;
+  --foundry-doc-card-body-font: 11px;
+  --foundry-doc-card-meta-font: 10px;
+  --foundry-doc-card-large-font: 12px;
 }
 
 html,
@@ -41,13 +100,13 @@ select {
 }
 
 .foundry-page {
-  width: min(1120px, 100%);
+  width: min(var(--foundry-page-width), 100%);
   margin: 0 auto;
   padding: 24px 20px 56px;
 }
 
 .foundry-page--narrow {
-  width: min(720px, 100%);
+  width: min(var(--foundry-page-narrow-width), 100%);
 }
 
 .foundry-grid-2 {
@@ -148,7 +207,7 @@ select {
 }
 
 .hub-content {
-  width: min(760px, 100%);
+  width: min(var(--foundry-hub-content-width), 100%);
   margin: 0 auto;
   padding: 20px 16px 64px;
 }
@@ -186,7 +245,135 @@ select {
   animation: fadeIn 0.2s ease;
 }
 
+@media (min-width: 1024px) {
+  :root {
+    --foundry-page-width: 1240px;
+    --foundry-page-narrow-width: 760px;
+    --foundry-hub-content-width: 860px;
+    --foundry-forge-chat-width: 800px;
+    --foundry-desktop-ui-scale: 1.11;
+    --foundry-forge-tab-content-scale: 1.12;
+    --foundry-app-page-content-scale: 1.08;
+  }
+
+  .hub-content {
+    zoom: var(--foundry-desktop-ui-scale);
+  }
+
+}
+
+@media (min-width: 1440px) {
+  :root {
+    --foundry-page-width: 1400px;
+    --foundry-page-narrow-width: 840px;
+    --foundry-hub-content-width: 980px;
+    --foundry-forge-chat-width: 920px;
+    --foundry-desktop-ui-scale: 1.17;
+    --foundry-forge-header-button-font: 20px;
+    --foundry-forge-header-button-padding: 11px 21px;
+    --foundry-forge-header-menu-padding: 11px 15px;
+    --foundry-forge-header-stage-title-font: 21px;
+    --foundry-forge-header-stage-meta-font: 16px;
+    --foundry-forge-header-tab-font: 16px;
+    --foundry-forge-header-tab-padding: 11px 18px;
+    --foundry-forge-header-secondary-tab-font: 16px;
+    --foundry-forge-header-secondary-tab-padding: 11px 18px;
+    --foundry-forge-header-icon-size: 24px;
+    --foundry-forge-header-stage-icon-size: 26px;
+    --foundry-forge-header-chevron-icon-size: 27px;
+    --foundry-forge-tab-content-scale: 1.27;
+    --foundry-hub-header-menu-font: 20px;
+    --foundry-hub-header-menu-padding: 11px 15px;
+    --foundry-hub-header-title-font: 21px;
+    --foundry-hub-header-meta-font: 16px;
+    --foundry-hub-header-cta-font: 20px;
+    --foundry-hub-header-cta-padding: 11px 21px;
+    --foundry-hub-header-cta-icon-size: 24px;
+    --foundry-hub-sidebar-width: 420px;
+    --foundry-hub-sidebar-header-padding: max(30px, calc(21px + env(safe-area-inset-top))) 24px 24px;
+    --foundry-hub-sidebar-title-font: 23px;
+    --foundry-hub-sidebar-close-font: 18px;
+    --foundry-hub-sidebar-close-padding: 8px 15px;
+    --foundry-hub-sidebar-name-font: 20px;
+    --foundry-hub-sidebar-summary-font: 17px;
+    --foundry-hub-sidebar-section-label-font: 14px;
+    --foundry-hub-sidebar-card-title-font: 20px;
+    --foundry-hub-sidebar-card-copy-font: 15px;
+    --foundry-hub-sidebar-card-button-font: 17px;
+    --foundry-hub-sidebar-card-button-padding: 12px 15px;
+    --foundry-hub-sidebar-nav-padding: 15px 15px;
+    --foundry-hub-sidebar-nav-gap: 18px;
+    --foundry-hub-sidebar-nav-icon-box: 54px;
+    --foundry-hub-sidebar-nav-icon-size: 24px;
+    --foundry-hub-sidebar-nav-title-font: 20px;
+    --foundry-hub-sidebar-nav-sub-font: 15px;
+    --foundry-hub-sidebar-footer-button-font: 17px;
+    --foundry-hub-sidebar-footer-button-padding: 14px;
+    --foundry-app-header-button-font: 20px;
+    --foundry-app-header-button-padding: 11px 21px;
+    --foundry-app-header-title-font: 21px;
+    --foundry-app-header-meta-font: 16px;
+    --foundry-app-header-icon-size: 24px;
+    --foundry-app-page-content-scale: 1.18;
+    --foundry-academy-xs-font: 12px;
+    --foundry-academy-sm-font: 13px;
+    --foundry-academy-md-font: 14px;
+    --foundry-doc-content-width: 700px;
+    --foundry-doc-card-title-font: 15px;
+    --foundry-doc-card-body-font: 13px;
+    --foundry-doc-card-meta-font: 12px;
+    --foundry-doc-card-large-font: 14px;
+  }
+}
+
+.forge-screen__content,
+.forge-screen__composer,
+.forge-screen__archive,
+.forge-screen__goals {
+  zoom: var(--foundry-forge-tab-content-scale);
+}
+
+.forge-screen__stage-trigger {
+  min-width: 0;
+  max-width: min(52vw, 420px);
+}
+
+.forge-screen__stage-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.forge-screen__stage-title,
+.forge-screen__stage-meta {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.foundry-app-page__content {
+  zoom: var(--foundry-app-page-content-scale);
+}
+
 @media (max-width: 768px) {
+  .forge-screen__stage-trigger {
+    max-width: calc(100vw - 176px);
+    gap: 6px;
+    padding: 4px 8px !important;
+  }
+
+  .forge-screen__stage-title {
+    font-size: 12px !important;
+    line-height: 1.1;
+  }
+
+  .forge-screen__stage-meta {
+    display: none;
+  }
+
+  .forge-screen__stage-chevron {
+    margin-left: 0 !important;
+  }
+
   .foundry-page {
     padding: 20px 16px 40px;
   }
