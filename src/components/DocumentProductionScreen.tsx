@@ -215,7 +215,21 @@ export interface DocumentScreenContext {
     documentContent: string | null;
 }
 
-export default function DocumentProductionScreen({ userId, profile, onBack, onContextChange }: { userId: string; profile: any; onBack: () => void; onContextChange?: (ctx: DocumentScreenContext) => void }) {
+export default function DocumentProductionScreen({
+    userId,
+    profile,
+    onBack,
+    onContextChange,
+    generationLocked = false,
+    generationLockMessage = null,
+}: {
+    userId: string;
+    profile: any;
+    onBack: () => void;
+    onContextChange?: (ctx: DocumentScreenContext) => void;
+    generationLocked?: boolean;
+    generationLockMessage?: string | null;
+}) {
     // ── Navigation ──────────────────────────────────────────
     const [phase, setPhase] = useState<Phase>("categories");
     const [selectedCategory, setSelectedCategory] = useState<DocCategory | null>(null);
@@ -355,7 +369,7 @@ export default function DocumentProductionScreen({ userId, profile, onBack, onCo
 
     // ── Generate document ────────────────────────────────────
     const generate = async () => {
-        if (generating) return;
+        if (generating || generationLocked) return;
         const requirement = selectedDoc && selectedCategory ? getDocumentRequirement(selectedDoc, selectedCategory) : null;
         const validation = requirement ? validateDocumentInputs(requirement, docInputs) : { valid: true, missingRequired: [], errors: {} };
         if (!validation.valid) {
@@ -716,7 +730,7 @@ export default function DocumentProductionScreen({ userId, profile, onBack, onCo
     // ═══════════════════════════════════════════════════════════
     if (phase === "configure" && selectedDoc && selectedCategory) {
         const smartPrompts = SMART_PROMPTS[selectedDoc.id] ?? DEFAULT_SMART_PROMPTS;
-        const canGenerate = currentValidation.valid;
+        const canGenerate = currentValidation.valid && !generationLocked;
 
         return (
             <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8" }}>
@@ -728,6 +742,21 @@ export default function DocumentProductionScreen({ userId, profile, onBack, onCo
                 />
 
                 <div className="foundry-app-page__content" style={{ maxWidth: "var(--foundry-doc-content-width)", margin: "0 auto", padding: "20px 16px 100px" }}>
+                    {generationLocked && generationLockMessage && (
+                        <div style={{
+                            marginBottom: 18,
+                            padding: "14px 16px",
+                            borderRadius: 12,
+                            background: "rgba(232,98,42,0.06)",
+                            border: "1px solid rgba(232,98,42,0.18)",
+                            fontSize: "var(--foundry-doc-card-body-font)",
+                            color: "#D8C9BC",
+                            lineHeight: 1.65,
+                        }}>
+                            {generationLockMessage}
+                        </div>
+                    )}
+
                     {/* Document identity block */}
                     <div style={{ marginBottom: 24, padding: "16px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.02)", animation: "fadeSlideUp 0.3s ease both" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
@@ -884,7 +913,7 @@ export default function DocumentProductionScreen({ userId, profile, onBack, onCo
                     {/* Generate button */}
                     <button
                         onClick={generate}
-                        disabled={generating}
+                        disabled={generating || generationLocked}
                         style={{
                             width: "100%", padding: "15px",
                             background: canGenerate ? "linear-gradient(135deg, #E8622A, #c9521e)" : "rgba(255,255,255,0.06)",
@@ -896,7 +925,7 @@ export default function DocumentProductionScreen({ userId, profile, onBack, onCo
                             transition: "all 0.15s",
                         }}
                     >
-                        {canGenerate ? "Generate Document →" : "Complete Required Info →"}
+                        {generationLocked ? "Document generation unlocks after Stage 1" : canGenerate ? "Generate Document →" : "Complete Required Info →"}
                     </button>
                 </div>
             </div>

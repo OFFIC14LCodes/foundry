@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode, type ChangeEvent } from "react";
 import { Archive } from "lucide-react";
 import { STAGES_DATA } from "../constants/stages";
+import { supabase } from "../supabase";
 import {
     buildYoutubeEmbedUrl,
     buildYoutubeThumbnailUrl,
@@ -18,6 +19,8 @@ import {
     type AcademyUserSeriesItemProgress,
     type AcademyWorkspace,
 } from "../lib/academy";
+import { STAGE_COLORS } from "../constants/glossary";
+import { loadGlossaryTerms, type GlossaryTerm } from "../lib/glossaryDb";
 import {
     loadAcademyWorkspace,
     recordAcademyHistory,
@@ -39,12 +42,76 @@ type ForgeAcademyScreenProps = {
     onOpenAskForgeAnything: () => void;
     onContextChange?: (ctx: AcademyScreenContext) => void;
     onOpenArchive?: () => void;
+    maxPreviewStage?: number | null;
+    trialNotice?: string | null;
 };
 
 const surface = "rgba(255,255,255,0.03)";
 const border = "1px solid rgba(255,255,255,0.08)";
 const textMuted = "#9D978E";
 const stageFilterOptions = [{ id: 0, label: "All stages" }, ...STAGES_DATA.map((stage) => ({ id: stage.id, label: `Stage ${stage.id}` }))];
+const PATH_STAGE_DESCRIPTIONS: Record<number, string> = {
+    1: "Prove the problem is real before building anything",
+    2: "Build a coherent business model before spending serious money",
+    3: "Protect the business and founder with the right structure",
+    4: "Build the financial foundation that makes every decision clearer",
+    5: "Get the first paying customers and a repeatable way to find more",
+    6: "Scale what's working without breaking what made it work",
+};
+
+type PathLessonStatus = "not_started" | "in_progress" | "completed";
+
+type UserLessonProgressRow = {
+    id: string;
+    user_id: string;
+    content_id: string;
+    status: PathLessonStatus;
+    started_at: string | null;
+    completed_at: string | null;
+    updated_at: string | null;
+};
+
+type PathSeriesBlock = {
+    type: "series";
+    id: string;
+    priority: number;
+    title: string;
+    difficultyLabel: string | null;
+    items: AcademyContent[];
+    totalMinutes: number;
+};
+
+type PathLessonBlock = {
+    type: "lesson";
+    id: string;
+    priority: number;
+    lesson: AcademyContent;
+};
+
+type PathStageGroup = {
+    stage: number;
+    title: string;
+    description: string;
+    coreBlocks: Array<PathSeriesBlock | PathLessonBlock>;
+    enrichmentBlocks: Array<PathSeriesBlock | PathLessonBlock>;
+    coreLessons: AcademyContent[];
+    enrichmentLessons: AcademyContent[];
+    completedCoreCount: number;
+    completedLessonCount: number;
+    totalLessonCount: number;
+    totalCoreCount: number;
+};
+
+type PathRecommendation = {
+    lesson: AcademyContent;
+    reason: string;
+    action: "Continue" | "Start";
+};
+
+function isMissingRelationError(error: any) {
+    const message = String(error?.message ?? "").toLowerCase();
+    return error?.code === "PGRST205" || message.includes("user_lesson_progress");
+}
 
 export default function ForgeAcademyScreen({
     userId,
@@ -54,6 +121,8 @@ export default function ForgeAcademyScreen({
     onOpenAskForgeAnything,
     onContextChange,
     onOpenArchive,
+    maxPreviewStage = null,
+    trialNotice = null,
 }: ForgeAcademyScreenProps) {
     const [workspace, setWorkspace] = useState<AcademyWorkspace>({
         categories: [],
@@ -72,12 +141,24 @@ export default function ForgeAcademyScreen({
     const [selectedSeries, setSelectedSeries] = useState<AcademySeries | null>(null);
     const [busyKey, setBusyKey] = useState<string | null>(null);
     const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 900);
+    const [activeView, setActiveView] = useState<"path" | "library" | "glossary" | "guide">("path");
+    const [glossaryTerms, setGlossaryTerms] = useState<GlossaryTerm[]>([]);
+    const [glossaryLoading, setGlossaryLoading] = useState(false);
+    const [pathProgressRows, setPathProgressRows] = useState<UserLessonProgressRow[]>([]);
+    const [pathProgressLoading, setPathProgressLoading] = useState(true);
+    const [expandedEnrichmentStages, setExpandedEnrichmentStages] = useState<Record<number, boolean>>({});
 
     useEffect(() => {
         const onResize = () => setIsMobile(window.innerWidth <= 900);
         window.addEventListener("resize", onResize);
         return () => window.removeEventListener("resize", onResize);
     }, []);
+
+    useEffect(() => {
+        if (maxPreviewStage === null) return;
+        if (selectedStageId === 0 || selectedStageId <= maxPreviewStage) return;
+        setSelectedStageId(0);
+    }, [maxPreviewStage, selectedStageId]);
 
     useEffect(() => {
         if (!onContextChange) return;
@@ -116,6 +197,39 @@ export default function ForgeAcademyScreen({
         void refreshWorkspace();
     }, [userId]);
 
+    useEffect(() => {
+        let cancelled = false;
+        setPathProgressLoading(true);
+        supabase
+            .from("user_lesson_progress")
+            .select("*")
+            .eq("user_id", userId)
+            .then(({ data, error: progressError }) => {
+                if (cancelled) return;
+                if (progressError) {
+                    if (!isMissingRelationError(progressError)) {
+                        console.error("user lesson progress load error:", progressError);
+                    }
+                    setPathProgressRows([]);
+                    return;
+                }
+                setPathProgressRows((data ?? []) as UserLessonProgressRow[]);
+            })
+            .finally(() => {
+                if (!cancelled) setPathProgressLoading(false);
+            });
+        return () => { cancelled = true; };
+    }, [userId]);
+
+    useEffect(() => {
+        const stage = Number(profile?.currentStage) || 1;
+        setGlossaryLoading(true);
+        loadGlossaryTerms(stage)
+            .then(setGlossaryTerms)
+            .catch(() => {})
+            .finally(() => setGlossaryLoading(false));
+    }, [userId, profile?.currentStage]);
+
     const contentProgressById = useMemo(
         () => new Map(workspace.contentProgress.map((entry) => [entry.contentId, entry])),
         [workspace.contentProgress]
@@ -124,26 +238,68 @@ export default function ForgeAcademyScreen({
         () => new Map(workspace.seriesItemProgress.map((entry) => [entry.seriesItemId, entry])),
         [workspace.seriesItemProgress]
     );
+    const visibleContent = useMemo(() => {
+        if (maxPreviewStage === null) return workspace.content;
+        return workspace.content.filter((entry) => entry.stageIds.some((stageId) => stageId <= maxPreviewStage));
+    }, [maxPreviewStage, workspace.content]);
+    const visibleContentIds = useMemo(() => new Set(visibleContent.map((entry) => entry.id)), [visibleContent]);
+    const visibleSeries = useMemo(() => {
+        if (maxPreviewStage === null) return workspace.series;
+        return workspace.series
+            .map((entry) => {
+                const items = entry.items.filter((item) => item.content && visibleContentIds.has(item.content.id));
+                const stageIds = Array.from(new Set(items.flatMap((item) => item.content?.stageIds ?? []))).sort((a, b) => a - b);
+                return { ...entry, items, stageIds };
+            })
+            .filter((entry) => entry.items.length > 0);
+    }, [maxPreviewStage, visibleContentIds, workspace.series]);
+    const visibleContentById = useMemo(() => new Map(visibleContent.map((entry) => [entry.id, entry])), [visibleContent]);
+    const visibleSeriesById = useMemo(() => new Map(visibleSeries.map((entry) => [entry.id, entry])), [visibleSeries]);
+    const visibleSeriesItemIds = useMemo(() => new Set(visibleSeries.flatMap((entry) => entry.items.map((item) => item.id))), [visibleSeries]);
+    const stageOptions = useMemo(() => (
+        maxPreviewStage === null
+            ? stageFilterOptions
+            : stageFilterOptions.filter((stage) => stage.id === 0 || stage.id <= maxPreviewStage)
+    ), [maxPreviewStage]);
+    const pathProgressByContentId = useMemo(
+        () => new Map(pathProgressRows.map((entry) => [entry.content_id, entry])),
+        [pathProgressRows]
+    );
+    const effectiveContentProgressById = useMemo(() => {
+        const merged = new Map(contentProgressById);
+        pathProgressRows.forEach((entry) => {
+            merged.set(entry.content_id, {
+                userId: entry.user_id,
+                contentId: entry.content_id,
+                status: entry.status,
+                completedAt: entry.completed_at,
+                lastOpenedAt: entry.started_at ?? entry.updated_at,
+                lastForgeOpenedAt: null,
+                updatedAt: entry.updated_at ?? new Date().toISOString(),
+            });
+        });
+        return merged;
+    }, [contentProgressById, pathProgressRows]);
 
     const filteredContent = useMemo(() => {
-        return workspace.content.filter((entry) => {
+        return visibleContent.filter((entry) => {
             const categoryMatch = selectedCategoryId === "all" || entry.categoryId === selectedCategoryId;
             const stageMatch = selectedStageId === 0 || entry.stageIds.includes(selectedStageId);
             return categoryMatch && stageMatch;
         });
-    }, [selectedCategoryId, selectedStageId, workspace.content]);
+    }, [selectedCategoryId, selectedStageId, visibleContent]);
 
     const filteredSeries = useMemo(() => {
-        return workspace.series.filter((entry) => {
+        return visibleSeries.filter((entry) => {
             const categoryMatch = selectedCategoryId === "all" || entry.categoryId === selectedCategoryId;
             const stageMatch = selectedStageId === 0 || entry.stageIds.includes(selectedStageId);
             return categoryMatch && stageMatch;
         });
-    }, [selectedCategoryId, selectedStageId, workspace.series]);
+    }, [selectedCategoryId, selectedStageId, visibleSeries]);
 
     const featuredTopics = filteredContent.filter((entry) => {
         if (entry.contentType !== "topic" || !entry.featured) return false;
-        const status = contentProgressById.get(entry.id)?.status;
+        const status = effectiveContentProgressById.get(entry.id)?.status;
         return status !== "in_progress" && status !== "completed";
     }).slice(0, 6);
     const lessonSeries = filteredSeries.slice(0, 6);
@@ -151,10 +307,10 @@ export default function ForgeAcademyScreen({
     const resources = filteredContent.filter((entry) => entry.contentType === "resource").slice(0, 6);
     const mindset = filteredContent.filter((entry) => entry.contentType === "mindset").slice(0, 6);
     const continueLearning = filteredContent
-        .filter((entry) => contentProgressById.get(entry.id)?.status === "in_progress")
+        .filter((entry) => effectiveContentProgressById.get(entry.id)?.status === "in_progress")
         .sort((a, b) => {
-            const aOpened = contentProgressById.get(a.id)?.lastOpenedAt ?? "";
-            const bOpened = contentProgressById.get(b.id)?.lastOpenedAt ?? "";
+            const aOpened = effectiveContentProgressById.get(a.id)?.lastOpenedAt ?? "";
+            const bOpened = effectiveContentProgressById.get(b.id)?.lastOpenedAt ?? "";
             return bOpened.localeCompare(aOpened);
         })
         .slice(0, 4);
@@ -162,7 +318,7 @@ export default function ForgeAcademyScreen({
         workspace.history
             .filter((entry) => entry.contentId && (entry.action === "viewed" || entry.action === "started_video" || entry.action === "opened_forge"))
             .map((entry) => {
-                const content = workspace.content.find((item) => item.id === entry.contentId);
+                const content = entry.contentId ? visibleContentById.get(entry.contentId) : undefined;
                 return content ? [content.id, content] : null;
             })
             .filter(Boolean) as Array<[string, AcademyContent]>
@@ -170,19 +326,206 @@ export default function ForgeAcademyScreen({
         .filter((entry) => !continueLearning.some((item) => item.id === entry.id))
         .slice(0, 4);
 
-    const completedContentCount = workspace.contentProgress.filter((entry) => entry.status === "completed").length;
-    const totalLessonsCount = workspace.content.length;
-    const completedSeriesItems = workspace.seriesItemProgress.filter((entry) => entry.status === "completed").length;
-    const recentHistory = workspace.history.slice(0, 4);
+    const completedContentCount = Array.from(effectiveContentProgressById.values()).filter((entry) => entry.status === "completed" && visibleContentIds.has(entry.contentId)).length;
+    const totalLessonsCount = visibleContent.length;
+    const completedSeriesItems = workspace.seriesItemProgress.filter((entry) => entry.status === "completed" && visibleSeriesItemIds.has(entry.seriesItemId)).length;
+    const recentHistory = workspace.history.filter((entry) => (
+        (!entry.contentId || visibleContentIds.has(entry.contentId)) &&
+        (!entry.seriesId || visibleSeriesById.has(entry.seriesId))
+    )).slice(0, 4);
     const nextSeriesUp = lessonSeries
         .map((series) => ({ series, nextItem: getNextSeriesItem(series, seriesItemProgressById) }))
         .filter((entry) => entry.nextItem)
         .slice(0, 3);
 
+    const persistPathProgress = async (contentId: string, status: PathLessonStatus) => {
+        const existing = pathProgressByContentId.get(contentId) ?? null;
+        const now = new Date().toISOString();
+        const payload = {
+            user_id: userId,
+            content_id: contentId,
+            status,
+            started_at: status === "not_started" ? null : existing?.started_at ?? now,
+            completed_at: status === "completed" ? now : null,
+            updated_at: now,
+        };
+
+        if (existing) {
+            const { data, error: updateError } = await supabase
+                .from("user_lesson_progress")
+                .update(payload)
+                .eq("id", existing.id)
+                .select()
+                .single();
+            if (updateError) {
+                if (!isMissingRelationError(updateError)) {
+                    console.error("user lesson progress update error:", updateError);
+                }
+                return;
+            }
+            if (data) {
+                setPathProgressRows((prev) => prev.map((entry) => entry.id === existing.id ? data as UserLessonProgressRow : entry));
+            }
+            return;
+        }
+
+        const { data, error: insertError } = await supabase
+            .from("user_lesson_progress")
+            .insert(payload)
+            .select()
+            .single();
+        if (insertError) {
+            if (!isMissingRelationError(insertError)) {
+                console.error("user lesson progress insert error:", insertError);
+            }
+            return;
+        }
+        if (data) {
+            setPathProgressRows((prev) => [data as UserLessonProgressRow, ...prev.filter((entry) => entry.content_id !== contentId)]);
+        }
+    };
+
+    const markLessonInProgress = async (contentId: string) => {
+        const currentStatus = pathProgressByContentId.get(contentId)?.status ?? "not_started";
+        if (currentStatus === "completed" || currentStatus === "in_progress") return;
+        await persistPathProgress(contentId, "in_progress");
+    };
+
+    const pathStageGroups = useMemo<PathStageGroup[]>(() => {
+        const contentByStage = new Map<number, AcademyContent[]>();
+        for (const content of visibleContent) {
+            const stage = content.pathStage ?? content.stageIds[0] ?? 1;
+            const existing = contentByStage.get(stage) ?? [];
+            existing.push(content);
+            contentByStage.set(stage, existing);
+        }
+
+        const seriesContentIds = new Set(visibleSeries.flatMap((series) => series.items.map((item) => item.contentId)));
+
+        return Array.from({ length: 6 }, (_, index) => {
+            const stage = index + 1;
+            const stageLessons = [...(contentByStage.get(stage) ?? [])].sort((a, b) => a.priority - b.priority || a.title.localeCompare(b.title));
+            const stageSeries = visibleSeries.flatMap((series) => {
+                const items = [...series.items]
+                    .filter((item) => item.content && (item.content.pathStage ?? item.content.stageIds[0] ?? 1) === stage)
+                    .sort((a, b) => a.position - b.position || (a.content?.priority ?? 0) - (b.content?.priority ?? 0));
+                if (items.length === 0) return [];
+
+                const makeBlock = (suffix: string, blockItems: typeof items): PathSeriesBlock | null => {
+                    const lessons = blockItems.map((item) => item.content).filter((item): item is AcademyContent => Boolean(item));
+                    if (lessons.length === 0) return null;
+                    return {
+                        type: "series",
+                        id: `${series.id}-${suffix}`,
+                        priority: Math.min(...lessons.map((lesson) => lesson.priority)),
+                        title: series.title,
+                        difficultyLabel: series.difficultyLabel,
+                        items: lessons,
+                        totalMinutes: lessons.reduce((sum, lesson) => sum + (lesson.estimatedMinutes ?? 0), 0),
+                    };
+                };
+
+                return [
+                    makeBlock("core", items.filter((item) => item.content?.isCore)),
+                    makeBlock("enrichment", items.filter((item) => !item.content?.isCore)),
+                ].filter((entry): entry is PathSeriesBlock => Boolean(entry));
+            });
+
+            const standaloneLessons = stageLessons
+                .filter((lesson) => !seriesContentIds.has(lesson.id))
+                .map((lesson) => ({
+                    type: "lesson" as const,
+                    id: lesson.id,
+                    priority: lesson.priority,
+                    lesson,
+                }));
+
+            const allBlocks = [...stageSeries, ...standaloneLessons].sort((a, b) => a.priority - b.priority || a.id.localeCompare(b.id));
+            const coreBlocks = allBlocks.filter((block) => block.type === "series" ? block.items[0]?.isCore : block.lesson.isCore);
+            const enrichmentBlocks = allBlocks.filter((block) => block.type === "series" ? !block.items[0]?.isCore : !block.lesson.isCore);
+            const coreLessons = stageLessons.filter((lesson) => lesson.isCore);
+            const enrichmentLessons = stageLessons.filter((lesson) => !lesson.isCore);
+            const completedCoreCount = coreLessons.filter((lesson) => pathProgressByContentId.get(lesson.id)?.status === "completed").length;
+            const completedLessonCount = stageLessons.filter((lesson) => pathProgressByContentId.get(lesson.id)?.status === "completed").length;
+
+            return {
+                stage,
+                title: STAGES_DATA.find((entry) => entry.id === stage)?.label ?? `Stage ${stage}`,
+                description: PATH_STAGE_DESCRIPTIONS[stage],
+                coreBlocks,
+                enrichmentBlocks,
+                coreLessons,
+                enrichmentLessons,
+                completedCoreCount,
+                completedLessonCount,
+                totalLessonCount: stageLessons.length,
+                totalCoreCount: coreLessons.length,
+            };
+        });
+    }, [pathProgressByContentId, visibleContent, visibleSeries]);
+
+    const pathRecommendation = useMemo<PathRecommendation | null>(() => {
+        const allCoreLessons = pathStageGroups.flatMap((group) => group.coreLessons);
+        const inProgressLesson = allCoreLessons.find((lesson) => pathProgressByContentId.get(lesson.id)?.status === "in_progress")
+            ?? visibleContent.find((lesson) => pathProgressByContentId.get(lesson.id)?.status === "in_progress")
+            ?? null;
+        if (inProgressLesson) {
+            return {
+                lesson: inProgressLesson,
+                reason: "You already started this lesson. Keep the thread warm and build from the thinking that is already moving.",
+                action: "Continue",
+            };
+        }
+
+        const firstIncompleteStage = pathStageGroups.find((group) => group.totalCoreCount === 0 || group.completedCoreCount < group.totalCoreCount) ?? null;
+        if (firstIncompleteStage) {
+            const nextLesson = firstIncompleteStage.coreLessons.find((lesson) => (pathProgressByContentId.get(lesson.id)?.status ?? "not_started") !== "completed") ?? firstIncompleteStage.coreLessons[0] ?? null;
+            if (nextLesson) {
+                return {
+                    lesson: nextLesson,
+                    reason: `Stage ${firstIncompleteStage.stage} is your active stretch right now. This is the next core lesson that moves the path forward.`,
+                    action: pathProgressByContentId.get(nextLesson.id)?.status === "in_progress" ? "Continue" : "Start",
+                };
+            }
+        }
+
+        const nextEnrichmentLesson = pathStageGroups
+            .flatMap((group) => group.enrichmentLessons)
+            .find((lesson) => (pathProgressByContentId.get(lesson.id)?.status ?? "not_started") !== "completed") ?? null;
+        if (nextEnrichmentLesson) {
+            return {
+                lesson: nextEnrichmentLesson,
+                reason: "You cleared the core path. Go deeper where a stronger founder instinct still compounds.",
+                action: "Start",
+            };
+        }
+
+        return visibleContent[0]
+            ? {
+                lesson: visibleContent[0],
+                reason: "Start with the first lesson on the path and let the roadmap build from there.",
+                action: "Start",
+            }
+            : null;
+    }, [pathProgressByContentId, pathStageGroups, visibleContent]);
+
+    const activePathStage = pathRecommendation?.lesson.pathStage
+        ?? pathStageGroups.find((group) => group.totalCoreCount === 0 || group.completedCoreCount < group.totalCoreCount)?.stage
+        ?? 1;
+
+    const toggleEnrichmentStage = (stage: number) => {
+        setExpandedEnrichmentStages((prev) => ({ ...prev, [stage]: !prev[stage] }));
+    };
+
+    const launchLessonFromPath = async (content: AcademyContent) => {
+        await handleLaunchForge(content);
+    };
+
     const openContent = async (content: AcademyContent, action: "viewed" | "started_video" = "viewed") => {
         setSelectedSeries(null);
         setSelectedContent(content);
         try {
+            await markLessonInProgress(content.id);
             await touchAcademyContentOpened(userId, content.id);
             await recordAcademyHistory(userId, action, {
                 contentId: content.id,
@@ -227,6 +570,7 @@ export default function ForgeAcademyScreen({
         if (!canLaunchForgeFromContent(content)) return;
         setBusyKey(`forge-${content.id}`);
         try {
+            await markLessonInProgress(content.id);
             await touchAcademyContentForgeOpened(userId, content.id);
             await recordAcademyHistory(userId, "opened_forge", {
                 contentId: content.id,
@@ -243,6 +587,7 @@ export default function ForgeAcademyScreen({
     const handleToggleContentComplete = async (content: AcademyContent, completed: boolean) => {
         setBusyKey(`content-${content.id}`);
         try {
+            await persistPathProgress(content.id, completed ? "completed" : "in_progress");
             const progress = await upsertAcademyContentProgress(userId, content.id, completed);
             if (completed) {
                 await recordAcademyHistory(userId, "completed", {
@@ -276,6 +621,7 @@ export default function ForgeAcademyScreen({
     const handleToggleSeriesItemComplete = async (series: AcademySeries, item: AcademySeriesItem, completed: boolean) => {
         setBusyKey(`series-item-${item.id}`);
         try {
+            await persistPathProgress(item.contentId, completed ? "completed" : "in_progress");
             const progress = await upsertAcademySeriesItemProgress(userId, series.id, item.id, completed);
             if (completed) {
                 await recordAcademyHistory(userId, "completed_series_item", {
@@ -333,6 +679,39 @@ export default function ForgeAcademyScreen({
 
     return (
         <AcademyShell onBack={onBack} onOpenArchive={onOpenArchive}>
+            <div style={{ display: "flex", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+                <FilterPill active={activeView === "path"} onClick={() => setActiveView("path")}>Path</FilterPill>
+                <FilterPill active={activeView === "library"} onClick={() => setActiveView("library")}>Library</FilterPill>
+                <FilterPill active={activeView === "glossary"} onClick={() => setActiveView("glossary")}>Glossary</FilterPill>
+                <FilterPill active={activeView === "guide"} onClick={() => setActiveView("guide")}>Guide</FilterPill>
+            </div>
+
+            {activeView === "path" && (
+                <PathView
+                    stages={pathStageGroups}
+                    recommendation={pathRecommendation}
+                    activeStage={activePathStage}
+                    progressByContentId={pathProgressByContentId}
+                    loading={pathProgressLoading}
+                    busyKey={busyKey}
+                    onLaunchLesson={launchLessonFromPath}
+                    expandedEnrichmentStages={expandedEnrichmentStages}
+                    onToggleEnrichmentStage={toggleEnrichmentStage}
+                    trialNotice={trialNotice}
+                />
+            )}
+
+            {activeView === "glossary" && (
+                <GlossaryView terms={glossaryTerms} loading={glossaryLoading} />
+            )}
+
+            {activeView === "guide" && (
+                <div style={{ maxWidth: 1180, margin: "0 auto" }}>
+                    <AcademyGuideCard activeView={activeView} />
+                </div>
+            )}
+
+            {activeView === "library" && (
             <div style={{ maxWidth: 1180, margin: "0 auto", display: "grid", gap: 18 }}>
                 <div style={{
                     background: "linear-gradient(180deg, rgba(232,98,42,0.07), rgba(255,255,255,0.025))",
@@ -352,9 +731,22 @@ export default function ForgeAcademyScreen({
                         </div>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
                             <HeroPill label={`${totalLessonsCount} lessons available`} />
-                            <HeroPill label={`${workspace.series.length} series`} />
+                            <HeroPill label={`${visibleSeries.length} series`} />
                             <HeroPill label={`${completedContentCount} completed`} />
                         </div>
+                        {trialNotice && (
+                            <div style={{
+                                padding: "12px 14px",
+                                borderRadius: 14,
+                                background: "rgba(232,98,42,0.08)",
+                                border: "1px solid rgba(232,98,42,0.18)",
+                                fontSize: 12,
+                                color: "#D9C7B8",
+                                lineHeight: 1.65,
+                            }}>
+                                {trialNotice}
+                            </div>
+                        )}
                         {continueLearning.length > 0 && (
                             <div style={{ fontSize: 13, color: "#9D978E" }}>
                                 You have {continueLearning.length} lesson{continueLearning.length !== 1 ? "s" : ""} in progress —{" "}
@@ -398,7 +790,7 @@ export default function ForgeAcademyScreen({
                             ))}
                         </div>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                            {stageFilterOptions.map((stage) => (
+                            {stageOptions.map((stage) => (
                                 <FilterPill
                                     key={stage.id}
                                     active={selectedStageId === stage.id}
@@ -426,7 +818,7 @@ export default function ForgeAcademyScreen({
                                     <ContentCard
                                         key={entry.id}
                                         content={entry}
-                                        progress={contentProgressById.get(entry.id)}
+                                        progress={effectiveContentProgressById.get(entry.id)}
                                         onOpen={() => void openContent(entry, entry.contentType === "video" ? "started_video" : "viewed")}
                                         onLaunchForge={() => void handleLaunchForge(entry)}
                                         busy={busyKey === `forge-${entry.id}`}
@@ -458,7 +850,7 @@ export default function ForgeAcademyScreen({
                                     <ContentCard
                                         key={entry.id}
                                         content={entry}
-                                        progress={contentProgressById.get(entry.id)}
+                                        progress={effectiveContentProgressById.get(entry.id)}
                                         onOpen={() => void openContent(entry)}
                                         onLaunchForge={() => void handleLaunchForge(entry)}
                                         busy={busyKey === `forge-${entry.id}`}
@@ -499,7 +891,7 @@ export default function ForgeAcademyScreen({
                                 <ContentCard
                                     key={entry.id}
                                     content={entry}
-                                    progress={contentProgressById.get(entry.id)}
+                                    progress={effectiveContentProgressById.get(entry.id)}
                                     onOpen={() => void openContent(entry, entry.contentType === "video" ? "started_video" : "viewed")}
                                     onLaunchForge={() => void handleLaunchForge(entry)}
                                     busy={busyKey === `forge-${entry.id}`}
@@ -521,7 +913,7 @@ export default function ForgeAcademyScreen({
                                 <ContentCard
                                     key={entry.id}
                                     content={entry}
-                                    progress={contentProgressById.get(entry.id)}
+                                    progress={effectiveContentProgressById.get(entry.id)}
                                     onOpen={() => void openContent(entry, "started_video")}
                                     onLaunchForge={() => void handleLaunchForge(entry)}
                                     busy={busyKey === `forge-${entry.id}`}
@@ -542,7 +934,7 @@ export default function ForgeAcademyScreen({
                                 <ContentCard
                                     key={entry.id}
                                     content={entry}
-                                    progress={contentProgressById.get(entry.id)}
+                                    progress={effectiveContentProgressById.get(entry.id)}
                                     onOpen={() => void openContent(entry)}
                                     onLaunchForge={() => void handleLaunchForge(entry)}
                                     busy={busyKey === `forge-${entry.id}`}
@@ -563,7 +955,7 @@ export default function ForgeAcademyScreen({
                                 <ContentCard
                                     key={entry.id}
                                     content={entry}
-                                    progress={contentProgressById.get(entry.id)}
+                                    progress={effectiveContentProgressById.get(entry.id)}
                                     onOpen={() => void openContent(entry)}
                                     onLaunchForge={() => void handleLaunchForge(entry)}
                                     busy={busyKey === `forge-${entry.id}`}
@@ -625,7 +1017,7 @@ export default function ForgeAcademyScreen({
                             ) : (
                                 <div style={{ display: "grid", gap: 10 }}>
                                     {recentHistory.map((entry) => (
-                                        <HistoryRow key={entry.id} entry={entry} content={workspace.content.find((c) => c.id === entry.contentId) ?? null} series={workspace.series.find((s) => s.id === entry.seriesId) ?? null} />
+                                        <HistoryRow key={entry.id} entry={entry} content={entry.contentId ? visibleContentById.get(entry.contentId) ?? null : null} series={entry.seriesId ? visibleSeriesById.get(entry.seriesId) ?? null : null} />
                                     ))}
                                 </div>
                             )}
@@ -675,11 +1067,12 @@ export default function ForgeAcademyScreen({
                     );
                 })()}
             </div>
+            )}
 
             {selectedContent && (
                 <ContentDetailModal
                     content={selectedContent}
-                    progress={contentProgressById.get(selectedContent.id)}
+                    progress={effectiveContentProgressById.get(selectedContent.id)}
                     onClose={() => setSelectedContent(null)}
                     onToggleComplete={(completed) => void handleToggleContentComplete(selectedContent, completed)}
                     onLaunchForge={canLaunchForgeFromContent(selectedContent) ? () => void handleLaunchForge(selectedContent) : undefined}
@@ -698,6 +1091,660 @@ export default function ForgeAcademyScreen({
                 />
             )}
         </AcademyShell>
+    );
+}
+
+function AcademyGuideCard({ activeView }: { activeView: "path" | "library" | "guide" }) {
+    return (
+        <div style={{
+            maxWidth: 1180,
+            margin: "0 auto",
+            padding: "16px 18px",
+            borderRadius: 18,
+            background: "rgba(255,255,255,0.03)",
+            border,
+            display: "grid",
+            gap: 14,
+        }}>
+            <div style={{ display: "grid", gap: 4 }}>
+                <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700 }}>
+                    How To Use Forge Academy
+                </div>
+                <div style={{ fontSize: 18, lineHeight: 1.15, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
+                    Learn the room once, then the whole system makes sense
+                </div>
+            </div>
+
+            <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+                <GuideBlock
+                    title="Core"
+                    body="The main required lessons for a stage. Clear these first if you want the strongest path through Academy."
+                />
+                <GuideBlock
+                    title="Applied"
+                    body="A practical lesson meant to sharpen judgment in real business situations, not just teach theory."
+                />
+                <GuideBlock
+                    title="Go Deeper"
+                    body="Optional enrichment lessons. Use these after the core path when you want more reps, nuance, or context."
+                />
+                <GuideBlock
+                    title="Learn with Forge"
+                    body="Opens a guided Forge conversation from that lesson so you can turn the topic into your actual situation."
+                />
+            </div>
+
+            <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+                <GuideBlock
+                    title="Path"
+                    body="The primary roadmap. Use it when you want Forge Academy to show the next stage-based lesson in sequence."
+                />
+                <GuideBlock
+                    title="Library"
+                    body="The browseable catalog. Use filters to explore by discipline or stage when you already know what you want."
+                />
+                <GuideBlock
+                    title="Glossary"
+                    body="A quick-reference language bank. Search terms by name or meaning, and use it when Forge uses business language you want to ground more clearly."
+                />
+                <GuideBlock
+                    title="Archive"
+                    body="Saved Academy chats and lesson conversations live in Archive, so useful teaching does not disappear after one session."
+                />
+            </div>
+
+            <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+                <GuideBlock
+                    title="Continue Learning"
+                    body="Picks up lessons you already opened or started, so you do not lose momentum every time you leave Academy."
+                />
+                <GuideBlock
+                    title="Featured Topics"
+                    body="Strong starting points picked to matter early. Use these when you want a sharp lesson fast rather than a full sequence."
+                />
+                <GuideBlock
+                    title="Lesson Series"
+                    body="Multi-lesson tracks that stack ideas in order. Best when one concept is not enough and you want a fuller progression."
+                />
+                <GuideBlock
+                    title="Winner's Mindset"
+                    body="The founder psychology side of the work: hesitation, identity, resilience, fear, and patterns that affect execution."
+                />
+            </div>
+
+            <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+                <GuideBlock
+                    title="Start Learning"
+                    body="Opens the lesson walkthrough first, so you get the structured teaching before going into conversation with Forge."
+                />
+                <GuideBlock
+                    title="Recommendation Card"
+                    body="At the top of Path, Forge Academy suggests the best next lesson based on what is in progress and what core work is still incomplete."
+                />
+                <GuideBlock
+                    title="Progress Status"
+                    body="Not Started means untouched, In Progress means you began the lesson or opened it with Forge, and Completed means you marked it done."
+                />
+                <GuideBlock
+                    title="Filters"
+                    body="Library filters help when the room is too broad. Narrow by discipline or stage when you want signal, not more scrolling."
+                />
+            </div>
+
+            <div style={{
+                padding: "12px 14px",
+                borderRadius: 14,
+                background: "rgba(232,98,42,0.06)",
+                border: "1px solid rgba(232,98,42,0.16)",
+                fontSize: 13,
+                color: "#C8C4BE",
+                lineHeight: 1.75,
+            }}>
+                {activeView === "path"
+                    ? "Path is the roadmap. Move stage by stage, complete the core lessons, then open Go Deeper when you want extra depth. Use Library when you want to browse the full curriculum more freely."
+                    : activeView === "library"
+                        ? "Library is the browseable catalog. Use it when you already know what you want to study, want to reopen lessons, or want to jump by category instead of following the path."
+                        : "Use this Guide tab when you want a quick reset on Academy language, navigation, lesson states, and where to go next. Then jump back into Path, Library, or Glossary when you are ready."}
+            </div>
+        </div>
+    );
+}
+
+function GuideBlock({ title, body }: { title: string; body: string }) {
+    return (
+        <div style={{
+            padding: "12px 13px",
+            borderRadius: 14,
+            background: "rgba(255,255,255,0.02)",
+            border: "1px solid rgba(255,255,255,0.06)",
+            display: "grid",
+            gap: 6,
+        }}>
+            <div style={{ fontSize: 13, color: "#F0EDE8", fontWeight: 700 }}>
+                {title}
+            </div>
+            <div style={{ fontSize: 12, color: "#A8A4A0", lineHeight: 1.7 }}>
+                {body}
+            </div>
+        </div>
+    );
+}
+
+function PathView({
+    stages,
+    recommendation,
+    activeStage,
+    progressByContentId,
+    loading,
+    busyKey,
+    onLaunchLesson,
+    expandedEnrichmentStages,
+    onToggleEnrichmentStage,
+    trialNotice,
+}: {
+    stages: PathStageGroup[];
+    recommendation: PathRecommendation | null;
+    activeStage: number;
+    progressByContentId: Map<string, UserLessonProgressRow>;
+    loading: boolean;
+    busyKey: string | null;
+    onLaunchLesson: (content: AcademyContent) => void;
+    expandedEnrichmentStages: Record<number, boolean>;
+    onToggleEnrichmentStage: (stage: number) => void;
+    trialNotice?: string | null;
+}) {
+    return (
+        <div style={{ maxWidth: 980, margin: "0 auto", display: "grid", gap: 18 }}>
+            <div style={{
+                background: "linear-gradient(180deg, rgba(232,98,42,0.08), rgba(255,255,255,0.02))",
+                border,
+                borderRadius: 26,
+                padding: "24px 22px",
+                display: "grid",
+                gap: 16,
+            }}>
+                <div style={{ display: "grid", gap: 8 }}>
+                    <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#E8622A", letterSpacing: "0.16em", textTransform: "uppercase" }}>
+                        Forge Academy Path
+                    </div>
+                    <div style={{ fontSize: "clamp(28px, 4.4vw, 40px)", lineHeight: 1.02, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
+                        A roadmap, not a pile of lessons
+                    </div>
+                    <div style={{ fontSize: 14, color: "#BDAFA2", lineHeight: 1.8, fontStyle: "italic" }}>
+                        Move stage by stage. Clear the core path first. Go deeper when the business needs depth, not distraction.
+                    </div>
+                </div>
+
+                {trialNotice && (
+                    <div style={{
+                        padding: "12px 14px",
+                        borderRadius: 14,
+                        background: "rgba(232,98,42,0.08)",
+                        border: "1px solid rgba(232,98,42,0.18)",
+                        fontSize: 12,
+                        color: "#D9C7B8",
+                        lineHeight: 1.65,
+                    }}>
+                        {trialNotice}
+                    </div>
+                )}
+
+                <div style={{
+                    background: "rgba(255,255,255,0.03)",
+                    border,
+                    borderRadius: 20,
+                    padding: "18px 18px 16px",
+                    display: "grid",
+                    gap: 12,
+                }}>
+                    <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700 }}>
+                        Your next step
+                    </div>
+                    {loading ? (
+                        <div style={{ fontSize: 14, color: textMuted, lineHeight: 1.7 }}>Loading your lesson progress...</div>
+                    ) : recommendation ? (
+                        <>
+                            <div style={{ fontSize: 26, lineHeight: 1.08, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
+                                {recommendation.lesson.title}
+                            </div>
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                                <HeroPill label={`Stage ${recommendation.lesson.pathStage ?? recommendation.lesson.stageIds[0] ?? 1}`} />
+                                {recommendation.lesson.difficultyLabel && <HeroPill label={recommendation.lesson.difficultyLabel} />}
+                                {recommendation.lesson.estimatedMinutes ? <HeroPill label={`${recommendation.lesson.estimatedMinutes} min`} /> : null}
+                            </div>
+                            <div style={{ fontSize: 14, color: "#C8C4BE", lineHeight: 1.8 }}>
+                                {recommendation.reason}
+                            </div>
+                            <div>
+                                <InlineButton onClick={() => onLaunchLesson(recommendation.lesson)}>
+                                    {recommendation.action}
+                                </InlineButton>
+                            </div>
+                        </>
+                    ) : (
+                        <div style={{ fontSize: 14, color: textMuted, lineHeight: 1.7 }}>No lessons are available on the path yet.</div>
+                    )}
+                </div>
+            </div>
+
+            <div style={{ position: "relative", display: "grid", gap: 18 }}>
+                <div style={{
+                    position: "absolute",
+                    left: 30,
+                    top: 12,
+                    bottom: 12,
+                    width: 3,
+                    borderRadius: 999,
+                    background: "linear-gradient(180deg, rgba(232,98,42,0.42), rgba(255,255,255,0.1))",
+                    boxShadow: "0 0 18px rgba(232,98,42,0.08)",
+                    pointerEvents: "none",
+                }} />
+                {stages.map((stage) => (
+                    <PathStageCard
+                        key={stage.stage}
+                        stage={stage}
+                        activeStage={activeStage}
+                        progressByContentId={progressByContentId}
+                        busyKey={busyKey}
+                        onLaunchLesson={onLaunchLesson}
+                        enrichmentExpanded={Boolean(expandedEnrichmentStages[stage.stage])}
+                        onToggleEnrichment={() => onToggleEnrichmentStage(stage.stage)}
+                    />
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function PathStageCard({
+    stage,
+    activeStage,
+    progressByContentId,
+    busyKey,
+    onLaunchLesson,
+    enrichmentExpanded,
+    onToggleEnrichment,
+}: {
+    stage: PathStageGroup;
+    activeStage: number;
+    progressByContentId: Map<string, UserLessonProgressRow>;
+    busyKey: string | null;
+    onLaunchLesson: (content: AcademyContent) => void;
+    enrichmentExpanded: boolean;
+    onToggleEnrichment: () => void;
+}) {
+    const allCoreComplete = stage.totalCoreCount > 0 && stage.completedCoreCount >= stage.totalCoreCount;
+    const stageColor = allCoreComplete
+        ? "#4CAF8A"
+        : stage.stage === activeStage
+            ? "#E8622A"
+            : "rgba(255,255,255,0.2)";
+
+    return (
+        <div style={{ position: "relative", paddingLeft: 84 }}>
+            <div style={{
+                position: "absolute",
+                left: 16,
+                top: 9,
+                width: 30,
+                height: 30,
+                borderRadius: "50%",
+                background: `radial-gradient(circle at 35% 35%, ${stageColor}55, rgba(8,8,9,0.95))`,
+                border: `1px solid ${stageColor}`,
+                boxShadow: `0 0 0 6px ${stageColor}14, inset 0 0 18px rgba(255,255,255,0.05)`,
+                zIndex: 1,
+            }} />
+            <div style={{
+                position: "absolute",
+                left: 26,
+                top: 19,
+                width: 10,
+                height: 10,
+                borderRadius: "50%",
+                background: stageColor,
+                boxShadow: `0 0 12px ${stageColor}66`,
+                zIndex: 2,
+            }} />
+            <div style={{
+                position: "absolute",
+                left: 46,
+                top: 22,
+                width: 34,
+                height: 3,
+                borderRadius: 999,
+                background: `linear-gradient(90deg, ${stageColor}, rgba(255,255,255,0.18))`,
+                opacity: 0.95,
+            }} />
+
+            <div style={{
+                background: "rgba(255,255,255,0.025)",
+                border,
+                borderRadius: 22,
+                padding: "20px 20px 18px",
+                display: "grid",
+                gap: 16,
+            }}>
+                <div style={{ display: "grid", gap: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                        <div style={{ display: "grid", gap: 4 }}>
+                            <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: stageColor, letterSpacing: "0.16em", textTransform: "uppercase", fontWeight: 700 }}>
+                                Stage {stage.stage}
+                            </div>
+                            <div style={{ fontSize: 24, lineHeight: 1.08, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
+                                {stage.title}
+                            </div>
+                        </div>
+                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                            <HeroPill label={`${stage.completedLessonCount}/${stage.totalLessonCount} complete`} />
+                            <HeroPill label={`${stage.totalCoreCount} core lesson${stage.totalCoreCount === 1 ? "" : "s"}`} />
+                            {stage.enrichmentLessons.length > 0 ? <HeroPill label={`${stage.enrichmentLessons.length} deeper lesson${stage.enrichmentLessons.length === 1 ? "" : "s"}`} /> : null}
+                        </div>
+                    </div>
+                    <div style={{ fontSize: 14, color: "#C8C4BE", lineHeight: 1.8 }}>
+                        {stage.description}
+                    </div>
+                </div>
+
+                <div style={{ display: "grid", gap: 12 }}>
+                    {stage.coreBlocks.length > 0 ? stage.coreBlocks.map((block) => (
+                        block.type === "series"
+                            ? <PathSeriesGroup key={`series-${block.id}`} block={block} progressByContentId={progressByContentId} busyKey={busyKey} onLaunchLesson={onLaunchLesson} />
+                            : <PathLessonNode key={block.lesson.id} lesson={block.lesson} progress={progressByContentId.get(block.lesson.id) ?? null} busy={busyKey === `forge-${block.lesson.id}`} onLaunch={() => onLaunchLesson(block.lesson)} />
+                    )) : (
+                        <div style={{ fontSize: 13, color: "#777", lineHeight: 1.7 }}>
+                            No core lessons have been mapped to this stage yet.
+                        </div>
+                    )}
+                </div>
+
+                {stage.enrichmentBlocks.length > 0 && (
+                    <div style={{ display: "grid", gap: 12 }}>
+                        <button
+                            onClick={onToggleEnrichment}
+                            style={{
+                                background: "rgba(255,255,255,0.02)",
+                                border: "1px solid rgba(255,255,255,0.06)",
+                                borderRadius: 14,
+                                padding: "12px 14px",
+                                color: "rgba(240,237,232,0.6)",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                gap: 10,
+                                fontFamily: "'Lora', Georgia, serif",
+                                fontSize: 13,
+                            }}
+                        >
+                            <span>{`Go Deeper · ${stage.enrichmentLessons.length} lesson${stage.enrichmentLessons.length === 1 ? "" : "s"}`}</span>
+                            <span>{enrichmentExpanded ? "−" : "+"}</span>
+                        </button>
+                        {enrichmentExpanded && (
+                            <div style={{ display: "grid", gap: 12 }}>
+                                {stage.enrichmentBlocks.map((block) => (
+                                    block.type === "series"
+                                        ? <PathSeriesGroup key={`series-${block.id}`} block={block} progressByContentId={progressByContentId} busyKey={busyKey} onLaunchLesson={onLaunchLesson} muted />
+                                        : <PathLessonNode key={block.lesson.id} lesson={block.lesson} progress={progressByContentId.get(block.lesson.id) ?? null} busy={busyKey === `forge-${block.lesson.id}`} onLaunch={() => onLaunchLesson(block.lesson)} muted />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function PathSeriesGroup({
+    block,
+    progressByContentId,
+    busyKey,
+    onLaunchLesson,
+    muted = false,
+}: {
+    block: PathSeriesBlock;
+    progressByContentId: Map<string, UserLessonProgressRow>;
+    busyKey: string | null;
+    onLaunchLesson: (content: AcademyContent) => void;
+    muted?: boolean;
+}) {
+    return (
+        <div style={{
+            background: muted ? "rgba(255,255,255,0.02)" : "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.025))",
+            border: "1px solid rgba(255,255,255,0.07)",
+            borderRadius: 18,
+            padding: "14px 14px 12px 14px",
+            display: "grid",
+            gap: 12,
+        }}>
+            <div style={{ display: "grid", gap: 6 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+                    <div style={{ fontSize: 16, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: muted ? "rgba(240,237,232,0.72)" : "#F0EDE8" }}>
+                        {block.title}
+                    </div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        <SeriesMetaBadge label={`${block.items.length} lesson${block.items.length === 1 ? "" : "s"}`} muted={muted} />
+                        <SeriesMetaBadge label={`${block.totalMinutes} min`} muted={muted} />
+                        {block.difficultyLabel ? <SeriesMetaBadge label={block.difficultyLabel} muted={muted} /> : null}
+                    </div>
+                </div>
+            </div>
+            <div style={{ display: "grid", gap: 10 }}>
+                {block.items.map((lesson) => (
+                    <PathLessonNode
+                        key={lesson.id}
+                        lesson={lesson}
+                        progress={progressByContentId.get(lesson.id) ?? null}
+                        busy={busyKey === `forge-${lesson.id}`}
+                        onLaunch={() => onLaunchLesson(lesson)}
+                        muted={muted}
+                    />
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function PathLessonNode({
+    lesson,
+    progress,
+    busy,
+    onLaunch,
+    muted = false,
+}: {
+    lesson: AcademyContent;
+    progress: UserLessonProgressRow | null;
+    busy: boolean;
+    onLaunch: () => void;
+    muted?: boolean;
+}) {
+    const status = progress?.status ?? "not_started";
+    const statusColor = status === "completed" ? "#4CAF8A" : status === "in_progress" ? "#E8622A" : "rgba(255,255,255,0.35)";
+    const textColor = muted ? "rgba(240,237,232,0.72)" : "#F0EDE8";
+    const bodyColor = muted ? "rgba(240,237,232,0.6)" : "#C8C4BE";
+
+    return (
+        <div style={{ position: "relative", paddingLeft: 34 }}>
+            <div style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", width: 16, height: 16, borderRadius: "50%", background: "rgba(8,8,9,0.98)", border: `1px solid ${statusColor}`, boxShadow: `0 0 0 4px ${statusColor}12` }} />
+            <div style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", width: 6, height: 6, borderRadius: "50%", background: statusColor, boxShadow: `0 0 10px ${statusColor}55` }} />
+            <div style={{
+                background: muted ? "rgba(255,255,255,0.015)" : "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                borderRadius: 16,
+                padding: "14px 14px 13px",
+                display: "grid",
+                gap: 10,
+            }}>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                    <div style={{ display: "grid", gap: 6 }}>
+                        <div style={{ fontSize: 18, lineHeight: 1.16, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: textColor }}>
+                            {lesson.title}
+                        </div>
+                        {lesson.shortDescription && (
+                            <div style={{ fontSize: 13, color: bodyColor, lineHeight: 1.7 }}>
+                                {lesson.shortDescription}
+                            </div>
+                        )}
+                    </div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                        {lesson.difficultyLabel ? <SeriesMetaBadge label={lesson.difficultyLabel} muted={muted} /> : null}
+                        {lesson.estimatedMinutes ? <SeriesMetaBadge label={`${lesson.estimatedMinutes} min`} muted={muted} /> : null}
+                    </div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                    <div style={{ fontSize: 12, color: statusColor, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                        {status === "completed" ? "Completed" : status === "in_progress" ? "In Progress" : "Not Started"}
+                    </div>
+                    <InlineButton onClick={onLaunch} tone={muted ? "muted" : "primary"} disabled={busy}>
+                        {busy ? "Opening..." : "Learn with Forge"}
+                    </InlineButton>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function SeriesMetaBadge({ label, muted = false }: { label: string; muted?: boolean }) {
+    return (
+        <div style={{
+            padding: "5px 10px",
+            borderRadius: 999,
+            background: muted ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.045)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            color: muted ? "rgba(240,237,232,0.56)" : "#A8A4A0",
+            fontSize: 11,
+            lineHeight: 1,
+            whiteSpace: "nowrap",
+        }}>
+            {label}
+        </div>
+    );
+}
+
+function GlossaryView({ terms, loading }: { terms: GlossaryTerm[]; loading: boolean }) {
+    const [search, setSearch] = useState("");
+
+    const filtered = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        if (!q) return terms;
+        return terms.filter((t) =>
+            t.term.toLowerCase().includes(q) ||
+            t.definition.toLowerCase().includes(q)
+        );
+    }, [search, terms]);
+
+    const byCategory = useMemo(() => {
+        const map = new Map<string, GlossaryTerm[]>();
+        for (const t of filtered) {
+            const list = map.get(t.category) ?? [];
+            list.push(t);
+            map.set(t.category, list);
+        }
+        return map;
+    }, [filtered]);
+
+    const categoryOrder = ["Strategy", "Finance", "Marketing", "Sales", "Legal"];
+    const sortedCategories = Array.from(byCategory.keys()).sort((a, b) => {
+        const ai = categoryOrder.indexOf(a);
+        const bi = categoryOrder.indexOf(b);
+        if (ai === -1 && bi === -1) return a.localeCompare(b);
+        if (ai === -1) return 1;
+        if (bi === -1) return -1;
+        return ai - bi;
+    });
+
+    if (loading) {
+        return (
+            <div style={{ textAlign: "center", padding: "60px 20px", color: textMuted, fontSize: 14 }}>
+                Loading glossary…
+            </div>
+        );
+    }
+
+    return (
+        <div style={{ maxWidth: 1180, margin: "0 auto", display: "grid", gap: 24 }}>
+            <div style={{ display: "grid", gap: 10, maxWidth: 760, margin: "0 auto", textAlign: "center", width: "100%" }}>
+                <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#E8622A", letterSpacing: "0.16em", textTransform: "uppercase" }}>
+                    Forge Glossary
+                </div>
+                <div style={{ fontSize: "clamp(26px, 4vw, 38px)", lineHeight: 1.05, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
+                    The language that changes how you think
+                </div>
+                <div style={{ fontSize: 14, color: "#BDAFA2", lineHeight: 1.8, fontStyle: "italic" }}>
+                    Terms unlock as you advance through the stages. Every one of these is a concept the market will teach you one way or another.
+                </div>
+            </div>
+
+            <div style={{ position: "relative", maxWidth: 520, margin: "0 auto", width: "100%" }}>
+                <input
+                    type="text"
+                    placeholder="Search terms…"
+                    value={search}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+                    style={{
+                        width: "100%",
+                        padding: "12px 16px",
+                        background: "rgba(255,255,255,0.04)",
+                        border: "1px solid rgba(255,255,255,0.10)",
+                        borderRadius: 14,
+                        color: "#F0EDE8",
+                        fontSize: 14,
+                        fontFamily: "'Lora', Georgia, serif",
+                        outline: "none",
+                        boxSizing: "border-box",
+                    }}
+                />
+            </div>
+
+            {terms.length === 0 && (
+                <div style={{ textAlign: "center", padding: "40px 20px", color: textMuted, fontSize: 14, lineHeight: 1.8 }}>
+                    No glossary terms have been unlocked yet. Terms unlock as you move through the stages.
+                </div>
+            )}
+
+            {terms.length > 0 && filtered.length === 0 && (
+                <div style={{ textAlign: "center", padding: "40px 20px", color: textMuted, fontSize: 14 }}>
+                    No terms match your search.
+                </div>
+            )}
+
+            {sortedCategories.map((category) => {
+                const categoryTerms = byCategory.get(category)!;
+                return (
+                    <div key={category} style={{ display: "grid", gap: 14 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                            <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "#E8622A", letterSpacing: "0.16em", textTransform: "uppercase", fontWeight: 700, whiteSpace: "nowrap" }}>
+                                {category}
+                            </div>
+                            <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.07)" }} />
+                        </div>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>
+                            {categoryTerms.map((t) => {
+                                const stageColor = STAGE_COLORS[t.stage_unlock as keyof typeof STAGE_COLORS] ?? "#F5A843";
+                                return (
+                                    <div key={t.id} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, padding: 18, display: "grid", gap: 12 }}>
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+                                            <div style={{ fontSize: 16, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", lineHeight: 1.2 }}>
+                                                {t.term}
+                                            </div>
+                                            <div style={{ fontSize: 10, color: stageColor, background: `${stageColor}18`, border: `1px solid ${stageColor}30`, borderRadius: 20, padding: "2px 9px", fontWeight: 500, flexShrink: 0 }}>
+                                                Stage {t.stage_unlock}
+                                            </div>
+                                        </div>
+                                        <div style={{ fontSize: 13, color: "#C8C4BE", lineHeight: 1.75 }}>
+                                            {t.definition}
+                                        </div>
+                                        <div style={{ fontSize: 12, color: "#7A736B", fontStyle: "italic", lineHeight: 1.7, borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 10 }}>
+                                            {t.usage_example}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
     );
 }
 

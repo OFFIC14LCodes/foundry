@@ -124,7 +124,23 @@ Use this structure:
 Keep the whole thing under 300 words. Write it the way Forge speaks — direct, warm, no filler, no corporate language. This should feel like a Monday morning text from a partner who's been thinking about their business over the weekend.
 `.trim();
 
-export default function BriefingsScreen({ userId, profile, briefings, onBriefingsChange, onBack, completedByStage }) {
+export default function BriefingsScreen({
+    userId,
+    profile,
+    briefings,
+    onBriefingsChange,
+    onBack,
+    completedByStage,
+    generationLimit = null,
+}: {
+    userId: string;
+    profile: any;
+    briefings: any[];
+    onBriefingsChange: (next: any[]) => void;
+    onBack: () => void;
+    completedByStage: Record<number, any[]>;
+    generationLimit?: number | null;
+}) {
     const [generating, setGenerating] = useState(false);
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [mounted, setMounted] = useState(false);
@@ -145,9 +161,11 @@ export default function BriefingsScreen({ userId, profile, briefings, onBriefing
         ? Math.floor((Date.now() - lastBriefingDate.getTime()) / (1000 * 60 * 60 * 24))
         : null;
     const canGenerate = daysSinceLast === null || daysSinceLast >= 1;
+    const hasReachedLimit = generationLimit !== null && briefings.length >= generationLimit;
+    const canCreateBriefing = canGenerate && !hasReachedLimit;
 
     const generateBriefing = async () => {
-        if (generating || !canGenerate) return;
+        if (generating || !canCreateBriefing) return;
         setGenerating(true);
         try {
             const prompt = FORGE_BRIEFING_PROMPT(profile, stageLabel, completedCount, totalCount);
@@ -215,23 +233,24 @@ export default function BriefingsScreen({ userId, profile, briefings, onBriefing
                     }}>Monday Briefings</div>
                     <div style={{ fontSize: "var(--foundry-app-header-meta-font)", color: "#555" }}>
                         {briefings.length} {briefings.length === 1 ? "briefing" : "briefings"}
+                        {generationLimit !== null ? ` · ${Math.max(0, generationLimit - briefings.length)} free left` : ""}
                     </div>
                 </div>
 
                 <button
                     onClick={generateBriefing}
-                    disabled={generating || !canGenerate}
+                    disabled={generating || !canCreateBriefing}
                     style={{
-                        background: generating || !canGenerate ? "rgba(255,255,255,0.04)" : "rgba(232,98,42,0.1)",
-                        border: generating || !canGenerate ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(232,98,42,0.25)",
+                        background: generating || !canCreateBriefing ? "rgba(255,255,255,0.04)" : "rgba(232,98,42,0.1)",
+                        border: generating || !canCreateBriefing ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(232,98,42,0.25)",
                         borderRadius: 8, padding: "var(--foundry-app-header-button-padding)",
-                        color: generating || !canGenerate ? "#444" : "#E8622A",
+                        color: generating || !canCreateBriefing ? "#444" : "#E8622A",
                         fontSize: "var(--foundry-app-header-button-font)", fontWeight: 500,
-                        cursor: generating || !canGenerate ? "default" : "pointer",
+                        cursor: generating || !canCreateBriefing ? "default" : "pointer",
                         transition: "all 0.2s"
                     }}
                 >
-                    {generating ? "Writing..." : canGenerate ? "+ New" : "Up to date"}
+                    {generating ? "Writing..." : hasReachedLimit ? "Preview limit reached" : canGenerate ? "+ New" : "Up to date"}
                 </button>
             </div>
 
@@ -240,6 +259,22 @@ export default function BriefingsScreen({ userId, profile, briefings, onBriefing
                 flex: 1, overflowY: "auto", padding: "16px",
                 maxWidth: 680, width: "100%", margin: "0 auto"
             }} className="foundry-app-page__content">
+                {generationLimit !== null && (
+                    <div style={{
+                        marginBottom: 14,
+                        padding: "12px 14px",
+                        borderRadius: 12,
+                        background: hasReachedLimit ? "rgba(232,98,42,0.07)" : "rgba(232,98,42,0.05)",
+                        border: hasReachedLimit ? "1px solid rgba(232,98,42,0.2)" : "1px solid rgba(232,98,42,0.14)",
+                        fontSize: 12,
+                        color: hasReachedLimit ? "#D9B9A6" : "#BDAFA2",
+                        lineHeight: 1.65,
+                    }}>
+                        {hasReachedLimit
+                            ? `Free preview includes ${generationLimit} Monday Briefings. You have used them all.`
+                            : `Free preview includes up to ${generationLimit} Monday Briefings so Stage 1 founders can still get weekly guidance.`}
+                    </div>
+                )}
 
                 {/* Empty state */}
                 {briefings.length === 0 && !generating && (
@@ -259,14 +294,14 @@ export default function BriefingsScreen({ userId, profile, briefings, onBriefing
                         }}>
                             Forge will write you a personalized briefing — your priorities, a relevant framework, and one sharp question to start the week with.
                         </div>
-                        <button onClick={generateBriefing} disabled={generating} style={{
-                            background: generating ? "rgba(232,98,42,0.3)" : "linear-gradient(135deg, #E8622A, #c9521e)",
+                        <button onClick={generateBriefing} disabled={generating || hasReachedLimit} style={{
+                            background: generating || hasReachedLimit ? "rgba(232,98,42,0.3)" : "linear-gradient(135deg, #E8622A, #c9521e)",
                             border: "none", borderRadius: 12, padding: "12px 24px",
                             color: "#fff", fontSize: 13, fontFamily: "'Lora', Georgia, serif",
-                            fontWeight: 600, cursor: generating ? "default" : "pointer",
-                            boxShadow: generating ? "none" : "0 4px 20px rgba(232,98,42,0.3)"
+                            fontWeight: 600, cursor: generating || hasReachedLimit ? "default" : "pointer",
+                            boxShadow: generating || hasReachedLimit ? "none" : "0 4px 20px rgba(232,98,42,0.3)"
                         }}>
-                            {generating ? "Forge is writing..." : "Get your first briefing"}
+                            {generating ? "Forge is writing..." : hasReachedLimit ? "Preview limit reached" : "Get your first briefing"}
                         </button>
                     </div>
                 )}

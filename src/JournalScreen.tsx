@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { saveJournalEntry, deleteJournalEntry } from "./db";
 import Logo from "./components/Logo";
+import MicButton from "./components/MicButton";
 
 // ─────────────────────────────────────────────────────────────
 // FOUNDER'S JOURNAL
@@ -141,8 +142,11 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                         weekday: "long", month: "long", day: "numeric"
                                     })}
                                 </div>
-                                <div style={{ fontSize: 11, color: "#444" }}>
-                                    {wordCount > 0 ? `${wordCount} words` : "Start writing..."}
+                                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                    <div style={{ fontSize: 11, color: "#444" }}>
+                                        {wordCount > 0 ? `${wordCount} words` : "Start writing..."}
+                                    </div>
+                                    <MicButton value={draft} onChange={setDraft} size={16} idleColor="#555" />
                                 </div>
                             </div>
                             <textarea

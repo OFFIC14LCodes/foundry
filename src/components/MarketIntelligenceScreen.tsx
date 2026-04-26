@@ -135,12 +135,14 @@ export default function MarketIntelligenceScreen({
     report,
     onReportChange,
     onBack,
+    generationLimit = null,
 }: {
     profile: any;
     userId: string;
     report: MarketReport | null;
     onReportChange: (r: MarketReport | null) => void;
     onBack: () => void;
+    generationLimit?: number | null;
 }) {
     const [generating, setGenerating] = useState(false);
     const [streamedContent, setStreamedContent] = useState("");
@@ -193,6 +195,8 @@ export default function MarketIntelligenceScreen({
     const hasSavedReport = hasUsableContent(currentReport);
     const isCurrentReport = hasSavedReport && !!currentReport && isToday(currentReport.date);
     const hasOutdatedReport = hasSavedReport && !!currentReport && !isToday(currentReport.date);
+    const hasReachedLimit = generationLimit !== null && reportHistory.length >= generationLimit && !isCurrentReport;
+    const canGenerateReport = !hasReachedLimit;
 
     const industry = profile.industry || profile.idea?.slice(0, 40) || "your market";
 
@@ -204,7 +208,7 @@ export default function MarketIntelligenceScreen({
     };
 
     const generate = async () => {
-        if (generating || isCurrentReport) return;
+        if (generating || isCurrentReport || !canGenerateReport) return;
         setGenerating(true);
         setStreamedContent("");
         setSaveError(null);
@@ -286,6 +290,22 @@ export default function MarketIntelligenceScreen({
 
             {/* Content */}
             <div className="foundry-app-page__content" style={{ flex: 1, overflowY: "auto", padding: "20px 16px 60px", maxWidth: 980, width: "100%", margin: "0 auto" }}>
+                {generationLimit !== null && (
+                    <div style={{
+                        marginBottom: 14,
+                        padding: "12px 14px",
+                        borderRadius: 12,
+                        background: hasReachedLimit ? "rgba(232,98,42,0.07)" : "rgba(232,98,42,0.05)",
+                        border: hasReachedLimit ? "1px solid rgba(232,98,42,0.2)" : "1px solid rgba(232,98,42,0.14)",
+                        fontSize: 12,
+                        color: hasReachedLimit ? "#D9B9A6" : "#BDAFA2",
+                        lineHeight: 1.65,
+                    }}>
+                        {hasReachedLimit
+                            ? `Free preview includes ${generationLimit} saved market reports. You have reached that limit.`
+                            : `Free preview includes up to ${generationLimit} market reports so early founders can test the workflow without opening the full research library.`}
+                    </div>
+                )}
 
                 {/* Mobile: horizontal history strip above main content */}
                 {isNarrow && reportHistory.length > 0 && (
@@ -353,9 +373,10 @@ export default function MarketIntelligenceScreen({
 
                         <button
                             onClick={generate}
-                            style={{ width: "100%", padding: "15px", background: "linear-gradient(135deg, #E8622A, #c9521e)", border: "none", borderRadius: 14, color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "'Lora', Georgia, serif", animation: "fadeSlideUp 0.4s ease 0.15s both" }}
+                            disabled={!canGenerateReport}
+                            style={{ width: "100%", padding: "15px", background: canGenerateReport ? "linear-gradient(135deg, #E8622A, #c9521e)" : "rgba(255,255,255,0.06)", border: "none", borderRadius: 14, color: canGenerateReport ? "#fff" : "#555", fontSize: 15, fontWeight: 700, cursor: canGenerateReport ? "pointer" : "default", fontFamily: "'Lora', Georgia, serif", animation: "fadeSlideUp 0.4s ease 0.15s both" }}
                         >
-                            Generate Today's Report →
+                            {hasReachedLimit ? "Preview limit reached" : "Generate Today's Report →"}
                         </button>
                     </div>
                 )}
@@ -369,9 +390,10 @@ export default function MarketIntelligenceScreen({
                         </div>
                         <button
                             onClick={generate}
-                            style={{ background: "rgba(245,168,67,0.12)", border: "1px solid rgba(245,168,67,0.25)", borderRadius: 8, padding: "6px 14px", color: "#F5A843", fontSize: 11, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}
+                            disabled={!canGenerateReport}
+                            style={{ background: canGenerateReport ? "rgba(245,168,67,0.12)" : "rgba(255,255,255,0.04)", border: canGenerateReport ? "1px solid rgba(245,168,67,0.25)" : "1px solid rgba(255,255,255,0.06)", borderRadius: 8, padding: "6px 14px", color: canGenerateReport ? "#F5A843" : "#555", fontSize: 11, fontWeight: 600, cursor: canGenerateReport ? "pointer" : "default", flexShrink: 0 }}
                         >
-                            Refresh
+                            {hasReachedLimit ? "Preview limit reached" : "Refresh"}
                         </button>
                     </div>
                 )}

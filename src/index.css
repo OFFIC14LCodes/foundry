@@ -354,6 +354,14 @@ select {
   zoom: var(--foundry-app-page-content-scale);
 }
 
+.forge-chat-room__title-wrap {
+  min-width: 0;
+}
+
+.forge-chat-room__title {
+  min-width: 0;
+}
+
 @media (max-width: 768px) {
   .forge-screen__stage-trigger {
     max-width: calc(100vw - 176px);
@@ -372,6 +380,27 @@ select {
 
   .forge-screen__stage-chevron {
     margin-left: 0 !important;
+  }
+
+  .forge-chat-room__title {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.15;
+    font-size: 13px !important;
+    max-width: 100%;
+  }
+
+  .forge-chat-room__subtitle {
+    display: none;
+  }
+
+  .forge-chat-room__action {
+    font-size: 10px !important;
+    padding: 5px 10px !important;
+    flex-shrink: 0;
   }
 
   .foundry-page {

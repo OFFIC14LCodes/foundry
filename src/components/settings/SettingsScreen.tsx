@@ -1,4 +1,5 @@
 import { useState } from "react";
+import MicButton from "../MicButton";
 import type { BillingSubscription } from "../../lib/accessGate";
 import { roleLabel } from "../../lib/roles";
 import { getReengagementThresholdCopy, type AppNotification, type UserNotificationPreferences } from "../../lib/notifications";
@@ -381,26 +382,32 @@ export default function SettingsScreen({
                                 <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.7 }}>
                                     This sends an email directly to {SUPPORT_EMAIL}. Include what happened, what screen you were on, and what you expected instead.
                                 </div>
-                                <textarea
-                                    value={supportMessage}
-                                    onChange={(event) => setSupportMessage(event.target.value)}
-                                    placeholder="Tell us what you need help with..."
-                                    rows={6}
-                                    style={{
-                                        width: "100%",
-                                        resize: "vertical",
-                                        background: "rgba(255,255,255,0.04)",
-                                        border: "1px solid rgba(255,255,255,0.1)",
-                                        borderRadius: 12,
-                                        color: "#F0EDE8",
-                                        fontSize: 13,
-                                        lineHeight: 1.7,
-                                        padding: 14,
-                                        outline: "none",
-                                        fontFamily: "inherit",
-                                        boxSizing: "border-box",
-                                    }}
-                                />
+                                <div style={{ position: "relative" }}>
+                                    <textarea
+                                        value={supportMessage}
+                                        onChange={(event) => setSupportMessage(event.target.value)}
+                                        placeholder="Tell us what you need help with..."
+                                        rows={6}
+                                        style={{
+                                            width: "100%",
+                                            resize: "vertical",
+                                            background: "rgba(255,255,255,0.04)",
+                                            border: "1px solid rgba(255,255,255,0.1)",
+                                            borderRadius: 12,
+                                            color: "#F0EDE8",
+                                            fontSize: 13,
+                                            lineHeight: 1.7,
+                                            padding: 14,
+                                            paddingTop: 36,
+                                            outline: "none",
+                                            fontFamily: "inherit",
+                                            boxSizing: "border-box",
+                                        }}
+                                    />
+                                    <div style={{ position: "absolute", top: 8, right: 8 }}>
+                                        <MicButton value={supportMessage} onChange={setSupportMessage} size={16} idleColor="#555" />
+                                    </div>
+                                </div>
                                 <div className="foundry-inline-actions">
                                     <SettingsButton tone="primary" onClick={handleSupportSubmit} disabled={supportSubmitting || !supportMessage.trim()}>
                                         {supportSubmitting ? "Sending..." : "Submit Support Ticket"}
@@ -421,26 +428,32 @@ export default function SettingsScreen({
                                 <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.7 }}>
                                     If there is a feature, workflow, or improvement you want in Foundry, send it here.
                                 </div>
-                                <textarea
-                                    value={suggestionMessage}
-                                    onChange={(event) => setSuggestionMessage(event.target.value)}
-                                    placeholder="What would be a strong addition to Foundry?"
-                                    rows={6}
-                                    style={{
-                                        width: "100%",
-                                        resize: "vertical",
-                                        background: "rgba(255,255,255,0.04)",
-                                        border: "1px solid rgba(255,255,255,0.1)",
-                                        borderRadius: 12,
-                                        color: "#F0EDE8",
-                                        fontSize: 13,
-                                        lineHeight: 1.7,
-                                        padding: 14,
-                                        outline: "none",
-                                        fontFamily: "inherit",
-                                        boxSizing: "border-box",
-                                    }}
-                                />
+                                <div style={{ position: "relative" }}>
+                                    <textarea
+                                        value={suggestionMessage}
+                                        onChange={(event) => setSuggestionMessage(event.target.value)}
+                                        placeholder="What would be a strong addition to Foundry?"
+                                        rows={6}
+                                        style={{
+                                            width: "100%",
+                                            resize: "vertical",
+                                            background: "rgba(255,255,255,0.04)",
+                                            border: "1px solid rgba(255,255,255,0.1)",
+                                            borderRadius: 12,
+                                            color: "#F0EDE8",
+                                            fontSize: 13,
+                                            lineHeight: 1.7,
+                                            padding: 14,
+                                            paddingTop: 36,
+                                            outline: "none",
+                                            fontFamily: "inherit",
+                                            boxSizing: "border-box",
+                                        }}
+                                    />
+                                    <div style={{ position: "absolute", top: 8, right: 8 }}>
+                                        <MicButton value={suggestionMessage} onChange={setSuggestionMessage} size={16} idleColor="#555" />
+                                    </div>
+                                </div>
                                 <div className="foundry-inline-actions">
                                     <SettingsButton tone="primary" onClick={handleSuggestionSubmit} disabled={suggestionSubmitting || !suggestionMessage.trim()}>
                                         {suggestionSubmitting ? "Sending..." : "Submit Suggestion"}

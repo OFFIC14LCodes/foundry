@@ -9,6 +9,7 @@ import { formatCurrency, getBudgetRangeLabel, parseBudgetInput } from "../lib/bu
 import { getBusinessHealth } from "../lib/businessHealth";
 import { summarizeBusinessIdea } from "../lib/businessSummary";
 import Logo from "./Logo";
+import MicButton from "./MicButton";
 
 export default function HubScreen({
     profile,
@@ -1065,7 +1066,12 @@ export default function HubScreen({
                 <div className="hub-modal-backdrop" onClick={() => setShowDecisionModal(false)}>
                     <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: "#0E0E10", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 22, animation: "fadeSlideUp 0.3s ease" }}>
                         <div style={{ fontSize: 17, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 16 }}>Log a Decision</div>
-                        <textarea value={decisionText} onChange={e => setDecisionText(e.target.value)} placeholder="What did you decide and why?" rows={3} autoFocus style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", lineHeight: 1.6, boxSizing: "border-box" }} />
+                        <div style={{ position: "relative" }}>
+                            <textarea value={decisionText} onChange={e => setDecisionText(e.target.value)} placeholder="What did you decide and why?" rows={3} autoFocus style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 36px 10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", lineHeight: 1.6, boxSizing: "border-box" }} />
+                            <div style={{ position: "absolute", top: 8, right: 8 }}>
+                                <MicButton value={decisionText} onChange={setDecisionText} size={16} idleColor="#555" />
+                            </div>
+                        </div>
                         <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
                             {Object.keys(TAG_COLORS).map(t => (
                                 <button key={t} onClick={() => setDecisionTag(t)} style={{ padding: "4px 12px", borderRadius: 20, border: "none", background: decisionTag === t ? TAG_COLORS[t].bg : "rgba(255,255,255,0.04)", color: decisionTag === t ? TAG_COLORS[t].text : "#555", fontSize: 11, cursor: "pointer" }}>{t}</button>

@@ -154,6 +154,8 @@ function mapContent(row: any, categoriesById: Map<string, AcademyCategory>, tags
         transcript: row.transcript ?? null,
         featured: row.featured ?? false,
         priority: row.priority ?? 0,
+        pathStage: row.path_stage ?? null,
+        isCore: row.is_core ?? false,
         status: row.status,
         publishedAt: row.published_at ?? null,
         createdAt: row.created_at,

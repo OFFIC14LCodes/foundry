@@ -58,6 +58,8 @@ export type AcademyContent = {
     transcript: string | null;
     featured: boolean;
     priority: number;
+    pathStage: number | null;
+    isCore: boolean;
     status: AcademyStatus;
     publishedAt: string | null;
     createdAt: string;

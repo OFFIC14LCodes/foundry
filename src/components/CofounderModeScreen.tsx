@@ -6,6 +6,7 @@ import { applyFoundryBookCitations, buildFoundryBookContext } from '../lib/found
 import { Icons } from '../icons';
 import ForgeAvatar from './ForgeAvatar';
 import { MessageActions } from './AnimatedChatText';
+import MicButton from './MicButton';
 import type {
     CofounderTeam,
     CofounderMember,
@@ -894,6 +895,11 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
                                         fontFamily: "'Lora', Georgia, serif", lineHeight: 1.5,
                                         outline: 'none', maxHeight: 120, overflowY: 'auto',
                                     }}
+                                />
+                                <MicButton
+                                    value={input}
+                                    onChange={setInput}
+                                    disabled={chatLoading}
                                 />
                                 <button
                                     onClick={handleSend}

@@ -57,6 +57,31 @@ function readAsBase64(file: File): Promise<string> {
     });
 }
 
+const MAX_IMAGE_PX = 1024;
+
+function resizeImageToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        const objectUrl = URL.createObjectURL(file);
+        img.onload = () => {
+            URL.revokeObjectURL(objectUrl);
+            const { naturalWidth: w, naturalHeight: h } = img;
+            const scale = w > h ? MAX_IMAGE_PX / w : MAX_IMAGE_PX / h;
+            const targetW = scale < 1 ? Math.round(w * scale) : w;
+            const targetH = scale < 1 ? Math.round(h * scale) : h;
+            const canvas = document.createElement("canvas");
+            canvas.width = targetW;
+            canvas.height = targetH;
+            const ctx = canvas.getContext("2d")!;
+            ctx.drawImage(img, 0, 0, targetW, targetH);
+            const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+            resolve(dataUrl.split(",")[1] ?? "");
+        };
+        img.onerror = reject;
+        img.src = objectUrl;
+    });
+}
+
 const MAX_TEXT_CHARS = 20_000;
 
 export async function processFile(file: File): Promise<AttachedFile> {
@@ -69,7 +94,7 @@ export async function processFile(file: File): Promise<AttachedFile> {
     let previewUrl: string | undefined;
 
     if (isImage) {
-        content = await readAsBase64(file);
+        content = await resizeImageToBase64(file);
         previewUrl = URL.createObjectURL(file);
     } else if (isPDF) {
         content = await readAsBase64(file);
@@ -88,7 +113,7 @@ export async function processFile(file: File): Promise<AttachedFile> {
     return {
         id: `file-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         name: file.name,
-        mimeType,
+        mimeType: isImage ? "image/jpeg" : mimeType,
         size: file.size,
         content,
         isImage,

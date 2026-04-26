@@ -25,6 +25,11 @@ export interface AccessSummary {
     endsAt: string | null;
 }
 
+export const FREE_TIER_ACADEMY_STAGE_LIMIT = 1;
+export const FREE_TIER_PITCH_PRACTICE_LIMIT = 3;
+export const FREE_TIER_BRIEFING_LIMIT = 5;
+export const FREE_TIER_MARKET_REPORT_LIMIT = 5;
+
 function parseDate(value: string | null | undefined): Date | null {
     if (!value) return null;
     const parsed = new Date(value);
@@ -84,6 +89,12 @@ export function canAccessPaidStages(access: AccountAccess | null, now = new Date
     if (!access || !canAccessApp(access)) return false;
     const state = getPaidStageAccessState(access, now);
     return state === "eligible" || state === "comped" || state === "canceled_active";
+}
+
+export function isFreeTierAccess(access: AccountAccess | null, now = new Date()): boolean {
+    if (!access) return true;
+    if (!canAccessApp(access)) return false;
+    return !canAccessPaidStages(access, now);
 }
 
 export function canAccessStage(stageId: number, access: AccountAccess | null, now = new Date()): boolean {

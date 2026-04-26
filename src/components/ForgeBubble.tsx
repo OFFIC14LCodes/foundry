@@ -9,6 +9,7 @@ import { applyFoundryBookCitations, buildFoundryBookContext } from "../lib/found
 import ForgeAvatar from "./ForgeAvatar";
 import TypingDots from "./TypingDots";
 import Logo from "./Logo";
+import MicButton from "./MicButton";
 
 interface BubbleMessage {
     id: string;
@@ -575,6 +576,12 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
                                     setAttachedFiles(prev => [...prev, ...processed]);
                                     e.target.value = "";
                                 }}
+                            />
+
+                            <MicButton
+                                value={input}
+                                onChange={setInput}
+                                disabled={loading}
                             />
 
                             <textarea

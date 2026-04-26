@@ -26,6 +26,7 @@ import { GLOBAL_STYLES } from "./constants/styles";
 import { FORGE_SYSTEM_PROMPT } from "./constants/prompts";
 import { STAGES_DATA } from "./constants/stages";
 import { applyGlossaryHighlights } from "./lib/applyGlossaryHighlights";
+import { loadGlossaryTerms, type GlossaryTerm } from "./lib/glossaryDb";
 import { cleanAIText } from "./lib/cleanAIText";
 import { buildMessageContent, type AttachedFile } from "./lib/fileAttach";
 import { getArchiveDisplaySummary, getArchiveDisplayTitle, getArchivePreviewText, parseArchiveSummaryPayload } from "./lib/archiveSummary";
@@ -75,7 +76,15 @@ import { getTeamForUser, getRecentCofounderContext } from "./lib/cofounderDb";
 import { ensureAccountAccess, updateUserActivity } from "./db";
 import { canAccessApp, getAccessBlockReason } from "./lib/accessGate";
 import type { AccountAccess, BillingSubscription } from "./lib/accessGate";
-import { canAccessStage, getAccessSummary } from "./lib/foundryAccess";
+import {
+  canAccessStage,
+  FREE_TIER_ACADEMY_STAGE_LIMIT,
+  FREE_TIER_BRIEFING_LIMIT,
+  FREE_TIER_MARKET_REPORT_LIMIT,
+  FREE_TIER_PITCH_PRACTICE_LIMIT,
+  getAccessSummary,
+  isFreeTierAccess,
+} from "./lib/foundryAccess";
 import { hasAdminHubAccess, isOwnerEmail } from "./lib/roles";
 import { openCustomerPortal } from "./lib/billing";
 import { clearBillingRoute, getBillingRouteState } from "./lib/billingRoute";
@@ -347,7 +356,7 @@ function getArchiveDisplayDate(dateLike?: string) {
 }
 
 
-function renderWithBold(text, onStageRef, onGlossaryTap, onConceptTap?) {
+function renderWithBold(text, onStageRef, onGlossaryTap, onConceptTap?, glossaryTerms: GlossaryTerm[] = []) {
   if (!text) return null;
   text = cleanAIText(text);
 
@@ -390,7 +399,7 @@ function renderWithBold(text, onStageRef, onGlossaryTap, onConceptTap?) {
         const inner = part.slice(2, -2);
         return (
           <strong key={key} style={{ color: "#F0EDE8", fontWeight: 700 }}>
-            {applyGlossaryHighlights(inner, onGlossaryTap)}
+            {applyGlossaryHighlights(inner, onGlossaryTap, glossaryTerms)}
           </strong>
         );
       }
@@ -400,7 +409,7 @@ function renderWithBold(text, onStageRef, onGlossaryTap, onConceptTap?) {
       return lines.map((line: string, j: number) => (
         <span key={`${key}-l${j}`}>
           {j > 0 && <br />}
-          {applyGlossaryHighlights(line, onGlossaryTap)}
+          {applyGlossaryHighlights(line, onGlossaryTap, glossaryTerms)}
         </span>
       ));
     });
@@ -637,7 +646,8 @@ function ForgeScreen({
   const [advanceReady, setAdvanceReady] = useState(false);
   const [showStageSelector, setShowStageSelector] = useState(false);
   const [stageRefModal, setStageRefModal] = useState<number | null>(null);
-  const [glossaryModal, setGlossaryModal] = useState<{ term: string; entry: any } | null>(null);
+  const [glossaryModal, setGlossaryModal] = useState<{ term: string; entry: GlossaryTerm } | null>(null);
+  const [glossaryTerms, setGlossaryTerms] = useState<GlossaryTerm[]>([]);
   const [conceptModal, setConceptModal] = useState<{ name: string } | null>(null);
   const [briefingDismissed, setBriefingDismissed] = useState(false);
   const [cofoundersContext, setCofoundersContext] = useState<string | null>(null);
@@ -671,6 +681,11 @@ function ForgeScreen({
     if (!teamId) { setCofoundersContext(null); return; }
     getRecentCofounderContext(teamId, 20).then(ctx => setCofoundersContext(ctx || null));
   }, [teamId]);
+
+  useEffect(() => {
+    const stage = Number(profile?.currentStage) || 1;
+    loadGlossaryTerms(stage).then(setGlossaryTerms).catch(() => {});
+  }, [profile?.currentStage]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1929,7 +1944,7 @@ Where do you want to start?`;
                   onStageRef={(id: number) => setStageRefModal(id)}
                   onGlossaryTap={(term: string, entry: any) => setGlossaryModal({ term, entry })}
                   onConceptTap={(name: string) => setConceptModal({ name })}
-                  renderWithBold={renderWithBold}
+                  renderWithBold={(t, sr, gt, ct) => renderWithBold(t, sr, gt, ct, glossaryTerms)}
                   userName={profile?.name || "You"}
                   onAction={(action: any) => {
                     if (action.type === "upgrade") {
@@ -2294,6 +2309,13 @@ Where do you want to start?`;
                   setLanguageWarning(null);
                   setConfirmedProfanityInput(null);
                 } else if (confirmedProfanityInput && nextValue.trim() !== confirmedProfanityInput) {
+                  setLanguageWarning(null);
+                  setConfirmedProfanityInput(null);
+                }
+              }}
+              onValueChange={(v) => {
+                setInput(v);
+                if (!v.trim()) {
                   setLanguageWarning(null);
                   setConfirmedProfanityInput(null);
                 }
@@ -2716,6 +2738,11 @@ export default function FoundryApp() {
   };
 
   const accessSummary = getAccessSummary(accountAccess);
+  const isFreeTier = isFreeTierAccess(accountAccess);
+  const pitchPracticeTrialUses = Math.max(0, Number(profile?.pitchPracticeTrialUses) || 0);
+  const pitchPracticeUsesRemaining = isFreeTier
+    ? Math.max(0, FREE_TIER_PITCH_PRACTICE_LIMIT - pitchPracticeTrialUses)
+    : null;
   const lockedSelectedStage = profile
     ? (() => {
       const targetStage = initialStage ?? profile.currentStage ?? 1;
@@ -2785,6 +2812,11 @@ export default function FoundryApp() {
     setShowJournal(true);
   };
 
+  const openFeatureUpgrade = (message: string) => {
+    setBillingMessage(message);
+    setPaywallStage(Math.max(2, profile?.currentStage || 2));
+  };
+
   const openBriefings = () => {
     markMeaningfulActivity();
     setShowBriefings(true);
@@ -2792,6 +2824,10 @@ export default function FoundryApp() {
 
   const openPitchPractice = () => {
     markMeaningfulActivity();
+    if (isFreeTier && pitchPracticeTrialUses >= FREE_TIER_PITCH_PRACTICE_LIMIT) {
+      openFeatureUpgrade("Free-tier founders can use Pitch Practice three times. Unlock paid access to keep rehearsing with Forge.");
+      return;
+    }
     setShowPitchPractice(true);
   };
 
@@ -2809,6 +2845,11 @@ export default function FoundryApp() {
     markMeaningfulActivity();
     setAcademyConversationEntry(null);
     setShowAcademy(true);
+  };
+
+  const handleConsumePitchPracticeTrialUse = () => {
+    if (!isFreeTier) return;
+    updateProfile({ pitchPracticeTrialUses: pitchPracticeTrialUses + 1 });
   };
 
   const openAcademyAskForgeAnything = () => {
@@ -3153,6 +3194,7 @@ export default function FoundryApp() {
             report={marketReport}
             onReportChange={setMarketReport}
             onBack={() => setShowMarketIntel(false)}
+            generationLimit={isFreeTier ? FREE_TIER_MARKET_REPORT_LIMIT : null}
           />
         </div>
       )}
@@ -3163,6 +3205,8 @@ export default function FoundryApp() {
             profile={profile}
             onBack={() => setShowDocuments(false)}
             onContextChange={setDocumentContext}
+            generationLocked={isFreeTier}
+            generationLockMessage={isFreeTier ? "Document Production stays browseable during Stage 1, but document generation unlocks once you move beyond the free idea-stage tier." : null}
           />
         </div>
       )}
@@ -3172,6 +3216,8 @@ export default function FoundryApp() {
             userId={(user as any).id}
             profile={profile}
             onBack={() => setShowPitchPractice(false)}
+            trialUsesRemaining={pitchPracticeUsesRemaining}
+            onConsumeTrialUse={handleConsumePitchPracticeTrialUse}
           />
         </div>
       )}
@@ -3192,6 +3238,7 @@ export default function FoundryApp() {
           onBriefingsChange={setBriefings}
           onBack={() => setShowBriefings(false)}
           completedByStage={completedByStage}
+          generationLimit={isFreeTier ? FREE_TIER_BRIEFING_LIMIT : null}
         />
       )}
       {showAcademy && profile && user && (
@@ -3203,6 +3250,8 @@ export default function FoundryApp() {
           onOpenAskForgeAnything={openAcademyAskForgeAnything}
           onContextChange={setAcademyContext}
           onOpenArchive={() => setShowArchivePanel(true)}
+          maxPreviewStage={isFreeTier ? FREE_TIER_ACADEMY_STAGE_LIMIT : null}
+          trialNotice={isFreeTier ? "Free preview includes Forge Academy Stage 1 lessons only. The rest of Academy unlocks with paid access." : null}
         />
       )}
       {showChatRoom && profile && (
@@ -3212,7 +3261,15 @@ export default function FoundryApp() {
             profile={profile}
             initialArchive={chatRoomArchive}
             academyEntry={academyConversationEntry}
-            onBack={() => { setShowChatRoom(false); setChatRoomArchive(null); setAcademyConversationEntry(null); }}
+            onBack={() => {
+              const returnToAcademy = Boolean(academyConversationEntry);
+              setShowChatRoom(false);
+              setChatRoomArchive(null);
+              setAcademyConversationEntry(null);
+              if (returnToAcademy) {
+                setShowAcademy(true);
+              }
+            }}
             onArchiveSaved={(saved) => {
               setBubbleSummaries((prev) => {
                 const exists = prev.some((item) => item.id === saved.id);

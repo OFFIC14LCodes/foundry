@@ -10,6 +10,7 @@ import TypingDots from "./TypingDots";
 import ForgeAvatar from "./ForgeAvatar";
 import Logo from "./Logo";
 import { MessageActions } from "./AnimatedChatText";
+import MicButton from "./MicButton";
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -155,7 +156,19 @@ function StructuredPitchText({ text }: { text: string }) {
 // ─────────────────────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────────────────────
-export default function PitchPracticeScreen({ userId, profile, onBack }: { userId: string; profile: any; onBack: () => void }) {
+export default function PitchPracticeScreen({
+    userId,
+    profile,
+    onBack,
+    trialUsesRemaining = null,
+    onConsumeTrialUse,
+}: {
+    userId: string;
+    profile: any;
+    onBack: () => void;
+    trialUsesRemaining?: number | null;
+    onConsumeTrialUse?: () => void;
+}) {
     const [phase, setPhase] = useState<Phase>("setup");
     const [mode, setMode] = useState<Mode>("text");
     const [scenario, setScenario] = useState<Scenario>("investor");
@@ -204,6 +217,8 @@ export default function PitchPracticeScreen({ userId, profile, onBack }: { userI
 
     // ── Start session, stream Forge's opening line ──
     const startSession = async () => {
+        if (trialUsesRemaining !== null && trialUsesRemaining <= 0) return;
+        onConsumeTrialUse?.();
         setMessages([]);
         setSessionTime(0);
         setPhase("session");
@@ -392,6 +407,23 @@ export default function PitchPracticeScreen({ userId, profile, onBack }: { userI
                 </div>
 
                 <div className="foundry-app-page__content" style={{ maxWidth: 560, margin: "0 auto", padding: "28px 16px 60px" }}>
+                    {trialUsesRemaining !== null && (
+                        <div style={{
+                            marginBottom: 18,
+                            padding: "12px 14px",
+                            borderRadius: 12,
+                            background: trialUsesRemaining > 0 ? "rgba(232,98,42,0.05)" : "rgba(232,98,42,0.07)",
+                            border: trialUsesRemaining > 0 ? "1px solid rgba(232,98,42,0.14)" : "1px solid rgba(232,98,42,0.2)",
+                            fontSize: 12,
+                            color: trialUsesRemaining > 0 ? "#BDAFA2" : "#D9B9A6",
+                            lineHeight: 1.65,
+                        }}>
+                            {trialUsesRemaining > 0
+                                ? `Free preview includes 3 Pitch Practice sessions. You have ${trialUsesRemaining} remaining.`
+                                : "Free preview includes 3 Pitch Practice sessions. You have used them all."}
+                        </div>
+                    )}
+
                     {/* Intro */}
                     <div style={{ marginBottom: 28, animation: "fadeSlideUp 0.4s ease both", textAlign: "left" }}>
                         <div style={{ fontSize: 23, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 8, lineHeight: 1.2 }}>
@@ -519,9 +551,10 @@ export default function PitchPracticeScreen({ userId, profile, onBack }: { userI
                     {/* Start Button */}
                     <button
                         onClick={startSession}
-                        style={{ width: "100%", padding: "15px", background: "linear-gradient(135deg, #E8622A, #c9521e)", border: "none", borderRadius: 14, color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "'Lora', Georgia, serif", letterSpacing: "0.02em", animation: "fadeSlideUp 0.4s ease 0.15s both" }}
+                        disabled={trialUsesRemaining !== null && trialUsesRemaining <= 0}
+                        style={{ width: "100%", padding: "15px", background: trialUsesRemaining !== null && trialUsesRemaining <= 0 ? "rgba(255,255,255,0.06)" : "linear-gradient(135deg, #E8622A, #c9521e)", border: "none", borderRadius: 14, color: trialUsesRemaining !== null && trialUsesRemaining <= 0 ? "#555" : "#fff", fontSize: 15, fontWeight: 700, cursor: trialUsesRemaining !== null && trialUsesRemaining <= 0 ? "default" : "pointer", fontFamily: "'Lora', Georgia, serif", letterSpacing: "0.02em", animation: "fadeSlideUp 0.4s ease 0.15s both" }}
                     >
-                        Start Session →
+                        {trialUsesRemaining !== null && trialUsesRemaining <= 0 ? "Preview limit reached" : "Start Session →"}
                     </button>
                 </div>
             </div>
@@ -837,6 +870,17 @@ export default function PitchPracticeScreen({ userId, profile, onBack }: { userI
                                 outline: "none",
                                 opacity: loading ? 0.6 : 1,
                             }}
+                        />
+                        <MicButton
+                            value={input}
+                            onChange={(v) => {
+                                setInput(v);
+                                if (!v.trim()) {
+                                    setLanguageWarning(null);
+                                    setConfirmedProfanityInput(null);
+                                }
+                            }}
+                            disabled={loading}
                         />
                         <button
                             onClick={() => sendMessage(input)}

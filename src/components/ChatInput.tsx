@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from "react";
 import { processFile } from "../lib/fileAttach";
 import type { AttachedFile } from "../lib/fileAttach";
+import MicButton from "./MicButton";
 
 interface ChatInputProps {
     value: string;
@@ -13,6 +14,7 @@ interface ChatInputProps {
     onFilesChange?: (files: AttachedFile[]) => void;
     allowAttachments?: boolean;
     notice?: string | null;
+    onValueChange?: (v: string) => void;
 }
 
 export default function ChatInput({
@@ -26,6 +28,7 @@ export default function ChatInput({
     onFilesChange,
     allowAttachments = true,
     notice = null,
+    onValueChange,
 }: ChatInputProps) {
     const textareaRef = useRef<HTMLTextAreaElement | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -202,6 +205,14 @@ export default function ChatInput({
                         resize: "none",
                     }}
                 />
+
+                {onValueChange && (
+                    <MicButton
+                        value={value}
+                        onChange={onValueChange}
+                        disabled={loading}
+                    />
+                )}
 
                 <button
                     onClick={onSend}

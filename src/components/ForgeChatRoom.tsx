@@ -11,6 +11,7 @@ import ForgeAvatar from "./ForgeAvatar";
 import TypingDots from "./TypingDots";
 import Logo from "./Logo";
 import { AnimatedChatText, renderText, MessageActions } from "./AnimatedChatText";
+import MicButton from "./MicButton";
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -360,16 +361,21 @@ Start with a confident first lesson message that frames the topic, explains the 
                 </button>
                 <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.08)" }} />
                 <ForgeAvatar size={30} />
-                <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 15, fontWeight: 600, color: "#F0EDE8", fontFamily: "'Lora', Georgia, serif" }}>
+                <div className="forge-chat-room__title-wrap" style={{ flex: 1, minWidth: 0 }}>
+                    <div
+                        className="forge-chat-room__title"
+                        title={chatTitle}
+                        style={{ fontSize: 15, fontWeight: 600, color: "#F0EDE8", fontFamily: "'Lora', Georgia, serif" }}
+                    >
                         {chatTitle}
                     </div>
-                    <div style={{ fontSize: 11, color: "#4CAF8A", marginTop: 1 }}>
+                    <div className="forge-chat-room__subtitle" style={{ fontSize: 11, color: "#4CAF8A", marginTop: 1 }}>
                         {chatSubtitle}
                     </div>
                 </div>
                 {hasMessages && (
                     <button
+                        className="forge-chat-room__action"
                         onClick={openSaveArchiveModal}
                         style={{
                             background: "rgba(76,175,138,0.08)",
@@ -387,6 +393,7 @@ Start with a confident first lesson message that frames the topic, explains the 
                 )}
                 {hasMessages && (
                     <button
+                        className="forge-chat-room__action"
                         onClick={() => setMessages([])}
                         style={{
                             background: "rgba(255,255,255,0.04)",
@@ -644,6 +651,18 @@ Start with a confident first lesson message that frames the topic, explains the 
                                 setAttachedFiles(prev => [...prev, ...processed]);
                                 e.target.value = "";
                             }}
+                        />
+
+                        <MicButton
+                            value={input}
+                            onChange={(v) => {
+                                setInput(v);
+                                if (!v.trim()) {
+                                    setLanguageWarning(null);
+                                    setConfirmedProfanityInput(null);
+                                }
+                            }}
+                            disabled={loading}
                         />
 
                         <textarea
