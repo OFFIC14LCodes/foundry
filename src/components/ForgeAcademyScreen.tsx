@@ -694,6 +694,7 @@ export default function ForgeAcademyScreen({
                     progressByContentId={pathProgressByContentId}
                     loading={pathProgressLoading}
                     busyKey={busyKey}
+                    onOpenLesson={(content) => void openContent(content, content.contentType === "video" ? "started_video" : "viewed")}
                     onLaunchLesson={launchLessonFromPath}
                     expandedEnrichmentStages={expandedEnrichmentStages}
                     onToggleEnrichmentStage={toggleEnrichmentStage}
@@ -1237,6 +1238,7 @@ function PathView({
     progressByContentId,
     loading,
     busyKey,
+    onOpenLesson,
     onLaunchLesson,
     expandedEnrichmentStages,
     onToggleEnrichmentStage,
@@ -1248,6 +1250,7 @@ function PathView({
     progressByContentId: Map<string, UserLessonProgressRow>;
     loading: boolean;
     busyKey: string | null;
+    onOpenLesson: (content: AcademyContent) => void;
     onLaunchLesson: (content: AcademyContent) => void;
     expandedEnrichmentStages: Record<number, boolean>;
     onToggleEnrichmentStage: (stage: number) => void;
@@ -1346,6 +1349,7 @@ function PathView({
                         activeStage={activeStage}
                         progressByContentId={progressByContentId}
                         busyKey={busyKey}
+                        onOpenLesson={onOpenLesson}
                         onLaunchLesson={onLaunchLesson}
                         enrichmentExpanded={Boolean(expandedEnrichmentStages[stage.stage])}
                         onToggleEnrichment={() => onToggleEnrichmentStage(stage.stage)}
@@ -1361,6 +1365,7 @@ function PathStageCard({
     activeStage,
     progressByContentId,
     busyKey,
+    onOpenLesson,
     onLaunchLesson,
     enrichmentExpanded,
     onToggleEnrichment,
@@ -1369,6 +1374,7 @@ function PathStageCard({
     activeStage: number;
     progressByContentId: Map<string, UserLessonProgressRow>;
     busyKey: string | null;
+    onOpenLesson: (content: AcademyContent) => void;
     onLaunchLesson: (content: AcademyContent) => void;
     enrichmentExpanded: boolean;
     onToggleEnrichment: () => void;
@@ -1448,8 +1454,8 @@ function PathStageCard({
                 <div style={{ display: "grid", gap: 12 }}>
                     {stage.coreBlocks.length > 0 ? stage.coreBlocks.map((block) => (
                         block.type === "series"
-                            ? <PathSeriesGroup key={`series-${block.id}`} block={block} progressByContentId={progressByContentId} busyKey={busyKey} onLaunchLesson={onLaunchLesson} />
-                            : <PathLessonNode key={block.lesson.id} lesson={block.lesson} progress={progressByContentId.get(block.lesson.id) ?? null} busy={busyKey === `forge-${block.lesson.id}`} onLaunch={() => onLaunchLesson(block.lesson)} />
+                            ? <PathSeriesGroup key={`series-${block.id}`} block={block} progressByContentId={progressByContentId} busyKey={busyKey} onOpenLesson={onOpenLesson} onLaunchLesson={onLaunchLesson} />
+                            : <PathLessonNode key={block.lesson.id} lesson={block.lesson} progress={progressByContentId.get(block.lesson.id) ?? null} busy={busyKey === `forge-${block.lesson.id}`} onOpen={() => onOpenLesson(block.lesson)} onLaunch={() => onLaunchLesson(block.lesson)} />
                     )) : (
                         <div style={{ fontSize: 13, color: "#777", lineHeight: 1.7 }}>
                             No core lessons have been mapped to this stage yet.
@@ -1483,8 +1489,8 @@ function PathStageCard({
                             <div style={{ display: "grid", gap: 12 }}>
                                 {stage.enrichmentBlocks.map((block) => (
                                     block.type === "series"
-                                        ? <PathSeriesGroup key={`series-${block.id}`} block={block} progressByContentId={progressByContentId} busyKey={busyKey} onLaunchLesson={onLaunchLesson} muted />
-                                        : <PathLessonNode key={block.lesson.id} lesson={block.lesson} progress={progressByContentId.get(block.lesson.id) ?? null} busy={busyKey === `forge-${block.lesson.id}`} onLaunch={() => onLaunchLesson(block.lesson)} muted />
+                                        ? <PathSeriesGroup key={`series-${block.id}`} block={block} progressByContentId={progressByContentId} busyKey={busyKey} onOpenLesson={onOpenLesson} onLaunchLesson={onLaunchLesson} muted />
+                                        : <PathLessonNode key={block.lesson.id} lesson={block.lesson} progress={progressByContentId.get(block.lesson.id) ?? null} busy={busyKey === `forge-${block.lesson.id}`} onOpen={() => onOpenLesson(block.lesson)} onLaunch={() => onLaunchLesson(block.lesson)} muted />
                                 ))}
                             </div>
                         )}
@@ -1499,12 +1505,14 @@ function PathSeriesGroup({
     block,
     progressByContentId,
     busyKey,
+    onOpenLesson,
     onLaunchLesson,
     muted = false,
 }: {
     block: PathSeriesBlock;
     progressByContentId: Map<string, UserLessonProgressRow>;
     busyKey: string | null;
+    onOpenLesson: (content: AcademyContent) => void;
     onLaunchLesson: (content: AcademyContent) => void;
     muted?: boolean;
 }) {
@@ -1536,6 +1544,7 @@ function PathSeriesGroup({
                         lesson={lesson}
                         progress={progressByContentId.get(lesson.id) ?? null}
                         busy={busyKey === `forge-${lesson.id}`}
+                        onOpen={() => onOpenLesson(lesson)}
                         onLaunch={() => onLaunchLesson(lesson)}
                         muted={muted}
                     />
@@ -1549,12 +1558,14 @@ function PathLessonNode({
     lesson,
     progress,
     busy,
+    onOpen,
     onLaunch,
     muted = false,
 }: {
     lesson: AcademyContent;
     progress: UserLessonProgressRow | null;
     busy: boolean;
+    onOpen: () => void;
     onLaunch: () => void;
     muted?: boolean;
 }) {
@@ -1595,9 +1606,14 @@ function PathLessonNode({
                     <div style={{ fontSize: 12, color: statusColor, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>
                         {status === "completed" ? "Completed" : status === "in_progress" ? "In Progress" : "Not Started"}
                     </div>
-                    <InlineButton onClick={onLaunch} tone={muted ? "muted" : "primary"} disabled={busy}>
-                        {busy ? "Opening..." : "Learn with Forge"}
-                    </InlineButton>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                        <InlineButton onClick={onOpen} tone="muted">
+                            Start Learning
+                        </InlineButton>
+                        <InlineButton onClick={onLaunch} tone={muted ? "muted" : "primary"} disabled={busy}>
+                            {busy ? "Opening..." : "Learn with Forge"}
+                        </InlineButton>
+                    </div>
                 </div>
             </div>
         </div>
