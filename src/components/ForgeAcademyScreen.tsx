@@ -2176,10 +2176,10 @@ function buildLessonSlides(content: AcademyContent) {
                 : "Use this lesson to build a cleaner working understanding before you pressure-test it with Forge.",
         ]),
         bullets: [
-            content.category?.title ?? getAcademyContentTypeLabel(content.contentType),
+            `Discipline: ${content.category?.title ?? getAcademyContentTypeLabel(content.contentType)}`,
             content.difficultyLabel ? `Difficulty: ${content.difficultyLabel}` : null,
-            content.estimatedMinutes ? `${content.estimatedMinutes} minute lesson` : "Guided deep dive",
-            stageLabels.length ? stageLabels.join(" · ") : null,
+            content.estimatedMinutes ? `Length: ${content.estimatedMinutes} minute lesson` : "Length: Guided deep dive",
+            stageLabels.length ? `Stages: ${stageLabels.join(" · ")}` : null,
         ].filter(Boolean) as string[],
         note: "Move through the cards first, then take the lesson into Forge for application.",
         tone: "orange",
