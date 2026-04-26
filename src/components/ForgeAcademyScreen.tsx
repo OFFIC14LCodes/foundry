@@ -2150,6 +2150,18 @@ function joinLessonParts(parts: Array<string | null | undefined>) {
         .join("\n\n");
 }
 
+function renderSlideBullet(text: string) {
+    const match = text.match(/^([^:]+:)(\s*)(.*)$/);
+    if (!match) return text;
+    return (
+        <>
+            <strong style={{ color: "#F0EDE8", fontWeight: 700 }}>{match[1]}</strong>
+            {match[2]}
+            <span>{match[3]}</span>
+        </>
+    );
+}
+
 function buildLessonSlides(content: AcademyContent) {
     const stageLabels = getAcademyStageLabels(content.stageIds);
     const slides: LessonSlide[] = [];
@@ -2442,7 +2454,7 @@ function ContentDetailModal({
                                 <div style={{ display: "grid", gap: 10 }}>
                                     {activeSlide.bullets.map((bullet) => (
                                         <div key={bullet} style={{ background: "rgba(255,255,255,0.04)", border, borderRadius: 16, padding: "12px 14px", fontSize: 13, color: "#D7D1CA", lineHeight: 1.8 }}>
-                                            {bullet}
+                                            {renderSlideBullet(bullet)}
                                         </div>
                                     ))}
                                 </div>
