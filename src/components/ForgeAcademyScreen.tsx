@@ -2143,6 +2143,13 @@ type LessonSlide = {
     tone?: "orange" | "blue" | "warm" | "neutral";
 };
 
+function joinLessonParts(parts: Array<string | null | undefined>) {
+    return parts
+        .map((part) => (part ?? "").trim())
+        .filter(Boolean)
+        .join("\n\n");
+}
+
 function buildLessonSlides(content: AcademyContent) {
     const stageLabels = getAcademyStageLabels(content.stageIds);
     const slides: LessonSlide[] = [];
@@ -2150,7 +2157,12 @@ function buildLessonSlides(content: AcademyContent) {
     slides.push({
         eyebrow: "Lesson overview",
         title: "What this lesson covers",
-        body: content.shortDescription,
+        body: joinLessonParts([
+            content.shortDescription,
+            content.description
+                ? "This walkthrough gives you the context first, then the founder-level judgment behind the lesson."
+                : "Use this lesson to build a cleaner working understanding before you pressure-test it with Forge.",
+        ]),
         bullets: [
             content.category?.title ?? getAcademyContentTypeLabel(content.contentType),
             content.difficultyLabel ? `Difficulty: ${content.difficultyLabel}` : null,
@@ -2165,7 +2177,12 @@ function buildLessonSlides(content: AcademyContent) {
         slides.push({
             eyebrow: "What you should learn",
             title: "The outcome this lesson should create",
-            body: content.learningGoal || "Use this lesson to sharpen how you think, decide, and execute on this topic.",
+            body: joinLessonParts([
+                content.learningGoal || "Use this lesson to sharpen how you think, decide, and execute on this topic.",
+                content.whoThisIsFor
+                    ? `This is especially useful for founders who are dealing with this issue in real time, not just studying it conceptually.`
+                    : null,
+            ]),
             bullets: [
                 content.whoThisIsFor ? `Best for: ${content.whoThisIsFor}` : null,
                 content.whenThisMatters ? `Most useful when: ${content.whenThisMatters}` : null,
@@ -2178,7 +2195,12 @@ function buildLessonSlides(content: AcademyContent) {
         slides.push({
             eyebrow: "Strategic context",
             title: "Why this matters right now",
-            body: content.whyThisMatters || "This topic matters because it compounds into clearer decisions and stronger execution over time.",
+            body: joinLessonParts([
+                content.whyThisMatters || "This topic matters because it compounds into clearer decisions and stronger execution over time.",
+                content.whenThisMatters
+                    ? `Founders usually feel the consequences of this lesson most sharply when timing, pressure, or uncertainty makes weak thinking expensive.`
+                    : null,
+            ]),
             bullets: [
                 content.whenThisMatters ? `When this shows up: ${content.whenThisMatters}` : null,
                 content.category?.title ? `Discipline: ${content.category.title}` : null,
@@ -2191,11 +2213,34 @@ function buildLessonSlides(content: AcademyContent) {
         slides.push({
             eyebrow: "Critical pattern",
             title: "What experienced founders notice here",
-            body: content.whatToWatchFor || "Pay attention to the subtle patterns and assumptions that can distort your judgment on this topic.",
+            body: joinLessonParts([
+                content.whatToWatchFor || "Pay attention to the subtle patterns and assumptions that can distort your judgment on this topic.",
+                content.commonMistake
+                    ? "The point is not just to avoid a mistake once. It is to recognize the mental pattern early enough that it stops shaping your execution."
+                    : null,
+            ]),
             bullets: [
                 content.commonMistake ? `Common mistake: ${content.commonMistake}` : null,
             ].filter(Boolean) as string[],
             tone: "orange",
+        });
+    }
+
+    if (content.learningGoal || content.whyThisMatters || content.commonMistake) {
+        slides.push({
+            eyebrow: "Decision lens",
+            title: "How to use this lesson in the real world",
+            body: joinLessonParts([
+                "Do not treat this as information to agree with. Treat it as a lens for better decisions.",
+                content.learningGoal ? `A strong outcome here looks like this: ${content.learningGoal}` : null,
+                content.commonMistake ? `A weak outcome usually sounds like this: ${content.commonMistake}` : null,
+            ]),
+            bullets: [
+                content.whyThisMatters ? `Why it compounds: ${content.whyThisMatters}` : null,
+                content.whenThisMatters ? `Where to apply it: ${content.whenThisMatters}` : null,
+            ].filter(Boolean) as string[],
+            note: "As you move through the next slides, keep asking where this is already showing up in your company.",
+            tone: "neutral",
         });
     }
 
@@ -2213,8 +2258,11 @@ function buildLessonSlides(content: AcademyContent) {
         slides.push({
             eyebrow: "Bring it into Forge",
             title: "Translate the lesson into your company",
-            body: content.forgeContext
-                || "You have the lesson framing. Next, use Forge to pressure-test it against your actual startup, decisions, and constraints.",
+            body: joinLessonParts([
+                content.forgeContext
+                    || "You have the lesson framing. Next, use Forge to pressure-test it against your actual startup, decisions, and constraints.",
+                "The strongest Forge conversations happen when you bring one real decision, one weak assumption, or one current situation into the discussion.",
+            ]),
             bullets: [
                 content.starterPrompt ? `Suggested prompt: ${content.starterPrompt}` : null,
                 content.tags.length ? `Topics: ${content.tags.map((tag) => tag.name).join(" · ")}` : null,
@@ -2254,14 +2302,14 @@ function splitLessonTextIntoSlides(text: string | null | undefined) {
     if (!paragraphs.length) return [];
 
     const chunks: { title: string; body: string }[] = [];
-    for (let index = 0; index < paragraphs.length; index += 2) {
-        const body = paragraphs.slice(index, index + 2).join("\n\n");
+    for (let index = 0; index < paragraphs.length; index += 1) {
+        const body = paragraphs[index];
         chunks.push({
             title: `Lesson detail ${chunks.length + 1}`,
             body,
         });
     }
-    return chunks.slice(0, 4);
+    return chunks.slice(0, 5);
 }
 
 function ContentDetailModal({
@@ -2356,13 +2404,12 @@ function ContentDetailModal({
                                 ) : (
                                     <div
                                         style={{
-                                            minHeight: 220,
                                             background: thumbnailUrl
                                                 ? `linear-gradient(180deg, rgba(8,8,9,0.18), rgba(8,8,9,0.62)), url(${thumbnailUrl}) center/cover`
                                                 : "linear-gradient(135deg, rgba(232,98,42,0.26), rgba(99,179,237,0.18), rgba(12,12,14,0.9))",
                                             display: "grid",
-                                            alignContent: "end",
-                                            padding: 20,
+                                            alignContent: "start",
+                                            padding: "16px 18px",
                                         }}
                                     >
                                         <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#C8A96E", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 8 }}>
