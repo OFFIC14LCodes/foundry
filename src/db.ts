@@ -223,19 +223,78 @@ export async function loadJournalEntries(userId: string) {
         id: row.id,
         content: row.content,
         createdAt: row.created_at,
+        stageId: row.stage_id ?? null,
+        wordCount: row.word_count ?? null,
+        forgeSummary: row.forge_summary ?? null,
+        themes: row.themes ?? [],
+        summaryGeneratedAt: row.summary_generated_at ?? null,
     }));
 }
 
-export async function saveJournalEntry(userId: string, content: string) {
+export async function saveJournalEntry(userId: string, content: string, stageId?: number, wordCount?: number) {
     const { data, error } = await supabase
         .from("journal_entries")
-        .insert({ user_id: userId, content })
+        .insert({
+            user_id: userId,
+            content,
+            ...(stageId != null ? { stage_id: stageId } : {}),
+            ...(wordCount != null ? { word_count: wordCount } : {}),
+        })
         .select()
         .single();
 
     if (error) { console.error("saveJournalEntry error:", error.message); return null; }
     await recordMeaningfulActivity(userId, undefined, { force: true });
-    return { id: data.id, content: data.content, createdAt: data.created_at };
+    return {
+        id: data.id,
+        content: data.content,
+        createdAt: data.created_at,
+        stageId: data.stage_id ?? null,
+        wordCount: data.word_count ?? null,
+        forgeSummary: data.forge_summary ?? null,
+        themes: data.themes ?? [],
+        summaryGeneratedAt: data.summary_generated_at ?? null,
+    };
+}
+
+export async function updateJournalEntrySummary(
+    entryId: string,
+    userId: string,
+    summary: string,
+    themes: string[]
+): Promise<void> {
+    const { error } = await supabase
+        .from("journal_entries")
+        .update({
+            forge_summary: summary,
+            themes,
+            summary_generated_at: new Date().toISOString(),
+        })
+        .eq("id", entryId)
+        .eq("user_id", userId);
+
+    if (error) console.error("updateJournalEntrySummary error:", error.message);
+}
+
+export async function loadJournalEntriesWithSummaries(userId: string, limit = 50) {
+    const { data, error } = await supabase
+        .from("journal_entries")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+
+    if (error || !data) return [];
+    return data.map(row => ({
+        id: row.id,
+        content: row.content,
+        createdAt: row.created_at,
+        stageId: row.stage_id ?? null,
+        wordCount: row.word_count ?? null,
+        forgeSummary: row.forge_summary ?? null,
+        themes: row.themes ?? [],
+        summaryGeneratedAt: row.summary_generated_at ?? null,
+    }));
 }
 
 // ── DAILY CHAT SUMMARIES ─────────────────────────────────────
@@ -471,7 +530,18 @@ export async function saveMarketReport(userId: string, content: string, industry
 
 // ── BRIEFINGS ─────────────────────────────────────────────────
 
-export async function loadBriefings(userId: string) {
+export type SavedBriefing = {
+    id: string;
+    content: string;
+    stageId: number;
+    createdAt: string;
+    weekStart: string | null;
+    highlights: Record<string, unknown> | null;
+    sourceCounts: Record<string, number> | null;
+    generatedAt: string | null;
+};
+
+export async function loadBriefings(userId: string): Promise<SavedBriefing[]> {
     const { data, error } = await supabase
         .from("briefings")
         .select("*")
@@ -484,19 +554,50 @@ export async function loadBriefings(userId: string) {
         content: row.content,
         stageId: row.stage_id,
         createdAt: row.created_at,
+        weekStart: row.week_start ?? null,
+        highlights: (row.highlights ?? null) as Record<string, unknown> | null,
+        sourceCounts: (row.source_counts ?? null) as Record<string, number> | null,
+        generatedAt: row.generated_at ?? null,
     }));
 }
 
-export async function saveBriefing(userId: string, content: string, stageId: number) {
+export async function saveBriefing(
+    userId: string,
+    content: string,
+    stageId: number,
+    metadata?: {
+        weekStart?: string | null;
+        highlights?: Record<string, unknown> | null;
+        sourceCounts?: Record<string, number> | null;
+        generatedAt?: string | null;
+    },
+): Promise<SavedBriefing | null> {
     const { data, error } = await supabase
         .from("briefings")
-        .insert({ user_id: userId, content, stage_id: stageId })
+        .insert({
+            user_id: userId,
+            content,
+            stage_id: stageId,
+            week_start: metadata?.weekStart ?? null,
+            highlights: metadata?.highlights ?? null,
+            source_counts: metadata?.sourceCounts ?? null,
+            generated_at: metadata?.generatedAt ?? null,
+        })
         .select()
         .single();
 
     if (error) { console.error("saveBriefing error:", error.message); return null; }
     await recordMeaningfulActivity(userId, undefined, { force: true });
-    return { id: data.id, content: data.content, stageId: data.stage_id, createdAt: data.created_at };
+    return {
+        id: data.id,
+        content: data.content,
+        stageId: data.stage_id,
+        createdAt: data.created_at,
+        weekStart: data.week_start ?? null,
+        highlights: (data.highlights ?? null) as Record<string, unknown> | null,
+        sourceCounts: (data.source_counts ?? null) as Record<string, number> | null,
+        generatedAt: data.generated_at ?? null,
+    };
 }
 
 // ── PRODUCED DOCUMENTS ───────────────────────────────────────
@@ -870,4 +971,279 @@ export async function ensureOwnerProfileRole(userId: string, email?: string | nu
     }
 
     return true;
+}
+
+// ── LONGITUDINAL MEMORY TYPES ────────────────────────────────
+
+export interface StageSummary {
+    stageId: number;
+    summary: string;
+    summaryDate: string;
+    title: string;
+}
+
+export interface FounderDecision {
+    id: string;
+    stageId: number;
+    tag: string | null;
+    text: string;
+    decidedAt: string;
+}
+
+// ── FOUNDER DECISIONS ─────────────────────────────────────────
+
+export async function saveDecision(
+    userId: string,
+    stageId: number,
+    tag: string | null,
+    text: string
+): Promise<FounderDecision | null> {
+    const { data, error } = await supabase
+        .from("founder_decisions")
+        .insert({ user_id: userId, stage_id: stageId, tag: tag ?? null, text })
+        .select()
+        .single();
+    if (error) { console.error("saveDecision error:", error.message); return null; }
+    return {
+        id: data.id,
+        stageId: data.stage_id,
+        tag: data.tag ?? null,
+        text: data.text,
+        decidedAt: data.decided_at,
+    };
+}
+
+export async function loadDecisions(
+    userId: string,
+    limit = 30
+): Promise<FounderDecision[]> {
+    const { data, error } = await supabase
+        .from("founder_decisions")
+        .select("*")
+        .eq("user_id", userId)
+        .order("decided_at", { ascending: false })
+        .limit(limit);
+    if (error) { console.error("loadDecisions error:", error.message); return []; }
+    return (data ?? []).map(row => ({
+        id: row.id,
+        stageId: row.stage_id,
+        tag: row.tag ?? null,
+        text: row.text,
+        decidedAt: row.decided_at,
+    }));
+}
+
+// ── RECENT SUMMARIES (for longitudinal memory) ────────────────
+
+let recentSummariesAvailable: boolean | null = null;
+
+export async function loadRecentSummaries(
+    userId: string,
+    daysBack = 30
+): Promise<StageSummary[]> {
+    if (recentSummariesAvailable === false) return [];
+
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - daysBack);
+    const cutoffStr = cutoff.toISOString().split("T")[0];
+
+    const { data, error } = await supabase
+        .from("daily_chat_summaries")
+        .select("stage_id, summary, summary_date, title")
+        .eq("user_id", userId)
+        .gte("summary_date", cutoffStr)
+        .order("summary_date", { ascending: false });
+
+    if (error) {
+        if (isMissingRelationError(error, "daily_chat_summaries")) {
+            recentSummariesAvailable = false;
+            return [];
+        }
+        console.error("loadRecentSummaries error:", error.message);
+        return [];
+    }
+
+    recentSummariesAvailable = true;
+    return (data ?? []).map(row => ({
+        stageId: row.stage_id,
+        summary: row.summary,
+        summaryDate: row.summary_date,
+        title: row.title,
+    }));
+}
+
+// Upserts a coaching summary for today's date into daily_chat_summaries.
+// If a row already exists for (user_id, stage_id, today) it is updated in place.
+export async function persistStageSummaryToday(
+    userId: string,
+    stageId: number,
+    summary: string,
+    messageCount: number
+): Promise<void> {
+    if (dailyChatSummariesAvailable === false) return;
+
+    const today = getLocalDateKey();
+    const title = `Stage ${stageId} — ${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
+
+    const { error } = await supabase
+        .from("daily_chat_summaries")
+        .upsert(
+            {
+                user_id: userId,
+                stage_id: stageId,
+                summary_date: today,
+                title,
+                summary,
+                message_count: messageCount,
+                updated_at: new Date().toISOString(),
+            },
+            { onConflict: "user_id,stage_id,summary_date" }
+        );
+
+    if (error) {
+        if (isMissingRelationError(error, "daily_chat_summaries")) {
+            dailyChatSummariesAvailable = false;
+            return;
+        }
+        console.error("persistStageSummaryToday error:", error.message);
+    }
+}
+
+// ── STAGE PROGRESS DATES ──────────────────────────────────────
+
+export async function loadStageProgressDates(userId: string): Promise<Record<number, string>> {
+    const { data, error } = await supabase
+        .from("stage_progress")
+        .select("stage_id, updated_at")
+        .eq("user_id", userId);
+
+    const result: Record<number, string> = {};
+    if (error || !data) return result;
+    data.forEach(row => {
+        if (row.updated_at) result[row.stage_id] = row.updated_at;
+    });
+    return result;
+}
+
+// ── FOUNDER NUDGES ────────────────────────────────────────────
+
+export interface FounderNudge {
+    id: string;
+    nudgeType: string;
+    nudgeText: string;
+    signalSource: string;
+    seenAt: string | null;
+    dismissedAt: string | null;
+    actedOnAt: string | null;
+    createdAt: string;
+}
+
+let founderNudgesAvailable: boolean | null = null;
+
+function mapNudge(row: any): FounderNudge {
+    return {
+        id: row.id,
+        nudgeType: row.nudge_type,
+        nudgeText: row.nudge_text,
+        signalSource: row.signal_source,
+        seenAt: row.seen_at ?? null,
+        dismissedAt: row.dismissed_at ?? null,
+        actedOnAt: row.acted_on_at ?? null,
+        createdAt: row.created_at,
+    };
+}
+
+export async function saveNudge(
+    userId: string,
+    nudgeType: string,
+    nudgeText: string,
+    signalSource: string
+): Promise<FounderNudge | null> {
+    if (founderNudgesAvailable === false) return null;
+
+    const { data, error } = await supabase
+        .from("founder_nudges")
+        .insert({ user_id: userId, nudge_type: nudgeType, nudge_text: nudgeText, signal_source: signalSource })
+        .select()
+        .single();
+
+    if (error) {
+        if (isMissingRelationError(error, "founder_nudges")) {
+            founderNudgesAvailable = false;
+            return null;
+        }
+        console.error("saveNudge error:", error.message);
+        return null;
+    }
+
+    founderNudgesAvailable = true;
+    return mapNudge(data);
+}
+
+// Returns the most recent undismissed nudge created within the last 7 days.
+export async function loadActiveNudge(userId: string): Promise<FounderNudge | null> {
+    if (founderNudgesAvailable === false) return null;
+
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 7);
+
+    const { data, error } = await supabase
+        .from("founder_nudges")
+        .select("*")
+        .eq("user_id", userId)
+        .is("dismissed_at", null)
+        .gte("created_at", cutoff.toISOString())
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+    if (error) {
+        if (isMissingRelationError(error, "founder_nudges")) {
+            founderNudgesAvailable = false;
+            return null;
+        }
+        console.error("loadActiveNudge error:", error.message);
+        return null;
+    }
+
+    founderNudgesAvailable = true;
+    return data ? mapNudge(data) : null;
+}
+
+export async function dismissNudge(userId: string, nudgeId: string): Promise<void> {
+    if (founderNudgesAvailable === false) return;
+
+    const { error } = await supabase
+        .from("founder_nudges")
+        .update({ dismissed_at: new Date().toISOString() })
+        .eq("id", nudgeId)
+        .eq("user_id", userId);
+
+    if (error) console.error("dismissNudge error:", error.message);
+}
+
+export async function markNudgeActedOn(userId: string, nudgeId: string): Promise<void> {
+    if (founderNudgesAvailable === false) return;
+
+    const { error } = await supabase
+        .from("founder_nudges")
+        .update({ acted_on_at: new Date().toISOString() })
+        .eq("id", nudgeId)
+        .eq("user_id", userId)
+        .is("acted_on_at", null);
+
+    if (error) console.error("markNudgeActedOn error:", error.message);
+}
+
+export async function markNudgeSeen(userId: string, nudgeId: string): Promise<void> {
+    if (founderNudgesAvailable === false) return;
+
+    const { error } = await supabase
+        .from("founder_nudges")
+        .update({ seen_at: new Date().toISOString() })
+        .eq("id", nudgeId)
+        .eq("user_id", userId)
+        .is("seen_at", null);
+
+    if (error) console.error("markNudgeSeen error:", error.message);
 }

@@ -44,6 +44,9 @@ type ContentFormState = {
     commonMistake: string;
     starterPrompt: string;
     forgeContext: string;
+    knowledgeCheckPrompt: string;
+    knowledgeCheckExpectedPoints: string;
+    completionBadgeLabel: string;
     videoUrl: string;
     resourceUrl: string;
     thumbnailUrl: string;
@@ -246,6 +249,9 @@ export default function AdminAcademyManager({ userId, onBack }: Props) {
                                             commonMistake: contentForm.commonMistake,
                                             starterPrompt: contentForm.starterPrompt,
                                             forgeContext: contentForm.forgeContext,
+                                            knowledgeCheckPrompt: contentForm.knowledgeCheckPrompt,
+                                            knowledgeCheckExpectedPoints: contentForm.knowledgeCheckExpectedPoints.split("\n").map((value) => value.trim()).filter(Boolean),
+                                            completionBadgeLabel: contentForm.completionBadgeLabel,
                                             videoUrl: contentForm.videoUrl,
                                             resourceUrl: contentForm.resourceUrl,
                                             thumbnailUrl: contentForm.thumbnailUrl,
@@ -908,6 +914,15 @@ function renderContentForm({
             <FormField label="Forge supporting context">
                 <textarea value={form.forgeContext} onChange={(event) => onChange({ ...form, forgeContext: event.target.value })} style={textareaStyle} />
             </FormField>
+            <FormField label="Knowledge check prompt" hint="One sharp understanding question Forge can use before completion.">
+                <textarea value={form.knowledgeCheckPrompt} onChange={(event) => onChange({ ...form, knowledgeCheckPrompt: event.target.value })} style={{ ...textareaStyle, minHeight: 110 }} />
+            </FormField>
+            <FormField label="Knowledge check expected points" hint="One point per line. Forge uses these to judge whether the lesson really landed.">
+                <textarea value={form.knowledgeCheckExpectedPoints} onChange={(event) => onChange({ ...form, knowledgeCheckExpectedPoints: event.target.value })} style={{ ...textareaStyle, minHeight: 120 }} />
+            </FormField>
+            <FormField label="Completion badge label">
+                <input value={form.completionBadgeLabel} onChange={(event) => onChange({ ...form, completionBadgeLabel: event.target.value })} style={inputStyle} />
+            </FormField>
             <FormField label="YouTube video URL" hint={youtubeId ? `Detected YouTube ID: ${youtubeId}` : "Accepted formats: youtube.com, youtu.be, embed, shorts, or a raw 11-char ID."}>
                 <input value={form.videoUrl} onChange={(event) => onChange({ ...form, videoUrl: event.target.value })} style={inputStyle} />
             </FormField>
@@ -1112,6 +1127,9 @@ function createEmptyContentForm(): ContentFormState {
         commonMistake: "",
         starterPrompt: "",
         forgeContext: "",
+        knowledgeCheckPrompt: "",
+        knowledgeCheckExpectedPoints: "",
+        completionBadgeLabel: "",
         videoUrl: "",
         resourceUrl: "",
         thumbnailUrl: "",
@@ -1175,6 +1193,9 @@ function populateContentForm(entry: AcademyContent): ContentFormState {
         commonMistake: entry.commonMistake ?? "",
         starterPrompt: entry.starterPrompt ?? "",
         forgeContext: entry.forgeContext ?? "",
+        knowledgeCheckPrompt: entry.knowledgeCheckPrompt ?? "",
+        knowledgeCheckExpectedPoints: entry.knowledgeCheckExpectedPoints.join("\n"),
+        completionBadgeLabel: entry.completionBadgeLabel ?? "",
         videoUrl: entry.videoUrl ?? "",
         resourceUrl: entry.resourceUrl ?? "",
         thumbnailUrl: entry.thumbnailUrl ?? "",

@@ -21,7 +21,23 @@ import {
   markNotificationRead,
   recordMeaningfulActivity,
   loadBillingSubscription,
+  saveDecision,
+  loadDecisions,
+  loadRecentSummaries,
+  persistStageSummaryToday,
+  loadStageProgressDates,
+  loadActiveNudge,
+  dismissNudge,
+  markNudgeActedOn,
+  markNudgeSeen,
+  type StageSummary,
+  type FounderDecision,
+  type FounderNudge,
+  type SavedBriefing,
 } from "./db";
+import { generateNudgeIfNeeded } from "./lib/nudgeEngine";
+import { buildLongitudinalContext, extractLongitudinalSignals } from "./lib/longitudinalMemory";
+import { buildJournalContext } from "./lib/journalIntelligence";
 import { GLOBAL_STYLES } from "./constants/styles";
 import { FORGE_SYSTEM_PROMPT } from "./constants/prompts";
 import { STAGES_DATA } from "./constants/stages";
@@ -73,6 +89,13 @@ import BillingReturnScreen from "./components/BillingReturnScreen";
 import { buildMarketIntelContext } from "./constants/marketPrompt";
 import { callForgeAPI, streamForgeAPI } from "./lib/forgeApi";
 import { getTeamForUser, getRecentCofounderContext } from "./lib/cofounderDb";
+import { completeAcademyLesson } from "./lib/academyCompletion";
+import {
+  getFounderSessionState,
+  type FounderSessionState,
+  updateLastScreen,
+  updateLastSeenAt,
+} from "./lib/founderSessionState";
 import { ensureAccountAccess, updateUserActivity } from "./db";
 import { canAccessApp, getAccessBlockReason } from "./lib/accessGate";
 import type { AccountAccess, BillingSubscription } from "./lib/accessGate";
@@ -89,6 +112,25 @@ import { hasAdminHubAccess, isOwnerEmail } from "./lib/roles";
 import { openCustomerPortal } from "./lib/billing";
 import { clearBillingRoute, getBillingRouteState } from "./lib/billingRoute";
 import {
+  buildLegacyFinancialMirror,
+  getFinancialSummary,
+  type FinancialSummary,
+  type FounderFinancialData,
+  type PlaidReviewTransaction,
+} from "./lib/financialModeling";
+import {
+  acceptPlaidTransactionAsExpense,
+  acceptPlaidTransactionAsRevenue,
+  deleteExpense,
+  deleteRevenue,
+  ignorePlaidTransaction,
+  loadFounderFinancialData,
+  saveExpense,
+  saveFinancialSettings,
+  saveRevenue,
+} from "./lib/financialDb";
+import { syncPlaidTransactions } from "./lib/plaid";
+import {
   DEFAULT_ADMIN_NOTIFICATION_SETTINGS,
   DEFAULT_USER_NOTIFICATION_PREFERENCES,
   type AdminNotificationSettings,
@@ -96,7 +138,7 @@ import {
   type UserNotificationPreferences,
 } from "./lib/notifications";
 import type { AcademyTopicLaunch } from "./lib/academy";
-import { STORAGE_KEYS, clearFoundryClientStorage, createEmptyMessagesByStage, createEmptyStageProgress } from "./lib/session";
+import { clearFoundryClientStorage, createEmptyMessagesByStage, createEmptyStageProgress } from "./lib/session";
 
 // callForgeAPI and streamForgeAPI are imported from ./lib/forgeApi
 
@@ -105,10 +147,29 @@ import { STORAGE_KEYS, clearFoundryClientStorage, createEmptyMessagesByStage, cr
 // ─────────────────────────────────────────────────────────────
 const memorySummaryCache: Record<number, { summary: string; messageCount: number }> = {};
 
-async function generateStageSummary(stageId, messages, profile) {
+async function generateStageSummary(
+  stageId: number,
+  messages: any[],
+  profile: any,
+  recentSummaries?: StageSummary[],
+  userId?: string
+) {
   if (!messages || messages.length === 0) return null;
   const cached = memorySummaryCache[stageId];
   if (cached && cached.messageCount === messages.length) return cached.summary;
+
+  // Check persisted summaries from the last 48 hours before regenerating
+  if (recentSummaries && recentSummaries.length > 0) {
+    const cutoff48h = new Date(Date.now() - 48 * 60 * 60 * 1000);
+    const recent = recentSummaries.find(
+      s => s.stageId === stageId && new Date(s.summaryDate + "T23:59:59") >= cutoff48h
+    );
+    if (recent) {
+      memorySummaryCache[stageId] = { summary: recent.summary, messageCount: messages.length };
+      return recent.summary;
+    }
+  }
+
   const stageData = STAGES_DATA[stageId - 1];
   const transcript = messages
     .filter(m => m.text && m.text.trim())
@@ -122,6 +183,9 @@ async function generateStageSummary(stageId, messages, profile) {
       "You are a concise summarizer. Respond with only the summary, no preamble."
     );
     memorySummaryCache[stageId] = { summary, messageCount: messages.length };
+    if (userId) {
+      persistStageSummaryToday(userId, stageId, summary, messages.length).catch(() => {});
+    }
     return summary;
   } catch {
     return null;
@@ -134,7 +198,13 @@ async function buildRichContext(
   completedByStage,
   messagesByStage,
   cofoundersContext?: string | null,
-  currentPrompt?: string
+  currentPrompt?: string,
+  recentSummaries?: StageSummary[],
+  foundryDecisions?: FounderDecision[],
+  userId?: string,
+  stageProgressDates?: Record<number, string>,
+  journalEntries?: any[],
+  financialSummary?: FinancialSummary | null,
 ) {
   const stageData = STAGES_DATA[activeStage - 1];
   const completedMilestones = completedByStage[activeStage] || [];
@@ -162,13 +232,22 @@ async function buildRichContext(
   const expenses = (profile.budget?.expenses || []).slice(0, 4)
     .map(e => `  $${e.amount?.toLocaleString()} — ${e.label}`)
     .join("\n") || "  None yet";
+  const financialSummaryBlock = financialSummary ? `FINANCIAL MODEL:
+Available cash: $${Math.round(financialSummary.availableCash).toLocaleString()}
+Estimated monthly burn: $${Math.round(financialSummary.monthlyBurn).toLocaleString()}
+Estimated runway: ${financialSummary.runwayMonths != null ? `${financialSummary.runwayMonths.toFixed(1)} months` : "Not enough recurring burn data yet"}
+Recurring expenses: ${financialSummary.recurringExpenseCount} items · $${Math.round(financialSummary.monthlyRecurringExpenses).toLocaleString()}/mo
+Recurring revenue: ${financialSummary.recurringRevenueCount} items · $${Math.round(financialSummary.monthlyRecurringRevenue).toLocaleString()}/mo
+Rough net snapshot: $${Math.round(financialSummary.roughNetSnapshot).toLocaleString()}
+Profit First status: ${financialSummary.profitFirst.enabled ? financialSummary.profitFirst.buckets.map((bucket) => `${bucket.bucketType} ${bucket.allocationPercent}% (~$${Math.round(bucket.estimatedAmount).toLocaleString()})`).join(", ") : "Disabled"}
+Financial note: ${financialSummary.usesEstimatedInputs ? "Some values are estimated or manually entered." : "Based on manually entered normalized financial data."}` : "";
 
   const memorySections: string[] = [];
   for (const s of STAGES_DATA) {
     if (s.id === activeStage) continue;
     const msgs = messagesByStage[s.id] || [];
     if (msgs.length === 0) continue;
-    const summary = await generateStageSummary(s.id, msgs, profile);
+    const summary = await generateStageSummary(s.id, msgs, profile, recentSummaries, userId);
     if (summary) memorySections.push(`Stage ${s.id} (${s.label}) memory:\n  ${summary}`);
   }
 
@@ -215,6 +294,20 @@ Do not make this awkward or repetitive. Reassess naturally when it fits the conv
   const safeProfileName = profile?.nameNeedsReview ? "Founder" : profile.name;
   const safeBusinessName = profile?.ideaNeedsReview ? "Still being clarified" : (profile.businessName || profile.idea || "Idea stage");
 
+  const longitudinalBlock = (recentSummaries || foundryDecisions || stageProgressDates)
+    ? buildLongitudinalContext(
+        activeStage,
+        recentSummaries ?? [],
+        foundryDecisions ?? [],
+        completedByStage,
+        stageProgressDates ?? {}
+      )
+    : "";
+
+  const journalBlock = journalEntries && journalEntries.length > 0
+    ? buildJournalContext(journalEntries, 14)
+    : "";
+
   const context = `
 Current date & time: ${dateStr}, ${timeStr}
 Founder: ${safeProfileName} | Business: ${safeBusinessName} (${profile.industry || "Early Stage"})
@@ -235,10 +328,15 @@ ${decisions}
 RECENT EXPENSES:
 ${expenses}
 
+${financialSummaryBlock ? `${financialSummaryBlock}
+
+` : ""}
 ${memorySections.length > 0 ? `CROSS-STAGE MEMORY (prior stage work):
 ${memorySections.join("\n\n")}` : ""}
 
-STAGE REFERENCES: When referencing work from another stage, wrap it like [STAGE_REF:N]text[/STAGE_REF]. Use naturally when prior work is relevant — not on every mention.${onboardingReviewSection}${cofounderSection}${methodSection}
+${longitudinalBlock ? `${longitudinalBlock}` : ""}
+
+${journalBlock ? `${journalBlock}\n\n` : ""}STAGE REFERENCES: When referencing work from another stage, wrap it like [STAGE_REF:N]text[/STAGE_REF]. Use naturally when prior work is relevant — not on every mention.${onboardingReviewSection}${cofounderSection}${methodSection}
   `.trim();
 
   return {
@@ -634,6 +732,15 @@ function ForgeScreen({
   onBubbleSummaryUpdated = null as ((entry: any) => void) | null,
   onBubbleSummaryDeleted = null as ((entry: any) => void) | null,
   archiveMutationTick = 0,
+  recentSummaries = [] as StageSummary[],
+  foundryDecisions = [] as FounderDecision[],
+  stageProgressDates = {} as Record<number, string>,
+  onGreetingOpen = null as (() => void) | null,
+  journalEntries = [] as any[],
+  journalSeedPrompt = null as string | null,
+  onJournalSeedUsed = null as (() => void) | null,
+  financialSummary = null as FinancialSummary | null,
+  initialLastSeenAt = null as string | null,
 }) {
   const [activeStage, setActiveStage] = useState(pendingUpgradeStage || initialStage || profile.currentStage);
   const [activeTab, setActiveTab] = useState("chat");
@@ -664,6 +771,11 @@ function ForgeScreen({
   const [archiveMenuOpenId, setArchiveMenuOpenId] = useState<string | null>(null);
   const [summaryModalMenuOpen, setSummaryModalMenuOpen] = useState(false);
   const [archiveFilter, setArchiveFilter] = useState<"all" | "forge" | "chatroom" | "academy" | "bubble" | "pitchpractice">("all");
+  const [sessionLastSeenAt, setSessionLastSeenAt] = useState<string | null>(initialLastSeenAt);
+
+  useEffect(() => {
+    setSessionLastSeenAt(initialLastSeenAt);
+  }, [initialLastSeenAt]);
 
   useEffect(() => {
     if (!summaryModal) {
@@ -805,14 +917,42 @@ function ForgeScreen({
     if (stageMessages.length > 0 || loading || shouldShowBriefing) return;
 
     const stageData = STAGES_DATA[activeStage - 1];
-    const lastSeenRaw = localStorage.getItem("foundry_last_seen");
-    const lastSeen = lastSeenRaw ? parseInt(lastSeenRaw) : null;
-    const hoursSince = lastSeen ? (Date.now() - lastSeen) / 1000 / 60 / 60 : null;
-    const isLongAbsence = !lastSeen || hoursSince > 8;
-
-    localStorage.setItem("foundry_last_seen", Date.now().toString());
+    const lastSeenMs = sessionLastSeenAt ? new Date(sessionLastSeenAt).getTime() : null;
+    const hoursSince = lastSeenMs ? (Date.now() - lastSeenMs) / 1000 / 60 / 60 : null;
+    const isLongAbsence = !lastSeenMs || hoursSince > 8;
+    const nextLastSeenAt = new Date().toISOString();
+    setSessionLastSeenAt(nextLastSeenAt);
+    void updateLastSeenAt(userId, nextLastSeenAt);
 
     const runGreeting = async () => {
+      // Journal seed — founder tapped "Ask Forge about this" from journal screen
+      if (journalSeedPrompt) {
+        onJournalSeedUsed?.();
+        const seedMessage = journalSeedPrompt;
+        const seedContext = appendMarketContext(await buildRichContext(
+          profile, activeStage, completedByStage, messagesByStage,
+          cofoundersContext, seedMessage, recentSummaries, foundryDecisions, userId, stageProgressDates, journalEntries, financialSummary
+        ), marketReport);
+        setLoading(true);
+        try {
+          const seedReply = await callForgeAPI(
+            [{ role: "user", content: seedMessage }],
+            FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", seedContext.context)
+          );
+          const { cleanText: seedClean } = parseForgeResponseWithBookCitations(seedReply, seedContext.bookMatches);
+          onUpdateMessages(activeStage, [
+            { id: `journal-user-${Date.now()}`, role: "user", text: seedMessage, createdAt: new Date().toISOString() },
+            { id: `journal-forge-${Date.now()}`, role: "forge", text: seedClean, createdAt: new Date().toISOString() },
+          ]);
+        } catch {
+          onUpdateMessages(activeStage, [
+            { id: `journal-user-${Date.now()}`, role: "user", text: seedMessage, createdAt: new Date().toISOString() },
+          ]);
+        }
+        setLoading(false);
+        return;
+      }
+
       let greetingPrompt = "";
       const safeName = profile.nameNeedsReview ? "Founder" : profile.name;
       const safeIdea = profile.ideaNeedsReview ? "still being clarified" : profile.idea;
@@ -836,13 +976,37 @@ Start with a short recap of what they told Foundry during onboarding: the busine
         greetingPrompt = `${safeName} just opened Stage ${activeStage}: ${stageData.label}. Introduce the mission for this stage in a way that feels personal to their specific situation. Reference what makes this stage matter. Then ask the first sharp question to get started. Use **bold** on 2-3 key words. 3-4 paragraphs max. ${onboardingReviewNote}`;
       }
 
+      // Augment greeting with longitudinal signals when patterns exist
+      // Only for returning founders (not first visit / onboarding entry)
+      if (!isFirstVisit) {
+        const longitudinalBlock = buildLongitudinalContext(
+          activeStage,
+          recentSummaries,
+          foundryDecisions,
+          completedByStage,
+          stageProgressDates
+        );
+        const signals = extractLongitudinalSignals(longitudinalBlock);
+        if (signals) {
+          greetingPrompt += `\n\nFORGE OPENING INSTRUCTION — LONGITUDINAL AWARENESS:\n${signals}\n\nOpen with awareness of this history. Do not narrate that you're reading context. Weave it naturally into your opening — reference what you've noticed as a partner who has been thinking about this founder between sessions. Then move forward.`;
+        }
+      }
+
+      onGreetingOpen?.();
+
       const ctxPackage = appendMarketContext(await buildRichContext(
         profile,
         activeStage,
         completedByStage,
         messagesByStage,
         cofoundersContext,
-        greetingPrompt
+        greetingPrompt,
+        recentSummaries,
+        foundryDecisions,
+        userId,
+        stageProgressDates,
+        journalEntries,
+        financialSummary
       ), marketReport);
 
       setLoading(true);
@@ -899,7 +1063,7 @@ Where do you want to start?`;
     };
 
     setTimeout(runGreeting, 400);
-  }, [activeStage, briefingDismissed, stageSummaries.length, !!messagesByStage[activeStage]?.length]);
+  }, [activeStage, briefingDismissed, stageSummaries.length, !!messagesByStage[activeStage]?.length, !!journalSeedPrompt, userId]);
 
   const openSaveArchiveModal = () => {
     const defaultTitle = archiveSession?.entry?.title || `${stage.label} Archive — ${new Date().toLocaleDateString("en-US", {
@@ -1388,7 +1552,13 @@ Where do you want to start?`;
         completedByStage,
         messagesByStage,
         cofoundersContext,
-        text
+        text,
+        recentSummaries,
+        foundryDecisions,
+        userId,
+        stageProgressDates,
+        journalEntries,
+        financialSummary
       );
       const ctxPackage = appendArchiveSessionContext(
         appendMarketContext(baseContextPackage, marketReport),
@@ -2343,34 +2513,6 @@ Where do you want to start?`;
   );
 }
 
-function loadFromStorage(key, fallback) {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    return JSON.parse(raw);
-  } catch {
-    return fallback;
-  }
-}
-
-function saveToStorage(key, value) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch { /* Storage full — fail silently */ }
-}
-
-function usePersistedState(key, fallback) {
-  const [value, setValue] = useState(() => loadFromStorage(key, fallback));
-  const setPersisted = (updater) => {
-    setValue(prev => {
-      const next = typeof updater === "function" ? updater(prev) : updater;
-      saveToStorage(key, next);
-      return next;
-    });
-  };
-  return [value, setPersisted];
-}
-
 // ─────────────────────────────────────────────────────────────
 // ROOT APP
 // ─────────────────────────────────────────────────────────────
@@ -2388,9 +2530,9 @@ export default function FoundryApp() {
   const [isFirstVisit, setIsFirstVisit] = useState(false);
   const [initialStage, setInitialStage] = useState(null);
   const [pendingUpgradeStage, setPendingUpgradeStage] = useState<number | null>(null);
-  const [journalEntries, setJournalEntries] = useState([]);
+  const [journalEntries, setJournalEntries] = useState<any[]>([]);
   const [showJournal, setShowJournal] = useState(false);
-  const [briefings, setBriefings] = useState([]);
+  const [briefings, setBriefings] = useState<SavedBriefing[]>([]);
   const [showBriefings, setShowBriefings] = useState(false);
   const [showPitchPractice, setShowPitchPractice] = useState(false);
   const [showDocuments, setShowDocuments] = useState(false);
@@ -2420,16 +2562,49 @@ export default function FoundryApp() {
   const [chatRoomArchive, setChatRoomArchive] = useState<any | null>(null);
   const [academyConversationEntry, setAcademyConversationEntry] = useState<AcademyTopicLaunch | null>(null);
   const [archiveMutationTick, setArchiveMutationTick] = useState(0);
+  const [recentSummaries, setRecentSummaries] = useState<StageSummary[]>([]);
+  const [foundryDecisions, setFoundryDecisions] = useState<FounderDecision[]>([]);
+  const [stageProgressDates, setStageProgressDates] = useState<Record<number, string>>({});
+  const [activeNudge, setActiveNudge] = useState<FounderNudge | null>(null);
+  const [journalSeedPrompt, setJournalSeedPrompt] = useState<string | null>(null);
+  const [founderSessionState, setFounderSessionState] = useState<FounderSessionState | null>(null);
+  const [financialData, setFinancialData] = useState<FounderFinancialData | null>(null);
 
-  const getPersistedPostAuthScreen = (setupCompleted: boolean) => {
+  const getPersistedPostAuthScreen = (setupCompleted: boolean, sessionLastScreen?: string | null) => {
     const fallback = setupCompleted ? "hub" : "intro";
-    const persistedScreen = loadFromStorage(STORAGE_KEYS.screen, fallback);
+    const persistedScreen = sessionLastScreen || fallback;
 
     if (setupCompleted) {
       return persistedScreen === "forge" || persistedScreen === "hub" ? persistedScreen : "hub";
     }
 
     return persistedScreen === "onboarding" ? "onboarding" : "intro";
+  };
+
+  const financialSummary = useMemo(
+    () => (profile ? getFinancialSummary(profile, financialData) : null),
+    [profile, financialData]
+  );
+
+  const buildProfileWithFinancialMirror = (baseProfile: any, nextFinancialData: FounderFinancialData | null) => {
+    if (!baseProfile || !nextFinancialData) return baseProfile;
+    const summary = getFinancialSummary(baseProfile, nextFinancialData);
+    const legacyMirror = buildLegacyFinancialMirror(
+      Array.isArray(nextFinancialData.expenses) ? nextFinancialData.expenses : [],
+      Array.isArray(nextFinancialData.revenue) ? nextFinancialData.revenue : [],
+    );
+    return {
+      ...baseProfile,
+      budget: {
+        ...baseProfile.budget,
+        expenses: legacyMirror.expenses,
+        income: legacyMirror.income,
+        totalIncome: summary.totalRevenue,
+        spent: summary.totalExpenses,
+        remaining: summary.availableCash,
+        runway: summary.runwayMonths != null ? `${summary.runwayMonths.toFixed(1)} months` : "TBD",
+      },
+    };
   };
 
   const resetClientSessionState = () => {
@@ -2466,6 +2641,13 @@ export default function FoundryApp() {
     setBubbleSummaries([]);
     setChatRoomArchive(null);
     setAcademyConversationEntry(null);
+    setRecentSummaries([]);
+    setFoundryDecisions([]);
+    setStageProgressDates({});
+    setActiveNudge(null);
+    setJournalSeedPrompt(null);
+    setFounderSessionState(null);
+    setFinancialData(null);
     setDataLoaded(false);
     clearFoundryClientStorage();
   };
@@ -2504,7 +2686,7 @@ export default function FoundryApp() {
       const authEmail = ((user as any).email ?? null) as string | null;
       await ensureUserProfile(uid, user as any);
       await ensureOwnerProfileRole(uid, authEmail);
-      const [dbProfile, dbProgress, dbMessages, dbJournal, dbBriefings, dbMarket, dbNotificationPreferences, dbNotifications, dbBillingSubscription] = await Promise.all([
+      const [dbProfile, dbProgress, dbMessages, dbJournal, dbBriefings, dbMarket, dbNotificationPreferences, dbNotifications, dbBillingSubscription, dbRecentSummaries, dbFoundryDecisions, dbStageProgressDates, dbActiveNudge, dbFounderSessionState] = await Promise.all([
         loadProfile(uid),
         loadAllStageProgress(uid),
         loadAllMessages(uid),
@@ -2514,7 +2696,13 @@ export default function FoundryApp() {
         loadNotificationPreferences(uid),
         loadNotifications(uid),
         loadBillingSubscription(uid),
+        loadRecentSummaries(uid, 30),
+        loadDecisions(uid, 30),
+        loadStageProgressDates(uid),
+        loadActiveNudge(uid),
+        getFounderSessionState(uid),
       ]);
+      const dbFinancialData = await loadFounderFinancialData(uid, dbProfile);
 
       if (cancelled) return;
 
@@ -2527,15 +2715,16 @@ export default function FoundryApp() {
           isAdmin: ownerFallback ? true : dbProfile.isAdmin,
           isOwner: ownerFallback ? true : dbProfile.isOwner,
         };
+        const resolvedProfileWithFinancials = buildProfileWithFinancialMirror(resolvedProfile, dbFinancialData);
 
         console.debug("[AdminHub] loadData resolved profile", {
           authUserEmail: authEmail,
-          profileEmail: resolvedProfile.email ?? null,
-          profileRole: resolvedProfile.role ?? null,
+          profileEmail: resolvedProfileWithFinancials.email ?? null,
+          profileRole: resolvedProfileWithFinancials.role ?? null,
           ownerFallback,
         });
 
-        setProfile(resolvedProfile);
+        setProfile(resolvedProfileWithFinancials);
         setCompletedByStage(dbProgress);
         setMessagesByStage(dbMessages);
         setJournalEntries(dbJournal);
@@ -2543,13 +2732,31 @@ export default function FoundryApp() {
         setNotificationPreferences(dbNotificationPreferences);
         setNotifications(dbNotifications);
         setMarketReport(dbMarket ?? null);
+        setRecentSummaries(dbRecentSummaries);
+        setFoundryDecisions(dbFoundryDecisions);
+        setStageProgressDates(dbStageProgressDates);
+        setFounderSessionState(dbFounderSessionState);
+        setFinancialData(dbFinancialData);
+        // Load or generate a proactive nudge
+        const resolvedStage = dbProfile?.currentStage ?? 1;
+        const nudge = dbActiveNudge ?? await generateNudgeIfNeeded(
+          uid,
+          resolvedStage,
+          dbRecentSummaries,
+          dbFoundryDecisions,
+          dbProgress,
+          dbStageProgressDates,
+          null,
+          dbJournal
+        );
+        if (!cancelled) setActiveNudge(nudge);
         // Load and ensure account access record
         const access = await ensureAccountAccess(uid);
         setAccountAccess(access);
         setBillingSubscription(dbBillingSubscription);
         // Update activity + sync email for admin dashboard
         updateUserActivity(uid, authEmail ?? undefined);
-        setScreen(getPersistedPostAuthScreen(true));
+        setScreen(getPersistedPostAuthScreen(true, dbFounderSessionState?.lastScreen ?? null));
       } else {
         if (dbProfile) {
           const ownerFallback = isOwnerEmail(authEmail);
@@ -2560,18 +2767,21 @@ export default function FoundryApp() {
             isAdmin: ownerFallback ? true : dbProfile.isAdmin,
             isOwner: ownerFallback ? true : dbProfile.isOwner,
           };
+          const resolvedProfileWithFinancials = buildProfileWithFinancialMirror(resolvedProfile, dbFinancialData);
           console.debug("[AdminHub] loadData unresolved setup profile", {
             authUserEmail: authEmail,
-            profileEmail: resolvedProfile.email ?? null,
-            profileRole: resolvedProfile.role ?? null,
+            profileEmail: resolvedProfileWithFinancials.email ?? null,
+            profileRole: resolvedProfileWithFinancials.role ?? null,
             ownerFallback,
           });
-          setProfile(resolvedProfile);
+          setProfile(resolvedProfileWithFinancials);
         }
         setNotificationPreferences(dbNotificationPreferences);
         setNotifications(dbNotifications);
         setBillingSubscription(dbBillingSubscription);
-        setScreen(getPersistedPostAuthScreen(false));
+        setFounderSessionState(dbFounderSessionState);
+        setFinancialData(dbFinancialData);
+        setScreen(getPersistedPostAuthScreen(false, dbFounderSessionState?.lastScreen ?? null));
         setIsFirstVisit(true);
       }
       setDataLoaded(true);
@@ -2633,11 +2843,149 @@ export default function FoundryApp() {
   }, [messagesByStage]);
 
   const setScreenPersisted = (s) => {
+    if (screen === s) return;
     setScreen(s);
-    saveToStorage(STORAGE_KEYS.screen, s);
+    if (!user?.id || !dataLoaded) return;
+    setFounderSessionState((prev) => prev ? { ...prev, lastScreen: s } : {
+      userId: user.id,
+      lastSeenAt: null,
+      lastScreen: s,
+      weeklyJournalSummary: null,
+      weeklyJournalSummaryGeneratedAt: null,
+      updatedAt: new Date().toISOString(),
+    });
+    void updateLastScreen(user.id, s);
   };
 
-  const updateProfile = (updates) => setProfile(p => ({ ...p, ...updates }));
+  const updateProfile = (updates) => {
+    // When a new decision is prepended to profile.decisions, also persist it
+    // to founder_decisions so longitudinal memory has a timestamped record.
+    if (Array.isArray(updates.decisions) && user?.id) {
+      const current = profile?.decisions || [];
+      if (updates.decisions.length > current.length) {
+        const newest = updates.decisions[0];
+        const tag = typeof newest === "string" ? null : (newest.tag ?? null);
+        const text = typeof newest === "string" ? newest : newest.text;
+        const stageId = profile?.currentStage ?? 1;
+        saveDecision(user.id, stageId, tag, text).then(saved => {
+          if (saved) setFoundryDecisions(prev => [saved, ...prev]);
+        });
+      }
+    }
+    setProfile(p => ({ ...p, ...updates }));
+  };
+
+  const refreshFinancialData = async () => {
+    if (!user?.id) return null;
+    const nextFinancialData = await loadFounderFinancialData(user.id, profile);
+    setFinancialData(nextFinancialData);
+    setProfile((prev) => prev ? buildProfileWithFinancialMirror(prev, nextFinancialData) : prev);
+    return nextFinancialData;
+  };
+
+  const handleSaveExpense = async (input: {
+    label: string;
+    amount: number;
+    category?: string;
+    incurredOn?: string | null;
+    frequency?: "one_time" | "monthly" | "yearly";
+    renewalDate?: string | null;
+    notes?: string | null;
+  }) => {
+    if (!user?.id) return null;
+    const saved = await saveExpense(user.id, input);
+    if (!saved) return null;
+    await refreshFinancialData();
+    markMeaningfulActivity(true);
+    return saved;
+  };
+
+  const handleDeleteExpense = async (expenseId: string) => {
+    if (!user?.id) return false;
+    const ok = await deleteExpense(user.id, expenseId);
+    if (!ok) return false;
+    await refreshFinancialData();
+    markMeaningfulActivity(true);
+    return true;
+  };
+
+  const handleSaveRevenue = async (input: {
+    label: string;
+    amount: number;
+    category?: string;
+    receivedOn?: string | null;
+    frequency?: "one_time" | "monthly" | "yearly";
+    renewalDate?: string | null;
+    notes?: string | null;
+  }) => {
+    if (!user?.id) return null;
+    const saved = await saveRevenue(user.id, input);
+    if (!saved) return null;
+    await refreshFinancialData();
+    markMeaningfulActivity(true);
+    return saved;
+  };
+
+  const handleDeleteRevenue = async (revenueId: string) => {
+    if (!user?.id) return false;
+    const ok = await deleteRevenue(user.id, revenueId);
+    if (!ok) return false;
+    await refreshFinancialData();
+    markMeaningfulActivity(true);
+    return true;
+  };
+
+  const handleSaveFinancialSettings = async (updates: { startingCash?: number | null }) => {
+    if (!user?.id) return null;
+    const saved = await saveFinancialSettings(user.id, {
+      ...financialData?.settings,
+      ...updates,
+    });
+    if (!saved) return null;
+    await refreshFinancialData();
+    markMeaningfulActivity(true);
+    return saved;
+  };
+
+  const handlePlaidConnected = async () => {
+    await refreshFinancialData();
+    markMeaningfulActivity(true);
+  };
+
+  const handleSyncPlaidTransactions = async (plaidItemId: string) => {
+    if (!plaidItemId) return null;
+    const result = await syncPlaidTransactions(plaidItemId);
+    await refreshFinancialData();
+    markMeaningfulActivity(true);
+    return result;
+  };
+
+  const handleAcceptPlaidTransactionAsExpense = async (transaction: PlaidReviewTransaction) => {
+    if (!user?.id) return null;
+    const accepted = await acceptPlaidTransactionAsExpense(user.id, transaction);
+    if (!accepted) return null;
+    await refreshFinancialData();
+    markMeaningfulActivity(true);
+    return accepted;
+  };
+
+  const handleAcceptPlaidTransactionAsRevenue = async (transaction: PlaidReviewTransaction) => {
+    if (!user?.id) return null;
+    const accepted = await acceptPlaidTransactionAsRevenue(user.id, transaction);
+    if (!accepted) return null;
+    await refreshFinancialData();
+    markMeaningfulActivity(true);
+    return accepted;
+  };
+
+  const handleIgnorePlaidTransaction = async (transactionId: string) => {
+    if (!user?.id) return false;
+    const ok = await ignorePlaidTransaction(user.id, transactionId);
+    if (!ok) return false;
+    await refreshFinancialData();
+    markMeaningfulActivity(true);
+    return true;
+  };
 
   const handleMilestoneComplete = (milestoneId) => {
     markMeaningfulActivity(true);
@@ -2666,6 +3014,30 @@ export default function FoundryApp() {
     const nowIso = new Date().toISOString();
     setProfile((prev) => prev ? { ...prev, lastActiveAt: nowIso } : prev);
     recordMeaningfulActivity(user.id, authUserEmail ?? undefined, { force });
+  };
+
+  const handleDismissNudge = () => {
+    if (!activeNudge || !user?.id) return;
+    dismissNudge(user.id, activeNudge.id);
+    setActiveNudge(null);
+  };
+
+  const handleActOnNudge = () => {
+    if (!activeNudge || !user?.id) return;
+    markNudgeActedOn(user.id, activeNudge.id);
+    setActiveNudge(null);
+  };
+
+  const handleGreetingOpen = () => {
+    if (!activeNudge || !user?.id) return;
+    markNudgeSeen(user.id, activeNudge.id);
+  };
+
+  const handleAskForgeAboutJournal = (entryContent: string) => {
+    const seedText = `I want to talk through something I wrote in my journal: ${entryContent.trim().slice(0, 200)}${entryContent.trim().length > 200 ? "..." : ""}`;
+    setJournalSeedPrompt(seedText);
+    setShowJournal(false);
+    openForge(null);
   };
 
   const handleAdvance = (newStage) => {
@@ -2722,6 +3094,13 @@ export default function FoundryApp() {
         supabase.from("profiles").delete().eq("id", user.id),
         supabase.from("stage_progress").delete().eq("user_id", user.id),
         supabase.from("messages").delete().eq("user_id", user.id),
+        supabase.from("founder_financial_accounts").delete().eq("user_id", user.id),
+        supabase.from("founder_expenses").delete().eq("user_id", user.id),
+        supabase.from("founder_revenue").delete().eq("user_id", user.id),
+        supabase.from("founder_financial_settings").delete().eq("user_id", user.id),
+        supabase.from("founder_profit_buckets").delete().eq("user_id", user.id),
+        supabase.from("plaid_items").delete().eq("user_id", user.id),
+        supabase.from("plaid_transactions").delete().eq("user_id", user.id),
       ]);
     }
     // Clear localStorage
@@ -2873,6 +3252,28 @@ export default function FoundryApp() {
     setChatRoomArchive(null);
     setShowAcademy(false);
     setShowChatRoom(true);
+  };
+
+  const handleMarkAcademyLessonCompleted = async (
+    contentId: string,
+    options?: {
+      knowledgeCheckedAt?: string;
+      lastCheckResponse?: string | null;
+      lastCheckFeedback?: string | null;
+    }
+  ) => {
+    const activeUserId = (user as any)?.id as string | undefined;
+    if (!activeUserId) return;
+
+    await completeAcademyLesson({
+      userId: activeUserId,
+      contentId,
+      contentTitle: academyConversationEntry?.id === contentId ? academyConversationEntry.title : null,
+      response: options?.lastCheckResponse ?? null,
+      feedback: options?.lastCheckFeedback ?? null,
+      completedAt: options?.knowledgeCheckedAt ?? new Date().toISOString(),
+      source: "forge_chat",
+    });
   };
 
   const continueArchiveInChatRoom = (entry: any) => {
@@ -3133,6 +3534,21 @@ export default function FoundryApp() {
             accessSummary={accessSummary}
             onOpenUpgrade={() => requestUpgrade(Math.max(2, profile.currentStage || 2))}
             onOpenArchive={() => setShowArchivePanel(true)}
+            activeNudge={activeNudge}
+            onDismissNudge={handleDismissNudge}
+            onActOnNudge={handleActOnNudge}
+            financialData={financialData}
+            financialSummary={financialSummary}
+            onSaveExpense={handleSaveExpense}
+            onDeleteExpense={handleDeleteExpense}
+            onSaveRevenue={handleSaveRevenue}
+            onDeleteRevenue={handleDeleteRevenue}
+            onSaveFinancialSettings={handleSaveFinancialSettings}
+            onPlaidConnected={handlePlaidConnected}
+            onSyncPlaidTransactions={handleSyncPlaidTransactions}
+            onAcceptPlaidTransactionAsExpense={handleAcceptPlaidTransactionAsExpense}
+            onAcceptPlaidTransactionAsRevenue={handleAcceptPlaidTransactionAsRevenue}
+            onIgnorePlaidTransaction={handleIgnorePlaidTransaction}
           />
         )}
         {screen === "forge" && profile && (
@@ -3155,6 +3571,7 @@ export default function FoundryApp() {
             bubbleSummaries={bubbleSummaries}
             pendingUpgradeStage={effectivePendingUpgradeStage}
             furthestStageReached={furthestStageReached}
+            initialLastSeenAt={founderSessionState?.lastSeenAt ?? null}
             onRequestUpgrade={(stage: number) => setPaywallStage(stage)}
             onDowngradeToFree={() => revertToStage(1)}
             onContinueArchiveInChatRoom={continueArchiveInChatRoom}
@@ -3167,6 +3584,14 @@ export default function FoundryApp() {
               setArchiveMutationTick((tick) => tick + 1);
             }}
             archiveMutationTick={archiveMutationTick}
+            recentSummaries={recentSummaries}
+            foundryDecisions={foundryDecisions}
+            stageProgressDates={stageProgressDates}
+            onGreetingOpen={handleGreetingOpen}
+            journalEntries={journalEntries}
+            journalSeedPrompt={journalSeedPrompt}
+            onJournalSeedUsed={() => setJournalSeedPrompt(null)}
+            financialSummary={financialSummary}
           />
         )}
       </div>
@@ -3228,6 +3653,7 @@ export default function FoundryApp() {
           onEntriesChange={setJournalEntries}
           onBack={() => setShowJournal(false)}
           profile={profile}
+          onAskForge={handleAskForgeAboutJournal}
         />
       )}
       {showBriefings && user && (
@@ -3239,6 +3665,11 @@ export default function FoundryApp() {
           onBack={() => setShowBriefings(false)}
           completedByStage={completedByStage}
           generationLimit={isFreeTier ? FREE_TIER_BRIEFING_LIMIT : null}
+          recentSummaries={recentSummaries}
+          foundryDecisions={foundryDecisions}
+          journalEntries={journalEntries}
+          activeNudge={activeNudge}
+          stageProgressDates={stageProgressDates}
         />
       )}
       {showAcademy && profile && user && (
@@ -3261,6 +3692,7 @@ export default function FoundryApp() {
             profile={profile}
             initialArchive={chatRoomArchive}
             academyEntry={academyConversationEntry}
+            onMarkAcademyLessonCompleted={handleMarkAcademyLessonCompleted}
             onBack={() => {
               const returnToAcademy = Boolean(academyConversationEntry);
               setShowChatRoom(false);

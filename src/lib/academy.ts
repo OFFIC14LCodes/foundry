@@ -52,6 +52,9 @@ export type AcademyContent = {
     commonMistake: string | null;
     starterPrompt: string | null;
     forgeContext: string | null;
+    knowledgeCheckPrompt: string | null;
+    knowledgeCheckExpectedPoints: string[];
+    completionBadgeLabel: string | null;
     videoUrl: string | null;
     youtubeVideoId: string | null;
     resourceUrl: string | null;
@@ -107,10 +110,15 @@ export type AcademyUserContentProgress = {
     contentId: string;
     status: AcademyProgressStatus;
     completedAt: string | null;
+    knowledgeCheckedAt: string | null;
+    lastCheckResponse: string | null;
+    lastCheckFeedback: string | null;
     lastOpenedAt: string | null;
     lastForgeOpenedAt: string | null;
     updatedAt: string;
 };
+
+export type AcademySessionMode = "learn" | "apply" | "knowledge_check";
 
 export type AcademyUserSeriesItemProgress = {
     userId: string;
@@ -148,6 +156,7 @@ export type AcademyAdminWorkspace = AcademyWorkspace;
 export type AcademyTopicLaunch = {
     id: string;
     title: string;
+    sessionMode: AcademySessionMode;
     categoryTitle: string | null;
     stageIds: number[];
     learningGoal: string | null;
@@ -158,6 +167,9 @@ export type AcademyTopicLaunch = {
     forgeContext: string | null;
     whyThisMatters: string | null;
     whatToWatchFor: string | null;
+    knowledgeCheckPrompt: string | null;
+    knowledgeCheckExpectedPoints: string[];
+    completionBadgeLabel: string | null;
     tags: string[];
 };
 
@@ -271,10 +283,11 @@ export function getAcademyProgressLabel(status: AcademyProgressStatus | null | u
     }
 }
 
-export function toAcademyTopicLaunch(content: AcademyContent): AcademyTopicLaunch {
+export function toAcademyTopicLaunch(content: AcademyContent, sessionMode: AcademySessionMode = "learn"): AcademyTopicLaunch {
     return {
         id: content.id,
         title: content.title,
+        sessionMode,
         categoryTitle: content.category?.title ?? null,
         stageIds: content.stageIds,
         learningGoal: content.learningGoal,
@@ -285,6 +298,9 @@ export function toAcademyTopicLaunch(content: AcademyContent): AcademyTopicLaunc
         forgeContext: content.forgeContext,
         whyThisMatters: content.whyThisMatters,
         whatToWatchFor: content.whatToWatchFor,
+        knowledgeCheckPrompt: content.knowledgeCheckPrompt,
+        knowledgeCheckExpectedPoints: content.knowledgeCheckExpectedPoints,
+        completionBadgeLabel: content.completionBadgeLabel,
         tags: content.tags.map((tag) => tag.name),
     };
 }

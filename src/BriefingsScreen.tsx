@@ -1,6 +1,9 @@
 import { useState, useEffect, type ReactNode } from "react";
-import { saveBriefing } from "./db";
+import { saveBriefing, type FounderDecision, type SavedBriefing, type StageSummary, type FounderNudge } from "./db";
 import Logo from "./components/Logo";
+import { STAGES_DATA } from "./constants/stages";
+import { loadAcademyWeeklyActivity, type AcademyWeeklyActivity } from "./lib/academyDb";
+import { buildWeeklyBriefingIntelligence, buildWeeklyBriefingPrompt } from "./lib/weeklyBriefingIntelligence";
 
 function renderInline(text: string) {
     const parts = text.split(/\*\*(.+?)\*\*/g);
@@ -85,45 +88,6 @@ function BriefingText({ text }: { text: string }) {
     return <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>{blocks}</div>;
 }
 
-const FORGE_BRIEFING_PROMPT = (profile: any, stageLabel: string, completedCount: number, totalCount: number) => `
-You are Forge. Generate a Monday morning briefing for ${profile.name}, who is building "${profile.businessName || profile.idea}".
-
-Their current situation:
-- Stage: ${profile.currentStage} — ${stageLabel}
-- Stage progress: ${completedCount}/${totalCount} milestones complete
-- Strategy: ${profile.strategyLabel}
-- Budget remaining: $${(profile.budget?.remaining || 0).toLocaleString()}
-- Industry: ${profile.industry || "Early stage"}
-
-Write a Monday morning briefing that is easy to scan on a phone. Keep everything flush-left. Use short paragraphs, bullet points, and numbered lines when they help clarity. No centered prose blocks.
-
-Use this structure:
-
-1. Opening
-- A warm but direct opening that acknowledges where they are right now in the journey.
-- Reference something specific about their business or stage.
-- Keep it to 2-3 sentences.
-
-2. This Week's Priority
-- The single most important priority for this week given their stage and progress.
-- Be specific and direct.
-- Keep it to 2-3 sentences.
-
-3. Teaching Point
-- Give one relevant framework, mental model, or founder story that applies directly to what they're working on right now.
-- Name it clearly.
-- Explain it briefly.
-- Connect it directly to their situation.
-- Keep it to 3-4 sentences or 2-4 bullets.
-
-4. One Sharp Question
-- End with one sharp question to sit with this week.
-- Not a task. A question that shapes how they think.
-- One sentence.
-
-Keep the whole thing under 300 words. Write it the way Forge speaks — direct, warm, no filler, no corporate language. This should feel like a Monday morning text from a partner who's been thinking about their business over the weekend.
-`.trim();
-
 export default function BriefingsScreen({
     userId,
     profile,
@@ -132,28 +96,53 @@ export default function BriefingsScreen({
     onBack,
     completedByStage,
     generationLimit = null,
+    recentSummaries,
+    foundryDecisions,
+    journalEntries,
+    activeNudge,
+    stageProgressDates,
 }: {
     userId: string;
     profile: any;
-    briefings: any[];
-    onBriefingsChange: (next: any[]) => void;
+    briefings: SavedBriefing[];
+    onBriefingsChange: (next: SavedBriefing[]) => void;
     onBack: () => void;
     completedByStage: Record<number, any[]>;
     generationLimit?: number | null;
+    recentSummaries: StageSummary[];
+    foundryDecisions: FounderDecision[];
+    journalEntries: any[];
+    activeNudge: FounderNudge | null;
+    stageProgressDates: Record<number, string>;
 }) {
     const [generating, setGenerating] = useState(false);
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [mounted, setMounted] = useState(false);
-
-    const STAGES_DATA_LABELS = ["Idea", "Plan", "Legal", "Finance", "Launch", "Grow"];
-    const MILESTONE_COUNTS = [5, 5, 5, 5, 5, 5];
+    const [academyWeeklyActivity, setAcademyWeeklyActivity] = useState<AcademyWeeklyActivity | null>(null);
 
     useEffect(() => { setTimeout(() => setMounted(true), 100); }, []);
 
+    useEffect(() => {
+        let cancelled = false;
+        loadAcademyWeeklyActivity(userId, 7)
+            .then((result) => {
+                if (!cancelled) setAcademyWeeklyActivity(result);
+            })
+            .catch((error) => {
+                console.error("academy weekly activity error:", error);
+                if (!cancelled) setAcademyWeeklyActivity(null);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [userId]);
+
     const currentStageId = profile.currentStage || 1;
-    const stageLabel = STAGES_DATA_LABELS[currentStageId - 1];
+    const currentStage = STAGES_DATA.find((stage) => stage.id === currentStageId) ?? STAGES_DATA[0];
+    const stageLabel = currentStage.label;
     const completedCount = (completedByStage[currentStageId] || []).length;
-    const totalCount = MILESTONE_COUNTS[currentStageId - 1];
+    const totalCount = currentStage.milestones.length;
 
     const lastBriefing = briefings[0];
     const lastBriefingDate = lastBriefing ? new Date(lastBriefing.createdAt) : null;
@@ -168,21 +157,44 @@ export default function BriefingsScreen({
         if (generating || !canCreateBriefing) return;
         setGenerating(true);
         try {
-            const prompt = FORGE_BRIEFING_PROMPT(profile, stageLabel, completedCount, totalCount);
+            const academyActivity = academyWeeklyActivity ?? await loadAcademyWeeklyActivity(userId, 7).catch(() => null);
+            const weeklyIntelligence = buildWeeklyBriefingIntelligence({
+                profile,
+                currentStageId,
+                completedByStage,
+                stageProgressDates,
+                recentSummaries,
+                foundryDecisions,
+                journalEntries,
+                activeNudge,
+                academyActivity,
+            });
+            const prompt = buildWeeklyBriefingPrompt(
+                profile,
+                stageLabel,
+                completedCount,
+                totalCount,
+                weeklyIntelligence.contextBlock,
+            );
             const res = await fetch("/api/forge", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     model: "claude-sonnet-4-20250514",
-                    max_tokens: 600,
-                    system: "You are Forge, the AI business partner inside Foundry. Write exactly as instructed. Keep the text flush-left, easy to scan, and structured with short paragraphs, bullets, and numbered lines when useful.",
+                    max_tokens: 900,
+                    system: "You are Forge, the AI business partner inside Foundry. Write exactly as instructed. Keep the text flush-left, easy to scan, grounded in the founder's week, and structured with short paragraphs, bullets, and numbered lines when useful.",
                     messages: [{ role: "user", content: prompt }],
                 }),
             });
             const data = await res.json();
             const content = data.content?.map((b: any) => b.text || "").join("") || "";
             if (content) {
-                const saved = await saveBriefing(userId, content, currentStageId);
+                const saved = await saveBriefing(userId, content, currentStageId, {
+                    weekStart: weeklyIntelligence.weekStart,
+                    highlights: weeklyIntelligence.highlights as Record<string, unknown>,
+                    sourceCounts: weeklyIntelligence.sourceCounts,
+                    generatedAt: new Date().toISOString(),
+                });
                 if (saved) {
                     onBriefingsChange([saved, ...briefings]);
                     setExpandedId(saved.id);
@@ -202,7 +214,8 @@ export default function BriefingsScreen({
     };
 
     const formatStage = (stageId: number) => {
-        return `Stage ${stageId} — ${STAGES_DATA_LABELS[stageId - 1] || "Unknown"}`;
+        const stage = STAGES_DATA.find((entry) => entry.id === stageId);
+        return `Stage ${stageId} — ${stage?.label || "Unknown"}`;
     };
 
     return (

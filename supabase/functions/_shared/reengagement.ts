@@ -35,6 +35,30 @@ export function pickReminderVariant(daysInactive: number): ReminderVariant {
     return REMINDER_VARIANTS[0];
 }
 
+export function buildPersonalizedReminderEmail(name: string | null, nudgeText: string) {
+    const greeting = name?.trim() ? `${name},` : "Founder,";
+    const subject = "Forge has been thinking about you";
+    const title = "Forge has been thinking about you.";
+
+    return {
+        id: "personalized-nudge",
+        subject,
+        title,
+        body: nudgeText,
+        html: `
+            <div style="font-family:Arial,sans-serif;background:#080809;color:#F0EDE8;padding:32px;">
+                <div style="max-width:560px;margin:0 auto;background:#111214;border:1px solid rgba(255,255,255,0.08);border-radius:18px;padding:28px;">
+                    <div style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#E8622A;margin-bottom:10px;">Foundry</div>
+                    <h1 style="margin:0 0 14px;font-size:28px;line-height:1.1;font-family:Georgia,serif;color:#F0EDE8;">${title}</h1>
+                    <p style="margin:0 0 14px;font-size:15px;line-height:1.7;color:#D4CEC4;">${greeting}</p>
+                    <p style="margin:0 0 22px;font-size:15px;line-height:1.7;color:#D4CEC4;">${nudgeText}</p>
+                    <a href="https://foundryandforge.app" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#E8622A;color:#fff;text-decoration:none;font-weight:700;">Open Foundry</a>
+                </div>
+            </div>
+        `.trim(),
+    };
+}
+
 export function buildReminderEmail(name: string | null, daysInactive: number) {
     const variant = pickReminderVariant(daysInactive);
     const greeting = name?.trim() ? `${name},` : "Founder,";

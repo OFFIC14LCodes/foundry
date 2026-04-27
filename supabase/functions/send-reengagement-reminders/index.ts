@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { buildReminderEmail } from "../_shared/reengagement.ts";
+import { buildReminderEmail, buildPersonalizedReminderEmail } from "../_shared/reengagement.ts";
 
 type DueUser = {
     user_id: string;
@@ -72,7 +72,22 @@ Deno.serve(async (request) => {
         const results: Array<Record<string, unknown>> = [];
 
         for (const user of dueUsers) {
-            const reminder = buildReminderEmail(user.name, user.days_inactive);
+            // Check for an active personalized nudge (undismissed, created within last 7 days)
+            const nudgeCutoff = new Date();
+            nudgeCutoff.setDate(nudgeCutoff.getDate() - 7);
+            const { data: nudgeRow } = await supabase
+                .from("founder_nudges")
+                .select("nudge_text")
+                .eq("user_id", user.user_id)
+                .is("dismissed_at", null)
+                .gte("created_at", nudgeCutoff.toISOString())
+                .order("created_at", { ascending: false })
+                .limit(1)
+                .maybeSingle();
+
+            const reminder = nudgeRow?.nudge_text
+                ? buildPersonalizedReminderEmail(user.name, nudgeRow.nudge_text)
+                : buildReminderEmail(user.name, user.days_inactive);
             const createdAt = new Date().toISOString();
             const { data: createdNotification, error: createError } = await supabase
                 .from("notifications")

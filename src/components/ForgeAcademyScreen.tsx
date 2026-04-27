@@ -3,6 +3,14 @@ import { Archive } from "lucide-react";
 import { STAGES_DATA } from "../constants/stages";
 import { supabase } from "../supabase";
 import {
+    getAcademySessionSubtitle,
+    completeAcademyLesson,
+    getCompletionBadgeLabel,
+    getKnowledgeCheckExpectedPoints,
+    getKnowledgeCheckPrompt,
+    evaluateKnowledgeCheckAnswer,
+} from "../lib/academyCompletion";
+import {
     buildYoutubeEmbedUrl,
     buildYoutubeThumbnailUrl,
     getAcademyContentTypeLabel,
@@ -11,12 +19,12 @@ import {
     getAcademyStageLabels,
     toAcademyTopicLaunch,
     type AcademyContent,
+    type AcademySessionMode,
     type AcademySeries,
     type AcademySeriesItem,
     type AcademyTopicLaunch,
     type AcademyUserContentProgress,
     type AcademyUserHistory,
-    type AcademyUserSeriesItemProgress,
     type AcademyWorkspace,
 } from "../lib/academy";
 import { STAGE_COLORS } from "../constants/glossary";
@@ -26,8 +34,6 @@ import {
     recordAcademyHistory,
     touchAcademyContentForgeOpened,
     touchAcademyContentOpened,
-    upsertAcademyContentProgress,
-    upsertAcademySeriesItemProgress,
 } from "../lib/academyDb";
 import Logo from "./Logo";
 import type { AcademyBubbleContext } from "./ForgeBubble";
@@ -68,6 +74,9 @@ type UserLessonProgressRow = {
     status: PathLessonStatus;
     started_at: string | null;
     completed_at: string | null;
+    knowledge_checked_at: string | null;
+    last_check_response: string | null;
+    last_check_feedback: string | null;
     updated_at: string | null;
 };
 
@@ -234,10 +243,6 @@ export default function ForgeAcademyScreen({
         () => new Map(workspace.contentProgress.map((entry) => [entry.contentId, entry])),
         [workspace.contentProgress]
     );
-    const seriesItemProgressById = useMemo(
-        () => new Map(workspace.seriesItemProgress.map((entry) => [entry.seriesItemId, entry])),
-        [workspace.seriesItemProgress]
-    );
     const visibleContent = useMemo(() => {
         if (maxPreviewStage === null) return workspace.content;
         return workspace.content.filter((entry) => entry.stageIds.some((stageId) => stageId <= maxPreviewStage));
@@ -255,7 +260,6 @@ export default function ForgeAcademyScreen({
     }, [maxPreviewStage, visibleContentIds, workspace.series]);
     const visibleContentById = useMemo(() => new Map(visibleContent.map((entry) => [entry.id, entry])), [visibleContent]);
     const visibleSeriesById = useMemo(() => new Map(visibleSeries.map((entry) => [entry.id, entry])), [visibleSeries]);
-    const visibleSeriesItemIds = useMemo(() => new Set(visibleSeries.flatMap((entry) => entry.items.map((item) => item.id))), [visibleSeries]);
     const stageOptions = useMemo(() => (
         maxPreviewStage === null
             ? stageFilterOptions
@@ -273,6 +277,9 @@ export default function ForgeAcademyScreen({
                 contentId: entry.content_id,
                 status: entry.status,
                 completedAt: entry.completed_at,
+                knowledgeCheckedAt: entry.knowledge_checked_at,
+                lastCheckResponse: entry.last_check_response,
+                lastCheckFeedback: entry.last_check_feedback,
                 lastOpenedAt: entry.started_at ?? entry.updated_at,
                 lastForgeOpenedAt: null,
                 updatedAt: entry.updated_at ?? new Date().toISOString(),
@@ -328,17 +335,27 @@ export default function ForgeAcademyScreen({
 
     const completedContentCount = Array.from(effectiveContentProgressById.values()).filter((entry) => entry.status === "completed" && visibleContentIds.has(entry.contentId)).length;
     const totalLessonsCount = visibleContent.length;
-    const completedSeriesItems = workspace.seriesItemProgress.filter((entry) => entry.status === "completed" && visibleSeriesItemIds.has(entry.seriesItemId)).length;
+    const completedSeriesItems = visibleSeries.reduce((count, series) => (
+        count + series.items.filter((item) => item.content && effectiveContentProgressById.get(item.content.id)?.status === "completed").length
+    ), 0);
     const recentHistory = workspace.history.filter((entry) => (
         (!entry.contentId || visibleContentIds.has(entry.contentId)) &&
         (!entry.seriesId || visibleSeriesById.has(entry.seriesId))
     )).slice(0, 4);
     const nextSeriesUp = lessonSeries
-        .map((series) => ({ series, nextItem: getNextSeriesItem(series, seriesItemProgressById) }))
+        .map((series) => ({ series, nextItem: getNextSeriesItem(series, effectiveContentProgressById) }))
         .filter((entry) => entry.nextItem)
         .slice(0, 3);
 
-    const persistPathProgress = async (contentId: string, status: PathLessonStatus) => {
+    const persistPathProgress = async (
+        contentId: string,
+        status: PathLessonStatus,
+        options?: {
+            knowledgeCheckedAt?: string | null;
+            lastCheckResponse?: string | null;
+            lastCheckFeedback?: string | null;
+        }
+    ) => {
         const existing = pathProgressByContentId.get(contentId) ?? null;
         const now = new Date().toISOString();
         const payload = {
@@ -347,46 +364,32 @@ export default function ForgeAcademyScreen({
             status,
             started_at: status === "not_started" ? null : existing?.started_at ?? now,
             completed_at: status === "completed" ? now : null,
+            knowledge_checked_at: options?.knowledgeCheckedAt ?? existing?.knowledge_checked_at ?? null,
+            last_check_response: options?.lastCheckResponse ?? existing?.last_check_response ?? null,
+            last_check_feedback: options?.lastCheckFeedback ?? existing?.last_check_feedback ?? null,
             updated_at: now,
         };
 
-        if (existing) {
-            const { data, error: updateError } = await supabase
-                .from("user_lesson_progress")
-                .update(payload)
-                .eq("id", existing.id)
-                .select()
-                .single();
-            if (updateError) {
-                if (!isMissingRelationError(updateError)) {
-                    console.error("user lesson progress update error:", updateError);
-                }
-                return;
-            }
-            if (data) {
-                setPathProgressRows((prev) => prev.map((entry) => entry.id === existing.id ? data as UserLessonProgressRow : entry));
-            }
-            return;
-        }
-
-        const { data, error: insertError } = await supabase
+        const { data, error } = await supabase
             .from("user_lesson_progress")
-            .insert(payload)
+            .upsert(payload, { onConflict: "user_id,content_id" })
             .select()
             .single();
-        if (insertError) {
-            if (!isMissingRelationError(insertError)) {
-                console.error("user lesson progress insert error:", insertError);
+        if (error) {
+            if (!isMissingRelationError(error)) {
+                console.error("user lesson progress upsert error:", error);
             }
-            return;
+            return null;
         }
         if (data) {
             setPathProgressRows((prev) => [data as UserLessonProgressRow, ...prev.filter((entry) => entry.content_id !== contentId)]);
+            return data as UserLessonProgressRow;
         }
+        return null;
     };
 
     const markLessonInProgress = async (contentId: string) => {
-        const currentStatus = pathProgressByContentId.get(contentId)?.status ?? "not_started";
+        const currentStatus = effectiveContentProgressById.get(contentId)?.status ?? "not_started";
         if (currentStatus === "completed" || currentStatus === "in_progress") return;
         await persistPathProgress(contentId, "in_progress");
     };
@@ -445,8 +448,8 @@ export default function ForgeAcademyScreen({
             const enrichmentBlocks = allBlocks.filter((block) => block.type === "series" ? !block.items[0]?.isCore : !block.lesson.isCore);
             const coreLessons = stageLessons.filter((lesson) => lesson.isCore);
             const enrichmentLessons = stageLessons.filter((lesson) => !lesson.isCore);
-            const completedCoreCount = coreLessons.filter((lesson) => pathProgressByContentId.get(lesson.id)?.status === "completed").length;
-            const completedLessonCount = stageLessons.filter((lesson) => pathProgressByContentId.get(lesson.id)?.status === "completed").length;
+            const completedCoreCount = coreLessons.filter((lesson) => effectiveContentProgressById.get(lesson.id)?.status === "completed").length;
+            const completedLessonCount = stageLessons.filter((lesson) => effectiveContentProgressById.get(lesson.id)?.status === "completed").length;
 
             return {
                 stage,
@@ -462,12 +465,12 @@ export default function ForgeAcademyScreen({
                 totalCoreCount: coreLessons.length,
             };
         });
-    }, [pathProgressByContentId, visibleContent, visibleSeries]);
+    }, [effectiveContentProgressById, visibleContent, visibleSeries]);
 
     const pathRecommendation = useMemo<PathRecommendation | null>(() => {
         const allCoreLessons = pathStageGroups.flatMap((group) => group.coreLessons);
-        const inProgressLesson = allCoreLessons.find((lesson) => pathProgressByContentId.get(lesson.id)?.status === "in_progress")
-            ?? visibleContent.find((lesson) => pathProgressByContentId.get(lesson.id)?.status === "in_progress")
+        const inProgressLesson = allCoreLessons.find((lesson) => effectiveContentProgressById.get(lesson.id)?.status === "in_progress")
+            ?? visibleContent.find((lesson) => effectiveContentProgressById.get(lesson.id)?.status === "in_progress")
             ?? null;
         if (inProgressLesson) {
             return {
@@ -479,19 +482,19 @@ export default function ForgeAcademyScreen({
 
         const firstIncompleteStage = pathStageGroups.find((group) => group.totalCoreCount === 0 || group.completedCoreCount < group.totalCoreCount) ?? null;
         if (firstIncompleteStage) {
-            const nextLesson = firstIncompleteStage.coreLessons.find((lesson) => (pathProgressByContentId.get(lesson.id)?.status ?? "not_started") !== "completed") ?? firstIncompleteStage.coreLessons[0] ?? null;
+            const nextLesson = firstIncompleteStage.coreLessons.find((lesson) => (effectiveContentProgressById.get(lesson.id)?.status ?? "not_started") !== "completed") ?? firstIncompleteStage.coreLessons[0] ?? null;
             if (nextLesson) {
                 return {
                     lesson: nextLesson,
                     reason: `Stage ${firstIncompleteStage.stage} is your active stretch right now. This is the next core lesson that moves the path forward.`,
-                    action: pathProgressByContentId.get(nextLesson.id)?.status === "in_progress" ? "Continue" : "Start",
+                    action: effectiveContentProgressById.get(nextLesson.id)?.status === "in_progress" ? "Continue" : "Start",
                 };
             }
         }
 
         const nextEnrichmentLesson = pathStageGroups
             .flatMap((group) => group.enrichmentLessons)
-            .find((lesson) => (pathProgressByContentId.get(lesson.id)?.status ?? "not_started") !== "completed") ?? null;
+            .find((lesson) => (effectiveContentProgressById.get(lesson.id)?.status ?? "not_started") !== "completed") ?? null;
         if (nextEnrichmentLesson) {
             return {
                 lesson: nextEnrichmentLesson,
@@ -507,18 +510,19 @@ export default function ForgeAcademyScreen({
                 action: "Start",
             }
             : null;
-    }, [pathProgressByContentId, pathStageGroups, visibleContent]);
+    }, [effectiveContentProgressById, pathStageGroups, visibleContent]);
 
     const activePathStage = pathRecommendation?.lesson.pathStage
         ?? pathStageGroups.find((group) => group.totalCoreCount === 0 || group.completedCoreCount < group.totalCoreCount)?.stage
         ?? 1;
+    const isForgeBusyFor = (contentId: string) => Boolean(busyKey?.startsWith("forge-") && busyKey?.endsWith(`-${contentId}`));
 
     const toggleEnrichmentStage = (stage: number) => {
         setExpandedEnrichmentStages((prev) => ({ ...prev, [stage]: !prev[stage] }));
     };
 
     const launchLessonFromPath = async (content: AcademyContent) => {
-        await handleLaunchForge(content);
+        await handleLaunchForge(content, "learn");
     };
 
     const openContent = async (content: AcademyContent, action: "viewed" | "started_video" = "viewed") => {
@@ -566,17 +570,17 @@ export default function ForgeAcademyScreen({
         setSelectedSeries(series);
     };
 
-    const handleLaunchForge = async (content: AcademyContent) => {
+    const handleLaunchForge = async (content: AcademyContent, sessionMode: AcademySessionMode = "learn") => {
         if (!canLaunchForgeFromContent(content)) return;
-        setBusyKey(`forge-${content.id}`);
+        setBusyKey(`forge-${sessionMode}-${content.id}`);
         try {
             await markLessonInProgress(content.id);
             await touchAcademyContentForgeOpened(userId, content.id);
             await recordAcademyHistory(userId, "opened_forge", {
                 contentId: content.id,
-                metadata: { title: content.title },
+                metadata: { title: content.title, sessionMode },
             });
-            onLaunchForgeConversation(toAcademyTopicLaunch(content));
+            onLaunchForgeConversation(toAcademyTopicLaunch(content, sessionMode));
         } catch (launchError) {
             console.error("academy launch forge error:", launchError);
         } finally {
@@ -584,71 +588,42 @@ export default function ForgeAcademyScreen({
         }
     };
 
-    const handleToggleContentComplete = async (content: AcademyContent, completed: boolean) => {
+    const handleCompleteContent = async (
+        content: AcademyContent,
+        options?: {
+            knowledgeCheckedAt?: string | null;
+            lastCheckResponse?: string | null;
+            lastCheckFeedback?: string | null;
+        }
+    ) => {
         setBusyKey(`content-${content.id}`);
         try {
-            await persistPathProgress(content.id, completed ? "completed" : "in_progress");
-            const progress = await upsertAcademyContentProgress(userId, content.id, completed);
-            if (completed) {
-                await recordAcademyHistory(userId, "completed", {
-                    contentId: content.id,
-                    metadata: { title: content.title },
-                });
-            }
+            const result = await completeAcademyLesson({
+                userId,
+                contentId: content.id,
+                contentTitle: content.title,
+                response: options?.lastCheckResponse ?? null,
+                feedback: options?.lastCheckFeedback ?? null,
+                completedAt: options?.knowledgeCheckedAt ?? new Date().toISOString(),
+                source: "lesson_modal",
+            });
             setWorkspace((prev) => ({
                 ...prev,
-                contentProgress: mergeContentProgress(prev.contentProgress, progress),
-                history: completed
-                    ? [{
-                        id: `local-${Date.now()}`,
-                        userId,
-                        contentId: content.id,
-                        seriesId: null,
-                        seriesItemId: null,
-                        action: "completed",
-                        metadata: { title: content.title },
-                        createdAt: new Date().toISOString(),
-                    }, ...prev.history].slice(0, 18)
-                    : prev.history,
+                contentProgress: mergeContentProgress(prev.contentProgress, result.contentProgress),
+                history: [{
+                    id: `local-${Date.now()}`,
+                    userId,
+                    contentId: content.id,
+                    seriesId: null,
+                    seriesItemId: null,
+                    action: "completed",
+                    metadata: { title: content.title, source: "lesson_modal" },
+                    createdAt: new Date().toISOString(),
+                }, ...prev.history].slice(0, 18),
             }));
+            setPathProgressRows((prev) => [result.lessonProgress as UserLessonProgressRow, ...prev.filter((entry) => entry.content_id !== content.id)]);
         } catch (progressError) {
             console.error("academy complete content error:", progressError);
-        } finally {
-            setBusyKey(null);
-        }
-    };
-
-    const handleToggleSeriesItemComplete = async (series: AcademySeries, item: AcademySeriesItem, completed: boolean) => {
-        setBusyKey(`series-item-${item.id}`);
-        try {
-            await persistPathProgress(item.contentId, completed ? "completed" : "in_progress");
-            const progress = await upsertAcademySeriesItemProgress(userId, series.id, item.id, completed);
-            if (completed) {
-                await recordAcademyHistory(userId, "completed_series_item", {
-                    contentId: item.contentId,
-                    seriesId: series.id,
-                    seriesItemId: item.id,
-                    metadata: { seriesTitle: series.title, itemTitle: getSeriesItemTitle(item) },
-                });
-            }
-            setWorkspace((prev) => ({
-                ...prev,
-                seriesItemProgress: mergeSeriesItemProgress(prev.seriesItemProgress, progress),
-                history: completed
-                    ? [{
-                        id: `local-${Date.now()}`,
-                        userId,
-                        contentId: item.contentId,
-                        seriesId: series.id,
-                        seriesItemId: item.id,
-                        action: "completed_series_item",
-                        metadata: { seriesTitle: series.title, itemTitle: getSeriesItemTitle(item) },
-                        createdAt: new Date().toISOString(),
-                    }, ...prev.history].slice(0, 18)
-                    : prev.history,
-            }));
-        } catch (seriesProgressError) {
-            console.error("academy complete series item error:", seriesProgressError);
         } finally {
             setBusyKey(null);
         }
@@ -691,7 +666,7 @@ export default function ForgeAcademyScreen({
                     stages={pathStageGroups}
                     recommendation={pathRecommendation}
                     activeStage={activePathStage}
-                    progressByContentId={pathProgressByContentId}
+                    progressByContentId={effectiveContentProgressById}
                     loading={pathProgressLoading}
                     busyKey={busyKey}
                     onOpenLesson={(content) => void openContent(content, content.contentType === "video" ? "started_video" : "viewed")}
@@ -821,8 +796,9 @@ export default function ForgeAcademyScreen({
                                         content={entry}
                                         progress={effectiveContentProgressById.get(entry.id)}
                                         onOpen={() => void openContent(entry, entry.contentType === "video" ? "started_video" : "viewed")}
-                                        onLaunchForge={() => void handleLaunchForge(entry)}
-                                        busy={busyKey === `forge-${entry.id}`}
+                                        onLaunchForge={() => void handleLaunchForge(entry, "learn")}
+                                        onApplyNow={() => void handleLaunchForge(entry, "apply")}
+                                        busy={isForgeBusyFor(entry.id)}
                                         emphasis={entry.contentType === "mindset" ? "mindset" : "default"}
                                         continueLearning
                                     />
@@ -853,8 +829,9 @@ export default function ForgeAcademyScreen({
                                         content={entry}
                                         progress={effectiveContentProgressById.get(entry.id)}
                                         onOpen={() => void openContent(entry)}
-                                        onLaunchForge={() => void handleLaunchForge(entry)}
-                                        busy={busyKey === `forge-${entry.id}`}
+                                        onLaunchForge={() => void handleLaunchForge(entry, "learn")}
+                                        onApplyNow={() => void handleLaunchForge(entry, "apply")}
+                                        busy={isForgeBusyFor(entry.id)}
                                     />
                                 )}
                             />
@@ -873,7 +850,7 @@ export default function ForgeAcademyScreen({
                                 <SeriesCard
                                     key={entry.id}
                                     series={entry}
-                                    progressMap={seriesItemProgressById}
+                                    progressByContentId={effectiveContentProgressById}
                                     onOpen={() => void openSeries(entry)}
                                 />
                             )}
@@ -894,8 +871,9 @@ export default function ForgeAcademyScreen({
                                     content={entry}
                                     progress={effectiveContentProgressById.get(entry.id)}
                                     onOpen={() => void openContent(entry, entry.contentType === "video" ? "started_video" : "viewed")}
-                                    onLaunchForge={() => void handleLaunchForge(entry)}
-                                    busy={busyKey === `forge-${entry.id}`}
+                                    onLaunchForge={() => void handleLaunchForge(entry, "learn")}
+                                    onApplyNow={() => void handleLaunchForge(entry, "apply")}
+                                    busy={isForgeBusyFor(entry.id)}
                                     emphasis={entry.contentType === "mindset" ? "mindset" : "default"}
                                 />
                             )}
@@ -916,8 +894,9 @@ export default function ForgeAcademyScreen({
                                     content={entry}
                                     progress={effectiveContentProgressById.get(entry.id)}
                                     onOpen={() => void openContent(entry, "started_video")}
-                                    onLaunchForge={() => void handleLaunchForge(entry)}
-                                    busy={busyKey === `forge-${entry.id}`}
+                                    onLaunchForge={() => void handleLaunchForge(entry, "learn")}
+                                    onApplyNow={() => void handleLaunchForge(entry, "apply")}
+                                    busy={isForgeBusyFor(entry.id)}
                                 />
                             )}
                         />
@@ -937,8 +916,9 @@ export default function ForgeAcademyScreen({
                                     content={entry}
                                     progress={effectiveContentProgressById.get(entry.id)}
                                     onOpen={() => void openContent(entry)}
-                                    onLaunchForge={() => void handleLaunchForge(entry)}
-                                    busy={busyKey === `forge-${entry.id}`}
+                                    onLaunchForge={() => void handleLaunchForge(entry, "learn")}
+                                    onApplyNow={() => void handleLaunchForge(entry, "apply")}
+                                    busy={isForgeBusyFor(entry.id)}
                                 />
                             )}
                         />
@@ -958,8 +938,9 @@ export default function ForgeAcademyScreen({
                                     content={entry}
                                     progress={effectiveContentProgressById.get(entry.id)}
                                     onOpen={() => void openContent(entry)}
-                                    onLaunchForge={() => void handleLaunchForge(entry)}
-                                    busy={busyKey === `forge-${entry.id}`}
+                                    onLaunchForge={() => void handleLaunchForge(entry, "learn")}
+                                    onApplyNow={() => void handleLaunchForge(entry, "apply")}
+                                    busy={isForgeBusyFor(entry.id)}
                                     emphasis="mindset"
                                 />
                             )}
@@ -1075,20 +1056,18 @@ export default function ForgeAcademyScreen({
                     content={selectedContent}
                     progress={effectiveContentProgressById.get(selectedContent.id)}
                     onClose={() => setSelectedContent(null)}
-                    onToggleComplete={(completed) => void handleToggleContentComplete(selectedContent, completed)}
-                    onLaunchForge={canLaunchForgeFromContent(selectedContent) ? () => void handleLaunchForge(selectedContent) : undefined}
-                    busy={busyKey === `content-${selectedContent.id}` || busyKey === `forge-${selectedContent.id}`}
+                    onCompleteLesson={(options) => handleCompleteContent(selectedContent, options)}
+                    onLaunchForge={canLaunchForgeFromContent(selectedContent) ? (mode) => void handleLaunchForge(selectedContent, mode) : undefined}
+                    busy={busyKey === `content-${selectedContent.id}` || isForgeBusyFor(selectedContent.id)}
                 />
             )}
 
             {selectedSeries && (
                 <SeriesDetailModal
                     series={selectedSeries}
-                    progressMap={seriesItemProgressById}
+                    progressMap={effectiveContentProgressById}
                     onClose={() => setSelectedSeries(null)}
                     onOpenItem={(content) => void openContent(content, content.contentType === "video" ? "started_video" : "viewed")}
-                    onToggleSeriesItem={(item, completed) => void handleToggleSeriesItemComplete(selectedSeries, item, completed)}
-                    busyKey={busyKey}
                 />
             )}
         </AcademyShell>
@@ -1247,7 +1226,7 @@ function PathView({
     stages: PathStageGroup[];
     recommendation: PathRecommendation | null;
     activeStage: number;
-    progressByContentId: Map<string, UserLessonProgressRow>;
+    progressByContentId: Map<string, AcademyUserContentProgress>;
     loading: boolean;
     busyKey: string | null;
     onOpenLesson: (content: AcademyContent) => void;
@@ -1372,7 +1351,7 @@ function PathStageCard({
 }: {
     stage: PathStageGroup;
     activeStage: number;
-    progressByContentId: Map<string, UserLessonProgressRow>;
+    progressByContentId: Map<string, AcademyUserContentProgress>;
     busyKey: string | null;
     onOpenLesson: (content: AcademyContent) => void;
     onLaunchLesson: (content: AcademyContent) => void;
@@ -1455,7 +1434,7 @@ function PathStageCard({
                     {stage.coreBlocks.length > 0 ? stage.coreBlocks.map((block) => (
                         block.type === "series"
                             ? <PathSeriesGroup key={`series-${block.id}`} block={block} progressByContentId={progressByContentId} busyKey={busyKey} onOpenLesson={onOpenLesson} onLaunchLesson={onLaunchLesson} />
-                            : <PathLessonNode key={block.lesson.id} lesson={block.lesson} progress={progressByContentId.get(block.lesson.id) ?? null} busy={busyKey === `forge-${block.lesson.id}`} onOpen={() => onOpenLesson(block.lesson)} onLaunch={() => onLaunchLesson(block.lesson)} />
+                            : <PathLessonNode key={block.lesson.id} lesson={block.lesson} progress={progressByContentId.get(block.lesson.id) ?? null} busy={Boolean(busyKey?.startsWith("forge-") && busyKey?.endsWith(`-${block.lesson.id}`))} onOpen={() => onOpenLesson(block.lesson)} onLaunch={() => onLaunchLesson(block.lesson)} />
                     )) : (
                         <div style={{ fontSize: 13, color: "#777", lineHeight: 1.7 }}>
                             No core lessons have been mapped to this stage yet.
@@ -1490,7 +1469,7 @@ function PathStageCard({
                                 {stage.enrichmentBlocks.map((block) => (
                                     block.type === "series"
                                         ? <PathSeriesGroup key={`series-${block.id}`} block={block} progressByContentId={progressByContentId} busyKey={busyKey} onOpenLesson={onOpenLesson} onLaunchLesson={onLaunchLesson} muted />
-                                        : <PathLessonNode key={block.lesson.id} lesson={block.lesson} progress={progressByContentId.get(block.lesson.id) ?? null} busy={busyKey === `forge-${block.lesson.id}`} onOpen={() => onOpenLesson(block.lesson)} onLaunch={() => onLaunchLesson(block.lesson)} muted />
+                                        : <PathLessonNode key={block.lesson.id} lesson={block.lesson} progress={progressByContentId.get(block.lesson.id) ?? null} busy={Boolean(busyKey?.startsWith("forge-") && busyKey?.endsWith(`-${block.lesson.id}`))} onOpen={() => onOpenLesson(block.lesson)} onLaunch={() => onLaunchLesson(block.lesson)} muted />
                                 ))}
                             </div>
                         )}
@@ -1510,12 +1489,14 @@ function PathSeriesGroup({
     muted = false,
 }: {
     block: PathSeriesBlock;
-    progressByContentId: Map<string, UserLessonProgressRow>;
+    progressByContentId: Map<string, AcademyUserContentProgress>;
     busyKey: string | null;
     onOpenLesson: (content: AcademyContent) => void;
     onLaunchLesson: (content: AcademyContent) => void;
     muted?: boolean;
 }) {
+    const completedItems = block.items.filter((lesson) => progressByContentId.get(lesson.id)?.status === "completed").length;
+    const allCompleted = completedItems >= block.items.length && block.items.length > 0;
     return (
         <div style={{
             background: muted ? "rgba(255,255,255,0.02)" : "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.025))",
@@ -1527,10 +1508,14 @@ function PathSeriesGroup({
         }}>
             <div style={{ display: "grid", gap: 6 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
-                    <div style={{ fontSize: 16, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: muted ? "rgba(240,237,232,0.72)" : "#F0EDE8" }}>
-                        {block.title}
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                        <div style={{ fontSize: 16, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: muted ? "rgba(240,237,232,0.72)" : "#F0EDE8" }}>
+                            {block.title}
+                        </div>
+                        {allCompleted && <CompletionBadge label="Series Complete" />}
                     </div>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        <SeriesMetaBadge label={`${completedItems} of ${block.items.length} complete`} muted={muted} />
                         <SeriesMetaBadge label={`${block.items.length} lesson${block.items.length === 1 ? "" : "s"}`} muted={muted} />
                         <SeriesMetaBadge label={`${block.totalMinutes} min`} muted={muted} />
                         {block.difficultyLabel ? <SeriesMetaBadge label={block.difficultyLabel} muted={muted} /> : null}
@@ -1543,7 +1528,7 @@ function PathSeriesGroup({
                         key={lesson.id}
                         lesson={lesson}
                         progress={progressByContentId.get(lesson.id) ?? null}
-                        busy={busyKey === `forge-${lesson.id}`}
+                        busy={Boolean(busyKey?.startsWith("forge-") && busyKey?.endsWith(`-${lesson.id}`))}
                         onOpen={() => onOpenLesson(lesson)}
                         onLaunch={() => onLaunchLesson(lesson)}
                         muted={muted}
@@ -1563,7 +1548,7 @@ function PathLessonNode({
     muted = false,
 }: {
     lesson: AcademyContent;
-    progress: UserLessonProgressRow | null;
+    progress: AcademyUserContentProgress | null;
     busy: boolean;
     onOpen: () => void;
     onLaunch: () => void;
@@ -1573,6 +1558,7 @@ function PathLessonNode({
     const statusColor = status === "completed" ? "#4CAF8A" : status === "in_progress" ? "#E8622A" : "rgba(255,255,255,0.35)";
     const textColor = muted ? "rgba(240,237,232,0.72)" : "#F0EDE8";
     const bodyColor = muted ? "rgba(240,237,232,0.6)" : "#C8C4BE";
+    const startLabel = status === "in_progress" ? "Continue Learning" : "Start Learning";
 
     return (
         <div style={{ position: "relative", paddingLeft: 34 }}>
@@ -1600,6 +1586,7 @@ function PathLessonNode({
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
                         {lesson.difficultyLabel ? <SeriesMetaBadge label={lesson.difficultyLabel} muted={muted} /> : null}
                         {lesson.estimatedMinutes ? <SeriesMetaBadge label={`${lesson.estimatedMinutes} min`} muted={muted} /> : null}
+                        {status === "completed" && <CompletionBadge label={getCompletionBadgeLabel(lesson)} />}
                     </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
@@ -1608,7 +1595,7 @@ function PathLessonNode({
                     </div>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
                         <InlineButton onClick={onOpen} tone="muted">
-                            Start Learning
+                            {startLabel}
                         </InlineButton>
                         <InlineButton onClick={onLaunch} tone={muted ? "muted" : "primary"} disabled={busy}>
                             {busy ? "Opening..." : "Learn with Forge"}
@@ -1631,6 +1618,25 @@ function SeriesMetaBadge({ label, muted = false }: { label: string; muted?: bool
             fontSize: 11,
             lineHeight: 1,
             whiteSpace: "nowrap",
+        }}>
+            {label}
+        </div>
+    );
+}
+
+function CompletionBadge({ label }: { label: string }) {
+    return (
+        <div style={{
+            padding: "5px 10px",
+            borderRadius: 999,
+            background: "rgba(76,175,138,0.12)",
+            border: "1px solid rgba(76,175,138,0.22)",
+            color: "#8FD0B5",
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: "0.04em",
+            textTransform: "uppercase",
+            width: "fit-content",
         }}>
             {label}
         </div>
@@ -1888,6 +1894,7 @@ function ContentCard({
     progress,
     onOpen,
     onLaunchForge,
+    onApplyNow,
     busy,
     emphasis = "default",
     continueLearning: isContinueLearning = false,
@@ -1896,12 +1903,15 @@ function ContentCard({
     progress?: AcademyUserContentProgress;
     onOpen: () => void;
     onLaunchForge: () => void;
+    onApplyNow?: () => void;
     busy: boolean;
     emphasis?: "default" | "mindset";
     continueLearning?: boolean;
 }) {
     const stageLabels = getAcademyStageLabels(content.stageIds);
     const thumbnailUrl = content.thumbnailUrl || buildYoutubeThumbnailUrl(content.youtubeVideoId);
+    const status = progress?.status ?? "not_started";
+    const startLabel = status === "in_progress" ? "Continue Learning" : "Start Learning";
 
     return (
         <div
@@ -1922,10 +1932,11 @@ function ContentCard({
                     : "0 12px 28px rgba(0,0,0,0.16)",
             }}
         >
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center", alignItems: "center" }}>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center", alignItems: "center" }}>
                     <Pill tone={emphasis === "mindset" ? "warm" : "orange"}>{content.category?.title ?? getAcademyContentTypeLabel(content.contentType)}</Pill>
                     {content.difficultyLabel && <Pill>{content.difficultyLabel}</Pill>}
                 <ProgressPill status={progress?.status} />
+                {status === "completed" && <CompletionBadge label={getCompletionBadgeLabel(content)} />}
             </div>
 
             <div
@@ -1980,7 +1991,7 @@ function ContentCard({
                 </div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
                     <button type="button" onClick={onOpen} style={{ background: "rgba(255,255,255,0.04)", border, borderRadius: 999, padding: "8px 12px", color: "#C8C4BE", fontSize: "var(--foundry-academy-sm-font)", fontWeight: 700, cursor: "pointer" }}>
-                        Start Learning
+                        {startLabel}
                     </button>
                     {canLaunchForgeFromContent(content) && (
                         <button
@@ -2001,6 +2012,25 @@ function ContentCard({
                             {busy ? "Opening..." : "Learn with Forge"}
                         </button>
                     )}
+                    {canLaunchForgeFromContent(content) && onApplyNow && (
+                        <button
+                            type="button"
+                            onClick={onApplyNow}
+                            disabled={busy}
+                            style={{
+                                background: "rgba(99,179,237,0.12)",
+                                border: "1px solid rgba(99,179,237,0.22)",
+                                borderRadius: 999,
+                                padding: "8px 12px",
+                                color: "#8FC8F6",
+                                fontSize: "var(--foundry-academy-sm-font)",
+                                fontWeight: 700,
+                                cursor: busy ? "default" : "pointer",
+                            }}
+                        >
+                            Apply this now
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
@@ -2009,17 +2039,17 @@ function ContentCard({
 
 function SeriesCard({
     series,
-    progressMap,
+    progressByContentId,
     onOpen,
 }: {
     series: AcademySeries;
-    progressMap: Map<string, AcademyUserSeriesItemProgress>;
+    progressByContentId: Map<string, AcademyUserContentProgress>;
     onOpen: () => void;
 }) {
-    const completedItems = series.items.filter((item) => progressMap.get(item.id)?.status === "completed").length;
+    const completedItems = series.items.filter((item) => item.content && progressByContentId.get(item.content.id)?.status === "completed").length;
     const totalItems = Math.max(series.items.length, 1);
     const progress = Math.round((completedItems / totalItems) * 100);
-    const nextItem = getNextSeriesItem(series, progressMap);
+    const nextItem = series.items.find((item) => item.content && progressByContentId.get(item.content.id)?.status !== "completed") ?? null;
     const seriesStatus = completedItems === 0 ? "not_started" : completedItems >= series.items.length ? "completed" : "in_progress";
 
     return (
@@ -2044,7 +2074,10 @@ function SeriesCard({
                     <Pill tone="blue">{series.category?.title ?? "Lesson series"}</Pill>
                     {series.difficultyLabel && <Pill>{series.difficultyLabel}</Pill>}
                 </div>
-                <ProgressPill status={seriesStatus} compact />
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center", alignItems: "center" }}>
+                    <ProgressPill status={seriesStatus} compact />
+                    {seriesStatus === "completed" && <CompletionBadge label="Series Complete" />}
+                </div>
             </div>
             <div style={{ display: "grid", gap: 10, justifyItems: "center" }}>
                 <div style={{ fontSize: 22, lineHeight: 1.05, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 10 }}>
@@ -2059,7 +2092,7 @@ function SeriesCard({
                     <div style={{ width: `${progress}%`, height: "100%", background: "linear-gradient(90deg, #63B3ED, #E8622A)" }} />
                 </div>
                 <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#7A736B" }}>
-                    {series.items.length} items · {series.estimatedMinutes ? `${series.estimatedMinutes} min total` : "Structured track"}
+                    {completedItems} of {series.items.length} complete · {series.estimatedMinutes ? `${series.estimatedMinutes} min total` : "Structured track"}
                 </div>
                 {nextItem && (
                     <div style={{ marginTop: 8, fontSize: "var(--foundry-academy-md-font)", color: "#C8C4BE", lineHeight: 1.7 }}>
@@ -2328,15 +2361,15 @@ function ContentDetailModal({
     content,
     progress,
     onClose,
-    onToggleComplete,
+    onCompleteLesson,
     onLaunchForge,
     busy,
 }: {
     content: AcademyContent;
     progress?: AcademyUserContentProgress;
     onClose: () => void;
-    onToggleComplete: (completed: boolean) => void;
-    onLaunchForge?: () => void;
+    onCompleteLesson: (options: { knowledgeCheckedAt?: string | null; lastCheckResponse?: string | null; lastCheckFeedback?: string | null }) => Promise<void> | void;
+    onLaunchForge?: (mode: AcademySessionMode) => void;
     busy: boolean;
 }) {
     const completed = progress?.status === "completed";
@@ -2344,14 +2377,41 @@ function ContentDetailModal({
     const thumbnailUrl = content.thumbnailUrl || buildYoutubeThumbnailUrl(content.youtubeVideoId);
     const slides = useMemo(() => buildLessonSlides(content), [content]);
     const [activeSlideIndex, setActiveSlideIndex] = useState(0);
+    const [knowledgeAnswer, setKnowledgeAnswer] = useState("");
+    const [knowledgeFeedback, setKnowledgeFeedback] = useState(progress?.lastCheckFeedback ?? "");
+    const [showKnowledgeCheck, setShowKnowledgeCheck] = useState(completed);
+    const [checkingKnowledge, setCheckingKnowledge] = useState(false);
 
     useEffect(() => {
         setActiveSlideIndex(0);
-    }, [content.id]);
+        setKnowledgeAnswer("");
+        setKnowledgeFeedback(progress?.lastCheckFeedback ?? "");
+        setShowKnowledgeCheck(progress?.status === "completed");
+    }, [content.id, progress?.lastCheckFeedback, progress?.status]);
 
     const activeSlide = slides[activeSlideIndex] ?? slides[0];
     const isLastSlide = activeSlideIndex >= slides.length - 1;
     const canOpenForge = Boolean(onLaunchForge && isLastSlide);
+    const knowledgePrompt = getKnowledgeCheckPrompt(content);
+    const expectedPoints = getKnowledgeCheckExpectedPoints(content);
+    const handleKnowledgeCheck = async () => {
+        if (!knowledgeAnswer.trim() || checkingKnowledge) return;
+        setCheckingKnowledge(true);
+        try {
+            const evaluation = await evaluateKnowledgeCheckAnswer(content, knowledgeAnswer.trim());
+            setKnowledgeFeedback(evaluation.feedback);
+            if (evaluation.passed) {
+                await Promise.resolve(onCompleteLesson({
+                    knowledgeCheckedAt: new Date().toISOString(),
+                    lastCheckResponse: knowledgeAnswer.trim(),
+                    lastCheckFeedback: evaluation.feedback,
+                }));
+                onClose();
+            }
+        } finally {
+            setCheckingKnowledge(false);
+        }
+    };
 
     return (
         <ModalShell onClose={onClose}>
@@ -2369,6 +2429,7 @@ function ContentDetailModal({
                         <div style={{ fontSize: 14, color: "#C8C4BE", lineHeight: 1.9 }}>
                             Work through the lesson cards first. Forge unlocks after you finish the walkthrough.
                         </div>
+                        {completed && <CompletionBadge label={getCompletionBadgeLabel(content)} />}
                     </div>
                     <button onClick={onClose} style={{ background: "rgba(255,255,255,0.04)", border, borderRadius: 10, padding: "8px 12px", color: "#888", cursor: "pointer" }}>
                         Close
@@ -2482,13 +2543,32 @@ function ContentDetailModal({
 
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
                     {canOpenForge && onLaunchForge && (
-                        <InlineButton onClick={onLaunchForge} disabled={busy}>
-                            {busy ? "Opening..." : "Chat with Forge about this"}
+                        <InlineButton onClick={() => onLaunchForge("learn")} disabled={busy}>
+                            {busy ? "Opening..." : "Learn with Forge"}
                         </InlineButton>
                     )}
-                    <InlineButton tone={completed ? "muted" : "success"} onClick={() => onToggleComplete(!completed)} disabled={busy}>
-                        {completed ? "Mark as in progress" : "Mark completed"}
-                    </InlineButton>
+                    {canOpenForge && onLaunchForge && (
+                        <InlineButton tone="blue" onClick={() => onLaunchForge("apply")} disabled={busy}>
+                            {busy ? "Opening..." : "Apply this now"}
+                        </InlineButton>
+                    )}
+                    {!completed ? (
+                        <InlineButton tone="success" onClick={() => { setShowKnowledgeCheck(true); void handleKnowledgeCheck(); }} disabled={busy || checkingKnowledge || !knowledgeAnswer.trim()}>
+                            {checkingKnowledge ? "Checking..." : "Check understanding"}
+                        </InlineButton>
+                    ) : (
+                        <CompletionBadge label={getCompletionBadgeLabel(content)} />
+                    )}
+                    {canOpenForge && onLaunchForge && (
+                        <InlineButton tone="muted" onClick={() => onLaunchForge("knowledge_check")} disabled={busy}>
+                            Turn this into judgment
+                        </InlineButton>
+                    )}
+                    {!showKnowledgeCheck && !completed && (
+                        <InlineButton tone="muted" onClick={() => setShowKnowledgeCheck(true)} disabled={busy}>
+                            Open check prompt
+                        </InlineButton>
+                    )}
                     {content.resourceUrl && (
                         <a
                             href={content.resourceUrl}
@@ -2501,9 +2581,45 @@ function ContentDetailModal({
                     )}
                 </div>
 
+                {(showKnowledgeCheck || completed) && (
+                    <div style={{ display: "grid", gap: 12, background: "rgba(255,255,255,0.03)", border, borderRadius: 18, padding: 16 }}>
+                        <div style={{ display: "grid", gap: 6 }}>
+                            <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700 }}>
+                                Check your understanding
+                            </div>
+                            <div style={{ fontSize: 18, lineHeight: 1.15, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
+                                Forge wants to make sure this landed
+                            </div>
+                            <div style={{ fontSize: 14, color: "#D2CCC4", lineHeight: 1.8 }}>
+                                {knowledgePrompt}
+                            </div>
+                        </div>
+                        {expectedPoints.length > 0 && (
+                            <div style={{ display: "grid", gap: 8 }}>
+                                {expectedPoints.map((point) => (
+                                    <div key={point} style={{ background: "rgba(255,255,255,0.04)", border, borderRadius: 14, padding: "10px 12px", fontSize: 12, color: "#CFC7BF", lineHeight: 1.7 }}>
+                                        {point}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        <textarea
+                            value={knowledgeAnswer}
+                            onChange={(event) => setKnowledgeAnswer(event.target.value)}
+                            placeholder="Answer in your own words. Focus on what the lesson was really trying to build in your judgment."
+                            style={{ ...textareaStyle, minHeight: 120, background: "rgba(11,11,13,0.8)" }}
+                        />
+                        {knowledgeFeedback && (
+                            <div style={{ background: completed ? "rgba(76,175,138,0.10)" : "rgba(255,255,255,0.04)", border: completed ? "1px solid rgba(76,175,138,0.20)" : border, borderRadius: 14, padding: "12px 14px", fontSize: 13, color: completed ? "#D8F0E6" : "#D4CEC7", lineHeight: 1.8 }}>
+                                {knowledgeFeedback}
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 {!isLastSlide && onLaunchForge && (
                     <div style={{ fontSize: "var(--foundry-academy-md-font)", color: "#8D857C", lineHeight: 1.7 }}>
-                        Finish the full walkthrough to unlock the Forge conversation for this lesson.
+                        Finish the full walkthrough to unlock the Forge conversation and application step for this lesson.
                     </div>
                 )}
             </div>
@@ -2516,17 +2632,13 @@ function SeriesDetailModal({
     progressMap,
     onClose,
     onOpenItem,
-    onToggleSeriesItem,
-    busyKey,
 }: {
     series: AcademySeries;
-    progressMap: Map<string, AcademyUserSeriesItemProgress>;
+    progressMap: Map<string, AcademyUserContentProgress>;
     onClose: () => void;
     onOpenItem: (content: AcademyContent) => void;
-    onToggleSeriesItem: (item: AcademySeriesItem, completed: boolean) => void;
-    busyKey: string | null;
 }) {
-    const completedItems = series.items.filter((item) => progressMap.get(item.id)?.status === "completed").length;
+    const completedItems = series.items.filter((item) => item.content && progressMap.get(item.content.id)?.status === "completed").length;
     const nextItem = getNextSeriesItem(series, progressMap);
     return (
         <ModalShell onClose={onClose}>
@@ -2572,8 +2684,7 @@ function SeriesDetailModal({
 
                 <div style={{ display: "grid", gap: 12 }}>
                     {series.items.map((item, index) => {
-                        const itemProgress = progressMap.get(item.id);
-                        const status = itemProgress?.status;
+                        const status = item.content ? progressMap.get(item.content.id)?.status : undefined;
                         const completed = status === "completed";
                         const isNext = nextItem?.id === item.id;
                         return (
@@ -2598,15 +2709,9 @@ function SeriesDetailModal({
                                             {isNext ? "Continue lesson" : "Open lesson"}
                                         </InlineButton>
                                     )}
-                                    <InlineButton
-                                        tone={completed ? "muted" : "success"}
-                                        onClick={() => onToggleSeriesItem(item, !completed)}
-                                        disabled={busyKey === `series-item-${item.id}`}
-                                    >
-                                        {busyKey === `series-item-${item.id}`
-                                            ? "Saving..."
-                                            : completed ? "Mark as in progress" : "Mark lesson complete"}
-                                    </InlineButton>
+                                    {completed
+                                        ? <CompletionBadge label="Completed" />
+                                        : <div style={{ fontSize: 12, color: "#8F887F", lineHeight: 1.7, alignSelf: "center" }}>Completion happens after the lesson&apos;s understanding check.</div>}
                                 </div>
                             </div>
                         );
@@ -2834,26 +2939,15 @@ function mergeContentProgress(
     return copy;
 }
 
-function mergeSeriesItemProgress(
-    entries: AcademyUserSeriesItemProgress[],
-    next: AcademyUserSeriesItemProgress,
-) {
-    const index = entries.findIndex((entry) => entry.seriesItemId === next.seriesItemId);
-    if (index === -1) return [next, ...entries];
-    const copy = [...entries];
-    copy[index] = next;
-    return copy;
-}
-
 function getSeriesItemTitle(item: AcademySeriesItem) {
     return item.titleOverride || item.content?.title || "Series lesson";
 }
 
 function getNextSeriesItem(
     series: AcademySeries,
-    progressMap: Map<string, AcademyUserSeriesItemProgress>,
+    progressMap: Map<string, AcademyUserContentProgress>,
 ) {
-    return series.items.find((item) => progressMap.get(item.id)?.status !== "completed") ?? series.items[0] ?? null;
+    return series.items.find((item) => !item.content || progressMap.get(item.content.id)?.status !== "completed") ?? series.items[0] ?? null;
 }
 
 function canLaunchForgeFromContent(content: AcademyContent) {

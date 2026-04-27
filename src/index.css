@@ -251,9 +251,9 @@ select {
     --foundry-page-narrow-width: 760px;
     --foundry-hub-content-width: 860px;
     --foundry-forge-chat-width: 800px;
-    --foundry-desktop-ui-scale: 1.11;
-    --foundry-forge-tab-content-scale: 1.12;
-    --foundry-app-page-content-scale: 1.08;
+    --foundry-desktop-ui-scale: 1.08;
+    --foundry-forge-tab-content-scale: 1.09;
+    --foundry-app-page-content-scale: 1.06;
   }
 
   .hub-content {

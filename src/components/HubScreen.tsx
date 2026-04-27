@@ -10,6 +10,7 @@ import { getBusinessHealth } from "../lib/businessHealth";
 import { summarizeBusinessIdea } from "../lib/businessSummary";
 import Logo from "./Logo";
 import MicButton from "./MicButton";
+import PlaidConnectButton from "./PlaidConnectButton";
 
 export default function HubScreen({
     profile,
@@ -35,6 +36,21 @@ export default function HubScreen({
     completedByStage,
     furthestStageReached = 1,
     accessSummary,
+    activeNudge = null,
+    onDismissNudge,
+    onActOnNudge,
+    financialData = null,
+    financialSummary = null,
+    onSaveExpense,
+    onDeleteExpense,
+    onSaveRevenue,
+    onDeleteRevenue,
+    onSaveFinancialSettings,
+    onPlaidConnected,
+    onSyncPlaidTransactions,
+    onAcceptPlaidTransactionAsExpense,
+    onAcceptPlaidTransactionAsRevenue,
+    onIgnorePlaidTransaction,
 }) {
     const [showDecisionModal, setShowDecisionModal] = useState(false);
     const [showExpenseModal, setShowExpenseModal] = useState(false);
@@ -48,16 +64,22 @@ export default function HubScreen({
     const [decisionTag, setDecisionTag] = useState("Strategy");
     const [expenseLabel, setExpenseLabel] = useState("");
     const [expenseAmount, setExpenseAmount] = useState("");
+    const [expenseCategory, setExpenseCategory] = useState("operating");
+    const [expenseDate, setExpenseDate] = useState("");
     const [expenseFrequency, setExpenseFrequency] = useState<"one-time" | "monthly" | "yearly">("one-time");
     const [expenseRenewalDate, setExpenseRenewalDate] = useState("");
     const [incomeLabel, setIncomeLabel] = useState("");
     const [incomeAmount, setIncomeAmount] = useState("");
+    const [incomeCategory, setIncomeCategory] = useState("sales");
+    const [incomeDate, setIncomeDate] = useState("");
     const [incomeFrequency, setIncomeFrequency] = useState<"one-time" | "monthly" | "yearly">("one-time");
     const [incomeRenewalDate, setIncomeRenewalDate] = useState("");
     const [budgetEditAmount, setBudgetEditAmount] = useState("");
     const [budgetEditRange, setBudgetEditRange] = useState(profile.budgetRange || "");
     const [resetConfirmationCode, setResetConfirmationCode] = useState("");
     const [resetError, setResetError] = useState<string | null>(null);
+    const [syncingPlaidItemId, setSyncingPlaidItemId] = useState<string | null>(null);
+    const [plaidActionId, setPlaidActionId] = useState<string | null>(null);
 
     useEffect(() => {
         const timer = setTimeout(() => setMounted(true), 100);
@@ -97,97 +119,116 @@ export default function HubScreen({
         setShowDecisionModal(false);
     };
 
-    // Auto-apply recurring charges/income when renewal date passes
-    useEffect(() => {
-        const expenses = profile.budget?.expenses || [];
-        const incomes = profile.budget?.income || [];
-        const todayStr = new Date().toISOString().split("T")[0];
+    const expenseCategoryOptions = ["operating", "software", "marketing", "legal", "payroll", "contractor", "other"];
+    const revenueCategoryOptions = ["sales", "services", "subscription", "consulting", "other"];
+    const normalizedExpenses = financialData?.expenses || [];
+    const normalizedRevenue = financialData?.revenue || [];
+    const plaidItems = financialData?.plaidItems || [];
+    const pendingPlaidTransactions = financialData?.pendingPlaidTransactions || [];
+    const plaidAccounts = (financialData?.accounts || []).filter((account: any) => account.provider === "plaid");
+    const formatFinancialDate = (value?: string | null) => {
+        if (!value) return "";
+        const parsed = /^\d{4}-\d{2}-\d{2}$/.test(value)
+            ? new Date(`${value}T12:00:00`)
+            : new Date(value);
+        if (Number.isNaN(parsed.getTime())) return String(value);
+        return parsed.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    };
+    const expenseRows = normalizedExpenses.length ? normalizedExpenses : (profile.budget?.expenses || []).map((item: any) => ({
+        id: item.id || item.label,
+        label: item.label,
+        category: item.category || "operating",
+        amount: Number(item.amount || 0),
+        incurredOn: item.incurredOn || item.date || null,
+        frequency: item.frequency === "monthly" || item.frequency === "yearly" ? item.frequency : "one_time",
+    }));
+    const revenueRows = normalizedRevenue.length ? normalizedRevenue : (profile.budget?.income || []).map((item: any) => ({
+        id: item.id || item.label,
+        label: item.label,
+        category: item.category || "sales",
+        amount: Number(item.amount || 0),
+        receivedOn: item.receivedOn || item.date || null,
+        frequency: item.frequency === "monthly" || item.frequency === "yearly" ? item.frequency : "one_time",
+    }));
 
-        let hasChanges = false;
-        let newSpent = profile.budget?.spent || 0;
-        let newTotalIncome = profile.budget?.totalIncome || 0;
-
-        const updatedExpenses = expenses.map((exp: any) => {
-            if (!exp.renewalDate || exp.frequency === "one-time" || exp.renewalDate > todayStr) return exp;
-            hasChanges = true;
-            newSpent += exp.amount;
-            const next = new Date(`${exp.renewalDate}T12:00:00`);
-            if (exp.frequency === "monthly") next.setMonth(next.getMonth() + 1);
-            else if (exp.frequency === "yearly") next.setFullYear(next.getFullYear() + 1);
-            return { ...exp, renewalDate: next.toISOString().split("T")[0] };
-        });
-
-        const updatedIncomes = incomes.map((inc: any) => {
-            if (!inc.renewalDate || inc.frequency === "one-time" || inc.renewalDate > todayStr) return inc;
-            hasChanges = true;
-            newTotalIncome += inc.amount;
-            const next = new Date(`${inc.renewalDate}T12:00:00`);
-            if (inc.frequency === "monthly") next.setMonth(next.getMonth() + 1);
-            else if (inc.frequency === "yearly") next.setFullYear(next.getFullYear() + 1);
-            return { ...inc, renewalDate: next.toISOString().split("T")[0] };
-        });
-
-        if (!hasChanges) return;
-        const newRemaining = (profile.budget?.total || 0) + newTotalIncome - newSpent;
-        onUpdateProfile({
-            budget: { ...profile.budget, expenses: updatedExpenses, income: updatedIncomes, spent: newSpent, totalIncome: newTotalIncome, remaining: newRemaining },
-        });
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-    const addExpense = () => {
+    const addExpense = async () => {
         const amt = parseFloat(expenseAmount);
         if (!expenseLabel.trim() || isNaN(amt) || amt <= 0) return;
         if (expenseFrequency !== "one-time" && !expenseRenewalDate) return;
 
-        const id = `exp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-        const todayDisplay = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-        const newEntry: any = { id, label: expenseLabel.trim(), amount: amt, date: todayDisplay, frequency: expenseFrequency };
-        if (expenseFrequency !== "one-time") newEntry.renewalDate = expenseRenewalDate;
-
-        const newExpenses = [...(profile.budget?.expenses || []), newEntry];
-        const newSpent = (profile.budget?.spent || 0) + amt;
-        const totalIncome = profile.budget?.totalIncome || 0;
-        const newRemaining = (profile.budget?.total || 0) + totalIncome - newSpent;
-
-        onUpdateProfile({ budget: { ...profile.budget, expenses: newExpenses, spent: newSpent, remaining: newRemaining } });
-        setExpenseLabel(""); setExpenseAmount(""); setExpenseFrequency("one-time"); setExpenseRenewalDate("");
+        await onSaveExpense?.({
+            label: expenseLabel.trim(),
+            amount: amt,
+            category: expenseCategory,
+            incurredOn: expenseDate || null,
+            frequency: expenseFrequency === "monthly" ? "monthly" : expenseFrequency === "yearly" ? "yearly" : "one_time",
+            renewalDate: expenseFrequency !== "one-time" ? expenseRenewalDate : null,
+            notes: null,
+        });
+        setExpenseLabel(""); setExpenseAmount(""); setExpenseCategory("operating"); setExpenseDate(""); setExpenseFrequency("one-time"); setExpenseRenewalDate("");
         setShowExpenseModal(false);
     };
 
-    const addIncome = () => {
+    const addIncome = async () => {
         const amt = parseFloat(incomeAmount);
         if (!incomeLabel.trim() || isNaN(amt) || amt <= 0) return;
         if (incomeFrequency !== "one-time" && !incomeRenewalDate) return;
 
-        const id = `inc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-        const todayDisplay = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-        const newEntry: any = { id, label: incomeLabel.trim(), amount: amt, date: todayDisplay, frequency: incomeFrequency };
-        if (incomeFrequency !== "one-time") newEntry.renewalDate = incomeRenewalDate;
-
-        const newIncomes = [...(profile.budget?.income || []), newEntry];
-        const newTotalIncome = (profile.budget?.totalIncome || 0) + amt;
-        const spent = profile.budget?.spent || 0;
-        const newRemaining = (profile.budget?.total || 0) + newTotalIncome - spent;
-
-        onUpdateProfile({ budget: { ...profile.budget, income: newIncomes, totalIncome: newTotalIncome, remaining: newRemaining } });
-        setIncomeLabel(""); setIncomeAmount(""); setIncomeFrequency("one-time"); setIncomeRenewalDate("");
+        await onSaveRevenue?.({
+            label: incomeLabel.trim(),
+            amount: amt,
+            category: incomeCategory,
+            receivedOn: incomeDate || null,
+            frequency: incomeFrequency === "monthly" ? "monthly" : incomeFrequency === "yearly" ? "yearly" : "one_time",
+            renewalDate: incomeFrequency !== "one-time" ? incomeRenewalDate : null,
+            notes: null,
+        });
+        setIncomeLabel(""); setIncomeAmount(""); setIncomeCategory("sales"); setIncomeDate(""); setIncomeFrequency("one-time"); setIncomeRenewalDate("");
         setShowIncomeModal(false);
     };
 
-    const deleteExpense = (id: string) => {
-        const updated = (profile.budget?.expenses || []).filter((e: any) => e.id !== id);
-        const newSpent = updated.reduce((sum: number, e: any) => sum + (e.amount || 0), 0);
-        const totalIncome = profile.budget?.totalIncome || 0;
-        const newRemaining = (profile.budget?.total || 0) + totalIncome - newSpent;
-        onUpdateProfile({ budget: { ...profile.budget, expenses: updated, spent: newSpent, remaining: newRemaining } });
+    const deleteExpense = async (id: string) => {
+        await onDeleteExpense?.(id);
     };
 
-    const deleteIncome = (id: string) => {
-        const updated = (profile.budget?.income || []).filter((e: any) => e.id !== id);
-        const newTotalIncome = updated.reduce((sum: number, e: any) => sum + (e.amount || 0), 0);
-        const spent = profile.budget?.spent || 0;
-        const newRemaining = (profile.budget?.total || 0) + newTotalIncome - spent;
-        onUpdateProfile({ budget: { ...profile.budget, income: updated, totalIncome: newTotalIncome, remaining: newRemaining } });
+    const deleteIncome = async (id: string) => {
+        await onDeleteRevenue?.(id);
+    };
+
+    const handleSyncPlaid = async (plaidItemId: string) => {
+        setSyncingPlaidItemId(plaidItemId);
+        try {
+            await onSyncPlaidTransactions?.(plaidItemId);
+        } finally {
+            setSyncingPlaidItemId(null);
+        }
+    };
+
+    const handleAcceptImportedExpense = async (transaction: any) => {
+        setPlaidActionId(transaction.id);
+        try {
+            await onAcceptPlaidTransactionAsExpense?.(transaction);
+        } finally {
+            setPlaidActionId(null);
+        }
+    };
+
+    const handleAcceptImportedRevenue = async (transaction: any) => {
+        setPlaidActionId(transaction.id);
+        try {
+            await onAcceptPlaidTransactionAsRevenue?.(transaction);
+        } finally {
+            setPlaidActionId(null);
+        }
+    };
+
+    const handleIgnoreImportedTransaction = async (transactionId: string) => {
+        setPlaidActionId(transactionId);
+        try {
+            await onIgnorePlaidTransaction?.(transactionId);
+        } finally {
+            setPlaidActionId(null);
+        }
     };
 
     const openBudgetModal = () => {
@@ -212,7 +253,6 @@ export default function HubScreen({
         const parsedAmount = parseBudgetInput(budgetEditAmount);
         if (!parsedAmount) return;
 
-        const spent = profile.budget?.spent || 0;
         onUpdateProfile({
             budgetRange: budgetEditRange || null,
             exactBudgetAmount: parsedAmount,
@@ -220,9 +260,10 @@ export default function HubScreen({
             budget: {
                 ...profile.budget,
                 total: parsedAmount,
-                remaining: Math.max(parsedAmount - spent, 0),
+                remaining: parsedAmount,
             },
         });
+        void onSaveFinancialSettings?.({ startingCash: parsedAmount });
 
         setShowBudgetModal(false);
     };
@@ -231,10 +272,7 @@ export default function HubScreen({
     const revisitingStage = furthestStageReached > currentStage;
     const nextReachedStage = revisitingStage ? currentStage + 1 : null;
     const businessSummary = summarizeBusinessIdea(profile.businessName, profile.idea, 10);
-    const spentPct = profile.budget?.total
-        ? Math.min((profile.budget.spent / profile.budget.total) * 100, 100)
-        : 0;
-    const businessHealth = getBusinessHealth(profile, completedByStage, marketReport);
+    const businessHealth = getBusinessHealth(profile, completedByStage, marketReport, financialSummary);
 
     const NAV_ITEMS = [
         ...(isAdmin ? [{
@@ -688,6 +726,83 @@ export default function HubScreen({
                     </div>
                 </div>
 
+                {activeNudge && (
+                    <div
+                        style={{
+                            background: "rgba(232, 98, 42, 0.08)",
+                            border: "1px solid rgba(232, 98, 42, 0.3)",
+                            borderRadius: 14,
+                            padding: "14px 16px",
+                            marginBottom: 14,
+                            animation: "fadeSlideUp 0.4s ease 0.05s both",
+                        }}
+                    >
+                        <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 10 }}>
+                            <div
+                                style={{
+                                    width: 28,
+                                    height: 28,
+                                    borderRadius: "50%",
+                                    background: "rgba(232, 98, 42, 0.18)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    flexShrink: 0,
+                                    marginTop: 1,
+                                }}
+                            >
+                                <Icons.forge.chat size={14} color="#E8622A" />
+                            </div>
+                            <div
+                                style={{
+                                    fontSize: 13,
+                                    color: "#D4CFC9",
+                                    fontFamily: "'Lora', Georgia, serif",
+                                    lineHeight: 1.5,
+                                }}
+                            >
+                                {activeNudge.nudgeText}
+                            </div>
+                        </div>
+                        <div style={{ display: "flex", gap: 8, paddingLeft: 38 }}>
+                            <button
+                                onClick={() => {
+                                    onActOnNudge?.();
+                                    onOpenForge();
+                                }}
+                                style={{
+                                    background: "linear-gradient(135deg, #E8622A, #c9521e)",
+                                    border: "none",
+                                    borderRadius: 8,
+                                    padding: "6px 14px",
+                                    color: "#fff",
+                                    fontSize: 12,
+                                    fontWeight: 600,
+                                    cursor: "pointer",
+                                    fontFamily: "'Lora', Georgia, serif",
+                                }}
+                            >
+                                Talk to Forge
+                            </button>
+                            <button
+                                onClick={() => onDismissNudge?.()}
+                                style={{
+                                    background: "transparent",
+                                    border: "1px solid rgba(255,255,255,0.1)",
+                                    borderRadius: 8,
+                                    padding: "6px 12px",
+                                    color: "#666",
+                                    fontSize: 12,
+                                    cursor: "pointer",
+                                    fontFamily: "'Lora', Georgia, serif",
+                                }}
+                            >
+                                Dismiss
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 <div
                     style={{
                         background: "rgba(255,255,255,0.02)",
@@ -890,15 +1005,18 @@ export default function HubScreen({
                         )}
                     </div>
                 )}
-                {/* Budget */}
+                {/* Financial Modeling */}
                 <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "14px 16px", marginBottom: 14, animation: "fadeSlideUp 0.5s ease 0.25s both" }}>
-                    <div className="hub-section-header" style={{ marginBottom: 14 }}>
-                        <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>Budget</div>
+                    <div className="hub-section-header" style={{ marginBottom: 10 }}>
+                        <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>Financial Modeling</div>
                         <div className="foundry-inline-actions">
                             <button onClick={openBudgetModal} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "4px 12px", color: "#F0EDE8", fontSize: 11, cursor: "pointer", fontWeight: 500 }}>Customize</button>
-                            <button onClick={() => setShowIncomeModal(true)} style={{ background: "rgba(76,175,138,0.1)", border: "1px solid rgba(76,175,138,0.25)", borderRadius: 8, padding: "4px 12px", color: "#4CAF8A", fontSize: 11, cursor: "pointer", fontWeight: 500 }}>+ Income</button>
+                            <button onClick={() => setShowIncomeModal(true)} style={{ background: "rgba(76,175,138,0.1)", border: "1px solid rgba(76,175,138,0.25)", borderRadius: 8, padding: "4px 12px", color: "#4CAF8A", fontSize: 11, cursor: "pointer", fontWeight: 500 }}>+ Revenue</button>
                             <button onClick={() => setShowExpenseModal(true)} style={{ background: "rgba(232,98,42,0.1)", border: "1px solid rgba(232,98,42,0.25)", borderRadius: 8, padding: "4px 12px", color: "#E8622A", fontSize: 11, cursor: "pointer", fontWeight: 500 }}>+ Expense</button>
                         </div>
+                    </div>
+                    <div style={{ fontSize: 12, color: "#A8A4A0", lineHeight: 1.6, marginBottom: 12 }}>
+                        Estimates based on the data you&apos;ve entered. This is not accounting, tax, or legal advice.
                     </div>
                     {(profile.budgetRange || profile.budgetIsEstimated) && (
                         <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 12, fontSize: 10, color: "#666" }}>
@@ -908,70 +1026,198 @@ export default function HubScreen({
                     )}
                     <div className="hub-budget-grid" style={{ marginBottom: 14 }}>
                         {[
-                            { label: "Budget", value: formatCurrency(profile.budget?.total || 0), color: "#F0EDE8" },
-                            { label: "Income", value: formatCurrency(profile.budget?.totalIncome || 0), color: "#4CAF8A" },
-                            { label: "Spent", value: formatCurrency(profile.budget?.spent || 0), color: "#E8622A" },
-                            { label: "Remaining", value: formatCurrency((profile.budget?.total || 0) + (profile.budget?.totalIncome || 0) - (profile.budget?.spent || 0)), color: (profile.budget?.total || 0) + (profile.budget?.totalIncome || 0) - (profile.budget?.spent || 0) >= 0 ? "#4CAF8A" : "#FF4444" },
+                            { label: "Available Cash", value: formatCurrency(financialSummary?.availableCash || profile.budget?.remaining || 0), color: "#F0EDE8" },
+                            { label: "Monthly Burn", value: formatCurrency(financialSummary?.monthlyBurn || 0), color: "#E8622A" },
+                            { label: "Runway", value: financialSummary?.runwayMonths != null ? `${financialSummary.runwayMonths.toFixed(1)} mo` : "TBD", color: "#4CAF8A" },
+                            { label: "Net Snapshot", value: formatCurrency(financialSummary?.roughNetSnapshot || 0), color: (financialSummary?.roughNetSnapshot || 0) >= 0 ? "#4CAF8A" : "#FF6B6B" },
                         ].map(item => (
                             <div key={item.label} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 10, padding: "10px", textAlign: "center" }}>
-                                <div style={{ fontSize: "clamp(14px, 4vw, 20px)", fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: item.color, lineHeight: 1, marginBottom: 3 }}>{item.value}</div>
+                                <div style={{ fontSize: "clamp(14px, 4vw, 20px)", fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: item.color, lineHeight: 1.1, marginBottom: 3 }}>{item.value}</div>
                                 <div style={{ fontSize: 9, color: "#555", letterSpacing: "0.08em", textTransform: "uppercase" }}>{item.label}</div>
                             </div>
                         ))}
                     </div>
-                    <div style={{ height: 5, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden" }}>
-                        <div style={{ height: "100%", width: `${spentPct}%`, background: spentPct > 75 ? "linear-gradient(90deg, #E85A2A, #FF4444)" : "linear-gradient(90deg, #E8622A, #F5A843)", borderRadius: 3, transition: "width 1s ease" }} />
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
-                        <div style={{ fontSize: 10, color: "#555" }}>{spentPct.toFixed(0)}% spent</div>
-                        <div style={{ fontSize: 10, color: "#555" }}>Runway: {profile.budget?.runway || "TBD"}</div>
-                    </div>
-                    {profile.budget?.expenses?.length > 0 && (
-                        <div style={{ marginTop: 12 }}>
-                            <div style={{ fontSize: 10, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Expenses</div>
-                            {profile.budget.expenses.map((exp: any, i: number) => (
-                                <div key={exp.id || i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: i < profile.budget.expenses.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ fontSize: 12, color: "#888" }}>{exp.label}</div>
-                                        {exp.frequency && exp.frequency !== "one-time" && (
-                                            <div style={{ fontSize: 10, color: "#555", marginTop: 1 }}>
-                                                {exp.frequency} · renews {exp.renewalDate ? new Date(`${exp.renewalDate}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}
+
+                    <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: 12, marginBottom: 12 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 8, flexWrap: "wrap" }}>
+                            <div>
+                                <div style={{ fontSize: 13, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>Connect Bank</div>
+                                <div style={{ fontSize: 11, color: "#A8A4A0", lineHeight: 1.6, marginTop: 4 }}>
+                                    Imported transactions need review. These will not affect your financial model until approved.
+                                </div>
+                            </div>
+                            <PlaidConnectButton onConnected={onPlaidConnected} />
+                        </div>
+                        {plaidItems.length > 0 && (
+                            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 10 }}>
+                                {plaidItems.map((item) => (
+                                    <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 10, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ fontSize: 12, color: "#F0EDE8", fontWeight: 600 }}>{item.institutionName || "Connected bank"}</div>
+                                            <div style={{ fontSize: 10, color: "#666", marginTop: 2 }}>
+                                                {plaidAccounts.filter((account: any) => account.providerItemId === item.plaidItemId).length} linked accounts
+                                                {item.lastSyncedAt ? ` · last synced ${formatFinancialDate(item.lastSyncedAt)}` : ""}
                                             </div>
-                                        )}
+                                        </div>
+                                        <button
+                                            onClick={() => handleSyncPlaid(item.plaidItemId)}
+                                            disabled={syncingPlaidItemId === item.plaidItemId}
+                                            style={{
+                                                background: "rgba(255,255,255,0.04)",
+                                                border: "1px solid rgba(255,255,255,0.08)",
+                                                borderRadius: 8,
+                                                padding: "8px 12px",
+                                                color: "#F0EDE8",
+                                                fontSize: 11,
+                                                cursor: syncingPlaidItemId === item.plaidItemId ? "default" : "pointer",
+                                            }}
+                                        >
+                                            {syncingPlaidItemId === item.plaidItemId ? "Syncing..." : "Sync Transactions"}
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: 12, marginBottom: 12 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline", marginBottom: 8, flexWrap: "wrap" }}>
+                            <div style={{ fontSize: 13, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>Profit First Buckets</div>
+                            <div style={{ fontSize: 10, color: "#666" }}>{financialSummary?.profitFirst?.basisLabel || "Estimated basis"}</div>
+                        </div>
+                        {(financialSummary?.profitFirst?.buckets || []).map((bucket) => (
+                            <div key={bucket.bucketType} style={{ marginBottom: 10 }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 4 }}>
+                                    <div style={{ fontSize: 12, color: "#F0EDE8", textTransform: "capitalize" }}>{bucket.bucketType.replace("_", " ")}</div>
+                                    <div style={{ fontSize: 11, color: "#C8C4BE" }}>{bucket.allocationPercent}% · {formatCurrency(bucket.estimatedAmount)}</div>
+                                </div>
+                                <div style={{ height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 999, overflow: "hidden" }}>
+                                    <div style={{ width: `${Math.max(0, Math.min(bucket.allocationPercent, 100))}%`, height: "100%", background: bucket.bucketType === "profit" || bucket.bucketType === "tax" ? "linear-gradient(90deg, #4CAF8A, #75D0A7)" : "linear-gradient(90deg, #E8622A, #F5A843)" }} />
+                                </div>
+                            </div>
+                        ))}
+                        <div style={{ fontSize: 10, color: "#666", lineHeight: 1.5 }}>Connect bank data later to improve accuracy. For now, these allocations are estimated from your entered revenue or available cash.</div>
+                    </div>
+
+                    <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: 12, marginBottom: 12 }}>
+                        <div style={{ fontSize: 13, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 8 }}>Runway Calculator</div>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10, marginBottom: 10 }}>
+                            <div>
+                                <div style={{ fontSize: 10, color: "#666", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>Recurring Expenses</div>
+                                <div style={{ fontSize: 16, color: "#E8622A", fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>{formatCurrency(financialSummary?.monthlyRecurringExpenses || 0)}/mo</div>
+                            </div>
+                            <div>
+                                <div style={{ fontSize: 10, color: "#666", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>Recurring Revenue</div>
+                                <div style={{ fontSize: 16, color: "#4CAF8A", fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>{formatCurrency(financialSummary?.monthlyRecurringRevenue || 0)}/mo</div>
+                            </div>
+                        </div>
+                        <div style={{ fontSize: 11, color: "#A8A4A0", lineHeight: 1.6 }}>
+                            Estimated monthly burn is recurring expenses minus recurring revenue, with yearly items spread across 12 months. One-time items stay in the snapshot totals but do not inflate recurring burn.
+                        </div>
+                    </div>
+
+                    <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: 12, marginBottom: 12 }}>
+                        <div style={{ fontSize: 13, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 8 }}>Rough Monthly Snapshot</div>
+                        {financialSummary?.breakEvenReady ? (
+                            <>
+                                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10, marginBottom: 10 }}>
+                                    <div>
+                                        <div style={{ fontSize: 10, color: "#666", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>Monthly Revenue</div>
+                                        <div style={{ fontSize: 15, color: "#4CAF8A", fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>{formatCurrency(financialSummary?.operatingView.monthlyRevenue || 0)}</div>
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: 10, color: "#666", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>Monthly Expenses</div>
+                                        <div style={{ fontSize: 15, color: "#E8622A", fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>{formatCurrency(financialSummary?.operatingView.monthlyExpenses || 0)}</div>
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: 10, color: "#666", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>Operating Gap</div>
+                                        <div style={{ fontSize: 15, color: (financialSummary?.operatingView.monthlyOperatingGap || 0) >= 0 ? "#4CAF8A" : "#FF6B6B", fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>{formatCurrency(financialSummary?.operatingView.monthlyOperatingGap || 0)}</div>
+                                    </div>
+                                </div>
+                                <div style={{ fontSize: 11, color: "#A8A4A0", lineHeight: 1.6 }}>{financialSummary.breakEvenMessage}</div>
+                            </>
+                        ) : (
+                            <div style={{ fontSize: 12, color: "#A8A4A0", lineHeight: 1.6 }}>
+                                Add revenue and categorize expenses to unlock a better break-even view. Foundry will keep this honest until the inputs are strong enough to say more.
+                            </div>
+                        )}
+                    </div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 12 }}>
+                        <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: 12 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                                <div style={{ fontSize: 12, color: "#F0EDE8", fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>Imported Transactions</div>
+                                <div style={{ fontSize: 10, color: "#666" }}>{pendingPlaidTransactions.length} pending</div>
+                            </div>
+                            <div style={{ fontSize: 10, color: "#666", lineHeight: 1.5, marginBottom: 8 }}>
+                                These will not affect your financial model until you approve them.
+                            </div>
+                            {pendingPlaidTransactions.length === 0 ? (
+                                <div style={{ fontSize: 11, color: "#666", lineHeight: 1.6 }}>No imported transactions are waiting for review right now.</div>
+                            ) : pendingPlaidTransactions.slice(0, 8).map((transaction: any) => (
+                                <div key={transaction.id} style={{ padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                                    <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start" }}>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ fontSize: 12, color: "#C8C4BE" }}>{transaction.merchantName || transaction.name || "Imported transaction"}</div>
+                                            <div style={{ fontSize: 10, color: "#666", marginTop: 2 }}>
+                                                {formatFinancialDate(transaction.postedDate || transaction.authorizedDate)}{transaction.currency ? ` · ${transaction.currency}` : ""}
+                                            </div>
+                                        </div>
+                                        <div style={{ fontSize: 12, color: Number(transaction.amount || 0) >= 0 ? "#E8622A" : "#4CAF8A", fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>
+                                            {Number(transaction.amount || 0) >= 0 ? "-" : "+"}{formatCurrency(Math.abs(Number(transaction.amount || 0)))}
+                                        </div>
+                                    </div>
+                                    <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+                                        <button onClick={() => handleAcceptImportedExpense(transaction)} disabled={plaidActionId === transaction.id} style={{ background: "rgba(232,98,42,0.1)", border: "1px solid rgba(232,98,42,0.25)", borderRadius: 8, padding: "5px 10px", color: "#E8622A", fontSize: 11, cursor: plaidActionId === transaction.id ? "default" : "pointer" }}>Accept as Expense</button>
+                                        <button onClick={() => handleAcceptImportedRevenue(transaction)} disabled={plaidActionId === transaction.id} style={{ background: "rgba(76,175,138,0.1)", border: "1px solid rgba(76,175,138,0.25)", borderRadius: 8, padding: "5px 10px", color: "#4CAF8A", fontSize: 11, cursor: plaidActionId === transaction.id ? "default" : "pointer" }}>Accept as Revenue</button>
+                                        <button onClick={() => handleIgnoreImportedTransaction(transaction.id)} disabled={plaidActionId === transaction.id} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "5px 10px", color: "#A8A4A0", fontSize: 11, cursor: plaidActionId === transaction.id ? "default" : "pointer" }}>Ignore</button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: 12 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                                <div style={{ fontSize: 12, color: "#F0EDE8", fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>Expenses</div>
+                                <div style={{ fontSize: 10, color: "#666" }}>{expenseRows.length} logged</div>
+                            </div>
+                            {expenseRows.length === 0 ? (
+                                <div style={{ fontSize: 11, color: "#666", lineHeight: 1.6 }}>No normalized expenses yet. Add the costs that actually shape the business and Foundry will start modeling burn and runway more intelligently.</div>
+                            ) : expenseRows.map((exp: any) => (
+                                <div key={exp.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "7px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ fontSize: 12, color: "#C8C4BE" }}>{exp.label}</div>
+                                        <div style={{ fontSize: 10, color: "#666", marginTop: 2 }}>{exp.category} · {String(exp.frequency).replace("_", " ")}{exp.incurredOn ? ` · ${formatFinancialDate(exp.incurredOn)}` : ""}</div>
                                     </div>
                                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                                         <div style={{ fontSize: 12, color: "#E8622A", fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>-{formatCurrency(exp.amount)}</div>
-                                        {exp.id && (
-                                            <button onClick={() => deleteExpense(exp.id)} style={{ background: "none", border: "none", color: "#555", cursor: "pointer", fontSize: 14, lineHeight: 1, padding: "0 2px" }} title="Delete expense">×</button>
-                                        )}
+                                        <button onClick={() => deleteExpense(exp.id)} style={{ background: "none", border: "none", color: "#555", cursor: "pointer", fontSize: 14, lineHeight: 1, padding: "0 2px" }} title="Delete expense">×</button>
                                     </div>
                                 </div>
                             ))}
                         </div>
-                    )}
-                    {profile.budget?.income?.length > 0 && (
-                        <div style={{ marginTop: 12 }}>
-                            <div style={{ fontSize: 10, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Income</div>
-                            {profile.budget.income.map((inc: any, i: number) => (
-                                <div key={inc.id || i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: i < profile.budget.income.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
+
+                        <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: 12 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                                <div style={{ fontSize: 12, color: "#F0EDE8", fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>Revenue</div>
+                                <div style={{ fontSize: 10, color: "#666" }}>{revenueRows.length} logged</div>
+                            </div>
+                            {revenueRows.length === 0 ? (
+                                <div style={{ fontSize: 11, color: "#666", lineHeight: 1.6 }}>No revenue logged yet. Add sales, services, or recurring receipts to sharpen the operating view and make runway more realistic.</div>
+                            ) : revenueRows.map((inc: any) => (
+                                <div key={inc.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "7px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                                     <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ fontSize: 12, color: "#888" }}>{inc.label}</div>
-                                        {inc.frequency && inc.frequency !== "one-time" && (
-                                            <div style={{ fontSize: 10, color: "#555", marginTop: 1 }}>
-                                                {inc.frequency} · renews {inc.renewalDate ? new Date(`${inc.renewalDate}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}
-                                            </div>
-                                        )}
+                                        <div style={{ fontSize: 12, color: "#C8C4BE" }}>{inc.label}</div>
+                                        <div style={{ fontSize: 10, color: "#666", marginTop: 2 }}>{inc.category} · {String(inc.frequency).replace("_", " ")}{inc.receivedOn ? ` · ${formatFinancialDate(inc.receivedOn)}` : ""}</div>
                                     </div>
                                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                                         <div style={{ fontSize: 12, color: "#4CAF8A", fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>+{formatCurrency(inc.amount)}</div>
-                                        {inc.id && (
-                                            <button onClick={() => deleteIncome(inc.id)} style={{ background: "none", border: "none", color: "#555", cursor: "pointer", fontSize: 14, lineHeight: 1, padding: "0 2px" }} title="Delete income">×</button>
-                                        )}
+                                        <button onClick={() => deleteIncome(inc.id)} style={{ background: "none", border: "none", color: "#555", cursor: "pointer", fontSize: 14, lineHeight: 1, padding: "0 2px" }} title="Delete revenue">×</button>
                                     </div>
                                 </div>
                             ))}
                         </div>
-                    )}
+                    </div>
                 </div>
 
                 {/* Glossary learned */}
@@ -1091,7 +1337,13 @@ export default function HubScreen({
                     <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: "#0E0E10", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 22, animation: "fadeSlideUp 0.3s ease" }}>
                         <div style={{ fontSize: 17, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 16 }}>Log an Expense</div>
                         <input value={expenseLabel} onChange={e => setExpenseLabel(e.target.value)} placeholder="What was it for?" style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", marginBottom: 10, boxSizing: "border-box" }} />
+                        <select value={expenseCategory} onChange={e => setExpenseCategory(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", marginBottom: 10, boxSizing: "border-box" }}>
+                            {expenseCategoryOptions.map((category) => (
+                                <option key={category} value={category} style={{ background: "#0E0E10" }}>{category}</option>
+                            ))}
+                        </select>
                         <input value={expenseAmount} onChange={e => setExpenseAmount(e.target.value)} placeholder="Amount ($)" type="number" style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", marginBottom: 10, boxSizing: "border-box" }} />
+                        <input type="date" value={expenseDate} onChange={e => setExpenseDate(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", marginBottom: 10, boxSizing: "border-box", colorScheme: "dark" }} />
                         <div style={{ fontSize: 11, color: "#666", marginBottom: 6, letterSpacing: "0.08em", textTransform: "uppercase" }}>Frequency</div>
                         <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
                             {(["one-time", "monthly", "yearly"] as const).map(f => (
@@ -1116,9 +1368,15 @@ export default function HubScreen({
             {showIncomeModal && (
                 <div className="hub-modal-backdrop" onClick={() => setShowIncomeModal(false)}>
                     <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: "#0E0E10", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 22, animation: "fadeSlideUp 0.3s ease" }}>
-                        <div style={{ fontSize: 17, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 16 }}>Log Income</div>
-                        <input value={incomeLabel} onChange={e => setIncomeLabel(e.target.value)} placeholder="Source of income?" style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", marginBottom: 10, boxSizing: "border-box" }} />
+                        <div style={{ fontSize: 17, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 16 }}>Log Revenue</div>
+                        <input value={incomeLabel} onChange={e => setIncomeLabel(e.target.value)} placeholder="Where did the revenue come from?" style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", marginBottom: 10, boxSizing: "border-box" }} />
+                        <select value={incomeCategory} onChange={e => setIncomeCategory(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", marginBottom: 10, boxSizing: "border-box" }}>
+                            {revenueCategoryOptions.map((category) => (
+                                <option key={category} value={category} style={{ background: "#0E0E10" }}>{category}</option>
+                            ))}
+                        </select>
                         <input value={incomeAmount} onChange={e => setIncomeAmount(e.target.value)} placeholder="Amount ($)" type="number" style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", marginBottom: 10, boxSizing: "border-box" }} />
+                        <input type="date" value={incomeDate} onChange={e => setIncomeDate(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", marginBottom: 10, boxSizing: "border-box", colorScheme: "dark" }} />
                         <div style={{ fontSize: 11, color: "#666", marginBottom: 6, letterSpacing: "0.08em", textTransform: "uppercase" }}>Frequency</div>
                         <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
                             {(["one-time", "monthly", "yearly"] as const).map(f => (
@@ -1133,7 +1391,7 @@ export default function HubScreen({
                         )}
                         <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
                             <button onClick={() => setShowIncomeModal(false)} style={{ flex: 1, padding: "10px", background: "transparent", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#555", fontSize: 12, cursor: "pointer" }}>Cancel</button>
-                            <button onClick={addIncome} style={{ flex: 2, padding: "10px", background: "linear-gradient(135deg, #4CAF8A, #3a9470)", border: "none", borderRadius: 10, color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}>Save Income</button>
+                            <button onClick={addIncome} style={{ flex: 2, padding: "10px", background: "linear-gradient(135deg, #4CAF8A, #3a9470)", border: "none", borderRadius: 10, color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}>Save Revenue</button>
                         </div>
                     </div>
                 </div>

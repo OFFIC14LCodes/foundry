@@ -49,6 +49,9 @@ type ContentInput = {
     commonMistake?: string | null;
     starterPrompt?: string | null;
     forgeContext?: string | null;
+    knowledgeCheckPrompt?: string | null;
+    knowledgeCheckExpectedPoints?: string[] | null;
+    completionBadgeLabel?: string | null;
     videoUrl?: string | null;
     resourceUrl?: string | null;
     transcript?: string | null;
@@ -81,6 +84,24 @@ type SeriesInput = {
         descriptionOverride?: string | null;
         required?: boolean;
     }>;
+};
+
+export type AcademyWeeklyActivity = {
+    openedCount: number;
+    completedCount: number;
+    recentOpenedLessons: string[];
+    recentCompletedLessons: string[];
+    recentActivity: Array<{
+        action: AcademyHistoryAction;
+        title: string;
+        createdAt: string;
+    }>;
+    seriesProgress: Array<{
+        seriesTitle: string;
+        completedCount: number;
+        totalCount: number;
+    }>;
+    mostRecentActivity: string | null;
 };
 
 function isMissingAcademyRelationError(error: any) {
@@ -148,6 +169,9 @@ function mapContent(row: any, categoriesById: Map<string, AcademyCategory>, tags
         commonMistake: row.common_mistake ?? null,
         starterPrompt: row.starter_prompt ?? null,
         forgeContext: row.forge_context ?? null,
+        knowledgeCheckPrompt: row.knowledge_check_prompt ?? null,
+        knowledgeCheckExpectedPoints: row.knowledge_check_expected_points ?? [],
+        completionBadgeLabel: row.completion_badge_label ?? null,
         videoUrl: row.video_url ?? null,
         youtubeVideoId: row.youtube_video_id ?? null,
         resourceUrl: row.resource_url ?? null,
@@ -209,6 +233,9 @@ function mapContentProgress(row: any): AcademyUserContentProgress {
         contentId: row.content_id,
         status: row.status,
         completedAt: row.completed_at ?? null,
+        knowledgeCheckedAt: row.knowledge_checked_at ?? null,
+        lastCheckResponse: row.last_check_response ?? null,
+        lastCheckFeedback: row.last_check_feedback ?? null,
         lastOpenedAt: row.last_opened_at ?? null,
         lastForgeOpenedAt: row.last_forge_opened_at ?? null,
         updatedAt: row.updated_at,
@@ -478,6 +505,9 @@ export async function saveAcademyContent(input: ContentInput) {
         common_mistake: input.commonMistake?.trim() || null,
         starter_prompt: input.starterPrompt?.trim() || null,
         forge_context: input.forgeContext?.trim() || null,
+        knowledge_check_prompt: input.knowledgeCheckPrompt?.trim() || null,
+        knowledge_check_expected_points: normalizeTagNames(input.knowledgeCheckExpectedPoints),
+        completion_badge_label: input.completionBadgeLabel?.trim() || null,
         video_url: videoUrl,
         youtube_video_id: youtubeVideoId,
         resource_url: input.resourceUrl?.trim() || null,
@@ -596,13 +626,25 @@ export async function deleteAcademyTag(tagId: string) {
     if (error) throw error;
 }
 
-export async function upsertAcademyContentProgress(userId: string, contentId: string, completed: boolean) {
+export async function upsertAcademyContentProgress(
+    userId: string,
+    contentId: string,
+    completed: boolean,
+    options?: {
+        knowledgeCheckedAt?: string | null;
+        lastCheckResponse?: string | null;
+        lastCheckFeedback?: string | null;
+    }
+) {
     const now = new Date().toISOString();
     const payload = {
         user_id: userId,
         content_id: contentId,
         status: completed ? "completed" : "in_progress",
         completed_at: completed ? now : null,
+        knowledge_checked_at: options?.knowledgeCheckedAt ?? (completed ? now : null),
+        last_check_response: options?.lastCheckResponse ?? null,
+        last_check_feedback: options?.lastCheckFeedback ?? null,
         last_opened_at: now,
         updated_at: now,
     };
@@ -687,4 +729,119 @@ export async function recordAcademyHistory(
             metadata: input.metadata ?? {},
         });
     if (error) throw error;
+}
+
+export async function loadAcademyWeeklyActivity(userId: string, daysBack = 7): Promise<AcademyWeeklyActivity> {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - daysBack);
+    const cutoffIso = cutoff.toISOString();
+
+    const [historyRes, completedRes, seriesItemsRes, allCompletedRes] = await Promise.all([
+        supabase
+            .from("academy_user_history")
+            .select("action, created_at, content_id, content:academy_content(title)")
+            .eq("user_id", userId)
+            .gte("created_at", cutoffIso)
+            .order("created_at", { ascending: false })
+            .limit(12),
+        supabase
+            .from("academy_user_content_progress")
+            .select("content_id, completed_at, content:academy_content(title)")
+            .eq("user_id", userId)
+            .eq("status", "completed")
+            .not("completed_at", "is", null)
+            .gte("completed_at", cutoffIso)
+            .order("completed_at", { ascending: false }),
+        supabase
+            .from("academy_series_items")
+            .select("series_id, content_id, series:academy_series(title)")
+            .order("position", { ascending: true }),
+        supabase
+            .from("academy_user_content_progress")
+            .select("content_id")
+            .eq("user_id", userId)
+            .eq("status", "completed"),
+    ]);
+
+    const errors = [historyRes.error, completedRes.error, seriesItemsRes.error, allCompletedRes.error].filter(Boolean);
+    if (errors.length > 0) {
+        const firstError = errors[0];
+        if (isMissingAcademyRelationError(firstError)) {
+            return {
+                openedCount: 0,
+                completedCount: 0,
+                recentOpenedLessons: [],
+                recentCompletedLessons: [],
+                recentActivity: [],
+                seriesProgress: [],
+                mostRecentActivity: null,
+            };
+        }
+        throw firstError;
+    }
+
+    const recentActivity = (historyRes.data ?? []).map((row) => ({
+        action: row.action as AcademyHistoryAction,
+        title: row.content?.title ?? "Academy lesson",
+        createdAt: row.created_at,
+    }));
+
+    const openedContentIds = new Set(
+        (historyRes.data ?? [])
+            .filter((row) => row.action === "viewed" || row.action === "opened_forge")
+            .map((row) => row.content_id)
+            .filter(Boolean),
+    );
+
+    const completedRows = completedRes.data ?? [];
+    const recentCompletedLessons = Array.from(
+        new Set(
+            completedRows
+                .map((row) => row.content?.title ?? null)
+                .filter((title): title is string => Boolean(title)),
+        ),
+    ).slice(0, 4);
+
+    const recentOpenedLessons = Array.from(
+        new Set(
+            (historyRes.data ?? [])
+                .filter((row) => (row.action === "viewed" || row.action === "opened_forge") && row.content?.title)
+                .map((row) => row.content?.title as string),
+        ),
+    ).slice(0, 4);
+
+    const completedContentIds = new Set((allCompletedRes.data ?? []).map((row) => row.content_id));
+    const seriesProgressById = new Map<string, { title: string; completedCount: number; totalCount: number }>();
+
+    for (const row of seriesItemsRes.data ?? []) {
+        const existing = seriesProgressById.get(row.series_id) ?? {
+            title: row.series?.title ?? "Series",
+            completedCount: 0,
+            totalCount: 0,
+        };
+        existing.totalCount += 1;
+        if (completedContentIds.has(row.content_id)) {
+            existing.completedCount += 1;
+        }
+        seriesProgressById.set(row.series_id, existing);
+    }
+
+    const seriesProgress = Array.from(seriesProgressById.values())
+        .filter((item) => item.completedCount > 0)
+        .sort((a, b) => b.completedCount - a.completedCount || a.totalCount - b.totalCount)
+        .slice(0, 3);
+
+    const mostRecentActivity = recentActivity[0]
+        ? `${recentActivity[0].action === "completed" ? "Completed" : recentActivity[0].action === "opened_forge" ? "Opened with Forge" : "Viewed"} ${recentActivity[0].title}`
+        : null;
+
+    return {
+        openedCount: openedContentIds.size,
+        completedCount: new Set(completedRows.map((row) => row.content_id)).size,
+        recentOpenedLessons,
+        recentCompletedLessons,
+        recentActivity,
+        seriesProgress,
+        mostRecentActivity,
+    };
 }

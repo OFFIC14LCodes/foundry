@@ -2,7 +2,6 @@ export const STORAGE_KEYS = {
     profile: "foundry_profile",
     completedByStage: "foundry_completed",
     messagesByStage: "foundry_messages",
-    screen: "foundry_screen",
 } as const;
 
 export function createEmptyStageProgress() {
@@ -16,4 +15,6 @@ export function createEmptyMessagesByStage() {
 export function clearFoundryClientStorage() {
     Object.values(STORAGE_KEYS).forEach((key) => localStorage.removeItem(key));
     localStorage.removeItem("foundry_last_seen");
+    localStorage.removeItem("foundry_screen");
+    localStorage.removeItem("foundry_journal_weekly_summary");
 }

@@ -12,19 +12,29 @@ function keywordScore(content: string, positiveWords: string[], negativeWords: s
     return clamp(base + (positiveHits * 8) - (negativeHits * 7));
 }
 
-export function getBusinessHealth(profile: any, completedByStage: Record<number, string[]>, marketReport?: any | null) {
+export function getBusinessHealth(
+    profile: any,
+    completedByStage: Record<number, string[]>,
+    marketReport?: any | null,
+    financialSummary?: {
+        availableCash?: number;
+        totalRevenue?: number;
+        totalExpenses?: number;
+        runwayMonths?: number | null;
+    } | null,
+) {
     const currentStage = profile?.currentStage || 1;
     const stageMilestones = Number.isFinite(currentStage) ? completedByStage[currentStage] || [] : [];
     const currentStageTotal = STAGES_DATA[currentStage - 1]?.milestones?.length || 1;
     const executionScore = clamp((stageMilestones.length / currentStageTotal) * 100);
 
     const totalBudget = Number(profile?.budget?.total || 0);
-    const totalIncome = Number(profile?.budget?.totalIncome || 0);
-    const spent = Number(profile?.budget?.spent || 0);
-    const effectiveBudget = Math.max(totalBudget + totalIncome, 0);
-    const remaining = effectiveBudget - spent;
+    const totalIncome = Number((financialSummary?.totalRevenue ?? profile?.budget?.totalIncome) || 0);
+    const spent = Number((financialSummary?.totalExpenses ?? profile?.budget?.spent) || 0);
+    const remaining = Number(financialSummary?.availableCash ?? (Math.max(totalBudget + totalIncome, 0) - spent));
+    const effectiveBudget = Math.max(remaining + spent, 0);
     const remainingRatio = effectiveBudget > 0 ? clamp((remaining / effectiveBudget) * 100) : 45;
-    const runwayBonus = profile?.budget?.runway && profile.budget.runway !== "TBD" ? 10 : 0;
+    const runwayBonus = (financialSummary?.runwayMonths != null) || (profile?.budget?.runway && profile.budget.runway !== "TBD") ? 10 : 0;
     const incomeBonus = totalIncome > 0 ? Math.min(15, Math.round((totalIncome / Math.max(totalBudget || 1, 1)) * 25)) : 0;
     const financialScore = clamp((remainingRatio * 0.75) + runwayBonus + incomeBonus);
 

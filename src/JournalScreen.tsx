@@ -1,19 +1,32 @@
 import { useState, useEffect, useRef } from "react";
 import { saveJournalEntry, deleteJournalEntry } from "./db";
+import { getWeeklyJournalSummary, updateWeeklyJournalSummary } from "./lib/founderSessionState";
+import { generateWeeklyJournalSummary, summarizeJournalEntry } from "./lib/journalIntelligence";
 import Logo from "./components/Logo";
 import MicButton from "./components/MicButton";
+
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
+function calcWordCount(text: string): number {
+    return Math.round(text.trim().split(/\s+/).filter(Boolean).length);
+}
 
 // ─────────────────────────────────────────────────────────────
 // FOUNDER'S JOURNAL
 // ─────────────────────────────────────────────────────────────
-export default function JournalScreen({ userId, entries, onEntriesChange, onBack, profile }) {
+export default function JournalScreen({ userId, entries, onEntriesChange, onBack, profile, onAskForge }) {
     const [writing, setWriting] = useState(false);
     const [draft, setDraft] = useState("");
     const [saving, setSaving] = useState(false);
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [mounted, setMounted] = useState(false);
+    const [weeklySummary, setWeeklySummary] = useState<string | null>(null);
+    const [weeklyExpanded, setWeeklyExpanded] = useState(false);
+    const [loadingWeekly, setLoadingWeekly] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    const wordCount = calcWordCount(draft);
 
     useEffect(() => { setTimeout(() => setMounted(true), 100); }, []);
 
@@ -23,14 +36,64 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
         }
     }, [writing]);
 
+    // Weekly summary — load from cache or generate
+    useEffect(() => {
+        let cancelled = false;
+        const cutoff7Days = new Date();
+        cutoff7Days.setDate(cutoff7Days.getDate() - 7);
+        const recentEntries = entries.filter(e => new Date(e.createdAt) >= cutoff7Days);
+        if (recentEntries.length < 2) {
+            setWeeklySummary(null);
+            return;
+        }
+
+        const loadWeeklySummary = async () => {
+            const stored = await getWeeklyJournalSummary(userId);
+            const generatedAtMs = stored?.generatedAt ? new Date(stored.generatedAt).getTime() : NaN;
+            if (stored?.text && Number.isFinite(generatedAtMs) && Date.now() - generatedAtMs < SEVEN_DAYS_MS) {
+                if (!cancelled) setWeeklySummary(stored.text);
+                return;
+            }
+
+            if (!cancelled) setLoadingWeekly(true);
+            try {
+                const result = await generateWeeklyJournalSummary(userId, entries);
+                if (!result) return;
+                const generatedAt = new Date().toISOString();
+                await updateWeeklyJournalSummary(userId, result, generatedAt);
+                if (!cancelled) setWeeklySummary(result);
+            } finally {
+                if (!cancelled) setLoadingWeekly(false);
+            }
+        };
+
+        void loadWeeklySummary();
+    // Only run once on mount — entries list doesn't change the generation threshold
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+        return () => { cancelled = true; };
+    }, []);
+
     const handleSave = async () => {
         if (!draft.trim() || saving) return;
         setSaving(true);
-        const entry = await saveJournalEntry(userId, draft.trim());
+        const wc = calcWordCount(draft);
+        const stageId = profile?.currentStage ?? null;
+        const savedContent = draft.trim();
+        const entry = await saveJournalEntry(userId, savedContent, stageId, wc);
         if (entry) {
             onEntriesChange([entry, ...entries]);
             setDraft("");
             setWriting(false);
+
+            // Fire-and-forget: summarize asynchronously, update card when done
+            summarizeJournalEntry(entry.id, savedContent, userId).then(result => {
+                if (!result) return;
+                onEntriesChange(prev => prev.map(e =>
+                    e.id === entry.id
+                        ? { ...e, forgeSummary: result.summary, themes: result.themes }
+                        : e
+                ));
+            }).catch(() => {});
         }
         setSaving(false);
     };
@@ -54,7 +117,8 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
         return date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
     };
 
-    const wordCount = draft.trim() ? draft.trim().split(/\s+/).length : 0;
+    const isJustSaved = (isoString: string) =>
+        Date.now() - new Date(isoString).getTime() < 2 * 60 * 1000;
 
     return (
         <div style={{
@@ -96,6 +160,51 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
 
             {/* Content */}
             <div className="foundry-app-page__content" style={{ flex: 1, overflowY: "auto", padding: "16px", maxWidth: 680, width: "100%", margin: "0 auto" }}>
+
+                {/* Weekly reflection panel */}
+                {(weeklySummary || loadingWeekly) && (
+                    <div style={{
+                        background: "rgba(232,98,42,0.05)",
+                        border: "1px solid rgba(232,98,42,0.18)",
+                        borderRadius: 14,
+                        marginBottom: 16,
+                        overflow: "hidden",
+                        animation: "fadeSlideUp 0.4s ease",
+                    }}>
+                        <button
+                            onClick={() => setWeeklyExpanded(e => !e)}
+                            style={{
+                                width: "100%", background: "transparent", border: "none",
+                                padding: "12px 16px", cursor: "pointer",
+                                display: "flex", alignItems: "center", justifyContent: "space-between",
+                                color: "#D4CFC9",
+                            }}
+                        >
+                            <span style={{ fontSize: 13, fontWeight: 600, fontFamily: "'Lora', Georgia, serif" }}>
+                                This Week's Reflection
+                            </span>
+                            <span style={{ fontSize: 11, color: "#666", transition: "transform 0.2s", transform: weeklyExpanded ? "rotate(180deg)" : "rotate(0deg)" }}>
+                                ▾
+                            </span>
+                        </button>
+                        {weeklyExpanded && (
+                            <div style={{
+                                padding: "0 16px 16px",
+                                fontSize: 14,
+                                fontFamily: "'Lora', Georgia, serif",
+                                fontStyle: "italic",
+                                color: "#C8C4BE",
+                                lineHeight: 1.8,
+                                borderTop: "1px solid rgba(255,255,255,0.05)",
+                                paddingTop: 12,
+                            }}>
+                                {loadingWeekly ? (
+                                    <span style={{ color: "#555" }}>Forge is reading your week...</span>
+                                ) : weeklySummary}
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Empty state */}
                 {entries.length === 0 && !writing && (
@@ -164,7 +273,19 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                 }}
                             />
                             <div style={{
-                                padding: "12px 16px",
+                                padding: "8px 16px 4px",
+                                display: "flex", justifyContent: "flex-end",
+                            }}>
+                                <span style={{
+                                    fontSize: 12,
+                                    color: "rgba(240,237,232,0.4)",
+                                    fontFamily: "'DM Sans', sans-serif",
+                                }}>
+                                    {wordCount > 0 ? `${wordCount} words` : ""}
+                                </span>
+                            </div>
+                            <div style={{
+                                padding: "8px 16px 12px",
                                 borderTop: "1px solid rgba(255,255,255,0.05)",
                                 display: "flex", gap: 8, justifyContent: "flex-end"
                             }}>
@@ -196,6 +317,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                         const preview = isLong && !isExpanded
                             ? entry.content.slice(0, 280) + "..."
                             : entry.content;
+                        const justSaved = isJustSaved(entry.createdAt);
 
                         return (
                             <div key={entry.id} style={{
@@ -206,6 +328,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                 opacity: deletingId === entry.id ? 0.4 : 1,
                                 transition: "opacity 0.2s"
                             }}>
+                                {/* Entry header — date + delete */}
                                 <div style={{
                                     padding: "12px 16px",
                                     borderBottom: "1px solid rgba(255,255,255,0.04)",
@@ -217,6 +340,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                         </div>
                                         <div style={{ fontSize: 12, color: "#68625C", marginTop: 3, lineHeight: 1.3 }}>
                                             {formatTime(entry.createdAt)}
+                                            {entry.wordCount ? ` · ${entry.wordCount} words` : ""}
                                         </div>
                                     </div>
                                     <button
@@ -232,7 +356,9 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                         onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "#5F5952"}
                                     >×</button>
                                 </div>
-                                <div style={{ padding: "14px 16px" }}>
+
+                                {/* Entry body */}
+                                <div style={{ padding: "14px 16px 8px" }}>
                                     <div style={{
                                         fontSize: 15, fontFamily: "'Lora', Georgia, serif",
                                         color: "#C8C4BE", lineHeight: 1.8, whiteSpace: "pre-wrap"
@@ -246,6 +372,58 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                             {isExpanded ? "Show less ↑" : "Read more ↓"}
                                         </button>
                                     )}
+
+                                    {/* Forge summary */}
+                                    {entry.forgeSummary ? (
+                                        <div style={{
+                                            marginTop: 12,
+                                            paddingTop: 10,
+                                            borderTop: "1px solid rgba(255,255,255,0.04)",
+                                            fontSize: 13,
+                                            fontStyle: "italic",
+                                            color: "rgba(240,237,232,0.6)",
+                                            fontFamily: "'Lora', Georgia, serif",
+                                            lineHeight: 1.7,
+                                            display: "flex",
+                                            gap: 6,
+                                            alignItems: "flex-start",
+                                        }}>
+                                            <span style={{ color: "#E8622A", fontStyle: "normal", flexShrink: 0, fontSize: 12 }}>Forge:</span>
+                                            <span>{entry.forgeSummary}</span>
+                                        </div>
+                                    ) : justSaved ? (
+                                        <div style={{
+                                            marginTop: 10,
+                                            fontSize: 12,
+                                            fontStyle: "italic",
+                                            color: "rgba(240,237,232,0.3)",
+                                            fontFamily: "'Lora', Georgia, serif",
+                                        }}>
+                                            Forge is reading this...
+                                        </div>
+                                    ) : null}
+                                </div>
+
+                                {/* Entry footer — Ask Forge */}
+                                <div style={{
+                                    padding: "6px 16px 12px",
+                                    display: "flex",
+                                    justifyContent: "flex-end",
+                                }}>
+                                    <button
+                                        onClick={() => onAskForge?.(entry.content)}
+                                        style={{
+                                            background: "transparent",
+                                            border: "none",
+                                            color: "#E8622A",
+                                            fontSize: 12,
+                                            fontFamily: "'DM Sans', sans-serif",
+                                            cursor: "pointer",
+                                            padding: "4px 0",
+                                        }}
+                                    >
+                                        Ask Forge →
+                                    </button>
                                 </div>
                             </div>
                         );
