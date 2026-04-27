@@ -27,6 +27,7 @@ export default function HubScreen({
     onOpenPitchPractice,
     onOpenDocuments,
     onOpenMarketIntel,
+    onOpenBusinessModelCanvas,
     onOpenCofounder,
     onOpenSettings,
     onOpenAdminHub,
@@ -48,6 +49,7 @@ export default function HubScreen({
     onSaveFinancialSettings,
     onPlaidConnected,
     onSyncPlaidTransactions,
+    onDisconnectPlaidItem,
     onAcceptPlaidTransactionAsExpense,
     onAcceptPlaidTransactionAsRevenue,
     onIgnorePlaidTransaction,
@@ -204,6 +206,20 @@ export default function HubScreen({
         }
     };
 
+    const handleDisconnectPlaid = async (plaidItemId: string, institutionName?: string | null) => {
+        const confirmed = window.confirm(
+            `Disconnect ${institutionName || "this bank connection"}? Imported transactions still waiting for review from this bank will be removed, but transactions you already approved into your financial model will stay.`,
+        );
+        if (!confirmed) return;
+
+        setSyncingPlaidItemId(plaidItemId);
+        try {
+            await onDisconnectPlaidItem?.(plaidItemId);
+        } finally {
+            setSyncingPlaidItemId(null);
+        }
+    };
+
     const handleAcceptImportedExpense = async (transaction: any) => {
         setPlaidActionId(transaction.id);
         try {
@@ -342,6 +358,16 @@ export default function HubScreen({
             action: () => {
                 setSidebarOpen(false);
                 onOpenDocuments();
+            },
+            available: true,
+        },
+        {
+            icon: Icons.stages.plan,
+            label: "Business Model Canvas",
+            sub: "Living Stage 2 strategy map",
+            action: () => {
+                setSidebarOpen(false);
+                onOpenBusinessModelCanvas?.();
             },
             available: true,
         },
@@ -1005,6 +1031,20 @@ export default function HubScreen({
                         )}
                     </div>
                 )}
+                <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "14px 16px", marginBottom: 14, animation: "fadeSlideUp 0.5s ease 0.22s both" }}>
+                    <div className="hub-section-header" style={{ marginBottom: 8 }}>
+                        <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>Business Model Canvas</div>
+                        <button
+                            onClick={() => onOpenBusinessModelCanvas?.()}
+                            style={{ background: "rgba(232,98,42,0.1)", border: "1px solid rgba(232,98,42,0.25)", borderRadius: 8, padding: "4px 12px", color: "#E8622A", fontSize: 11, cursor: "pointer", fontWeight: 600 }}
+                        >
+                            Open Canvas
+                        </button>
+                    </div>
+                    <div style={{ fontSize: 12, color: "#A8A4A0", lineHeight: 1.65 }}>
+                        Forge uses the canvas to turn Stage 2 thinking into a sharper business model. Open it to see what is already solid, what is still vague, and where Forge should push next.
+                    </div>
+                </div>
                 {/* Financial Modeling */}
                 <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "14px 16px", marginBottom: 14, animation: "fadeSlideUp 0.5s ease 0.25s both" }}>
                     <div className="hub-section-header" style={{ marginBottom: 10 }}>
@@ -1058,22 +1098,49 @@ export default function HubScreen({
                                                 {plaidAccounts.filter((account: any) => account.providerItemId === item.plaidItemId).length} linked accounts
                                                 {item.lastSyncedAt ? ` · last synced ${formatFinancialDate(item.lastSyncedAt)}` : ""}
                                             </div>
+                                            {plaidAccounts.filter((account: any) => account.providerItemId === item.plaidItemId).length > 0 && (
+                                                <div style={{ fontSize: 10, color: "#8B8680", marginTop: 4, lineHeight: 1.5 }}>
+                                                    {plaidAccounts
+                                                        .filter((account: any) => account.providerItemId === item.plaidItemId)
+                                                        .slice(0, 3)
+                                                        .map((account: any) => account.officialName || account.name || `Account ••${account.mask || account.last4 || ""}`)
+                                                        .join(" · ")}
+                                                    {plaidAccounts.filter((account: any) => account.providerItemId === item.plaidItemId).length > 3 ? " · ..." : ""}
+                                                </div>
+                                            )}
                                         </div>
-                                        <button
-                                            onClick={() => handleSyncPlaid(item.plaidItemId)}
-                                            disabled={syncingPlaidItemId === item.plaidItemId}
-                                            style={{
-                                                background: "rgba(255,255,255,0.04)",
-                                                border: "1px solid rgba(255,255,255,0.08)",
-                                                borderRadius: 8,
-                                                padding: "8px 12px",
-                                                color: "#F0EDE8",
-                                                fontSize: 11,
-                                                cursor: syncingPlaidItemId === item.plaidItemId ? "default" : "pointer",
-                                            }}
-                                        >
-                                            {syncingPlaidItemId === item.plaidItemId ? "Syncing..." : "Sync Transactions"}
-                                        </button>
+                                        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
+                                            <button
+                                                onClick={() => handleSyncPlaid(item.plaidItemId)}
+                                                disabled={syncingPlaidItemId === item.plaidItemId}
+                                                style={{
+                                                    background: "rgba(255,255,255,0.04)",
+                                                    border: "1px solid rgba(255,255,255,0.08)",
+                                                    borderRadius: 8,
+                                                    padding: "8px 12px",
+                                                    color: "#F0EDE8",
+                                                    fontSize: 11,
+                                                    cursor: syncingPlaidItemId === item.plaidItemId ? "default" : "pointer",
+                                                }}
+                                            >
+                                                {syncingPlaidItemId === item.plaidItemId ? "Working..." : "Sync Transactions"}
+                                            </button>
+                                            <button
+                                                onClick={() => handleDisconnectPlaid(item.plaidItemId, item.institutionName)}
+                                                disabled={syncingPlaidItemId === item.plaidItemId}
+                                                style={{
+                                                    background: "rgba(232,98,42,0.1)",
+                                                    border: "1px solid rgba(232,98,42,0.25)",
+                                                    borderRadius: 8,
+                                                    padding: "8px 12px",
+                                                    color: "#E8622A",
+                                                    fontSize: 11,
+                                                    cursor: syncingPlaidItemId === item.plaidItemId ? "default" : "pointer",
+                                                }}
+                                            >
+                                                Unlink Bank
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
                             </div>

@@ -73,6 +73,7 @@ import CofounderModeScreen from "./components/CofounderModeScreen";
 import ForgeChatRoom from "./components/ForgeChatRoom";
 import AdminHubScreen from "./components/AdminHubScreen";
 import ForgeAcademyScreen from "./components/ForgeAcademyScreen";
+import BusinessModelCanvasScreen from "./components/BusinessModelCanvasScreen";
 import AppTourScreen from "./components/AppTourScreen";
 import ArchivePanel from "./components/ArchivePanel";
 import SettingsScreen from "./components/settings/SettingsScreen";
@@ -119,6 +120,14 @@ import {
   type PlaidReviewTransaction,
 } from "./lib/financialModeling";
 import {
+  buildBusinessModelCanvasContext,
+  buildBusinessModelCanvasSectionPrompt,
+  getEmptyBusinessModelCanvas,
+  tryParseBusinessModelCanvasPatch,
+  type BusinessModelCanvasRecord,
+  type BusinessModelCanvasSectionKey,
+} from "./lib/businessModelCanvas";
+import {
   acceptPlaidTransactionAsExpense,
   acceptPlaidTransactionAsRevenue,
   deleteExpense,
@@ -129,7 +138,13 @@ import {
   saveFinancialSettings,
   saveRevenue,
 } from "./lib/financialDb";
-import { syncPlaidTransactions } from "./lib/plaid";
+import { disconnectPlaidItem, syncPlaidTransactions } from "./lib/plaid";
+import {
+  applyBusinessModelCanvasPatch,
+  deleteBusinessModelCanvasEntry,
+  loadBusinessModelCanvas,
+  updateBusinessModelCanvasEntry,
+} from "./lib/businessModelCanvasDb";
 import {
   DEFAULT_ADMIN_NOTIFICATION_SETTINGS,
   DEFAULT_USER_NOTIFICATION_PREFERENCES,
@@ -205,6 +220,7 @@ async function buildRichContext(
   stageProgressDates?: Record<number, string>,
   journalEntries?: any[],
   financialSummary?: FinancialSummary | null,
+  businessModelCanvas?: BusinessModelCanvasRecord | null,
 ) {
   const stageData = STAGES_DATA[activeStage - 1];
   const completedMilestones = completedByStage[activeStage] || [];
@@ -307,6 +323,26 @@ Do not make this awkward or repetitive. Reassess naturally when it fits the conv
   const journalBlock = journalEntries && journalEntries.length > 0
     ? buildJournalContext(journalEntries, 14)
     : "";
+  const bmcBlock = businessModelCanvas
+    ? buildBusinessModelCanvasContext(businessModelCanvas)
+    : (activeStage === 2
+      ? `[BMC_CONTEXT]
+Business Model Canvas version: not started
+Current sections:
+- Customer Segments: missing
+- Value Propositions: missing
+- Channels: missing
+- Customer Relationships: missing
+- Revenue Streams: missing
+- Key Activities: missing
+- Key Resources: missing
+- Key Partners: missing
+- Cost Structure: missing
+Missing sections: All sections
+Weak areas: The business model still needs structure.
+If the conversation turns toward business model clarity, help the founder make concrete choices instead of staying abstract.
+[/BMC_CONTEXT]`
+      : "");
 
   const context = `
 Current date & time: ${dateStr}, ${timeStr}
@@ -336,7 +372,7 @@ ${memorySections.join("\n\n")}` : ""}
 
 ${longitudinalBlock ? `${longitudinalBlock}` : ""}
 
-${journalBlock ? `${journalBlock}\n\n` : ""}STAGE REFERENCES: When referencing work from another stage, wrap it like [STAGE_REF:N]text[/STAGE_REF]. Use naturally when prior work is relevant — not on every mention.${onboardingReviewSection}${cofounderSection}${methodSection}
+${journalBlock ? `${journalBlock}\n\n` : ""}${bmcBlock ? `${bmcBlock}\n\n` : ""}STAGE REFERENCES: When referencing work from another stage, wrap it like [STAGE_REF:N]text[/STAGE_REF]. Use naturally when prior work is relevant — not on every mention.${onboardingReviewSection}${cofounderSection}${methodSection}
   `.trim();
 
   return {
@@ -741,6 +777,13 @@ function ForgeScreen({
   onJournalSeedUsed = null as (() => void) | null,
   financialSummary = null as FinancialSummary | null,
   initialLastSeenAt = null as string | null,
+  businessModelCanvas = null as BusinessModelCanvasRecord | null,
+  onBusinessModelCanvasUpdated = null as ((canvas: BusinessModelCanvasRecord) => void) | null,
+  forgeSeedPrompt = null as string | null,
+  forgeSeedStage = null as number | null,
+  onForgeSeedUsed = null as (() => void) | null,
+  forgeSeedNonce = 0,
+  onOpenBusinessModelCanvas = null as (() => void) | null,
 }) {
   const [activeStage, setActiveStage] = useState(pendingUpgradeStage || initialStage || profile.currentStage);
   const [activeTab, setActiveTab] = useState("chat");
@@ -772,6 +815,7 @@ function ForgeScreen({
   const [summaryModalMenuOpen, setSummaryModalMenuOpen] = useState(false);
   const [archiveFilter, setArchiveFilter] = useState<"all" | "forge" | "chatroom" | "academy" | "bubble" | "pitchpractice">("all");
   const [sessionLastSeenAt, setSessionLastSeenAt] = useState<string | null>(initialLastSeenAt);
+  const processedCanvasSeedRef = useRef<string | null>(null);
 
   useEffect(() => {
     setSessionLastSeenAt(initialLastSeenAt);
@@ -912,6 +956,59 @@ function ForgeScreen({
   }, [pendingUpgradeStage]);
 
   useEffect(() => {
+    if (forgeSeedStage && activeStage !== forgeSeedStage) {
+      setActiveStage(forgeSeedStage);
+    }
+  }, [forgeSeedStage, forgeSeedNonce]);
+
+  useEffect(() => {
+    if (!forgeSeedPrompt) return;
+    if (processedCanvasSeedRef.current === `${forgeSeedNonce}`) return;
+    if (forgeSeedStage && activeStage !== forgeSeedStage) return;
+    if (loading) return;
+
+    let cancelled = false;
+
+    const runSeed = async () => {
+      processedCanvasSeedRef.current = `${forgeSeedNonce}`;
+      onForgeSeedUsed?.();
+      const seedMessage = forgeSeedPrompt;
+      const currentStageMessages = messagesByStage[activeStage] || [];
+      const timestamp = new Date().toISOString();
+      const userSeedMessage = { id: `canvas-seed-user-${Date.now()}`, role: "user", text: seedMessage, createdAt: timestamp };
+      setLoading(true);
+      try {
+        const seedContext = appendMarketContext(await buildRichContext(
+          profile, activeStage, completedByStage, messagesByStage,
+          cofoundersContext, seedMessage, recentSummaries, foundryDecisions, userId, stageProgressDates, journalEntries, financialSummary, businessModelCanvas
+        ), marketReport);
+        const seedReply = await callForgeAPI(
+          [{ role: "user", content: seedMessage }],
+          FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", seedContext.context)
+        );
+        if (cancelled) return;
+        const { cleanText } = parseForgeResponseWithBookCitations(seedReply, seedContext.bookMatches);
+        onUpdateMessages(activeStage, [
+          ...currentStageMessages,
+          userSeedMessage,
+          { id: `canvas-seed-forge-${Date.now()}`, role: "forge", text: cleanText, createdAt: new Date().toISOString() },
+        ]);
+        void syncBusinessModelCanvasFromExchange(seedMessage, cleanText);
+      } catch (error) {
+        if (!cancelled) {
+          console.error("forge seed prompt error:", error);
+          onUpdateMessages(activeStage, [...currentStageMessages, userSeedMessage]);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    void runSeed();
+    return () => { cancelled = true; };
+  }, [forgeSeedPrompt, forgeSeedNonce, forgeSeedStage, activeStage, loading, profile, completedByStage, messagesByStage, cofoundersContext, recentSummaries, foundryDecisions, userId, stageProgressDates, journalEntries, financialSummary, businessModelCanvas, marketReport]);
+
+  useEffect(() => {
     const stageMessages = messagesByStage[activeStage] || [];
     const shouldShowBriefing = !pendingUpgradeStage && stageMessages.length === 0 && stageSummaries.length === 0 && !loading && !briefingDismissed;
     if (stageMessages.length > 0 || loading || shouldShowBriefing) return;
@@ -931,7 +1028,7 @@ function ForgeScreen({
         const seedMessage = journalSeedPrompt;
         const seedContext = appendMarketContext(await buildRichContext(
           profile, activeStage, completedByStage, messagesByStage,
-          cofoundersContext, seedMessage, recentSummaries, foundryDecisions, userId, stageProgressDates, journalEntries, financialSummary
+          cofoundersContext, seedMessage, recentSummaries, foundryDecisions, userId, stageProgressDates, journalEntries, financialSummary, businessModelCanvas
         ), marketReport);
         setLoading(true);
         try {
@@ -1006,7 +1103,8 @@ Start with a short recap of what they told Foundry during onboarding: the busine
         userId,
         stageProgressDates,
         journalEntries,
-        financialSummary
+        financialSummary,
+        businessModelCanvas
       ), marketReport);
 
       setLoading(true);
@@ -1558,7 +1656,8 @@ Where do you want to start?`;
         userId,
         stageProgressDates,
         journalEntries,
-        financialSummary
+        financialSummary,
+        businessModelCanvas
       );
       const ctxPackage = appendArchiveSessionContext(
         appendMarketContext(baseContextPackage, marketReport),
@@ -1602,6 +1701,8 @@ Where do you want to start?`;
 
       completedIds.forEach((id) => onMilestoneComplete(id));
 
+      void syncBusinessModelCanvasFromExchange(text, redirectedAdvanceText);
+
       if (ar && canAdvanceNow) setAdvanceReady(true);
     } catch (err) {
       console.error("Forge error:", err);
@@ -1631,6 +1732,51 @@ Where do you want to start?`;
   };
 
   const showBriefing = !pendingUpgradeStage && messages.length === 0 && stageSummaries.length === 0 && !loading && !briefingDismissed;
+
+  const syncBusinessModelCanvasFromExchange = async (userPrompt: string, forgeReply: string) => {
+    if (activeStage !== 2 || !userId || !onBusinessModelCanvasUpdated) return;
+
+    const currentCanvas = businessModelCanvas || null;
+    const contextBlock = currentCanvas ? buildBusinessModelCanvasContext(currentCanvas) : `No canvas sections are filled yet.`;
+    const extractionPrompt = `You extract business-model updates from a founder coaching exchange.
+
+Return strict JSON only. Valid keys are:
+customer_segments
+value_propositions
+channels
+customer_relationships
+revenue_streams
+key_activities
+key_resources
+key_partners
+cost_structure
+
+Each key should contain an array of short, concrete strings. If nothing relevant changed, return {}.
+Do not invent sections that were not implied by the exchange.
+Keep each entry concise and specific enough to fit on a business model canvas.
+
+Current canvas:
+${contextBlock}
+
+Latest founder message:
+${userPrompt}
+
+Latest Forge reply:
+${forgeReply}`;
+
+    try {
+      const raw = await callForgeAPI(
+        [{ role: "user", content: extractionPrompt }],
+        "You turn business conversations into structured Business Model Canvas updates. Return JSON only.",
+        700
+      );
+      const patch = tryParseBusinessModelCanvasPatch(raw);
+      const nextCanvas = await applyBusinessModelCanvasPatch(userId, patch, { source: "forge" });
+      if (nextCanvas) onBusinessModelCanvasUpdated(nextCanvas);
+    } catch (error) {
+      console.error("business model canvas sync error:", error);
+    }
+  };
 
   return (
     <div
@@ -1874,6 +2020,25 @@ Where do you want to start?`;
             msOverflowStyle: "none",
           }}
         >
+          {activeStage === 2 && (
+            <button
+              onClick={() => onOpenBusinessModelCanvas?.()}
+              style={{
+                padding: "var(--foundry-forge-header-secondary-tab-padding)",
+                borderRadius: 6,
+                border: "none",
+                background: "transparent",
+                color: "#E8622A",
+                fontSize: "var(--foundry-forge-header-secondary-tab-font)",
+                cursor: "pointer",
+                fontWeight: 600,
+                whiteSpace: "nowrap",
+                flexShrink: 0,
+              }}
+            >
+              Canvas
+            </button>
+          )}
           {[
             { id: "chat", label: "Chat" },
             { id: "summaries", label: "Archive" },
@@ -2541,6 +2706,8 @@ export default function FoundryApp() {
   const [showCofounder, setShowCofounder] = useState(false);
   const [showAcademy, setShowAcademy] = useState(false);
   const [academyContext, setAcademyContext] = useState<import("./components/ForgeAcademyScreen").AcademyScreenContext | null>(null);
+  const [showBusinessModelCanvas, setShowBusinessModelCanvas] = useState(false);
+  const [businessModelCanvas, setBusinessModelCanvas] = useState<BusinessModelCanvasRecord | null>(null);
   const [showChatRoom, setShowChatRoom] = useState(false);
   const [settingsView, setSettingsView] = useState<null | "settings" | "privacy" | "eula" | "termsAndConditions" | "acceptableUse" | "disclaimer">(null);
   const [showAdminHub, setShowAdminHub] = useState(false);
@@ -2567,6 +2734,9 @@ export default function FoundryApp() {
   const [stageProgressDates, setStageProgressDates] = useState<Record<number, string>>({});
   const [activeNudge, setActiveNudge] = useState<FounderNudge | null>(null);
   const [journalSeedPrompt, setJournalSeedPrompt] = useState<string | null>(null);
+  const [forgeSeedPrompt, setForgeSeedPrompt] = useState<string | null>(null);
+  const [forgeSeedStage, setForgeSeedStage] = useState<number | null>(null);
+  const [forgeSeedNonce, setForgeSeedNonce] = useState(0);
   const [founderSessionState, setFounderSessionState] = useState<FounderSessionState | null>(null);
   const [financialData, setFinancialData] = useState<FounderFinancialData | null>(null);
 
@@ -2624,6 +2794,7 @@ export default function FoundryApp() {
     setShowCofounder(false);
     setShowChatRoom(false);
     setShowAcademy(false);
+    setShowBusinessModelCanvas(false);
     setSettingsView(null);
     setShowAdminHub(false);
     setUserTeamId(null);
@@ -2646,8 +2817,12 @@ export default function FoundryApp() {
     setStageProgressDates({});
     setActiveNudge(null);
     setJournalSeedPrompt(null);
+    setForgeSeedPrompt(null);
+    setForgeSeedStage(null);
+    setForgeSeedNonce(0);
     setFounderSessionState(null);
     setFinancialData(null);
+    setBusinessModelCanvas(null);
     setDataLoaded(false);
     clearFoundryClientStorage();
   };
@@ -2686,7 +2861,7 @@ export default function FoundryApp() {
       const authEmail = ((user as any).email ?? null) as string | null;
       await ensureUserProfile(uid, user as any);
       await ensureOwnerProfileRole(uid, authEmail);
-      const [dbProfile, dbProgress, dbMessages, dbJournal, dbBriefings, dbMarket, dbNotificationPreferences, dbNotifications, dbBillingSubscription, dbRecentSummaries, dbFoundryDecisions, dbStageProgressDates, dbActiveNudge, dbFounderSessionState] = await Promise.all([
+      const [dbProfile, dbProgress, dbMessages, dbJournal, dbBriefings, dbMarket, dbNotificationPreferences, dbNotifications, dbBillingSubscription, dbRecentSummaries, dbFoundryDecisions, dbStageProgressDates, dbActiveNudge, dbFounderSessionState, dbBusinessModelCanvas] = await Promise.all([
         loadProfile(uid),
         loadAllStageProgress(uid),
         loadAllMessages(uid),
@@ -2701,6 +2876,7 @@ export default function FoundryApp() {
         loadStageProgressDates(uid),
         loadActiveNudge(uid),
         getFounderSessionState(uid),
+        loadBusinessModelCanvas(uid),
       ]);
       const dbFinancialData = await loadFounderFinancialData(uid, dbProfile);
 
@@ -2737,6 +2913,7 @@ export default function FoundryApp() {
         setStageProgressDates(dbStageProgressDates);
         setFounderSessionState(dbFounderSessionState);
         setFinancialData(dbFinancialData);
+        setBusinessModelCanvas(dbBusinessModelCanvas);
         // Load or generate a proactive nudge
         const resolvedStage = dbProfile?.currentStage ?? 1;
         const nudge = dbActiveNudge ?? await generateNudgeIfNeeded(
@@ -2776,6 +2953,7 @@ export default function FoundryApp() {
           });
           setProfile(resolvedProfileWithFinancials);
         }
+        setBusinessModelCanvas(dbBusinessModelCanvas);
         setNotificationPreferences(dbNotificationPreferences);
         setNotifications(dbNotifications);
         setBillingSubscription(dbBillingSubscription);
@@ -2960,6 +3138,14 @@ export default function FoundryApp() {
     return result;
   };
 
+  const handleDisconnectPlaidItem = async (plaidItemId: string) => {
+    if (!plaidItemId) return null;
+    const result = await disconnectPlaidItem(plaidItemId);
+    await refreshFinancialData();
+    markMeaningfulActivity(true);
+    return result;
+  };
+
   const handleAcceptPlaidTransactionAsExpense = async (transaction: PlaidReviewTransaction) => {
     if (!user?.id) return null;
     const accepted = await acceptPlaidTransactionAsExpense(user.id, transaction);
@@ -2985,6 +3171,38 @@ export default function FoundryApp() {
     await refreshFinancialData();
     markMeaningfulActivity(true);
     return true;
+  };
+
+  const handleBusinessModelCanvasUpdated = (nextCanvas: BusinessModelCanvasRecord) => {
+    setBusinessModelCanvas(nextCanvas);
+    markMeaningfulActivity(true);
+  };
+
+  const handleEditBusinessModelCanvasEntry = async (
+    section: BusinessModelCanvasSectionKey,
+    entryId: string,
+    text: string,
+  ) => {
+    if (!user?.id) return null;
+    const nextCanvas = await updateBusinessModelCanvasEntry(user.id, section, entryId, text);
+    if (nextCanvas) {
+      setBusinessModelCanvas(nextCanvas);
+      markMeaningfulActivity(true);
+    }
+    return nextCanvas;
+  };
+
+  const handleDeleteBusinessModelCanvasEntry = async (
+    section: BusinessModelCanvasSectionKey,
+    entryId: string,
+  ) => {
+    if (!user?.id) return null;
+    const nextCanvas = await deleteBusinessModelCanvasEntry(user.id, section, entryId);
+    if (nextCanvas) {
+      setBusinessModelCanvas(nextCanvas);
+      markMeaningfulActivity(true);
+    }
+    return nextCanvas;
   };
 
   const handleMilestoneComplete = (milestoneId) => {
@@ -3099,6 +3317,7 @@ export default function FoundryApp() {
         supabase.from("founder_revenue").delete().eq("user_id", user.id),
         supabase.from("founder_financial_settings").delete().eq("user_id", user.id),
         supabase.from("founder_profit_buckets").delete().eq("user_id", user.id),
+        supabase.from("business_model_canvas").delete().eq("user_id", user.id),
         supabase.from("plaid_items").delete().eq("user_id", user.id),
         supabase.from("plaid_transactions").delete().eq("user_id", user.id),
       ]);
@@ -3220,6 +3439,15 @@ export default function FoundryApp() {
     setShowMarketIntel(true);
   };
 
+  const openBusinessModelCanvas = () => {
+    markMeaningfulActivity();
+    if (!canAccessStage(2, accountAccess)) {
+      openFeatureUpgrade("The Business Model Canvas opens when you unlock Stage 2. That is where Foundry starts structuring the business model with Forge.");
+      return;
+    }
+    setShowBusinessModelCanvas(true);
+  };
+
   const openAcademy = () => {
     markMeaningfulActivity();
     setAcademyConversationEntry(null);
@@ -3244,6 +3472,30 @@ export default function FoundryApp() {
     setAcademyConversationEntry(null);
     setChatRoomArchive(null);
     setShowChatRoom(true);
+  };
+
+  const handleForgeSeedUsed = () => {
+    setForgeSeedPrompt(null);
+    setForgeSeedStage(null);
+  };
+
+  const openBusinessModelCanvasViaForge = (section: BusinessModelCanvasSectionKey) => {
+    if (!canAccessStage(2, accountAccess)) {
+      openFeatureUpgrade("The Business Model Canvas is part of Stage 2. Unlock it first, then Forge can help you fill and refine the model.");
+      return;
+    }
+    markMeaningfulActivity();
+    const seedPrompt = buildBusinessModelCanvasSectionPrompt(
+      section,
+      businessModelCanvas || getEmptyBusinessModelCanvas((user as any)?.id || "canvas", 2),
+      profile,
+    );
+    setShowBusinessModelCanvas(false);
+    setInitialStage(2);
+    setForgeSeedStage(2);
+    setForgeSeedPrompt(seedPrompt);
+    setForgeSeedNonce((value) => value + 1);
+    setScreenPersisted("forge");
   };
 
   const launchAcademyConversation = (entry: AcademyTopicLaunch) => {
@@ -3526,6 +3778,7 @@ export default function FoundryApp() {
             onOpenPitchPractice={openPitchPractice}
             onOpenDocuments={openDocuments}
             onOpenMarketIntel={openMarketIntel}
+            onOpenBusinessModelCanvas={openBusinessModelCanvas}
             onOpenCofounder={openCofounder}
             onOpenAcademy={openAcademy}
             onOpenSettings={openSettings}
@@ -3546,6 +3799,7 @@ export default function FoundryApp() {
             onSaveFinancialSettings={handleSaveFinancialSettings}
             onPlaidConnected={handlePlaidConnected}
             onSyncPlaidTransactions={handleSyncPlaidTransactions}
+            onDisconnectPlaidItem={handleDisconnectPlaidItem}
             onAcceptPlaidTransactionAsExpense={handleAcceptPlaidTransactionAsExpense}
             onAcceptPlaidTransactionAsRevenue={handleAcceptPlaidTransactionAsRevenue}
             onIgnorePlaidTransaction={handleIgnorePlaidTransaction}
@@ -3592,6 +3846,13 @@ export default function FoundryApp() {
             journalSeedPrompt={journalSeedPrompt}
             onJournalSeedUsed={() => setJournalSeedPrompt(null)}
             financialSummary={financialSummary}
+            businessModelCanvas={businessModelCanvas}
+            onBusinessModelCanvasUpdated={handleBusinessModelCanvasUpdated}
+            forgeSeedPrompt={forgeSeedPrompt}
+            forgeSeedStage={forgeSeedStage}
+            onForgeSeedUsed={handleForgeSeedUsed}
+            forgeSeedNonce={forgeSeedNonce}
+            onOpenBusinessModelCanvas={openBusinessModelCanvas}
           />
         )}
       </div>
@@ -3683,6 +3944,16 @@ export default function FoundryApp() {
           onOpenArchive={() => setShowArchivePanel(true)}
           maxPreviewStage={isFreeTier ? FREE_TIER_ACADEMY_STAGE_LIMIT : null}
           trialNotice={isFreeTier ? "Free preview includes Forge Academy Stage 1 lessons only. The rest of Academy unlocks with paid access." : null}
+        />
+      )}
+      {showBusinessModelCanvas && profile && user && businessModelCanvas && (
+        <BusinessModelCanvasScreen
+          profile={profile}
+          canvas={businessModelCanvas}
+          onBack={() => setShowBusinessModelCanvas(false)}
+          onEditEntry={handleEditBusinessModelCanvasEntry}
+          onDeleteEntry={handleDeleteBusinessModelCanvasEntry}
+          onAddViaForge={openBusinessModelCanvasViaForge}
         />
       )}
       {showChatRoom && profile && (

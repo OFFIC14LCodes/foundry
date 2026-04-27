@@ -63,3 +63,11 @@ export async function syncPlaidTransactions(plaidItemId: string) {
     }
     return result.data;
 }
+
+export async function disconnectPlaidItem(plaidItemId: string) {
+    const result = await invokePlaidFunction("plaid-disconnect-item", { plaidItemId });
+    if (!result.ok) {
+        throw new Error(result.data?.error || "Could not disconnect this bank connection.");
+    }
+    return result.data;
+}
