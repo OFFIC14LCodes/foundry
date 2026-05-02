@@ -112,6 +112,11 @@ export default function DocumentFieldsForm({ requirement, values, errors, onChan
                             {group.description}
                         </div>
                     )}
+                    {group.id === "structured-template" && (
+                        <div style={{ fontSize: 10, color: "#E8622A", lineHeight: 1.5, marginBottom: 12 }}>
+                            Template-backed fields are validated before generation so the draft can include the core clauses for this document type.
+                        </div>
+                    )}
                     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                         {group.fields.map((field) => (
                             <div key={field.id}>

@@ -8,6 +8,7 @@ type RichCompetitor = Competitor & {
     weaknesses?: unknown[];
     pricingNotes?: string | null;
     positioning?: string | null;
+    timesSpotted?: number;
 };
 
 function toTextList(value: unknown[] | undefined) {
@@ -71,11 +72,18 @@ export default function StructuredCompetitorsPanel({ competitors }: { competitor
                             <div style={{ fontSize: 16, fontWeight: 700, color: "#E8622A", fontFamily: "'Lora', Georgia, serif", lineHeight: 1.35 }}>
                                 {competitor.name}
                             </div>
-                            {competitor.positioning && (
-                                <div style={{ flexShrink: 0, fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: "#E8622A", background: "rgba(232,98,42,0.15)", border: "1px solid rgba(232,98,42,0.6)", borderRadius: 6, padding: "4px 7px", lineHeight: 1.2 }}>
-                                    {competitor.positioning}
-                                </div>
-                            )}
+                            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end", flexShrink: 0 }}>
+                                {(competitor.timesSpotted ?? 0) > 0 && (
+                                    <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 10, color: "#F5A843", background: "rgba(245,168,67,0.1)", border: "1px solid rgba(245,168,67,0.25)", borderRadius: 999, padding: "4px 7px", lineHeight: 1.2, fontWeight: 700 }}>
+                                        {competitor.timesSpotted}x spotted
+                                    </div>
+                                )}
+                                {competitor.positioning && (
+                                    <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: "#E8622A", background: "rgba(232,98,42,0.15)", border: "1px solid rgba(232,98,42,0.6)", borderRadius: 6, padding: "4px 7px", lineHeight: 1.2 }}>
+                                        {competitor.positioning}
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         <div

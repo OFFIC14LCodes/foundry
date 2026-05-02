@@ -39,6 +39,13 @@ function getTimeframeDisplay(timeframe: string) {
     return { label: timeframe || "Unspecified", color: "rgba(240,237,232,0.4)" };
 }
 
+function formatFirstSeen(value?: string | null) {
+    if (!value) return "First seen today";
+    const date = new Date(value.includes("T") ? value : `${value}T12:00:00`);
+    if (Number.isNaN(date.getTime())) return "First seen today";
+    return `First seen ${date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
+}
+
 export default function StructuredTrendsPanel({ trends }: { trends: MarketTrend[] }) {
     const [hoveredTrendId, setHoveredTrendId] = useState<string | null>(null);
 
@@ -105,6 +112,10 @@ export default function StructuredTrendsPanel({ trends }: { trends: MarketTrend[
                                 <span style={{ display: "inline-flex", alignItems: "center", gap: 6, color: timeframe.color, fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 11, fontWeight: 700 }}>
                                     <span>•</span>
                                     <span>{timeframe.label}</span>
+                                </span>
+                                <span style={{ display: "inline-flex", alignItems: "center", gap: 6, marginLeft: 10, color: "#F5A843", fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 11, fontWeight: 700 }}>
+                                    <span>Momentum:</span>
+                                    <span>{trend.recurrenceCount ?? 0}x · {formatFirstSeen(trend.firstSeenAt)}</span>
                                 </span>
                             </div>
                         </div>

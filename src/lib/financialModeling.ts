@@ -115,6 +115,22 @@ export type PlaidReviewTransaction = {
     updatedAt: string | null;
 };
 
+export type LedgerEntry = {
+    id: string;
+    userId: string;
+    date: string;
+    description: string;
+    amount: number;
+    type: "debit" | "credit";
+    category: string;
+    account: string;
+    source: "manual" | "plaid" | "invoice";
+    referenceId: string | null;
+    reconciledAt: string | null;
+    createdAt: string;
+    updatedAt: string;
+};
+
 export type FounderFinancialData = {
     accounts: FounderFinancialAccount[];
     expenses: FounderExpense[];
@@ -123,6 +139,7 @@ export type FounderFinancialData = {
     profitBuckets: FounderProfitBucket[];
     plaidItems: PlaidItem[];
     pendingPlaidTransactions: PlaidReviewTransaction[];
+    ledgerEntries: LedgerEntry[];
     usedLegacyExpenses: boolean;
 };
 

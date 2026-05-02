@@ -5,6 +5,13 @@
 // ─────────────────────────────────────────────────────────────
 import { formatLegalDate, formatLongDate, getIsoDate } from "../lib/legalDate";
 
+export type DocumentTemplatePromptGuidance = {
+    documentType: string;
+    clauseGuidelines?: string;
+    jurisdictionNotes?: string;
+    requiredFields?: Array<{ name: string; label: string; required?: boolean }>;
+};
+
 export function buildDocSystemPrompt(profile: any): string {
     const businessName = profile.businessName || "the business";
     const idea = profile.idea || "a business idea";
@@ -61,23 +68,36 @@ FORMATTING RULES (required):
 - Never write broken date placeholders like "On this day of , 2024"; if a required date is unknown, use a clearly bracketed field instead of a partial sentence
 - Leave one blank line between sections
 - Do not include Foundry, Forge, AI, or generator branding inside official document text
+- For legal/business clauses, wrap each major clause or section with invisible clause markers using this exact pattern: <!-- FOUNDRY_CLAUSE: Clause Name --> before the clause and <!-- /FOUNDRY_CLAUSE --> after it. Choose stable, descriptive clause names.
 - Do NOT open with commentary, explanation, or "Here is your document" — go straight into the document
 - Do NOT close with a conversational sign-off — end with a clean document close or summary statement
 - When refining, produce the complete revised document — not a partial update or commentary about what changed`;
 }
 
-export function buildDocRequest(docType: string, audience: string, tone: string, request: string, state?: string, structuredInputs?: string): string {
+export function buildDocRequest(
+    docType: string,
+    audience: string,
+    tone: string,
+    request: string,
+    state?: string,
+    structuredInputs?: string,
+    templateGuidance?: DocumentTemplatePromptGuidance | null,
+): string {
     const stateClause = state
         ? `\nJurisdiction / State: ${state} — this document must reflect ${state}-specific legal requirements, filing thresholds, regulatory language, and standards throughout. Do not use generic national language where state-specific language is required.`
         : "";
     const inputClause = structuredInputs
         ? `\n\nFOUNDER-PROVIDED DOCUMENT INPUTS:\n${structuredInputs}\n\nUse these inputs directly in the document. Do not leave placeholder fields for information that has been provided. If a legally necessary fact is still missing, include a clearly labeled bracketed field such as [Attorney to confirm filing fee] rather than inventing the fact.`
         : "";
+    const templateClause = templateGuidance
+        ? `\n\nSTRUCTURED TEMPLATE GUIDANCE FOR ${templateGuidance.documentType.toUpperCase()}:\nClause guidelines:\n${templateGuidance.clauseGuidelines || "Use standard, complete clause structure for this document type."}\n\nJurisdiction notes:\n${templateGuidance.jurisdictionNotes || "Call out jurisdiction-sensitive assumptions without inventing state law."}\n\nRequired template fields to reflect in the document:\n${(templateGuidance.requiredFields || []).filter((field) => field.required).map((field) => `- ${field.label}`).join("\n") || "- Use all founder-provided required fields."}\n\nClause marker requirement: wrap each major generated clause with HTML comments in this exact form: <!-- FOUNDRY_CLAUSE: Clause Name --> followed by that clause content and then <!-- /FOUNDRY_CLAUSE -->. Keep marker names stable across refinements so the vault can compare changed clauses.`
+        : "";
 
     return `Generate a ${tone.toLowerCase()} ${docType.toLowerCase()} for a ${audience.toLowerCase()} audience.${stateClause}
 
 Special instructions from the founder: ${request || "None — use your best judgment based on the context provided."}
 ${inputClause}
+${templateClause}
 
 Produce the complete document now. Begin with the document title as a level-1 heading (# Title). Use professional legal/business document structure where appropriate, including signature blocks, notary acknowledgments, tables, numbered sections, and clean section hierarchy when the document type calls for them.`;
 }
@@ -91,5 +111,5 @@ ${currentDoc}
 
 Refinement instruction: ${instruction}
 
-Produce the complete revised document. Start with the document title as a level-1 heading. Do not explain what changed — just deliver the improved document.`;
+Produce the complete revised document. Start with the document title as a level-1 heading. Keep or add stable clause markers in the form <!-- FOUNDRY_CLAUSE: Clause Name --> and <!-- /FOUNDRY_CLAUSE --> around each major legal/business clause. Do not explain what changed — just deliver the improved document.`;
 }

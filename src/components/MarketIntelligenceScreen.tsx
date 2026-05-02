@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { callForgeAPI, streamForgeAPI } from "../lib/forgeApi";
+import { streamForgeAPI } from "../lib/forgeApi";
 import {
     buildMarketReportPrompt,
     buildSearchQueries,
@@ -13,17 +13,17 @@ import {
     loadMarketReportHistory,
     loadMarketReportSourcesByUser,
     loadMarketTrendsByUser,
+    loadCompetitorSnapshotsByUser,
+    loadTrendSnapshotsByUser,
     saveMarketReport,
     type Competitor,
+    type CompetitorSnapshot,
     type IndustryBenchmark,
     type MarketReportSource,
     type MarketTrend,
+    type TrendSnapshot,
 } from "../db";
-import { savePreParsedMarketIntelligence } from "../lib/marketIntelligencePipeline";
-import {
-    buildMarketIntelligenceExtractionPrompt,
-    MARKET_INTELLIGENCE_EXTRACTION_SYSTEM,
-} from "../lib/marketIntelligenceExtractor";
+import { getMarketRefreshSchedule, updateMarketRefreshSchedule } from "../lib/founderSessionState";
 import DailyBriefPanel from "./market-intelligence/DailyBriefPanel";
 import MarketIntelligenceTabs from "./market-intelligence/MarketIntelligenceTabs";
 import StructuredBenchmarksPanel from "./market-intelligence/StructuredBenchmarksPanel";
@@ -38,10 +38,6 @@ import {
     type MarketReport,
     type MarketTab,
 } from "./market-intelligence/shared";
-const MARKET_INTELLIGENCE_ANALYZE_PRODUCTION_ENABLED = true;
-const MARKET_INTELLIGENCE_AUTOMATIC_EXTRACTION_ENABLED =
-    import.meta.env.DEV || MARKET_INTELLIGENCE_ANALYZE_PRODUCTION_ENABLED;
-
 type GenerationPhase = "idle" | "searching" | "generating";
 
 // ─────────────────────────────────────────────────────────────
@@ -125,6 +121,20 @@ function buildFounderContext(profile: any) {
     };
 }
 
+function nextWeeklyRefreshDate(from = new Date()) {
+    const next = new Date(from);
+    next.setDate(next.getDate() + 7);
+    next.setHours(8, 0, 0, 0);
+    return next.toISOString();
+}
+
+function formatScheduleDate(value: string | null | undefined) {
+    if (!value) return "Not scheduled";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "Not scheduled";
+    return date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+}
+
 // ─────────────────────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────────────────────
@@ -156,10 +166,14 @@ export default function MarketIntelligenceScreen({
     const [trends, setTrends] = useState<MarketTrend[]>([]);
     const [benchmarks, setBenchmarks] = useState<IndustryBenchmark[]>([]);
     const [sources, setSources] = useState<MarketReportSource[]>([]);
+    const [competitorSnapshots, setCompetitorSnapshots] = useState<CompetitorSnapshot[]>([]);
+    const [trendSnapshots, setTrendSnapshots] = useState<TrendSnapshot[]>([]);
     const [sourceCountsByReportId, setSourceCountsByReportId] = useState<Record<string, number>>({});
     const [structuredLoading, setStructuredLoading] = useState(false);
     const [structuredError, setStructuredError] = useState<string | null>(null);
     const [automaticExtractionRunning, setAutomaticExtractionRunning] = useState(false);
+    const [scheduleSaving, setScheduleSaving] = useState(false);
+    const [marketRefreshSchedule, setMarketRefreshSchedule] = useState<Record<string, unknown> | null>(null);
     const latestLocalMutationRef = useRef(0);
 
     const loadStructuredData = async (
@@ -175,11 +189,13 @@ export default function MarketIntelligenceScreen({
         if (shouldCancel?.()) return;
 
         try {
-            const [nextCompetitors, nextTrends, nextBenchmarks, nextSources] = await Promise.all([
+            const [nextCompetitors, nextTrends, nextBenchmarks, nextSources, nextCompetitorSnapshots, nextTrendSnapshots] = await Promise.all([
                 loadCompetitorsByUser(userId),
                 loadMarketTrendsByUser(userId),
                 loadIndustryBenchmarksByUser(userId),
                 loadMarketReportSourcesByUser(userId),
+                loadCompetitorSnapshotsByUser(userId),
+                loadTrendSnapshotsByUser(userId),
             ]);
 
             if (shouldCancel?.()) return;
@@ -187,6 +203,8 @@ export default function MarketIntelligenceScreen({
             setCompetitors(nextCompetitors);
             setTrends(nextTrends);
             setBenchmarks(nextBenchmarks);
+            setCompetitorSnapshots(nextCompetitorSnapshots);
+            setTrendSnapshots(nextTrendSnapshots);
             setSourceCountsByReportId(countSourcesByReport(nextSources));
             setSources(
                 reportForSources?.id
@@ -255,6 +273,14 @@ export default function MarketIntelligenceScreen({
 
     useEffect(() => {
         let cancelled = false;
+        getMarketRefreshSchedule(userId).then((schedule) => {
+            if (!cancelled) setMarketRefreshSchedule(schedule);
+        });
+        return () => { cancelled = true; };
+    }, [userId]);
+
+    useEffect(() => {
+        let cancelled = false;
 
         const run = async () => {
             await loadStructuredData(currentReport, { shouldCancel: () => cancelled });
@@ -272,6 +298,42 @@ export default function MarketIntelligenceScreen({
     const canGenerateReport = !hasReachedLimit;
 
     const industry = profile.industry || profile.idea?.slice(0, 40) || "your market";
+    const scheduleEnabled = Boolean(marketRefreshSchedule?.enabled);
+    const nextRefreshAt = typeof marketRefreshSchedule?.nextRefreshAt === "string" ? marketRefreshSchedule.nextRefreshAt : null;
+    const previousReport = currentReport?.id
+        ? reportHistory.find((entry) => entry.id && entry.id !== currentReport.id) ?? null
+        : null;
+    const competitorNameById = competitors.reduce<Record<string, string>>((names, competitor) => {
+        names[competitor.id] = competitor.name;
+        return names;
+    }, {});
+    const currentCompetitorIds = new Set(
+        currentReport?.id
+            ? competitorSnapshots.filter((snapshot) => snapshot.reportId === currentReport.id).map((snapshot) => snapshot.competitorId)
+            : [],
+    );
+    const previousCompetitorIds = new Set(
+        previousReport?.id
+            ? competitorSnapshots.filter((snapshot) => snapshot.reportId === previousReport.id).map((snapshot) => snapshot.competitorId)
+            : [],
+    );
+    const newCompetitorsSinceLastReport = Array.from(currentCompetitorIds)
+        .filter((competitorId) => !previousCompetitorIds.has(competitorId))
+        .map((competitorId) => competitorNameById[competitorId])
+        .filter(Boolean);
+    const previousTrendNames = new Set(
+        previousReport?.id
+            ? trendSnapshots.filter((snapshot) => snapshot.reportId === previousReport.id).map((snapshot) => snapshot.trendName.trim().toLowerCase())
+            : [],
+    );
+    const highImpactTrendAlerts = currentReport?.id
+        ? trendSnapshots
+            .filter((snapshot) => snapshot.reportId === currentReport.id)
+            .filter((snapshot) => snapshot.impactLevel.trim().toLowerCase() === "high")
+            .filter((snapshot) => !previousTrendNames.has(snapshot.trendName.trim().toLowerCase()))
+            .map((snapshot) => snapshot.trendName)
+        : [];
+    const alertItems = Array.from(new Set([...newCompetitorsSinceLastReport, ...highImpactTrendAlerts])).slice(0, 4);
 
     const selectReport = (next: MarketReport) => {
         latestLocalMutationRef.current = Date.now();
@@ -280,60 +342,18 @@ export default function MarketIntelligenceScreen({
         setSaveError(null);
     };
 
-    const runAutomaticExtraction = (savedReport: MarketReport) => {
-        if (!MARKET_INTELLIGENCE_AUTOMATIC_EXTRACTION_ENABLED || !savedReport.id) return;
-
-        setAutomaticExtractionRunning(true);
-        console.log("[Market Intelligence] Automatic extraction trigger reached", JSON.stringify({
-            reportId: savedReport.id,
-            contentLength: savedReport.content.length,
-        }));
-
-        void (async () => {
-            try {
-                const founderContext = buildFounderContext(profile);
-                const extractionPrompt = buildMarketIntelligenceExtractionPrompt(
-                    savedReport.content,
-                    founderContext,
-                );
-                const rawExtractionText = await callForgeAPI(
-                    [{ role: "user", content: extractionPrompt }],
-                    MARKET_INTELLIGENCE_EXTRACTION_SYSTEM,
-                    2000,
-                );
-
-                console.log("[Extraction Raw]", rawExtractionText);
-
-                console.log("[Market Intelligence] Extraction Forge response", JSON.stringify({
-                    reportId: savedReport.id,
-                    responseType: typeof rawExtractionText,
-                    isNull: rawExtractionText === null,
-                    preview: typeof rawExtractionText === "string" ? rawExtractionText.slice(0, 500) : rawExtractionText,
-                }));
-
-                console.log("[Market Intelligence] Saving extracted insights", JSON.stringify({
-                    reportId: savedReport.id,
-                    reportContent: savedReport.content,
-                    extractionLength: rawExtractionText.length,
-                }));
-
-                const summary = await savePreParsedMarketIntelligence(
-                    userId,
-                    savedReport.id!,
-                    rawExtractionText,
-                );
-
-                if (import.meta.env.DEV) {
-                    console.info("Automatic market intelligence extraction summary", summary);
-                }
-                console.log("[Market Intelligence] Extraction save result", JSON.stringify(summary));
-            } catch (error) {
-                console.error("Automatic market intelligence extraction failed:", error);
-            } finally {
-                await loadStructuredData(savedReport, { silent: true });
-                setAutomaticExtractionRunning(false);
-            }
-        })();
+    const toggleWeeklyRefresh = async (enabled: boolean) => {
+        setScheduleSaving(true);
+        const nextSchedule = enabled
+            ? { enabled: true, frequency: "weekly", nextRefreshAt: nextWeeklyRefreshDate(), updatedAt: new Date().toISOString() }
+            : { enabled: false, frequency: "weekly", nextRefreshAt: null, updatedAt: new Date().toISOString() };
+        setMarketRefreshSchedule(nextSchedule);
+        try {
+            const saved = await updateMarketRefreshSchedule(userId, nextSchedule);
+            if (saved) setMarketRefreshSchedule(saved);
+        } finally {
+            setScheduleSaving(false);
+        }
     };
 
     const generate = async (options?: { force?: boolean; ignoreLimit?: boolean }) => {
@@ -343,11 +363,11 @@ export default function MarketIntelligenceScreen({
         setStreamedContent("");
         setSaveError(null);
         let searchResults: SearchResult[] = [];
+        let searchQueries: string[] = buildSearchQueries(profile);
 
         try {
             try {
-                const queries = buildSearchQueries(profile);
-                searchResults = await fetchMarketSearchResults(queries);
+                searchResults = await fetchMarketSearchResults(searchQueries);
             } catch (searchError) {
                 console.error("Market search unavailable; continuing without live sources:", searchError);
                 searchResults = [];
@@ -367,6 +387,7 @@ export default function MarketIntelligenceScreen({
                 industry: profile.industry || industry,
                 date: todayStr(),
                 createdAt: new Date().toISOString(),
+                searchQueries,
             };
 
             latestLocalMutationRef.current = Date.now();
@@ -374,20 +395,21 @@ export default function MarketIntelligenceScreen({
             setReportHistory((prev) => upsertReport(prev, optimisticReport));
             onReportChange(optimisticReport);
 
-            const saved = await saveMarketReport(userId, final, profile.industry || industry);
+            setAutomaticExtractionRunning(true);
+            const saved = await saveMarketReport(userId, final, profile.industry || industry, {
+                searchQueries,
+                founderContext: buildFounderContext(profile),
+            });
             if (saved) {
                 latestLocalMutationRef.current = Date.now();
                 setCurrentReport(saved);
                 setReportHistory((prev) => upsertReport(prev, saved));
                 onReportChange(saved);
-                console.log("[Market Intelligence] Report saved; starting automatic extraction", JSON.stringify({
-                    reportId: saved.id,
-                    contentLength: saved.content.length,
-                }));
-                runAutomaticExtraction(saved);
+                await loadStructuredData(saved, { silent: true });
             } else {
                 setSaveError("This report is staying visible now, but the database save did not complete. Refresh later and verify it appears in Saved Reports.");
             }
+            setAutomaticExtractionRunning(false);
             setStreamedContent("");
         } catch (err) {
             console.error("Market report error:", err);
@@ -398,6 +420,7 @@ export default function MarketIntelligenceScreen({
         }
 
         setGenerating(false);
+        setAutomaticExtractionRunning(false);
         setGenerationPhase("idle");
     };
 
@@ -440,7 +463,29 @@ export default function MarketIntelligenceScreen({
                     )}
                 </div>
 
-                <div style={{ display: "flex", justifyContent: "flex-end", margin: "0 0 14px" }}>
+                {alertItems.length > 0 && (
+                    <div style={{ marginBottom: 14, padding: "12px 14px", borderRadius: 12, background: "rgba(232,98,42,0.08)", border: "1px solid rgba(232,98,42,0.22)", color: "#D8C9BC", fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, lineHeight: 1.6 }}>
+                        <strong style={{ color: "#E8622A" }}>New since last report:</strong> {alertItems.join(", ")}
+                        {newCompetitorsSinceLastReport.length + highImpactTrendAlerts.length > alertItems.length ? " and more" : ""}
+                    </div>
+                )}
+
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, margin: "0 0 14px", flexWrap: "wrap" }}>
+                    <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 11px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.025)", cursor: scheduleSaving ? "wait" : "pointer" }}>
+                        <input
+                            type="checkbox"
+                            checked={scheduleEnabled}
+                            disabled={scheduleSaving}
+                            onChange={(event) => toggleWeeklyRefresh(event.target.checked)}
+                            style={{ accentColor: "#E8622A", width: 16, height: 16 }}
+                        />
+                        <span style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, color: "#C8C4BE", fontWeight: 700 }}>
+                            Schedule weekly refresh
+                        </span>
+                        <span style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 11, color: "#666" }}>
+                            {scheduleEnabled ? `Next: ${formatScheduleDate(nextRefreshAt)}` : "Off"}
+                        </span>
+                    </label>
                     <button
                         onClick={() => generate({ force: true, ignoreLimit: true })}
                         disabled={generating}
@@ -578,6 +623,7 @@ export default function MarketIntelligenceScreen({
                                     canGenerateReport={canGenerateReport}
                                     generationLimit={generationLimit}
                                     saveError={saveError}
+                                    searchQueries={currentReport?.searchQueries ?? []}
                                     onGenerate={generate}
                                 />
                             </div>

@@ -14,6 +14,7 @@ import {
     ignorePlaidTransaction,
     loadFounderFinancialData,
     loadInvoicesFromDb,
+    markLedgerEntryReconciled,
     saveExpense,
     saveFinancialSettings,
     saveInvoiceToDb,
@@ -39,6 +40,13 @@ type ChartMonth = {
     label: string;
     revenue: number;
     expenses: number;
+};
+
+type ProfitLossCategoryRow = {
+    category: string;
+    revenue: number;
+    expenses: number;
+    net: number;
 };
 
 interface Props {
@@ -133,6 +141,7 @@ export default function FinancialDashboardScreen({ userId, profile, onBack, onPl
     const [syncingItemId, setSyncingItemId] = useState<string | null>(null);
     const [disconnectConfirmId, setDisconnectConfirmId] = useState<string | null>(null);
     const [processingTxId, setProcessingTxId] = useState<string | null>(null);
+    const [reconcilingLedgerId, setReconcilingLedgerId] = useState<string | null>(null);
 
     // Invoices
     const [invoices, setInvoices] = useState<FounderInvoice[]>([]);
@@ -297,6 +306,16 @@ Profit First enabled: ${summary.profitFirst.enabled ? "yes" : "no"}`;
             return { year: d.getFullYear(), month: d.getMonth(), label: d.toLocaleDateString("en-US", { month: "short" }), revenue: 0, expenses: 0 };
         });
         if (!financialData) return months;
+        if (financialData.ledgerEntries.length > 0) {
+            for (const entry of financialData.ledgerEntries) {
+                const d = new Date(entry.date + "T00:00:00");
+                const idx = months.findIndex((m) => m.year === d.getFullYear() && m.month === d.getMonth());
+                if (idx < 0) continue;
+                if (entry.type === "credit") months[idx].revenue += Number(entry.amount || 0);
+                if (entry.type === "debit") months[idx].expenses += Number(entry.amount || 0);
+            }
+            return months;
+        }
         for (const rev of financialData.revenue) {
             if (!rev.receivedOn) continue;
             const d = new Date(rev.receivedOn + "T00:00:00");
@@ -316,20 +335,56 @@ Profit First enabled: ${summary.profitFirst.enabled ? "yes" : "no"}`;
     const chartIsEmpty = useMemo(() => chartData.every((m) => m.revenue === 0 && m.expenses === 0), [chartData]);
     const chartActiveMonths = useMemo(() => chartData.filter((m) => m.revenue > 0 || m.expenses > 0).length, [chartData]);
 
-    // ── Tax estimates (annualized recurring, not total) ────────────────────────
+    // ── Ledger-based P&L and tax estimates ─────────────────────────────────────
 
-    const annualizedRevenue = summary
-        ? summary.monthlyRecurringRevenue > 0
-            ? summary.monthlyRecurringRevenue * 12
-            : summary.totalRevenue
-        : 0;
-    const seTax = annualizedRevenue * 0.153;
-    const federalTax = annualizedRevenue * 0.22;
+    const profitLoss = useMemo(() => {
+        const currentYear = new Date().getFullYear();
+        const ledgerRows = financialData?.ledgerEntries ?? [];
+        const rowsInRange = ledgerRows.filter((entry) => {
+            const d = new Date(entry.date + "T00:00:00");
+            return d.getFullYear() === currentYear;
+        });
+        const byCategory = new Map<string, ProfitLossCategoryRow>();
+
+        for (const entry of rowsInRange) {
+            const category = entry.category || "uncategorized";
+            const existing = byCategory.get(category) ?? { category, revenue: 0, expenses: 0, net: 0 };
+            if (entry.type === "credit") existing.revenue += Number(entry.amount || 0);
+            if (entry.type === "debit") existing.expenses += Number(entry.amount || 0);
+            existing.net = existing.revenue - existing.expenses;
+            byCategory.set(category, existing);
+        }
+
+        const revenue = rowsInRange.filter((entry) => entry.type === "credit").reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+        const expenses = rowsInRange.filter((entry) => entry.type === "debit").reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+        const categoryRows = Array.from(byCategory.values()).sort((a, b) => Math.abs(b.net) - Math.abs(a.net)).slice(0, 5);
+
+        return {
+            year: currentYear,
+            revenue,
+            expenses,
+            netIncome: revenue - expenses,
+            categoryRows,
+            hasLedger: ledgerRows.length > 0,
+        };
+    }, [financialData]);
+
+    const unreconciledLedgerEntries = useMemo(
+        () => (financialData?.ledgerEntries ?? []).filter((entry) => entry.source === "plaid" && !entry.reconciledAt),
+        [financialData],
+    );
+
+    const taxableIncome = Math.max(profitLoss.revenue - profitLoss.expenses, 0);
+    const taxBasisLabel = profitLoss.hasLedger
+        ? `${formatCurrency(profitLoss.revenue)} ledger revenue - ${formatCurrency(profitLoss.expenses)} deductible ledger expenses = ${formatCurrency(taxableIncome)} estimated taxable income`
+        : "Ledger rows are not available yet, so this falls back to logged revenue minus logged expenses.";
+
+    const fallbackTaxableIncome = Math.max((summary?.totalRevenue ?? 0) - (summary?.totalExpenses ?? 0), 0);
+    const taxBasisAmount = profitLoss.hasLedger ? taxableIncome : fallbackTaxableIncome;
+    const seTax = taxBasisAmount * 0.153;
+    const federalTax = taxBasisAmount * 0.22;
     const totalTax = seTax + federalTax;
     const quarterlyTax = totalTax / 4;
-    const taxBasisLabel = summary?.monthlyRecurringRevenue && summary.monthlyRecurringRevenue > 0
-        ? `Based on ${formatCurrency(summary.monthlyRecurringRevenue)}/month recurring revenue (annualized)`
-        : `Based on ${formatCurrency(summary?.totalRevenue ?? 0)} total revenue logged (no recurring revenue detected)`;
 
     // ── Monthly close data ─────────────────────────────────────────────────────
 
@@ -468,6 +523,18 @@ Profit First enabled: ${summary.profitFirst.enabled ? "yes" : "no"}`;
         try { await ignorePlaidTransaction(userId, tx.id); await reload(); }
         catch (err) { console.error("ignorePlaidTransaction error:", err); }
         finally { setProcessingTxId(null); }
+    };
+
+    const handleConfirmLedgerReconciled = async (ledgerEntryId: string) => {
+        setReconcilingLedgerId(ledgerEntryId);
+        try {
+            await markLedgerEntryReconciled(userId, ledgerEntryId);
+            await reload();
+        } catch (err) {
+            console.error("markLedgerEntryReconciled error:", err);
+        } finally {
+            setReconcilingLedgerId(null);
+        }
     };
 
     // ── Starting cash modal ────────────────────────────────────────────────────
@@ -832,6 +899,55 @@ Be the partner who has been watching the whole time.`;
                             )}
                         </div>
 
+                        {/* ── Section 2: Profit & Loss Summary ─────────────── */}
+                        <div style={cardStyle}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, marginBottom: 12 }}>
+                                <div>
+                                    <p style={{ ...sectionHeadingStyle, marginBottom: 3 }}>Profit &amp; Loss Summary</p>
+                                    <div style={{ fontSize: 10, color: "#666", fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+                                        Ledger basis · Jan 1-{new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })}, {profitLoss.year}
+                                    </div>
+                                </div>
+                                <div style={{
+                                    fontSize: 10,
+                                    color: profitLoss.hasLedger ? "#4CAF8A" : "#E8C42A",
+                                    background: profitLoss.hasLedger ? "rgba(76,175,138,0.12)" : "rgba(232,196,42,0.1)",
+                                    border: `1px solid ${profitLoss.hasLedger ? "rgba(76,175,138,0.25)" : "rgba(232,196,42,0.25)"}`,
+                                    borderRadius: 999,
+                                    padding: "4px 8px",
+                                    whiteSpace: "nowrap",
+                                }}>
+                                    {profitLoss.hasLedger ? "Ledger active" : "Waiting for ledger"}
+                                </div>
+                            </div>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 12 }}>
+                                {[
+                                    { label: "Revenue", value: formatCurrency(profitLoss.revenue), color: "#4CAF8A" },
+                                    { label: "Expenses", value: formatCurrency(profitLoss.expenses), color: "#E8622A" },
+                                    { label: profitLoss.netIncome >= 0 ? "Net Income" : "Net Loss", value: formatCurrency(Math.abs(profitLoss.netIncome)), color: profitLoss.netIncome >= 0 ? "#4CAF8A" : "#FF6B6B" },
+                                ].map((item) => (
+                                    <div key={item.label} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
+                                        <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: item.color, marginBottom: 2 }}>{item.value}</div>
+                                        <div style={labelStyle}>{item.label}</div>
+                                    </div>
+                                ))}
+                            </div>
+                            {profitLoss.categoryRows.length > 0 ? (
+                                <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                                    {profitLoss.categoryRows.map((row) => (
+                                        <div key={row.category} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 10, alignItems: "center", fontSize: 12, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+                                            <div style={{ color: "#C8C4BE", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.category}</div>
+                                            <div style={{ color: row.net >= 0 ? "#4CAF8A" : "#E8622A", fontWeight: 700 }}>{formatCurrency(Math.abs(row.net))}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div style={{ fontSize: 12, color: "#666", lineHeight: 1.6, fontFamily: "'DM Sans', system-ui, sans-serif", textAlign: "center", padding: "12px 0" }}>
+                                    Save revenue, expenses, paid invoices, or accepted bank transactions to populate a ledger-backed P&amp;L.
+                                </div>
+                            )}
+                        </div>
+
                         {/* ── Section 2: Profit First Buckets ───────────────── */}
                         <div style={cardStyle}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
@@ -901,9 +1017,16 @@ Be the partner who has been watching the whole time.`;
                             )}
                         </div>
 
-                        {/* ── Section 4: Revenue vs Expenses Chart ──────────── */}
+                        {/* ── Section 4: Cash Flow Chart ───────────────────── */}
                         <div style={cardStyle}>
-                            <p style={sectionHeadingStyle}>Revenue vs Expenses (6 months)</p>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, marginBottom: 12 }}>
+                                <div>
+                                    <p style={{ ...sectionHeadingStyle, marginBottom: 3 }}>Cash Flow (6 months)</p>
+                                    <div style={{ fontSize: 10, color: "#666", fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+                                        {financialData?.ledgerEntries?.length ? "Ledger cash in vs cash out" : "Revenue and expense fallback until ledger rows exist"}
+                                    </div>
+                                </div>
+                            </div>
                             {chartIsEmpty ? (
                                 <div style={{ textAlign: "center", padding: "28px 0 20px" }}>
                                     <div style={{ fontSize: 32, color: "rgba(240,237,232,0.2)", marginBottom: 12 }}>▦</div>
@@ -929,8 +1052,8 @@ Be the partner who has been watching the whole time.`;
                                             return (
                                                 <div key={`${month.year}-${month.month}`} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
                                                     <div style={{ flex: 1, width: "100%", display: "flex", alignItems: "flex-end", gap: 2 }}>
-                                                        <div title={`Revenue: ${formatCurrency(month.revenue)}`} style={{ flex: 1, height: `${revH}%`, background: "#4CAF8A", borderRadius: "3px 3px 0 0", minHeight: 2, transition: "height 0.3s" }} />
-                                                        <div title={`Expenses: ${formatCurrency(month.expenses)}`} style={{ flex: 1, height: `${expH}%`, background: "#E8622A", borderRadius: "3px 3px 0 0", minHeight: 2, opacity: 0.8, transition: "height 0.3s" }} />
+                                                        <div title={`Cash in: ${formatCurrency(month.revenue)}`} style={{ flex: 1, height: `${revH}%`, background: "#4CAF8A", borderRadius: "3px 3px 0 0", minHeight: 2, transition: "height 0.3s" }} />
+                                                        <div title={`Cash out: ${formatCurrency(month.expenses)}`} style={{ flex: 1, height: `${expH}%`, background: "#E8622A", borderRadius: "3px 3px 0 0", minHeight: 2, opacity: 0.8, transition: "height 0.3s" }} />
                                                     </div>
                                                     <div style={{ fontSize: 9, color: "#555", letterSpacing: "0.04em" }}>{month.label}</div>
                                                 </div>
@@ -939,10 +1062,10 @@ Be the partner who has been watching the whole time.`;
                                     </div>
                                     <div style={{ display: "flex", gap: 14, marginTop: 10 }}>
                                         <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, color: "#888" }}>
-                                            <div style={{ width: 10, height: 10, borderRadius: 2, background: "#4CAF8A" }} />Revenue
+                                            <div style={{ width: 10, height: 10, borderRadius: 2, background: "#4CAF8A" }} />Cash In
                                         </div>
                                         <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, color: "#888" }}>
-                                            <div style={{ width: 10, height: 10, borderRadius: 2, background: "#E8622A" }} />Expenses
+                                            <div style={{ width: 10, height: 10, borderRadius: 2, background: "#E8622A" }} />Cash Out
                                         </div>
                                     </div>
                                     {chartActiveMonths === 1 && (
@@ -988,6 +1111,57 @@ Be the partner who has been watching the whole time.`;
                                 </div>
                             </div>
                         )}
+
+                        {/* ── Section 6: Bank Reconciliation ───────────────── */}
+                        <div style={cardStyle}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, gap: 10 }}>
+                                <p style={{ ...sectionHeadingStyle, marginBottom: 0 }}>Bank Reconciliation</p>
+                                <div style={{
+                                    fontSize: 10,
+                                    color: unreconciledLedgerEntries.length > 0 ? "#E8C42A" : "#4CAF8A",
+                                    background: unreconciledLedgerEntries.length > 0 ? "rgba(232,196,42,0.1)" : "rgba(76,175,138,0.12)",
+                                    border: `1px solid ${unreconciledLedgerEntries.length > 0 ? "rgba(232,196,42,0.25)" : "rgba(76,175,138,0.25)"}`,
+                                    borderRadius: 999,
+                                    padding: "4px 9px",
+                                    whiteSpace: "nowrap",
+                                }}>
+                                    {unreconciledLedgerEntries.length} unreconciled
+                                </div>
+                            </div>
+                            <div style={{ fontSize: 11, color: "#A8A4A0", marginBottom: 10, lineHeight: 1.5, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+                                Accepted Plaid transactions create ledger rows. Confirm them here once the bank record and ledger entry agree.
+                            </div>
+                            {unreconciledLedgerEntries.length === 0 ? (
+                                <div style={{ background: "rgba(76,175,138,0.06)", border: "1px solid rgba(76,175,138,0.16)", borderRadius: 10, padding: "12px 14px", color: "#4CAF8A", fontSize: 12, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+                                    No unmatched accepted bank entries.
+                                </div>
+                            ) : (
+                                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                    {unreconciledLedgerEntries.slice(0, 5).map((entry) => {
+                                        const busy = reconcilingLedgerId === entry.id;
+                                        return (
+                                            <div key={entry.id} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 10, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                    <div style={{ fontSize: 12, color: "#F0EDE8", fontWeight: 600, marginBottom: 2 }}>{entry.description}</div>
+                                                    <div style={{ fontSize: 10, color: "#666" }}>{entry.date} · {entry.category} · {entry.type === "credit" ? "cash in" : "cash out"}</div>
+                                                </div>
+                                                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                                    <div style={{ fontSize: 12, color: entry.type === "credit" ? "#4CAF8A" : "#E8622A", fontWeight: 700 }}>{formatCurrency(entry.amount)}</div>
+                                                    <button onClick={() => void handleConfirmLedgerReconciled(entry.id)} disabled={busy} style={{ background: "rgba(76,175,138,0.12)", border: "1px solid rgba(76,175,138,0.3)", borderRadius: 7, padding: "5px 9px", color: "#4CAF8A", fontSize: 10, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1 }}>
+                                                        {busy ? "Confirming..." : "Confirm"}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                    {unreconciledLedgerEntries.length > 5 && (
+                                        <div style={{ fontSize: 10, color: "#555", fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+                                            Showing 5 of {unreconciledLedgerEntries.length} unreconciled ledger rows.
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
 
                         {/* ── Section 6: Bank Connection ────────────────────── */}
                         <div style={cardStyle}>
@@ -1103,9 +1277,10 @@ Be the partner who has been watching the whole time.`;
                                 <div style={{ fontSize: 10, color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 8, fontFamily: "'DM Sans', system-ui, sans-serif" }}>This estimate assumes:</div>
                                 {[
                                     "Sole proprietor or single-member LLC (self-employed)",
-                                    "No business deductions applied — actual tax will likely be lower",
+                                    `Taxable income = ledger credits (${formatCurrency(profitLoss.hasLedger ? profitLoss.revenue : summary?.totalRevenue ?? 0)}) minus ledger debits (${formatCurrency(profitLoss.hasLedger ? profitLoss.expenses : summary?.totalExpenses ?? 0)})`,
                                     "Federal rate of 22% (may vary based on total income)",
                                     "Self-employment tax of 15.3% on net earnings",
+                                    "Expense categories are assumed deductible unless your CPA says otherwise",
                                     "No state income tax included",
                                 ].map((line) => (
                                     <div key={line} style={{ fontSize: 12, color: "rgba(240,237,232,0.5)", fontFamily: "'DM Sans', system-ui, sans-serif", lineHeight: 1.6, marginBottom: 3 }}>• {line}</div>
@@ -1207,13 +1382,13 @@ Be the partner who has been watching the whole time.`;
                 <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowTaxAsideModal(false)}>
                     <div style={{ background: "rgb(16,16,18)", border: "1px solid rgba(232,196,42,0.3)", borderRadius: 16, padding: 24, width: "100%", maxWidth: 380, boxSizing: "border-box" }} onClick={(e) => e.stopPropagation()}>
                         <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 10 }}>Set Aside for Taxes</div>
-                        <div style={{ fontSize: 12, color: "#A8A4A0", lineHeight: 1.7, marginBottom: 14, fontFamily: "'DM Sans', system-ui, sans-serif" }}>Based on your revenue, your estimated quarterly tax payment is:</div>
+                        <div style={{ fontSize: 12, color: "#A8A4A0", lineHeight: 1.7, marginBottom: 14, fontFamily: "'DM Sans', system-ui, sans-serif" }}>Based on estimated taxable income from your ledger, your quarterly tax reserve is:</div>
                         <div style={{ textAlign: "center", marginBottom: 18 }}>
                             <div style={{ fontSize: 28, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: "#E8C42A" }}>{formatCurrency(quarterlyTax)}</div>
                             <div style={{ fontSize: 11, color: "#666", marginTop: 4 }}>per quarter</div>
                         </div>
                         <div style={{ fontSize: 11, color: "#555", lineHeight: 1.6, marginBottom: 20, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
-                            Transfer this amount to a separate account each quarter before estimated tax deadlines (Apr, Jun, Sep, Jan). This is an estimate — consult a CPA.
+                            Formula: taxable income × (15.3% self-employment + 22% federal) ÷ 4. Transfer this reserve before estimated tax deadlines (Apr, Jun, Sep, Jan). This is an estimate — consult a CPA.
                         </div>
                         <button onClick={() => setShowTaxAsideModal(false)} style={{ width: "100%", background: "rgba(232,196,42,0.12)", border: "1px solid rgba(232,196,42,0.3)", borderRadius: 9, padding: "11px", color: "#E8C42A", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Got it</button>
                     </div>

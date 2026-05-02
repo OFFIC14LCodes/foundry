@@ -2,6 +2,21 @@ import { FolderOpen, MagnifyingGlass } from "@phosphor-icons/react";
 import type { VaultDocument } from "../../db";
 import { StageBadge, StatusBadge, formatShortDate } from "./shared";
 
+function getDocumentHealthScore(doc: VaultDocument) {
+    const metadata = doc.metadata && typeof doc.metadata === "object" ? doc.metadata as Record<string, any> : {};
+    const health = metadata.documentHealthScore && typeof metadata.documentHealthScore === "object"
+        ? metadata.documentHealthScore as Record<string, any>
+        : null;
+    const score = Number(health?.score);
+    return Number.isFinite(score) ? Math.max(0, Math.min(100, Math.round(score))) : null;
+}
+
+function healthColor(score: number) {
+    if (score >= 90) return { color: "#4CAF8A", background: "rgba(76,175,138,0.1)", border: "1px solid rgba(76,175,138,0.22)" };
+    if (score >= 70) return { color: "#D6A84F", background: "rgba(214,168,79,0.1)", border: "1px solid rgba(214,168,79,0.22)" };
+    return { color: "#D65037", background: "rgba(214,80,55,0.1)", border: "1px solid rgba(214,80,55,0.22)" };
+}
+
 export default function VaultDocumentList(props: {
     documents: VaultDocument[];
     filteredDocuments: VaultDocument[];
@@ -85,6 +100,8 @@ export default function VaultDocumentList(props: {
                 )}
                 {!loading && !error && filteredDocuments.map((doc) => {
                     const isActive = doc.id === selectedDocumentId;
+                    const healthScore = getDocumentHealthScore(doc);
+                    const healthStyle = healthScore == null ? null : healthColor(healthScore);
                     return (
                         <button
                             key={doc.id}
@@ -110,6 +127,11 @@ export default function VaultDocumentList(props: {
                                 </div>
                                 <div style={{ display: "flex", flexDirection: "column", gap: 5, alignItems: "flex-end" }}>
                                     <StatusBadge status={doc.status} />
+                                    {healthScore != null && healthStyle && (
+                                        <span style={{ padding: "3px 7px", borderRadius: 999, fontSize: 9, fontWeight: 700, color: healthStyle.color, background: healthStyle.background, border: healthStyle.border, whiteSpace: "nowrap" }}>
+                                            {healthScore}% health
+                                        </span>
+                                    )}
                                     <StageBadge stageId={doc.stageId} />
                                 </div>
                             </div>

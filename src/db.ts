@@ -30,6 +30,7 @@ function getLocalDateKey(date = new Date()) {
 let dailyChatSummariesAvailable: boolean | null = null;
 let producedDocumentsAvailable: boolean | null = null;
 let documentVaultAvailable: boolean | null = null;
+let documentTemplatesAvailable: boolean | null = null;
 let pitchSessionsAvailable: boolean | null = null;
 
 const DOCUMENT_FILE_BUCKET = "document-files";
@@ -647,11 +648,21 @@ export type Competitor = {
     description: string;
     website: string | null;
     createdAt: string;
+    summary?: string | null;
+    strengths?: unknown[];
+    weaknesses?: unknown[];
+    pricingNotes?: string | null;
+    positioning?: string | null;
+    timesSpotted?: number;
+    firstSeenAt?: string | null;
+    latestReportId?: string | null;
 };
 
 export type CompetitorSnapshot = {
     id: string;
     competitorId: string;
+    reportId: string | null;
+    snapshotDate: string | null;
     summary: string;
     strengths: unknown[];
     weaknesses: unknown[];
@@ -667,6 +678,20 @@ export type MarketTrend = {
     description: string;
     impactLevel: string;
     timeframe: string;
+    createdAt: string;
+    recurrenceCount?: number;
+    firstSeenAt?: string | null;
+    latestReportId?: string | null;
+};
+
+export type TrendSnapshot = {
+    id: string;
+    userId: string;
+    trendName: string;
+    reportId: string | null;
+    snapshotDate: string;
+    impactLevel: string;
+    notes: string;
     createdAt: string;
 };
 
@@ -740,6 +765,7 @@ export type SaveNormalizedMarketIntelligenceResult = {
     competitorsInserted: number;
     competitorSnapshotsInserted: number;
     trendsInserted: number;
+    trendSnapshotsInserted: number;
     benchmarksInserted: number;
     sourcesInserted: number;
     skipped: number;
@@ -761,11 +787,26 @@ function mapCompetitorSnapshot(row: any): CompetitorSnapshot {
     return {
         id: row.id,
         competitorId: row.competitor_id,
+        reportId: row.report_id ?? null,
+        snapshotDate: row.snapshot_date ?? null,
         summary: row.summary ?? "",
         strengths: Array.isArray(row.strengths) ? row.strengths : [],
         weaknesses: Array.isArray(row.weaknesses) ? row.weaknesses : [],
         pricingNotes: row.pricing_notes ?? null,
         positioning: row.positioning ?? null,
+        createdAt: row.created_at,
+    };
+}
+
+function mapTrendSnapshot(row: any): TrendSnapshot {
+    return {
+        id: row.id,
+        userId: row.user_id,
+        trendName: row.trend_name,
+        reportId: row.report_id ?? null,
+        snapshotDate: row.snapshot_date,
+        impactLevel: row.impact_level ?? "medium",
+        notes: row.notes ?? "",
         createdAt: row.created_at,
     };
 }
@@ -814,7 +855,7 @@ export async function loadTodayMarketReport(userId: string) {
         .eq("date", today)
         .single();
     if (error || !data) return null;
-    return { id: data.id, content: data.content, industry: data.industry, date: data.date, createdAt: data.created_at };
+    return { id: data.id, content: data.content, industry: data.industry, date: data.date, createdAt: data.created_at, searchQueries: Array.isArray(data.search_queries) ? data.search_queries : [] };
 }
 
 export async function loadLatestMarketReport(userId: string) {
@@ -826,7 +867,7 @@ export async function loadLatestMarketReport(userId: string) {
         .limit(1)
         .maybeSingle();
     if (error || !data) return null;
-    return { id: data.id, content: data.content, industry: data.industry, date: data.date, createdAt: data.created_at };
+    return { id: data.id, content: data.content, industry: data.industry, date: data.date, createdAt: data.created_at, searchQueries: Array.isArray(data.search_queries) ? data.search_queries : [] };
 }
 
 export async function loadMarketReportHistory(userId: string) {
@@ -843,11 +884,24 @@ export async function loadMarketReportHistory(userId: string) {
         industry: row.industry,
         date: row.date,
         createdAt: row.created_at,
+        searchQueries: Array.isArray(row.search_queries) ? row.search_queries : [],
     }));
 }
 
-export async function saveMarketReport(userId: string, content: string, industry: string) {
+export async function saveMarketReport(
+    userId: string,
+    content: string,
+    industry: string,
+    options?: {
+        searchQueries?: string[];
+        founderContext?: Record<string, unknown> | null;
+    },
+) {
     const today = getLocalDateKey();
+    const searchQueries = (options?.searchQueries ?? [])
+        .filter((query) => typeof query === "string" && query.trim())
+        .map((query) => query.trim())
+        .slice(0, 5);
     const { data, error } = await supabase
         .from("market_reports")
         .upsert(
@@ -856,6 +910,7 @@ export async function saveMarketReport(userId: string, content: string, industry
                 date: today,
                 content,
                 industry,
+                search_queries: searchQueries,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
             },
@@ -865,7 +920,23 @@ export async function saveMarketReport(userId: string, content: string, industry
         .single();
     if (error) { console.error("saveMarketReport error:", error.message); return null; }
     await recordMeaningfulActivity(userId, undefined, { force: true });
-    return { id: data.id, content: data.content, industry: data.industry, date: data.date, createdAt: data.created_at };
+    const savedReport = { id: data.id, content: data.content, industry: data.industry, date: data.date, createdAt: data.created_at, searchQueries: Array.isArray(data.search_queries) ? data.search_queries : searchQueries };
+
+    try {
+        const { extractAndSaveMarketIntelligenceFromReport } = await import("./lib/marketIntelligencePipeline");
+        await extractAndSaveMarketIntelligenceFromReport(
+            userId,
+            savedReport.id,
+            {
+                ...(options?.founderContext ?? {}),
+                industry,
+            },
+        );
+    } catch (extractionError) {
+        console.error("saveMarketReport automatic extraction error:", extractionError);
+    }
+
+    return savedReport;
 }
 
 export async function createCompetitor(
@@ -910,7 +981,29 @@ export async function loadCompetitorsByUser(userId: string): Promise<Competitor[
         .order("created_at", { ascending: false });
 
     if (error || !data) return [];
-    return data.map(mapCompetitor);
+    const competitors = data.map(mapCompetitor);
+    const snapshots = await loadCompetitorSnapshotsByUser(userId);
+    const snapshotsByCompetitor = snapshots.reduce<Record<string, CompetitorSnapshot[]>>((groups, snapshot) => {
+        groups[snapshot.competitorId] = groups[snapshot.competitorId] || [];
+        groups[snapshot.competitorId].push(snapshot);
+        return groups;
+    }, {});
+
+    return competitors.map((competitor) => {
+        const competitorSnapshots = snapshotsByCompetitor[competitor.id] ?? [];
+        const latestSnapshot = competitorSnapshots[0] ?? null;
+        return {
+            ...competitor,
+            summary: latestSnapshot?.summary ?? null,
+            strengths: latestSnapshot?.strengths ?? [],
+            weaknesses: latestSnapshot?.weaknesses ?? [],
+            pricingNotes: latestSnapshot?.pricingNotes ?? null,
+            positioning: latestSnapshot?.positioning ?? null,
+            timesSpotted: competitorSnapshots.length,
+            firstSeenAt: competitorSnapshots.length ? competitorSnapshots[competitorSnapshots.length - 1].snapshotDate || competitorSnapshots[competitorSnapshots.length - 1].createdAt : competitor.createdAt,
+            latestReportId: latestSnapshot?.reportId ?? null,
+        };
+    });
 }
 
 export async function createCompetitorSnapshot(
@@ -922,6 +1015,8 @@ export async function createCompetitorSnapshot(
         weaknesses?: unknown[];
         pricingNotes?: string | null;
         positioning?: string | null;
+        reportId?: string | null;
+        snapshotDate?: string | null;
     },
 ): Promise<CompetitorSnapshot | null> {
     const competitor = await loadCompetitor(userId, competitorId);
@@ -939,6 +1034,8 @@ export async function createCompetitorSnapshot(
             weaknesses: payload.weaknesses ?? [],
             pricing_notes: payload.pricingNotes ?? null,
             positioning: payload.positioning ?? null,
+            report_id: payload.reportId ?? null,
+            snapshot_date: payload.snapshotDate ?? getLocalDateKey(),
         })
         .select()
         .single();
@@ -953,7 +1050,7 @@ export async function createCompetitorSnapshot(
 export async function loadCompetitorSnapshot(userId: string, snapshotId: string): Promise<CompetitorSnapshot | null> {
     const { data, error } = await supabase
         .from("competitor_snapshots")
-        .select("id, competitor_id, summary, strengths, weaknesses, pricing_notes, positioning, created_at, competitors!inner(user_id)")
+        .select("id, competitor_id, report_id, snapshot_date, summary, strengths, weaknesses, pricing_notes, positioning, created_at, competitors!inner(user_id)")
         .eq("competitors.user_id", userId)
         .eq("id", snapshotId)
         .maybeSingle();
@@ -965,7 +1062,7 @@ export async function loadCompetitorSnapshot(userId: string, snapshotId: string)
 export async function loadCompetitorSnapshotsByUser(userId: string): Promise<CompetitorSnapshot[]> {
     const { data, error } = await supabase
         .from("competitor_snapshots")
-        .select("id, competitor_id, summary, strengths, weaknesses, pricing_notes, positioning, created_at, competitors!inner(user_id)")
+        .select("id, competitor_id, report_id, snapshot_date, summary, strengths, weaknesses, pricing_notes, positioning, created_at, competitors!inner(user_id)")
         .eq("competitors.user_id", userId)
         .order("created_at", { ascending: false });
 
@@ -1016,7 +1113,65 @@ export async function loadMarketTrendsByUser(userId: string): Promise<MarketTren
         .order("created_at", { ascending: false });
 
     if (error || !data) return [];
-    return data.map(mapMarketTrend);
+    const trends = data.map(mapMarketTrend);
+    const snapshots = await loadTrendSnapshotsByUser(userId);
+    const snapshotsByName = snapshots.reduce<Record<string, TrendSnapshot[]>>((groups, snapshot) => {
+        const key = snapshot.trendName.trim().toLowerCase();
+        groups[key] = groups[key] || [];
+        groups[key].push(snapshot);
+        return groups;
+    }, {});
+
+    return trends.map((trend) => {
+        const trendSnapshots = snapshotsByName[trend.name.trim().toLowerCase()] ?? [];
+        const latestSnapshot = trendSnapshots[0] ?? null;
+        return {
+            ...trend,
+            recurrenceCount: trendSnapshots.length,
+            firstSeenAt: trendSnapshots.length ? trendSnapshots[trendSnapshots.length - 1].snapshotDate : trend.createdAt,
+            latestReportId: latestSnapshot?.reportId ?? null,
+        };
+    });
+}
+
+export async function createTrendSnapshot(
+    userId: string,
+    payload: { trendName: string; reportId?: string | null; snapshotDate?: string | null; impactLevel?: string; notes?: string },
+): Promise<TrendSnapshot | null> {
+    const trendName = payload.trendName.trim();
+    if (!trendName) return null;
+
+    const { data, error } = await supabase
+        .from("trend_snapshots")
+        .insert({
+            user_id: userId,
+            trend_name: trendName,
+            report_id: payload.reportId ?? null,
+            snapshot_date: payload.snapshotDate ?? getLocalDateKey(),
+            impact_level: payload.impactLevel ?? "medium",
+            notes: payload.notes ?? "",
+        })
+        .select()
+        .single();
+
+    if (error || !data) {
+        console.error("createTrendSnapshot error:", error?.message);
+        return null;
+    }
+
+    return mapTrendSnapshot(data);
+}
+
+export async function loadTrendSnapshotsByUser(userId: string): Promise<TrendSnapshot[]> {
+    const { data, error } = await supabase
+        .from("trend_snapshots")
+        .select("*")
+        .eq("user_id", userId)
+        .order("snapshot_date", { ascending: false })
+        .order("created_at", { ascending: false });
+
+    if (error || !data) return [];
+    return data.map(mapTrendSnapshot);
 }
 
 export async function createIndustryBenchmark(
@@ -1161,11 +1316,13 @@ export async function saveNormalizedMarketIntelligence(
         competitorsInserted: 0,
         competitorSnapshotsInserted: 0,
         trendsInserted: 0,
+        trendSnapshotsInserted: 0,
         benchmarksInserted: 0,
         sourcesInserted: 0,
         skipped: 0,
         errors: [],
     };
+    const reportId = normalized.reportId?.trim();
 
     for (const competitor of normalized.competitors ?? []) {
         const name = competitor.name?.trim();
@@ -1240,7 +1397,8 @@ export async function saveNormalizedMarketIntelligence(
 
             const duplicateSnapshot = (existingSnapshotRows ?? []).some((row) => {
                 const snapshot = mapCompetitorSnapshot(row);
-                return snapshot.summary === normalizedSummary
+                return snapshot.reportId === reportId
+                    && snapshot.summary === normalizedSummary
                     && JSON.stringify(snapshot.strengths) === JSON.stringify(normalizedStrengths)
                     && JSON.stringify(snapshot.weaknesses) === JSON.stringify(normalizedWeaknesses)
                     && snapshot.pricingNotes === normalizedPricingNotes
@@ -1258,6 +1416,8 @@ export async function saveNormalizedMarketIntelligence(
                 weaknesses: normalizedWeaknesses,
                 pricingNotes: normalizedPricingNotes,
                 positioning: normalizedPositioning,
+                reportId,
+                snapshotDate: normalized.date || getLocalDateKey(),
             });
 
             if (!snapshot) {
@@ -1289,8 +1449,6 @@ export async function saveNormalizedMarketIntelligence(
                 .select("id")
                 .eq("user_id", userId)
                 .eq("name", name)
-                .eq("impact_level", normalizedImpactLevel)
-                .eq("timeframe", normalizedTimeframe)
                 .limit(1);
 
             if (existingTrendError) {
@@ -1299,25 +1457,53 @@ export async function saveNormalizedMarketIntelligence(
                 continue;
             }
 
-            if ((existingTrendRows?.length ?? 0) > 0) {
+            if ((existingTrendRows?.length ?? 0) === 0) {
+                const createdTrend = await createMarketTrend(userId, {
+                    name,
+                    description: normalizedDescription,
+                    impactLevel: normalizedImpactLevel,
+                    timeframe: normalizedTimeframe,
+                });
+
+                if (!createdTrend) {
+                    result.skipped += 1;
+                    result.errors.push(`Failed to insert trend: ${name}`);
+                    continue;
+                }
+
+                result.trendsInserted += 1;
+            } else {
                 result.skipped += 1;
+            }
+
+            const existingTrendSnapshot = await supabase
+                .from("trend_snapshots")
+                .select("id")
+                .eq("user_id", userId)
+                .eq("trend_name", name)
+                .eq("report_id", normalized.reportId)
+                .limit(1);
+
+            if (existingTrendSnapshot.error) {
+                result.errors.push(`Failed to check trend snapshot (${name}): ${existingTrendSnapshot.error.message}`);
                 continue;
             }
 
-            const createdTrend = await createMarketTrend(userId, {
-                name,
-                description: normalizedDescription,
+            if ((existingTrendSnapshot.data?.length ?? 0) > 0) {
+                continue;
+            }
+
+            const trendSnapshot = await createTrendSnapshot(userId, {
+                trendName: name,
+                reportId: normalized.reportId,
+                snapshotDate: normalized.date || getLocalDateKey(),
                 impactLevel: normalizedImpactLevel,
-                timeframe: normalizedTimeframe,
+                notes: normalizedDescription,
             });
 
-            if (!createdTrend) {
-                result.skipped += 1;
-                result.errors.push(`Failed to insert trend: ${name}`);
-                continue;
+            if (trendSnapshot) {
+                result.trendSnapshotsInserted += 1;
             }
-
-            result.trendsInserted += 1;
         } catch (error: any) {
             result.skipped += 1;
             result.errors.push(`Trend save error (${name}): ${error?.message ?? "Unknown error"}`);
@@ -1374,7 +1560,6 @@ export async function saveNormalizedMarketIntelligence(
         }
     }
 
-    const reportId = normalized.reportId?.trim();
     for (const source of normalized.sources ?? []) {
         const title = source.title?.trim();
         const url = source.url?.trim();
@@ -1426,6 +1611,7 @@ export async function saveNormalizedMarketIntelligence(
         result.competitorsInserted +
         result.competitorSnapshotsInserted +
         result.trendsInserted +
+        result.trendSnapshotsInserted +
         result.benchmarksInserted +
         result.sourcesInserted;
 
@@ -1679,6 +1865,24 @@ export type DocumentSignatureEvent = {
     createdAt: string;
 };
 
+export type DocumentTemplateField = {
+    name: string;
+    label: string;
+    type: string;
+    required?: boolean;
+    placeholder?: string;
+};
+
+export type DocumentTemplate = {
+    id: string;
+    documentType: string;
+    requiredFields: DocumentTemplateField[];
+    clauseGuidelines: string;
+    jurisdictionNotes: string;
+    createdAt: string;
+    updatedAt: string;
+};
+
 export type CreateDocumentSignatureRequestInput = {
     documentId: string;
     versionId?: string | null;
@@ -1844,6 +2048,28 @@ function mapDocumentFolder(row: any): DocumentFolder {
     };
 }
 
+function mapDocumentTemplate(row: any): DocumentTemplate {
+    const requiredFields = Array.isArray(row.required_fields) ? row.required_fields : [];
+    return {
+        id: row.id,
+        documentType: row.document_type,
+        requiredFields: requiredFields
+            .filter((field: any) => field && typeof field === "object")
+            .map((field: any) => ({
+                name: String(field.name ?? ""),
+                label: String(field.label ?? field.name ?? ""),
+                type: String(field.type ?? "text"),
+                required: Boolean(field.required),
+                placeholder: typeof field.placeholder === "string" ? field.placeholder : undefined,
+            }))
+            .filter((field: DocumentTemplateField) => field.name.length > 0),
+        clauseGuidelines: row.clause_guidelines ?? "",
+        jurisdictionNotes: row.jurisdiction_notes ?? "",
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+    };
+}
+
 function sanitizeStorageFileName(filename: string) {
     const trimmed = String(filename || "document").trim();
     const normalized = trimmed.normalize("NFKD").replace(/[^\x20-\x7E]/g, "");
@@ -1911,10 +2137,11 @@ function inferDocumentTemplateId(docType: string) {
     return DOCUMENT_TEMPLATE_LOOKUP.get(normalized)?.templateId ?? null;
 }
 
-function buildProducedDocumentMetadata(document: ProducedDocument, existing?: VaultDocument | null): Record<string, unknown> {
+function buildProducedDocumentMetadata(document: ProducedDocument, existing?: VaultDocument | null, metadata?: Record<string, unknown>): Record<string, unknown> {
     const existingMetadata = existing?.metadata && typeof existing.metadata === "object" ? existing.metadata : {};
     return {
         ...existingMetadata,
+        ...(metadata ?? {}),
         compatibilitySource: "produced_documents",
         legacyProducedDocumentId: document.id,
         templateId: inferDocumentTemplateId(document.docType),
@@ -2015,6 +2242,27 @@ export async function loadDocumentFolders(userId: string): Promise<DocumentFolde
 
     documentVaultAvailable = true;
     return (data ?? []).map(mapDocumentFolder);
+}
+
+export async function loadDocumentTemplates(): Promise<DocumentTemplate[]> {
+    if (documentTemplatesAvailable === false) return [];
+
+    const { data, error } = await supabase
+        .from("document_templates")
+        .select("*")
+        .order("document_type", { ascending: true });
+
+    if (error) {
+        if (isMissingRelationError(error, "document_templates")) {
+            documentTemplatesAvailable = false;
+            return [];
+        }
+        console.error("loadDocumentTemplates error:", error.message);
+        return [];
+    }
+
+    documentTemplatesAvailable = true;
+    return (data ?? []).map(mapDocumentTemplate);
 }
 
 export async function createDocumentFolder(userId: string, name: string): Promise<DocumentFolder | null> {
@@ -2176,6 +2424,7 @@ export async function createVaultDocumentFromProducedDocument(
     userId: string,
     producedDocument: ProducedDocument,
     fallbackStageId?: number | null,
+    metadata?: Record<string, unknown>,
 ): Promise<VaultDocument | null> {
     if (documentVaultAvailable === false) return null;
 
@@ -2209,7 +2458,7 @@ export async function createVaultDocumentFromProducedDocument(
         audience: producedDocument.audience,
         tone: producedDocument.tone,
         archived_at: existing?.archivedAt ?? null,
-        metadata: buildProducedDocumentMetadata(producedDocument, existing),
+        metadata: buildProducedDocumentMetadata(producedDocument, existing, metadata),
         updated_at: now,
     };
 
@@ -2855,10 +3104,15 @@ export async function trackProductUsageEvent(
     }
 }
 
-async function syncProducedDocumentToVault(userId: string, producedDocument: ProducedDocument, fallbackStageId?: number | null): Promise<void> {
+async function syncProducedDocumentToVault(
+    userId: string,
+    producedDocument: ProducedDocument,
+    fallbackStageId?: number | null,
+    metadata?: Record<string, unknown>,
+): Promise<void> {
     if (documentVaultAvailable === false) return;
 
-    const vaultDocument = await createVaultDocumentFromProducedDocument(userId, producedDocument, fallbackStageId);
+    const vaultDocument = await createVaultDocumentFromProducedDocument(userId, producedDocument, fallbackStageId, metadata);
     if (!vaultDocument) return;
 
     const latestVersion = await loadLatestDocumentVersionRow(userId, vaultDocument.id);
@@ -2871,6 +3125,7 @@ async function syncProducedDocumentToVault(userId: string, producedDocument: Pro
         source: versionSource,
         status: getPreservedDocumentStatus(vaultDocument),
         metadata: {
+            ...(metadata ?? {}),
             sourceProducedDocumentId: producedDocument.id,
             legacyUpdatedAt: producedDocument.updatedAt,
             legacyHistoryLength: producedDocument.history.length,
@@ -2914,7 +3169,7 @@ export async function saveProducedDocument(
         content: string;
         history: Array<{ instruction: string; doc: string }>;
     },
-    options?: { fallbackStageId?: number | null },
+    options?: { fallbackStageId?: number | null; metadata?: Record<string, unknown> },
 ): Promise<ProducedDocument | null> {
     if (producedDocumentsAvailable === false) return null;
 
@@ -2952,7 +3207,7 @@ export async function saveProducedDocument(
     const savedDocument = mapProducedDocument(data);
 
     try {
-        await syncProducedDocumentToVault(userId, savedDocument, options?.fallbackStageId);
+        await syncProducedDocumentToVault(userId, savedDocument, options?.fallbackStageId, options?.metadata);
     } catch (vaultError) {
         console.error("syncProducedDocumentToVault error:", vaultError);
     }

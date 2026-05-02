@@ -6,6 +6,7 @@ export type FounderSessionState = {
     lastScreen: string | null;
     weeklyJournalSummary: string | null;
     weeklyJournalSummaryGeneratedAt: string | null;
+    marketRefreshSchedule: Record<string, unknown> | null;
     updatedAt: string | null;
 };
 
@@ -14,6 +15,7 @@ type FounderSessionStateUpdate = Partial<{
     lastScreen: string | null;
     weeklyJournalSummary: string | null;
     weeklyJournalSummaryGeneratedAt: string | null;
+    marketRefreshSchedule: Record<string, unknown> | null;
 }>;
 
 let founderSessionStateAvailable: boolean | null = null;
@@ -30,6 +32,7 @@ function mapFounderSessionState(row: any): FounderSessionState {
         lastScreen: row.last_screen ?? null,
         weeklyJournalSummary: row.weekly_journal_summary ?? null,
         weeklyJournalSummaryGeneratedAt: row.weekly_journal_summary_generated_at ?? null,
+        marketRefreshSchedule: row.market_refresh_schedule && typeof row.market_refresh_schedule === "object" ? row.market_refresh_schedule : null,
         updatedAt: row.updated_at ?? null,
     };
 }
@@ -68,6 +71,7 @@ export async function upsertFounderSessionState(
         ...(partialState.lastScreen !== undefined ? { last_screen: partialState.lastScreen } : {}),
         ...(partialState.weeklyJournalSummary !== undefined ? { weekly_journal_summary: partialState.weeklyJournalSummary } : {}),
         ...(partialState.weeklyJournalSummaryGeneratedAt !== undefined ? { weekly_journal_summary_generated_at: partialState.weeklyJournalSummaryGeneratedAt } : {}),
+        ...(partialState.marketRefreshSchedule !== undefined ? { market_refresh_schedule: partialState.marketRefreshSchedule } : {}),
         updated_at: new Date().toISOString(),
     };
 
@@ -129,4 +133,16 @@ export async function updateWeeklyJournalSummary(userId: string, summary: string
         text: state.weeklyJournalSummary,
         generatedAt: state.weeklyJournalSummaryGeneratedAt,
     };
+}
+
+export async function getMarketRefreshSchedule(userId: string) {
+    const state = await getFounderSessionState(userId);
+    return state?.marketRefreshSchedule ?? null;
+}
+
+export async function updateMarketRefreshSchedule(userId: string, schedule: Record<string, unknown> | null) {
+    const state = await upsertFounderSessionState(userId, {
+        marketRefreshSchedule: schedule,
+    });
+    return state?.marketRefreshSchedule ?? null;
 }

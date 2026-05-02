@@ -6,19 +6,19 @@ import {
 } from "../db";
 import {
     parseMarketIntelligenceExtraction,
+    buildMarketIntelligenceExtractionPrompt,
+    MARKET_INTELLIGENCE_EXTRACTION_SYSTEM,
     type MarketIntelligenceFounderContext,
 } from "./marketIntelligenceExtractor";
+import { callForgeAPI } from "./forgeApi";
 
 export type ExtractionSummary = SaveNormalizedMarketIntelligenceResult;
 
-// This is a manual bridge for testing the structured extraction pipeline
-// before automated Forge/provider wiring. It is intentionally inactive:
-// no automatic calls, no UI wiring, and no direct Forge API invocation.
 export async function extractAndSaveMarketIntelligenceFromReport(
     userId: string,
     reportId: string,
     founderContext: MarketIntelligenceFounderContext | null | undefined,
-    rawExtractionText: string,
+    rawExtractionText = "",
 ): Promise<SaveNormalizedMarketIntelligenceResult> {
     const missingReportResult: SaveNormalizedMarketIntelligenceResult = {
         competitorsInserted: 0,
@@ -38,16 +38,22 @@ export async function extractAndSaveMarketIntelligenceFromReport(
         };
     }
 
-    void founderContext;
+    const extractionText = rawExtractionText.trim()
+        ? rawExtractionText
+        : await callForgeAPI(
+            [{ role: "user", content: buildMarketIntelligenceExtractionPrompt(report.content, founderContext) }],
+            MARKET_INTELLIGENCE_EXTRACTION_SYSTEM,
+            2000,
+        );
 
-    const parsed = parseMarketIntelligenceExtraction(rawExtractionText);
+    const parsed = parseMarketIntelligenceExtraction(extractionText);
     const parsedItemCount =
         parsed.competitors.length +
         parsed.trends.length +
         parsed.benchmarks.length +
         parsed.sources.length;
 
-    if (rawExtractionText.trim() && parsedItemCount === 0) {
+    if (extractionText.trim() && parsedItemCount === 0) {
         return {
             ...missingReportResult,
             errors: ["No structured insights could be parsed from the extraction response."],

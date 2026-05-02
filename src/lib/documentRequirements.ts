@@ -40,6 +40,22 @@ export interface DocumentRequirement {
     groups: DocumentFieldGroup[];
 }
 
+export interface StructuredDocumentTemplateField {
+    name: string;
+    label: string;
+    type: DocumentFieldType | string;
+    required?: boolean;
+    placeholder?: string;
+}
+
+export interface StructuredDocumentTemplate {
+    id: string;
+    documentType: string;
+    requiredFields: StructuredDocumentTemplateField[];
+    clauseGuidelines: string;
+    jurisdictionNotes: string;
+}
+
 export interface DocumentValidationResult {
     valid: boolean;
     missingRequired: string[];
@@ -289,6 +305,104 @@ function uniqueGroups(groups: DocumentFieldGroup[]) {
     }).filter((group) => group.fields.length > 0);
 }
 
+function normalizeTemplateKey(value: string) {
+    return String(value || "")
+        .toLowerCase()
+        .replace(/&/g, "and")
+        .replace(/[^a-z0-9]+/g, " ")
+        .replace(/\b(llc|limited liability company)\b/g, "llc")
+        .trim();
+}
+
+function normalizeTemplateFieldType(type: string | undefined): DocumentFieldType {
+    const value = String(type || "").toLowerCase();
+    if (["text", "textarea", "select", "date", "email", "phone", "number", "currency", "percentage", "checkbox", "list"].includes(value)) {
+        return value as DocumentFieldType;
+    }
+    return "text";
+}
+
+function templateFieldToDocumentField(field: StructuredDocumentTemplateField): DocumentField {
+    return {
+        id: field.name,
+        label: field.label || field.name,
+        type: normalizeTemplateFieldType(field.type),
+        required: Boolean(field.required),
+        placeholder: field.placeholder,
+        rows: normalizeTemplateFieldType(field.type) === "textarea" ? 3 : undefined,
+        help: "Required by the structured founder document template.",
+    };
+}
+
+export function findStructuredDocumentTemplate(docType: string, templates: StructuredDocumentTemplate[]) {
+    const key = normalizeTemplateKey(docType);
+    if (!key) return null;
+
+    return templates.find((template) => {
+        const templateKey = normalizeTemplateKey(template.documentType);
+        return templateKey === key
+            || templateKey.includes(key)
+            || key.includes(templateKey)
+            || (key.includes("operating agreement") && templateKey.includes("operating agreement"))
+            || (key.includes("privacy") && templateKey.includes("privacy"))
+            || (key.includes("terms") && templateKey.includes("terms"))
+            || (key.includes("nda") && templateKey.includes("nda"));
+    }) ?? null;
+}
+
+export function mergeDocumentTemplateIntoRequirement(
+    requirement: DocumentRequirement,
+    template: StructuredDocumentTemplate | null,
+): DocumentRequirement {
+    if (!template) return requirement;
+
+    const existingFields = new Map<string, DocumentField>();
+    requirement.groups.forEach((group) => group.fields.forEach((field) => existingFields.set(field.id, field)));
+
+    const templateFields = template.requiredFields.map(templateFieldToDocumentField);
+    const newFields = templateFields.filter((field) => !existingFields.has(field.id));
+    const templateRequiredIds = new Set(templateFields.filter((field) => field.required).map((field) => field.id));
+
+    const groups = requirement.groups.map((group) => ({
+        ...group,
+        fields: group.fields.map((field) => templateRequiredIds.has(field.id) ? { ...field, required: true } : field),
+    }));
+
+    if (newFields.length > 0) {
+        groups.push({
+            id: "structured-template",
+            title: `${template.documentType} template fields`,
+            description: "These required fields come from Foundry's structured document template for this document type.",
+            fields: newFields,
+        });
+    }
+
+    return {
+        ...requirement,
+        groups,
+    };
+}
+
+export function applyDocumentRequirementDefaults(requirement: DocumentRequirement, defaults: Record<string, any>) {
+    const next = { ...defaults };
+    requirement.groups.forEach((group) => {
+        group.fields.forEach((field) => {
+            if (next[field.id] !== undefined) return;
+            next[field.id] = field.type === "checkbox" ? false : field.type === "date" ? getIsoDate() : "";
+        });
+    });
+    return next;
+}
+
+export function computeDocumentCompleteness(requirement: DocumentRequirement, values: Record<string, any>) {
+    const requiredFields = requirement.groups.flatMap((group) => group.fields).filter((field) => field.required);
+    const filledRequired = requiredFields.filter((field) => !isBlank(values[field.id])).length;
+    const totalRequired = requiredFields.length;
+    const score = totalRequired > 0 ? Math.round((filledRequired / totalRequired) * 100) : 100;
+
+    return { filledRequired, totalRequired, score };
+}
+
 function inferGroups(doc: DocItem, category: DocCategory): DocumentFieldGroup[] {
     const docText = `${doc.id} ${doc.name}`.toLowerCase();
     const groups: DocumentFieldGroup[] = [cloneGroup(COMMON_FIELDS)];
@@ -350,14 +464,7 @@ export function createDocumentInputDefaults(doc: DocItem, category: DocCategory,
         signatureDate: getIsoDate(),
     };
 
-    requirement.groups.forEach((group) => {
-        group.fields.forEach((field) => {
-            if (defaults[field.id] !== undefined) return;
-            defaults[field.id] = field.type === "checkbox" ? false : field.type === "date" ? getIsoDate() : "";
-        });
-    });
-
-    return defaults;
+    return applyDocumentRequirementDefaults(requirement, defaults);
 }
 
 export function getSuggestedDocumentSettings(doc: DocItem, category: DocCategory): SuggestedDocumentSettings {

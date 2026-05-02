@@ -9,6 +9,7 @@ export interface MarketReport {
     industry: string;
     date: string;
     createdAt?: string;
+    searchQueries?: string[];
 }
 
 export type MarketTab = "brief" | "competitors" | "trends" | "benchmarks" | "sources";

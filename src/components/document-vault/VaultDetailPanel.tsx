@@ -3,6 +3,62 @@ import { FolderOpen } from "@phosphor-icons/react";
 import type { DocumentFolder, DocumentVersion, VaultDocument } from "../../db";
 import { StatusBadge, formatShortDate, getVersionPreviewLabel } from "./shared";
 
+type ParsedClause = { name: string; content: string };
+
+function normalizeDocType(value: string) {
+    return String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function getLegalRiskNotes(docType: string) {
+    const text = normalizeDocType(docType);
+    if (text.includes("nda")) return "NDA risk areas: overbroad confidentiality definitions, trade secret treatment, permitted disclosures, duration, remedies, and state limits on restrictive covenants.";
+    if (text.includes("operating agreement")) return "Operating agreement risk areas: state LLC default rules, member voting thresholds, fiduciary duties, transfer limits, buyout mechanics, and dissolution rights.";
+    if (text.includes("founder")) return "Founder agreement risk areas: equity issuance, vesting, IP chain of title, founder departures, tax elections, securities compliance, and non-compete limits.";
+    if (text.includes("consulting")) return "Consulting agreement risk areas: worker classification, deliverable acceptance, payment timing, IP assignment, confidentiality, and liability caps.";
+    if (text.includes("terms")) return "Terms of Service risk areas: auto-renewal rules, refund disclosures, consumer protection law, arbitration enforceability, user content rights, and platform policies.";
+    if (text.includes("privacy")) return "Privacy policy risk areas: CCPA/CPRA and other state privacy rights, GDPR exposure, cookies, sensitive data, children, retention, and vendor sharing.";
+    if (text.includes("ip assignment") || text.includes("intellectual property")) return "IP assignment risk areas: prior employer claims, excluded background IP, open-source obligations, moral rights, invention assignment statutes, and recordable patent or trademark transfers.";
+    if (text.includes("employment") || text.includes("offer")) return "Offer letter risk areas: wage/hour classification, at-will language, required state notices, equity plan documents, background checks, and non-compete restrictions.";
+    return "Legal risk areas vary by document type, state, parties, and transaction context. Review enforceability, missing deal terms, signatures, notices, and regulated-industry requirements before relying on this draft.";
+}
+
+function getDocumentHealthScore(document: VaultDocument) {
+    const metadata = document.metadata && typeof document.metadata === "object" ? document.metadata as Record<string, any> : {};
+    const health = metadata.documentHealthScore && typeof metadata.documentHealthScore === "object"
+        ? metadata.documentHealthScore as Record<string, any>
+        : null;
+    const score = Number(health?.score);
+    const filledRequired = Number(health?.filledRequired);
+    const totalRequired = Number(health?.totalRequired);
+    return Number.isFinite(score)
+        ? { score: Math.max(0, Math.min(100, Math.round(score))), filledRequired, totalRequired }
+        : null;
+}
+
+function parseClauseMarkers(content: string): ParsedClause[] {
+    const clauses: ParsedClause[] = [];
+    const regex = /<!--\s*FOUNDRY_CLAUSE:\s*([^>]+?)\s*-->([\s\S]*?)<!--\s*\/FOUNDRY_CLAUSE\s*-->/gi;
+    let match: RegExpExecArray | null;
+    while ((match = regex.exec(content)) !== null) {
+        clauses.push({
+            name: match[1].trim(),
+            content: match[2].replace(/\s+/g, " ").trim(),
+        });
+    }
+    return clauses;
+}
+
+function changedClauseNames(oldContent: string, newContent: string) {
+    const oldClauses = parseClauseMarkers(oldContent);
+    const newClauses = parseClauseMarkers(newContent);
+    const oldByName = new Map(oldClauses.map((clause) => [clause.name.toLowerCase(), clause]));
+    const newByName = new Map(newClauses.map((clause) => [clause.name.toLowerCase(), clause]));
+    const names = new Set([...oldByName.keys(), ...newByName.keys()]);
+    return Array.from(names)
+        .filter((name) => oldByName.get(name)?.content !== newByName.get(name)?.content)
+        .map((name) => newByName.get(name)?.name || oldByName.get(name)?.name || name);
+}
+
 export default function VaultDetailPanel(props: {
     document: VaultDocument | null;
     loading: boolean;
@@ -29,6 +85,7 @@ export default function VaultDetailPanel(props: {
     } = props;
     const [compareVersion, setCompareVersion] = useState<DocumentVersion | null>(null);
     const latestVersion = versions[0] ?? null;
+    const healthScore = document ? getDocumentHealthScore(document) : null;
 
     const renderParagraphs = (content: string, compareContent: string, mode: "old" | "new") => {
         const ownParas = content.split("\n\n").map((p) => p.trim()).filter(Boolean);
@@ -96,6 +153,9 @@ export default function VaultDetailPanel(props: {
                                     <span>Created {formatShortDate(document.createdAt)}</span>
                                     <span>Updated {formatShortDate(document.updatedAt)}</span>
                                     <span>{getVersionPreviewLabel(versionCount)}</span>
+                                    {healthScore && Number.isFinite(healthScore.totalRequired) && (
+                                        <span>{healthScore.score}% health ({healthScore.filledRequired}/{healthScore.totalRequired} required)</span>
+                                    )}
                                     {!document.currentVersionId && <span>Legacy mirror pending full version linkage</span>}
                                 </div>
                                 <div style={{ marginTop: 10, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
@@ -119,6 +179,12 @@ export default function VaultDetailPanel(props: {
 
                     {!loading && document && (
                         <div style={{ padding: 18, display: "grid", gap: 18 }}>
+                            <div style={{ border: "1px solid rgba(232,98,42,0.18)", borderRadius: 12, background: "rgba(232,98,42,0.06)", padding: "12px 14px" }}>
+                                <div style={{ fontSize: 11, color: "#E8622A", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 5 }}>Document-specific legal review</div>
+                                <div style={{ fontSize: 12, color: "#D8C9BC", lineHeight: 1.65 }}>
+                                    {getLegalRiskNotes(document.docType)} Foundry drafts are working documents, not legal advice.
+                                </div>
+                            </div>
                             <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.5fr) minmax(280px, 0.9fr)", gap: 18, alignItems: "start" }}>
                                 {previewNode}
 
@@ -211,6 +277,18 @@ export default function VaultDetailPanel(props: {
                                 Close
                             </button>
                         </div>
+                        {changedClauseNames(compareVersion.content, latestVersion.content).length > 0 && (
+                            <div style={{ marginBottom: 14, padding: "10px 12px", borderRadius: 12, border: "1px solid rgba(232,98,42,0.14)", background: "rgba(232,98,42,0.06)" }}>
+                                <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 11, color: "#E8622A", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Changed clauses</div>
+                                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                                    {changedClauseNames(compareVersion.content, latestVersion.content).map((name) => (
+                                        <span key={name} style={{ padding: "4px 8px", borderRadius: 999, background: "rgba(255,255,255,0.045)", border: "1px solid rgba(255,255,255,0.08)", color: "#D8C9BC", fontSize: 11 }}>
+                                            {name}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                             <div>
                                 <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, color: "rgba(240,237,232,0.45)", marginBottom: 8 }}>

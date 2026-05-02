@@ -9,6 +9,7 @@ import {
     type FounderFinancialSettings,
     type FounderProfitBucket,
     type FounderRevenue,
+    type LedgerEntry,
     type PlaidItem,
     type PlaidReviewTransaction,
     type ProfitBucketType,
@@ -27,6 +28,8 @@ type ExpenseInput = {
     isRecurring?: boolean;
     notes?: string | null;
     source?: "manual" | "imported" | "legacy_migrated";
+    ledgerSource?: "manual" | "plaid";
+    ledgerReferenceId?: string | null;
 };
 
 type RevenueInput = {
@@ -41,6 +44,20 @@ type RevenueInput = {
     renewalDate?: string | null;
     notes?: string | null;
     source?: "manual" | "imported" | "legacy_migrated";
+    ledgerSource?: "manual" | "plaid";
+    ledgerReferenceId?: string | null;
+};
+
+type LedgerEntryInput = {
+    date: string | null | undefined;
+    description: string;
+    amount: number;
+    type: "debit" | "credit";
+    category?: string | null;
+    account?: string | null;
+    source: "manual" | "plaid" | "invoice";
+    referenceId?: string | null;
+    reconciledAt?: string | null;
 };
 
 function toIsoDateOrNull(value: string | null | undefined) {
@@ -49,6 +66,120 @@ function toIsoDateOrNull(value: string | null | undefined) {
     const parsed = new Date(value);
     if (Number.isNaN(parsed.getTime())) return null;
     return parsed.toISOString().slice(0, 10);
+}
+
+let ledgerEntriesAvailable: boolean | null = null;
+
+function isMissingLedgerRelationError(error: any) {
+    const message = String(error?.message ?? "").toLowerCase();
+    return error?.code === "PGRST205" || message.includes("ledger_entries") || message.includes("could not find the table");
+}
+
+function mapLedgerEntry(row: any): LedgerEntry {
+    return {
+        id: row.id,
+        userId: row.user_id,
+        date: row.date,
+        description: row.description ?? "",
+        amount: Number(row.amount ?? 0),
+        type: row.type,
+        category: row.category ?? "uncategorized",
+        account: row.account ?? "operating",
+        source: row.source ?? "manual",
+        referenceId: row.reference_id ?? null,
+        reconciledAt: row.reconciled_at ?? null,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+    };
+}
+
+async function loadLedgerEntries(userId: string): Promise<LedgerEntry[]> {
+    if (ledgerEntriesAvailable === false) return [];
+
+    const { data, error } = await supabase
+        .from("ledger_entries")
+        .select("*")
+        .eq("user_id", userId)
+        .order("date", { ascending: false })
+        .order("created_at", { ascending: false });
+
+    if (error) {
+        if (isMissingLedgerRelationError(error)) {
+            ledgerEntriesAvailable = false;
+            return [];
+        }
+        console.error("loadLedgerEntries error:", error.message);
+        return [];
+    }
+
+    ledgerEntriesAvailable = true;
+    return (data ?? []).map(mapLedgerEntry);
+}
+
+async function upsertLedgerEntry(userId: string, entry: LedgerEntryInput): Promise<LedgerEntry | null> {
+    if (ledgerEntriesAvailable === false) return null;
+    if (!Number.isFinite(Number(entry.amount)) || Number(entry.amount) <= 0) return null;
+
+    const payload = {
+        user_id: userId,
+        date: toIsoDateOrNull(entry.date) ?? todayIso(),
+        description: entry.description || "Ledger entry",
+        amount: Math.abs(Number(entry.amount)),
+        type: entry.type,
+        category: entry.category || (entry.type === "credit" ? "sales" : "operating"),
+        account: entry.account || "operating",
+        source: entry.source,
+        reference_id: entry.referenceId ?? null,
+        reconciled_at: entry.reconciledAt ?? null,
+        updated_at: new Date().toISOString(),
+    };
+
+    const query = entry.referenceId
+        ? supabase.from("ledger_entries").upsert(payload, { onConflict: "user_id,source,reference_id,type" })
+        : supabase.from("ledger_entries").insert(payload);
+
+    const { data, error } = await query.select("*").single();
+    if (error) {
+        if (isMissingLedgerRelationError(error)) {
+            ledgerEntriesAvailable = false;
+            return null;
+        }
+        console.error("upsertLedgerEntry error:", error.message);
+        return null;
+    }
+
+    ledgerEntriesAvailable = true;
+    return data ? mapLedgerEntry(data) : null;
+}
+
+async function deleteLedgerEntriesForReference(
+    userId: string,
+    source: "manual" | "plaid" | "invoice",
+    referenceId: string,
+) {
+    if (ledgerEntriesAvailable === false) return false;
+
+    const { error } = await supabase
+        .from("ledger_entries")
+        .delete()
+        .eq("user_id", userId)
+        .eq("source", source)
+        .eq("reference_id", referenceId);
+
+    if (error) {
+        if (isMissingLedgerRelationError(error)) {
+            ledgerEntriesAvailable = false;
+            return false;
+        }
+        console.error("deleteLedgerEntriesForReference error:", error.message);
+        return false;
+    }
+    ledgerEntriesAvailable = true;
+    return true;
+}
+
+function todayIso() {
+    return new Date().toISOString().slice(0, 10);
 }
 
 function mapExpense(row: any): FounderExpense {
@@ -235,7 +366,7 @@ async function migrateLegacyExpenses(userId: string, profile: any) {
 }
 
 export async function loadFounderFinancialData(userId: string, profile?: any): Promise<FounderFinancialData> {
-    const [accountsResult, expensesResult, revenueResult, settingsResult, bucketsResult, plaidItemsResult, plaidTransactionsResult] = await Promise.all([
+    const [accountsResult, expensesResult, revenueResult, settingsResult, bucketsResult, plaidItemsResult, plaidTransactionsResult, ledgerEntries] = await Promise.all([
         supabase.from("founder_financial_accounts").select("*").eq("user_id", userId).order("created_at", { ascending: true }),
         supabase.from("founder_expenses").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
         supabase.from("founder_revenue").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
@@ -243,6 +374,7 @@ export async function loadFounderFinancialData(userId: string, profile?: any): P
         supabase.from("founder_profit_buckets").select("*").eq("user_id", userId).order("display_order", { ascending: true }),
         supabase.from("plaid_items").select("id, user_id, plaid_item_id, institution_id, institution_name, status, sync_cursor, last_synced_at, created_at, updated_at").eq("user_id", userId).order("created_at", { ascending: false }),
         supabase.from("plaid_transactions").select("*").eq("user_id", userId).eq("review_status", "pending").order("posted_date", { ascending: false }).order("imported_at", { ascending: false }),
+        loadLedgerEntries(userId),
     ]);
 
     if (expensesResult.error) console.error("loadFounderFinancialData expenses error:", expensesResult.error.message);
@@ -280,6 +412,7 @@ export async function loadFounderFinancialData(userId: string, profile?: any): P
         profitBuckets: buckets,
         plaidItems: (plaidItemsResult.data ?? []).map(mapPlaidItem),
         pendingPlaidTransactions: (plaidTransactionsResult.data ?? []).map(mapPlaidReviewTransaction),
+        ledgerEntries,
         usedLegacyExpenses,
     };
 }
@@ -308,7 +441,20 @@ export async function saveExpense(userId: string, input: ExpenseInput): Promise<
         console.error("saveExpense error:", error?.message);
         return null;
     }
-    return mapExpense(data);
+    const saved = mapExpense(data);
+    const ledgerSource = input.ledgerSource ?? (saved.source === "imported" ? "plaid" : "manual");
+    await upsertLedgerEntry(userId, {
+        date: saved.incurredOn ?? saved.createdAt,
+        description: saved.label,
+        amount: saved.amount,
+        type: "debit",
+        category: saved.category,
+        account: saved.accountId ?? "operating",
+        source: ledgerSource,
+        referenceId: input.ledgerReferenceId ?? saved.id,
+        reconciledAt: null,
+    });
+    return saved;
 }
 
 export async function deleteExpense(userId: string, expenseId: string) {
@@ -318,6 +464,10 @@ export async function deleteExpense(userId: string, expenseId: string) {
         .eq("user_id", userId)
         .eq("id", expenseId);
     if (error) console.error("deleteExpense error:", error.message);
+    if (!error) {
+        await deleteLedgerEntriesForReference(userId, "manual", expenseId);
+        await deleteLedgerEntriesForReference(userId, "plaid", expenseId);
+    }
     return !error;
 }
 
@@ -344,7 +494,20 @@ export async function saveRevenue(userId: string, input: RevenueInput): Promise<
         console.error("saveRevenue error:", error?.message);
         return null;
     }
-    return mapRevenue(data);
+    const saved = mapRevenue(data);
+    const ledgerSource = input.ledgerSource ?? (saved.source === "imported" ? "plaid" : "manual");
+    await upsertLedgerEntry(userId, {
+        date: saved.receivedOn ?? saved.createdAt,
+        description: saved.label,
+        amount: saved.amount,
+        type: "credit",
+        category: saved.category,
+        account: saved.accountId ?? "operating",
+        source: ledgerSource,
+        referenceId: input.ledgerReferenceId ?? saved.id,
+        reconciledAt: null,
+    });
+    return saved;
 }
 
 export async function deleteRevenue(userId: string, revenueId: string) {
@@ -354,6 +517,10 @@ export async function deleteRevenue(userId: string, revenueId: string) {
         .eq("user_id", userId)
         .eq("id", revenueId);
     if (error) console.error("deleteRevenue error:", error.message);
+    if (!error) {
+        await deleteLedgerEntriesForReference(userId, "manual", revenueId);
+        await deleteLedgerEntriesForReference(userId, "plaid", revenueId);
+    }
     return !error;
 }
 
@@ -443,6 +610,8 @@ export async function acceptPlaidTransactionAsExpense(userId: string, transactio
         frequency: "one_time",
         notes: `Imported from Plaid transaction ${transaction.plaidTransactionId}`,
         source: "imported",
+        ledgerSource: "plaid",
+        ledgerReferenceId: transaction.id,
     });
     if (!expense) return null;
 
@@ -472,6 +641,8 @@ export async function acceptPlaidTransactionAsRevenue(userId: string, transactio
         frequency: "one_time",
         notes: `Imported from Plaid transaction ${transaction.plaidTransactionId}`,
         source: "imported",
+        ledgerSource: "plaid",
+        ledgerReferenceId: transaction.id,
     });
     if (!revenue) return null;
 
@@ -490,6 +661,30 @@ export async function acceptPlaidTransactionAsRevenue(userId: string, transactio
         return null;
     }
     return revenue;
+}
+
+export async function markLedgerEntryReconciled(userId: string, ledgerEntryId: string): Promise<boolean> {
+    if (ledgerEntriesAvailable === false) return false;
+
+    const { error } = await supabase
+        .from("ledger_entries")
+        .update({
+            reconciled_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", userId)
+        .eq("id", ledgerEntryId);
+
+    if (error) {
+        if (isMissingLedgerRelationError(error)) {
+            ledgerEntriesAvailable = false;
+            return false;
+        }
+        console.error("markLedgerEntryReconciled error:", error.message);
+        return false;
+    }
+
+    return true;
 }
 
 // ── Invoices (Supabase) ───────────────────────────────────────────────────────
@@ -576,7 +771,22 @@ export async function saveInvoiceToDb(
         console.error("saveInvoiceToDb error:", error?.message);
         return null;
     }
-    return mapInvoice(data);
+    const saved = mapInvoice(data);
+    if (saved.status === "paid") {
+        await upsertLedgerEntry(userId, {
+            date: saved.issuedDate || saved.createdAt,
+            description: `Invoice: ${saved.clientName || saved.invoiceNumber}`,
+            amount: saved.amount,
+            type: "credit",
+            category: "sales",
+            account: "accounts_receivable",
+            source: "invoice",
+            referenceId: saved.id,
+        });
+    } else {
+        await deleteLedgerEntriesForReference(userId, "invoice", saved.id);
+    }
+    return saved;
 }
 
 export async function deleteInvoiceFromDb(userId: string, invoiceId: string): Promise<boolean> {
@@ -586,6 +796,7 @@ export async function deleteInvoiceFromDb(userId: string, invoiceId: string): Pr
         .eq("user_id", userId)
         .eq("id", invoiceId);
     if (error) console.error("deleteInvoiceFromDb error:", error.message);
+    if (!error) await deleteLedgerEntriesForReference(userId, "invoice", invoiceId);
     return !error;
 }
 

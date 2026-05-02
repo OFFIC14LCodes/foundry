@@ -17,6 +17,7 @@ import {
     loadDocumentFolders,
     loadDocumentSignatureEvents,
     loadDocumentSignatureRequests,
+    loadDocumentTemplates,
     loadDocumentVersions,
     loadDocumentFiles,
     loadProducedDocuments,
@@ -31,6 +32,7 @@ import {
     type DocumentFolder,
     type DocumentSignatureEvent,
     type DocumentSignatureRequest,
+    type DocumentTemplate,
     type DocumentVersion,
     type ProducedDocument,
     type VaultDocument,
@@ -64,9 +66,13 @@ import {
 } from "../lib/documentNeedRecommendations";
 import {
     createDocumentInputDefaults,
+    computeDocumentCompleteness,
+    applyDocumentRequirementDefaults,
+    findStructuredDocumentTemplate,
     formatDocumentInputsForPrompt,
     getDocumentRequirement,
     getSuggestedDocumentSettings,
+    mergeDocumentTemplateIntoRequirement,
     validateDocumentInputs,
 } from "../lib/documentRequirements";
 import { formatLegalDate, formatLongDate, getIsoDate } from "../lib/legalDate";
@@ -381,6 +387,7 @@ export default function DocumentProductionScreen({
     const [vaultDocuments, setVaultDocuments] = useState<VaultDocument[]>([]);
     const [vaultLoading, setVaultLoading] = useState(true);
     const [vaultError, setVaultError] = useState<string | null>(null);
+    const [documentTemplates, setDocumentTemplates] = useState<DocumentTemplate[]>([]);
     const [vaultFolders, setVaultFolders] = useState<DocumentFolder[]>([]);
     const [vaultFoldersLoading, setVaultFoldersLoading] = useState(false);
     const [vaultFoldersError, setVaultFoldersError] = useState<string | null>(null);
@@ -490,6 +497,16 @@ export default function DocumentProductionScreen({
         });
         return () => { cancelled = true; };
     }, [userId]);
+
+    useEffect(() => {
+        let cancelled = false;
+        loadDocumentTemplates().then((templates) => {
+            if (!cancelled) setDocumentTemplates(templates);
+        }).catch((error) => {
+            console.error("loadDocumentTemplates error:", error);
+        });
+        return () => { cancelled = true; };
+    }, []);
 
     useEffect(() => {
         if (!needsEntityType && (profile?.entityType || profile?.businessType || profile?.legalStructure)) {
@@ -683,6 +700,11 @@ export default function DocumentProductionScreen({
     const persistDocument = async (content: string, nextHistory: GenRecord[], existingId = currentDocumentIdRef.current) => {
         if (!content.trim()) return null;
         setSaveStatus("saving");
+        const completeness = currentRequirement ? computeDocumentCompleteness(currentRequirement, docInputs) : null;
+        const templateMetadata = currentTemplate ? {
+            templateDocumentType: currentTemplate.documentType,
+            templateId: currentTemplate.id,
+        } : {};
         const saved = await saveProducedDocument(userId, {
             id: existingId,
             title: getDocTitle(content),
@@ -692,7 +714,20 @@ export default function DocumentProductionScreen({
             request,
             content,
             history: nextHistory,
-        }, { fallbackStageId: currentStageId });
+        }, {
+            fallbackStageId: currentStageId,
+            metadata: {
+                ...templateMetadata,
+                businessName: businessName || undefined,
+                state: docState || docInputs.jurisdictionState || undefined,
+                documentHealthScore: completeness ? {
+                    score: completeness.score,
+                    filledRequired: completeness.filledRequired,
+                    totalRequired: completeness.totalRequired,
+                    computedAt: new Date().toISOString(),
+                } : undefined,
+            },
+        });
         if (!saved) {
             setSaveStatus("unavailable");
             return null;
@@ -1305,9 +1340,11 @@ export default function DocumentProductionScreen({
         setDocState("");
         if (selectedCategory) {
             const suggested = getSuggestedDocumentSettings(doc, selectedCategory);
+            const template = findStructuredDocumentTemplate(doc.name, documentTemplates);
+            const requirement = mergeDocumentTemplateIntoRequirement(getDocumentRequirement(doc, selectedCategory), template);
             setAudience(suggested.audience);
             setTone(suggested.tone);
-            setDocInputs(createDocumentInputDefaults(doc, selectedCategory, profile));
+            setDocInputs(applyDocumentRequirementDefaults(requirement, createDocumentInputDefaults(doc, selectedCategory, profile)));
         }
         setAutoFillCurrentDate(true);
         setShowValidation(false);
@@ -1318,7 +1355,10 @@ export default function DocumentProductionScreen({
     const generate = async () => {
         if (generating || generationLocked) return;
         setStudioLaunchNotice(null);
-        const requirement = selectedDoc && selectedCategory ? getDocumentRequirement(selectedDoc, selectedCategory) : null;
+        const template = findStructuredDocumentTemplate(docType || selectedDoc?.name || "", documentTemplates);
+        const requirement = selectedDoc && selectedCategory
+            ? mergeDocumentTemplateIntoRequirement(getDocumentRequirement(selectedDoc, selectedCategory), template)
+            : null;
         const validation = requirement ? validateDocumentInputs(requirement, docInputs) : { valid: true, missingRequired: [], errors: {} };
         if (!validation.valid) {
             setShowValidation(true);
@@ -1340,7 +1380,13 @@ export default function DocumentProductionScreen({
             tone,
             request,
             selectedDoc?.isStateAware ? docState : undefined,
-            [useCaseContext, structuredInputs].filter(Boolean).join("\n\n")
+            [useCaseContext, structuredInputs].filter(Boolean).join("\n\n"),
+            template ? {
+                documentType: template.documentType,
+                clauseGuidelines: template.clauseGuidelines,
+                jurisdictionNotes: template.jurisdictionNotes,
+                requiredFields: template.requiredFields,
+            } : null,
         );
 
         try {
@@ -1427,7 +1473,10 @@ export default function DocumentProductionScreen({
     const todayIso = getIsoDate();
     const effectiveDocumentDate = docInputs.documentDate || todayIso;
     const todayDate = formatLongDate(effectiveDocumentDate);
-    const currentRequirement = selectedDoc && selectedCategory ? getDocumentRequirement(selectedDoc, selectedCategory) : null;
+    const currentTemplate = findStructuredDocumentTemplate(docType || selectedDoc?.name || "", documentTemplates);
+    const currentRequirement = selectedDoc && selectedCategory
+        ? mergeDocumentTemplateIntoRequirement(getDocumentRequirement(selectedDoc, selectedCategory), currentTemplate)
+        : null;
     const suggestedSettings = selectedDoc && selectedCategory ? getSuggestedDocumentSettings(selectedDoc, selectedCategory) : null;
     const currentValidation = currentRequirement
         ? validateDocumentInputs(currentRequirement, docInputs)
@@ -1512,6 +1561,18 @@ export default function DocumentProductionScreen({
         legalDate: formatLegalDate(todayIso),
         state: typeof selectedVaultMetadata.state === "string" ? selectedVaultMetadata.state : undefined,
     };
+    const selectedVaultRiskNote = (() => {
+        const text = String(effectiveSelectedVaultDocument?.docType || "").toLowerCase();
+        if (text.includes("nda")) return "Review confidentiality scope, exclusions, duration, remedies, and state limits on restrictive covenants before signing.";
+        if (text.includes("operating agreement")) return "Review state LLC default rules, member voting, transfer limits, buyout mechanics, fiduciary duties, and dissolution terms.";
+        if (text.includes("privacy")) return "Review state privacy rights, GDPR exposure, cookies, sensitive data, children, retention, and vendor data sharing.";
+        if (text.includes("terms")) return "Review subscription, refund, arbitration, consumer protection, user content, limitation of liability, and platform-policy terms.";
+        if (text.includes("founder")) return "Review equity issuance, vesting, IP assignment, founder departures, tax elections, and securities implications.";
+        if (text.includes("consulting")) return "Review scope, payment timing, independent contractor classification, deliverable acceptance, IP assignment, and liability caps.";
+        if (text.includes("ip")) return "Review prior employer claims, excluded background IP, open-source obligations, moral rights, and recordable assignment needs.";
+        if (text.includes("employment") || text.includes("offer")) return "Review wage/hour classification, at-will language, state notices, equity documents, background checks, and non-compete limits.";
+        return "Review enforceability, missing deal terms, signature authority, notices, and state-specific requirements before relying on this draft.";
+    })();
 
     const generateVaultHealthSummary = async () => {
         if (vaultDocuments.length < 3 || vaultHealthLoading) return;
@@ -1711,7 +1772,7 @@ export default function DocumentProductionScreen({
                                             <div style={{ marginBottom: 12, background: "rgba(232,98,42,0.08)", border: "1px solid rgba(232,98,42,0.25)", borderRadius: 8, padding: "12px 14px", color: "rgba(240,237,232,0.7)", fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, lineHeight: 1.6, display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start" }}>
                                                 <div>
                                                     <strong style={{ color: "#F0EDE8" }}>⚠ AI-Generated Document</strong>
-                                                    <div>This document was created by Forge and has not been reviewed by an attorney. For legal documents, have a qualified attorney review before signing or sending.</div>
+                                                    <div>{selectedVaultRiskNote} This document was created by Forge and has not been reviewed by an attorney.</div>
                                                 </div>
                                                 <button
                                                     onClick={() => setLegalDisclaimerDismissed(true)}

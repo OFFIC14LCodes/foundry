@@ -40,6 +40,7 @@ export default function DailyBriefPanel({
     canGenerateReport,
     generationLimit,
     saveError,
+    searchQueries,
     onGenerate,
 }: {
     profileIndustry?: string | null;
@@ -56,9 +57,11 @@ export default function DailyBriefPanel({
     canGenerateReport: boolean;
     generationLimit: number | null;
     saveError: string | null;
+    searchQueries: string[];
     onGenerate: () => void;
 }) {
     const [sourcesOpen, setSourcesOpen] = useState(false);
+    const [researchOpen, setResearchOpen] = useState(false);
     const displayContent = generating
         ? streamedContent || currentReport?.content || ""
         : currentReport?.content || "";
@@ -69,6 +72,7 @@ export default function DailyBriefPanel({
 
     useEffect(() => {
         setSourcesOpen(false);
+        setResearchOpen(false);
     }, [currentReport?.id, currentReport?.date]);
 
     return (
@@ -171,7 +175,7 @@ export default function DailyBriefPanel({
                     <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "20px 18px", marginBottom: 14 }}>
                         <ReportSection content={displayContent} />
                         {!generating && (
-                            <div style={{ marginTop: 18, paddingTop: 14, background: "rgba(255,255,255,0.03)", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+                            <div style={{ marginTop: 18, paddingTop: 14, background: "rgba(255,255,255,0.03)", borderTop: "1px solid rgba(255,255,255,0.08)", display: "grid", gap: 12 }}>
                                 <button
                                     onClick={() => setSourcesOpen((open) => !open)}
                                     style={{
@@ -216,6 +220,44 @@ export default function DailyBriefPanel({
                                         </div>
                                     )
                                 )}
+                                <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 12 }}>
+                                    <button
+                                        onClick={() => setResearchOpen((open) => !open)}
+                                        style={{
+                                            width: "100%",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "space-between",
+                                            gap: 10,
+                                            background: "transparent",
+                                            border: "none",
+                                            padding: 0,
+                                            color: "#C8C4BE",
+                                            cursor: "pointer",
+                                            fontFamily: "'DM Sans', system-ui, sans-serif",
+                                            fontSize: 12,
+                                            fontWeight: 700,
+                                        }}
+                                    >
+                                        <span>How this was researched</span>
+                                        <span style={{ color: "#77716A", fontSize: 11 }}>{researchOpen ? "Hide" : "Show"}</span>
+                                    </button>
+                                    {researchOpen && (
+                                        searchQueries.length > 0 ? (
+                                            <ol style={{ margin: "10px 0 0 18px", padding: 0 }}>
+                                                {searchQueries.slice(0, 5).map((query) => (
+                                                    <li key={query} style={{ color: "#77716A", fontSize: 12, lineHeight: 1.7, marginBottom: 4, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+                                                        {query}
+                                                    </li>
+                                                ))}
+                                            </ol>
+                                        ) : (
+                                            <div style={{ marginTop: 10, color: "rgba(240,237,232,0.4)", fontSize: 12, lineHeight: 1.6, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+                                                Search query history is not available for this saved report.
+                                            </div>
+                                        )
+                                    )}
+                                </div>
                             </div>
                         )}
                     </div>
