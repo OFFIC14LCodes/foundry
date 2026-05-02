@@ -525,7 +525,7 @@ export default function ArchivePanel({
                             <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "36px 24px", color: "#888", fontSize: 13, lineHeight: 1.7, textAlign: "center" }}>
                                 <div style={{ fontSize: 30, marginBottom: 14 }}>📁</div>
                                 <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 16, color: "#F0EDE8", marginBottom: 8 }}>No saved archives yet.</div>
-                                <div>Use Save Chat in the Forge to store named snapshots of your conversations.</div>
+                                <div>Use Archive Chat in the Forge to store named snapshots of your conversations.</div>
                             </div>
                         ) : (
                             <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "18px 16px", color: "#888", fontSize: 13 }}>

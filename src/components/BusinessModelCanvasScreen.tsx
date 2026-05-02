@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import Logo from "./Logo";
 import {
     BUSINESS_MODEL_CANVAS_LABELS,
     BUSINESS_MODEL_CANVAS_SECTIONS,
@@ -64,7 +65,7 @@ export default function BusinessModelCanvasScreen({
                 >
                     ← Back
                 </button>
-                <Logo size={42} />
+                <Logo variant="flame" style={{ width: 42, height: 42, objectFit: "contain", flexShrink: 0 }} />
                 <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 30, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, lineHeight: 1 }}>Business Model Canvas</div>
                     <div style={{ fontSize: 13, color: "#9D978E", marginTop: 5 }}>

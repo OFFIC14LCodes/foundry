@@ -2,48 +2,7 @@ import { supabase } from '../supabase';
 import { recordMeaningfulActivity } from '../db';
 
 // ─────────────────────────────────────────────────────────────
-// COFOUNDER MODE — Database Layer
-//
-// Required Supabase tables (run in SQL editor):
-//
-// create table cofounder_teams (
-//   id uuid primary key default gen_random_uuid(),
-//   business_name text not null,
-//   owner_id uuid references auth.users(id),
-//   created_at timestamptz default now()
-// );
-//
-// create table cofounder_members (
-//   id uuid primary key default gen_random_uuid(),
-//   team_id uuid references cofounder_teams(id) on delete cascade,
-//   user_id uuid references auth.users(id),
-//   role text not null default 'Cofounder',
-//   display_name text not null,
-//   invited_by uuid references auth.users(id),
-//   joined_at timestamptz default now()
-// );
-//
-// create table cofounder_invites (
-//   id uuid primary key default gen_random_uuid(),
-//   team_id uuid references cofounder_teams(id) on delete cascade,
-//   token text unique not null default gen_random_uuid()::text,
-//   created_by uuid references auth.users(id),
-//   created_at timestamptz default now(),
-//   used_at timestamptz
-// );
-//
-// create table cofounder_messages (
-//   id uuid primary key default gen_random_uuid(),
-//   team_id uuid references cofounder_teams(id) on delete cascade,
-//   user_id uuid,
-//   role text not null,        -- 'member' | 'forge'
-//   sender_name text not null,
-//   sender_role text not null default '',
-//   content text not null,
-//   created_at timestamptz default now()
-// );
-//
-// Enable Row Level Security as needed for your deployment.
+// TYPES
 // ─────────────────────────────────────────────────────────────
 
 export interface CofounderTeam {
@@ -61,6 +20,7 @@ export interface CofounderMember {
     display_name: string;
     invited_by: string | null;
     joined_at: string;
+    last_seen_at?: string | null;
 }
 
 export interface CofounderInvite {
@@ -81,6 +41,21 @@ export interface CofounderMessage {
     sender_role: string;
     content: string;
     created_at: string;
+}
+
+export interface CofounderTask {
+    id: string;
+    team_id: string;
+    created_by: string | null;
+    assigned_to: string | null;
+    title: string;
+    description: string | null;
+    status: 'todo' | 'in_progress' | 'done';
+    priority: 'low' | 'normal' | 'high';
+    due_date: string | null;
+    completed_at: string | null;
+    created_at: string;
+    updated_at: string;
 }
 
 // ── TEAM ──────────────────────────────────────────────────────
@@ -123,6 +98,7 @@ export async function createTeam(
         role: 'Founder',
         display_name: displayName,
         invited_by: null,
+        last_seen_at: new Date().toISOString(),
     });
 
     return team as CofounderTeam;
@@ -139,6 +115,37 @@ export async function getTeamMembers(teamId: string): Promise<CofounderMember[]>
 
     if (error) console.error('getTeamMembers error:', error.message);
     return (data as CofounderMember[]) ?? [];
+}
+
+export async function updateMemberRole(
+    memberId: string,
+    userId: string,
+    newRole: string
+): Promise<boolean> {
+    const { error } = await supabase
+        .from('cofounder_members')
+        .update({ role: newRole })
+        .eq('id', memberId);
+
+    if (error) { console.error('updateMemberRole error:', error.message); return false; }
+    return true;
+}
+
+export async function removeMember(memberId: string): Promise<boolean> {
+    const { error } = await supabase
+        .from('cofounder_members')
+        .delete()
+        .eq('id', memberId);
+
+    if (error) { console.error('removeMember error:', error.message); return false; }
+    return true;
+}
+
+export async function updateMemberLastSeen(memberId: string): Promise<void> {
+    await supabase
+        .from('cofounder_members')
+        .update({ last_seen_at: new Date().toISOString() })
+        .eq('id', memberId);
 }
 
 // ── INVITES ───────────────────────────────────────────────────
@@ -198,7 +205,6 @@ export async function acceptInvite(
     const invite = await getInviteByToken(token);
     if (!invite) return { success: false };
 
-    // Check if already a member
     const { data: existing } = await supabase
         .from('cofounder_members')
         .select('id')
@@ -213,26 +219,43 @@ export async function acceptInvite(
             role,
             display_name: displayName,
             invited_by: invite.created_by,
+            last_seen_at: new Date().toISOString(),
         });
         if (error) { console.error('acceptInvite error:', error.message); return { success: false }; }
     }
 
-    // Invites remain reusable — multiple teammates can join with the same link
+    // Invite remains reusable — multiple teammates can join with the same link
     return { success: true, teamId: invite.team_id };
+}
+
+export async function revokeInvite(inviteId: string): Promise<boolean> {
+    const { error } = await supabase
+        .from('cofounder_invites')
+        .delete()
+        .eq('id', inviteId);
+
+    if (error) { console.error('revokeInvite error:', error.message); return false; }
+    return true;
 }
 
 // ── MESSAGES ──────────────────────────────────────────────────
 
-export async function loadCofounderMessages(teamId: string, limit = 60): Promise<CofounderMessage[]> {
+// Returns messages in chronological ASC order (newest `limit` messages).
+// offset lets you page back through history: offset=0 is newest, offset=60 is the next older batch.
+export async function loadCofounderMessages(
+    teamId: string,
+    limit = 60,
+    offset = 0
+): Promise<CofounderMessage[]> {
     const { data, error } = await supabase
         .from('cofounder_messages')
         .select('*')
         .eq('team_id', teamId)
-        .order('created_at', { ascending: true })
-        .limit(limit);
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
 
     if (error) console.error('loadCofounderMessages error:', error.message);
-    return (data as CofounderMessage[]) ?? [];
+    return ((data ?? []) as CofounderMessage[]).reverse();
 }
 
 export async function sendCofounderMessage(
@@ -256,11 +279,61 @@ export async function sendCofounderMessage(
     return (data as CofounderMessage) ?? null;
 }
 
-// Fetches recent team chat formatted as plain text for Forge context injection.
+// Returns the most recent `limit` messages as plain text for Forge context injection.
+// Ordered oldest-first so Forge reads the conversation in natural sequence.
 export async function getRecentCofounderContext(teamId: string, limit = 20): Promise<string> {
-    const msgs = await loadCofounderMessages(teamId, limit);
+    const msgs = await loadCofounderMessages(teamId, limit, 0);
     if (msgs.length === 0) return '';
     return msgs
         .map(m => `[${m.sender_name} (${m.sender_role})]: ${m.content}`)
         .join('\n');
+}
+
+// ── TASKS ─────────────────────────────────────────────────────
+
+export async function loadCofounderTasks(teamId: string): Promise<CofounderTask[]> {
+    const { data, error } = await supabase
+        .from('cofounder_tasks')
+        .select('*')
+        .eq('team_id', teamId)
+        .order('created_at', { ascending: false });
+
+    if (error) console.error('loadCofounderTasks error:', error.message);
+    return (data as CofounderTask[]) ?? [];
+}
+
+export async function createCofounderTask(
+    task: Omit<CofounderTask, 'id' | 'created_at' | 'updated_at'>
+): Promise<CofounderTask | null> {
+    const { data, error } = await supabase
+        .from('cofounder_tasks')
+        .insert(task)
+        .select()
+        .single();
+
+    if (error) console.error('createCofounderTask error:', error.message);
+    return (data as CofounderTask) ?? null;
+}
+
+export async function updateCofounderTask(
+    id: string,
+    updates: Partial<Pick<CofounderTask, 'title' | 'description' | 'status' | 'priority' | 'due_date' | 'assigned_to' | 'completed_at'>>
+): Promise<boolean> {
+    const { error } = await supabase
+        .from('cofounder_tasks')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', id);
+
+    if (error) { console.error('updateCofounderTask error:', error.message); return false; }
+    return true;
+}
+
+export async function deleteCofounderTask(id: string): Promise<boolean> {
+    const { error } = await supabase
+        .from('cofounder_tasks')
+        .delete()
+        .eq('id', id);
+
+    if (error) { console.error('deleteCofounderTask error:', error.message); return false; }
+    return true;
 }

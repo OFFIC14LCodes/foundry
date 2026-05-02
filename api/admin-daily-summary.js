@@ -38,6 +38,48 @@ const FROM_ADDRESS = process.env.RESEND_FROM_ADDRESS || 'Foundry <onboarding@res
 
 const STAGE_NAMES = { 1: 'Idea', 2: 'Plan', 3: 'Legal', 4: 'Finance', 5: 'Launch', 6: 'Grow' };
 
+async function countExact(queryBuilder) {
+  const { count, error } = await queryBuilder;
+  if (error) {
+    const message = String(error.message || '');
+    if (error.code === 'PGRST205' || message.includes('could not find the table')) {
+      return 0;
+    }
+    throw error;
+  }
+  return count ?? 0;
+}
+
+async function loadVaultUsageSummary(db, sinceIso) {
+  const [
+    vaultDocumentsCreated,
+    filesUploaded,
+    artifactsSaved,
+    signatureRequestsCreated,
+    documentsSignedCompleted,
+    mockDocumentsSignedCompleted,
+    needsWizardRuns,
+  ] = await Promise.all([
+    countExact(db.from('documents').select('id', { count: 'exact', head: true }).gte('created_at', sinceIso)),
+    countExact(db.from('document_files').select('id', { count: 'exact', head: true }).gte('created_at', sinceIso).in('file_kind', ['source_upload', 'attachment'])),
+    countExact(db.from('document_files').select('id', { count: 'exact', head: true }).gte('created_at', sinceIso).in('file_kind', ['generated_pdf', 'generated_docx', 'generated_html', 'signed_pdf'])),
+    countExact(db.from('document_signature_requests').select('id', { count: 'exact', head: true }).gte('created_at', sinceIso)),
+    countExact(db.from('document_signature_requests').select('id', { count: 'exact', head: true }).eq('status', 'completed').gte('completed_at', sinceIso)),
+    countExact(db.from('document_signature_requests').select('id', { count: 'exact', head: true }).eq('provider', 'mock').eq('status', 'completed').gte('completed_at', sinceIso)),
+    countExact(db.from('product_usage_events').select('id', { count: 'exact', head: true }).eq('feature', 'document_vault').eq('event_name', 'needs_wizard_run').gte('created_at', sinceIso)),
+  ]);
+
+  return {
+    vaultDocumentsCreated,
+    filesUploaded,
+    artifactsSaved,
+    signatureRequestsCreated,
+    documentsSignedCompleted,
+    mockDocumentsSignedCompleted,
+    needsWizardRuns,
+  };
+}
+
 // ── Handler ───────────────────────────────────────────────────
 
 export default async function handler(req, res) {
@@ -84,6 +126,7 @@ export default async function handler(req, res) {
     topUsersRes,
     inactivePayingRes,
     stageDistributionRes,
+    vaultUsageSummary,
   ] = await Promise.all([
     db.from('profiles').select('id', { count: 'exact', head: true }),
     db.from('profiles').select('id, name, email, created_at').gte('created_at', since24h).order('created_at', { ascending: false }),
@@ -100,6 +143,7 @@ export default async function handler(req, res) {
       .not('last_active_at', 'is', null)
       .order('last_active_at', { ascending: true }),
     db.from('profiles').select('current_stage').not('current_stage', 'is', null),
+    loadVaultUsageSummary(db, since24h),
   ]);
 
   const totalUsers = totalUsersRes.count ?? 0;
@@ -259,6 +303,7 @@ export default async function handler(req, res) {
     freeCount,
     messages24hCount: messages24h.length,
     docs24hCount: docs24h.length,
+    vaultUsageSummary,
     journalCount,
     briefingsCount,
     archiveSaves,
@@ -292,7 +337,7 @@ export default async function handler(req, res) {
 
 function buildEmailHtml({
   dateLabel, totalUsers, newSignups, paidCount, freeCount,
-  messages24hCount, docs24hCount, journalCount, briefingsCount, archiveSaves,
+  messages24hCount, docs24hCount, vaultUsageSummary, journalCount, briefingsCount, archiveSaves,
   renewalsSoon, recentCancellations, failedPayments, stripeError,
   topUserDetails, inactivePayingUsers, avgStage, stageDist,
 }) {
@@ -402,6 +447,13 @@ function buildEmailHtml({
     ${section('Usage — Last 24 Hours', '#63B3ED', `
       ${row('Forge messages sent', messages24hCount.toLocaleString())}
       ${row('Documents produced', docs24hCount.toLocaleString())}
+      ${row('Vault documents created', vaultUsageSummary.vaultDocumentsCreated.toLocaleString())}
+      ${row('Files uploaded', vaultUsageSummary.filesUploaded.toLocaleString())}
+      ${row('Artifacts saved', vaultUsageSummary.artifactsSaved.toLocaleString())}
+      ${row('Signature requests created', vaultUsageSummary.signatureRequestsCreated.toLocaleString())}
+      ${row('Completed signatures', vaultUsageSummary.documentsSignedCompleted.toLocaleString())}
+      ${row('Completed mock signatures', vaultUsageSummary.mockDocumentsSignedCompleted.toLocaleString())}
+      ${row('Needs wizard runs', vaultUsageSummary.needsWizardRuns.toLocaleString())}
       ${row('Journal entries written', journalCount.toLocaleString())}
       ${row('Briefings generated', briefingsCount.toLocaleString())}
       ${row('Archive saves', archiveSaves.toLocaleString())}

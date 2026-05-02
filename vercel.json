@@ -13,6 +13,10 @@
     {
       "path": "/api/admin-daily-summary",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/send-monday-briefings",
+      "schedule": "0 9 * * 1"
     }
   ]
 }

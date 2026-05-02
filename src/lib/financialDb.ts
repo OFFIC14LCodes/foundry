@@ -491,3 +491,128 @@ export async function acceptPlaidTransactionAsRevenue(userId: string, transactio
     }
     return revenue;
 }
+
+// ── Invoices (Supabase) ───────────────────────────────────────────────────────
+
+export type FounderInvoice = {
+    id: string;
+    invoiceNumber: string;
+    clientName: string;
+    clientEmail: string;
+    description: string;
+    amount: number;
+    currency: string;
+    issuedDate: string;
+    dueDate: string;
+    status: "draft" | "sent" | "paid";
+    notes: string;
+    createdAt: string;
+};
+
+function mapInvoice(row: any): FounderInvoice {
+    const lineItems = Array.isArray(row.line_items) ? row.line_items : [];
+    const first = lineItems[0] ?? {};
+    return {
+        id: row.id,
+        invoiceNumber: row.invoice_number ?? "",
+        clientName: row.client_name ?? "",
+        clientEmail: row.client_email ?? "",
+        description: first.description ?? "",
+        amount: Number(row.total_amount ?? 0),
+        currency: first.currency ?? "USD",
+        issuedDate: first.issuedDate ?? (row.created_at ?? "").slice(0, 10),
+        dueDate: row.due_date ?? "",
+        status: (row.status as "draft" | "sent" | "paid") ?? "draft",
+        notes: row.notes ?? "",
+        createdAt: row.created_at ?? "",
+    };
+}
+
+function generateInvoiceNumber(): string {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const r = Math.random().toString(36).slice(2, 6).toUpperCase();
+    return `INV-${y}${m}-${r}`;
+}
+
+export async function loadInvoicesFromDb(userId: string): Promise<FounderInvoice[]> {
+    const { data, error } = await supabase
+        .from("founder_invoices")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+    if (error) {
+        console.error("loadInvoicesFromDb error:", error.message);
+        return [];
+    }
+    return (data ?? []).map(mapInvoice);
+}
+
+export async function saveInvoiceToDb(
+    userId: string,
+    invoice: Omit<FounderInvoice, "id" | "invoiceNumber" | "createdAt"> & { id?: string; invoiceNumber?: string },
+): Promise<FounderInvoice | null> {
+    const lineItems = [{ description: invoice.description, currency: invoice.currency, issuedDate: invoice.issuedDate }];
+    const payload = {
+        user_id: userId,
+        invoice_number: invoice.invoiceNumber ?? generateInvoiceNumber(),
+        client_name: invoice.clientName,
+        client_email: invoice.clientEmail || null,
+        line_items: lineItems,
+        due_date: invoice.dueDate || null,
+        notes: invoice.notes || null,
+        status: invoice.status ?? "draft",
+        total_amount: Number(invoice.amount ?? 0),
+        updated_at: new Date().toISOString(),
+    };
+
+    const query = invoice.id
+        ? supabase.from("founder_invoices").upsert({ ...payload, id: invoice.id }, { onConflict: "id" })
+        : supabase.from("founder_invoices").insert(payload);
+
+    const { data, error } = await query.select("*").single();
+    if (error || !data) {
+        console.error("saveInvoiceToDb error:", error?.message);
+        return null;
+    }
+    return mapInvoice(data);
+}
+
+export async function deleteInvoiceFromDb(userId: string, invoiceId: string): Promise<boolean> {
+    const { error } = await supabase
+        .from("founder_invoices")
+        .delete()
+        .eq("user_id", userId)
+        .eq("id", invoiceId);
+    if (error) console.error("deleteInvoiceFromDb error:", error.message);
+    return !error;
+}
+
+// ── Monthly Close Notes ───────────────────────────────────────────────────────
+
+export async function saveMonthlyCloseNote(
+    userId: string,
+    data: {
+        monthYear: string;
+        revenue: number | null;
+        expenses: number | null;
+        net: number | null;
+        forgeInsight: string | null;
+        founderNote: string | null;
+        revenueGoal: number | null;
+    },
+): Promise<boolean> {
+    const { error } = await supabase.from("monthly_close_notes").insert({
+        user_id: userId,
+        month_year: data.monthYear,
+        revenue: data.revenue,
+        expenses: data.expenses,
+        net: data.net,
+        forge_insight: data.forgeInsight || null,
+        founder_note: data.founderNote || null,
+        revenue_goal: data.revenueGoal,
+    });
+    if (error) console.error("saveMonthlyCloseNote error:", error.message);
+    return !error;
+}

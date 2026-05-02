@@ -109,10 +109,7 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
     const [saveArchiveModalOpen, setSaveArchiveModalOpen] = useState(false);
     const [archiveTitleInput, setArchiveTitleInput] = useState("");
     const [savingArchive, setSavingArchive] = useState(false);
-    const [markingAcademyComplete, setMarkingAcademyComplete] = useState(false);
     const [academyLessonCompleted, setAcademyLessonCompleted] = useState(false);
-    const [knowledgeCheckAnswer, setKnowledgeCheckAnswer] = useState("");
-    const [knowledgeCheckFeedback, setKnowledgeCheckFeedback] = useState("");
     const [knowledgeCheckOpen, setKnowledgeCheckOpen] = useState(false);
     const [activeArchive, setActiveArchive] = useState<any | null>(initialArchive);
     const [activeAcademyEntry, setActiveAcademyEntry] = useState<AcademyTopicLaunch | null>(academyEntry);
@@ -139,10 +136,28 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
         setActiveAcademyEntry(academyEntry);
         academyBootstrappedRef.current = false;
         setAcademyLessonCompleted(false);
-        setMarkingAcademyComplete(false);
-        setKnowledgeCheckAnswer("");
-        setKnowledgeCheckFeedback("");
         setKnowledgeCheckOpen(false);
+
+        if (academyEntry) {
+            const saved = localStorage.getItem(`academy-chat-${academyEntry.id}`);
+            if (saved) {
+                try {
+                    const restored = JSON.parse(saved) as ChatMessage[];
+                    if (restored.length > 0) {
+                        setMessages(restored);
+                        academyBootstrappedRef.current = true;
+                    } else {
+                        setMessages([]);
+                    }
+                } catch {
+                    setMessages([]);
+                }
+            } else {
+                setMessages([]);
+            }
+        } else {
+            setMessages([]);
+        }
     }, [academyEntry]);
 
     useEffect(() => {
@@ -150,6 +165,11 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
         academyBootstrappedRef.current = true;
         void sendAcademyKickoff();
     }, [activeAcademyEntry?.id, activeArchive?.id]);
+
+    useEffect(() => {
+        if (!activeAcademyEntry || messages.length === 0) return;
+        localStorage.setItem(`academy-chat-${activeAcademyEntry.id}`, JSON.stringify(messages));
+    }, [messages, activeAcademyEntry?.id]);
 
     const openSaveArchiveModal = () => {
         const defaultTitle = activeArchive?.title || (activeAcademyEntry
@@ -205,6 +225,9 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
 
             if (!saved) return;
             onArchiveSaved?.(saved);
+            if (activeAcademyEntry) {
+                localStorage.removeItem(`academy-chat-${activeAcademyEntry.id}`);
+            }
             setSaveArchiveModalOpen(false);
             setMessages([]);
             setInput("");
@@ -286,6 +309,10 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
         }
 
         setLoading(false);
+
+        if (activeAcademyEntry?.sessionMode === "knowledge_check" && text.trim()) {
+            void autoEvaluateKnowledgeCheck(text.trim());
+        }
     };
 
     const sendAcademyKickoff = async (entryOverride?: AcademyTopicLaunch | null) => {
@@ -374,28 +401,24 @@ Start with a confident first lesson message that frames the topic, explains the 
         setActiveAcademyEntry(nextEntry);
         academyBootstrappedRef.current = false;
         setKnowledgeCheckOpen(false);
-        setKnowledgeCheckFeedback("");
-        setKnowledgeCheckAnswer("");
         await sendAcademyKickoff(nextEntry);
     };
 
-    const handleMarkAcademyComplete = async () => {
-        if (!activeAcademyEntry || !onMarkAcademyLessonCompleted || markingAcademyComplete || academyLessonCompleted || !knowledgeCheckAnswer.trim()) return;
-        setMarkingAcademyComplete(true);
+    const autoEvaluateKnowledgeCheck = async (userAnswer: string) => {
+        if (!activeAcademyEntry || !onMarkAcademyLessonCompleted || academyLessonCompleted) return;
         try {
-            const evaluation = await evaluateKnowledgeCheckLaunchAnswer(activeAcademyEntry, knowledgeCheckAnswer.trim());
-            setKnowledgeCheckFeedback(evaluation.feedback);
-            if (!evaluation.passed) return;
-            await Promise.resolve(onMarkAcademyLessonCompleted(activeAcademyEntry.id, {
-                knowledgeCheckedAt: new Date().toISOString(),
-                lastCheckResponse: knowledgeCheckAnswer.trim(),
-                lastCheckFeedback: evaluation.feedback,
-            }));
-            setAcademyLessonCompleted(true);
+            const evaluation = await evaluateKnowledgeCheckLaunchAnswer(activeAcademyEntry, userAnswer);
+            if (evaluation.passed) {
+                await Promise.resolve(onMarkAcademyLessonCompleted(activeAcademyEntry.id, {
+                    knowledgeCheckedAt: new Date().toISOString(),
+                    lastCheckResponse: userAnswer,
+                    lastCheckFeedback: evaluation.feedback,
+                }));
+                setAcademyLessonCompleted(true);
+                setKnowledgeCheckOpen(false);
+            }
         } catch (error) {
-            console.error("academy lesson completion error:", error);
-        } finally {
-            setMarkingAcademyComplete(false);
+            console.error("auto knowledge check error:", error);
         }
     };
 
@@ -480,8 +503,12 @@ Start with a confident first lesson message that frames the topic, explains the 
                 {activeAcademyEntry && onMarkAcademyLessonCompleted && (
                     <button
                         className="forge-chat-room__action"
-                        onClick={() => setKnowledgeCheckOpen((prev) => !prev)}
-                        disabled={markingAcademyComplete || academyLessonCompleted}
+                        onClick={() => {
+                            if (!academyLessonCompleted && activeAcademyEntry.sessionMode !== "knowledge_check") {
+                                void switchAcademyMode("knowledge_check");
+                            }
+                        }}
+                        disabled={academyLessonCompleted || activeAcademyEntry.sessionMode === "knowledge_check"}
                         style={{
                             background: academyLessonCompleted ? "rgba(76,175,138,0.08)" : "rgba(232,98,42,0.10)",
                             border: academyLessonCompleted ? "1px solid rgba(76,175,138,0.22)" : "1px solid rgba(232,98,42,0.22)",
@@ -489,12 +516,11 @@ Start with a confident first lesson message that frames the topic, explains the 
                             padding: "5px 12px",
                             color: academyLessonCompleted ? "#4CAF8A" : "#E8622A",
                             fontSize: 11,
-                            cursor: markingAcademyComplete || academyLessonCompleted ? "default" : "pointer",
+                            cursor: academyLessonCompleted || activeAcademyEntry.sessionMode === "knowledge_check" ? "default" : "pointer",
                             transition: "all 0.15s",
-                            opacity: markingAcademyComplete ? 0.72 : 1,
                         }}
                     >
-                        {academyLessonCompleted ? "Completed" : markingAcademyComplete ? "Checking..." : "Check understanding"}
+                        {academyLessonCompleted ? "Completed" : activeAcademyEntry.sessionMode === "knowledge_check" ? "Checking understanding" : "Check understanding"}
                     </button>
                 )}
                 {hasMessages && (
@@ -512,7 +538,7 @@ Start with a confident first lesson message that frames the topic, explains the 
                             transition: "all 0.15s",
                         }}
                     >
-                        Save Chat
+                        Archive Chat
                     </button>
                 )}
                 {hasMessages && (
@@ -536,90 +562,6 @@ Start with a confident first lesson message that frames the topic, explains the 
                     </button>
                 )}
             </div>
-
-            {knowledgeCheckOpen && activeAcademyEntry && onMarkAcademyLessonCompleted && (
-                <div style={{
-                    padding: "14px 20px",
-                    borderBottom: "1px solid rgba(255,255,255,0.07)",
-                    background: "rgba(12,12,14,0.98)",
-                    display: "grid",
-                    gap: 10,
-                }}>
-                    <div style={{ fontSize: 11, color: "#E8622A", letterSpacing: "0.12em", textTransform: "uppercase", fontWeight: 700 }}>
-                        Check your understanding
-                    </div>
-                    <div style={{ fontSize: 15, color: "#F0EDE8", lineHeight: 1.6 }}>
-                        {activeAcademyEntry.knowledgeCheckPrompt || `What is the core founder judgment this lesson was trying to build around "${activeAcademyEntry.title}"?`}
-                    </div>
-                    <textarea
-                        value={knowledgeCheckAnswer}
-                        onChange={(event) => setKnowledgeCheckAnswer(event.target.value)}
-                        placeholder="Answer in your own words. Focus on what the lesson was really trying to change in your judgment."
-                        style={{
-                            width: "100%",
-                            minHeight: 100,
-                            resize: "vertical",
-                            borderRadius: 12,
-                            border: "1px solid rgba(255,255,255,0.10)",
-                            background: "rgba(255,255,255,0.04)",
-                            color: "#F0EDE8",
-                            padding: "12px 14px",
-                            fontSize: 13,
-                            fontFamily: "'Lora', Georgia, serif",
-                            lineHeight: 1.7,
-                            boxSizing: "border-box",
-                        }}
-                    />
-                    {knowledgeCheckFeedback && (
-                        <div style={{
-                            background: academyLessonCompleted ? "rgba(76,175,138,0.10)" : "rgba(255,255,255,0.04)",
-                            border: academyLessonCompleted ? "1px solid rgba(76,175,138,0.20)" : "1px solid rgba(255,255,255,0.08)",
-                            borderRadius: 12,
-                            padding: "10px 12px",
-                            color: academyLessonCompleted ? "#D8F0E6" : "#D4CEC7",
-                            fontSize: 12,
-                            lineHeight: 1.7,
-                        }}>
-                            {knowledgeCheckFeedback}
-                        </div>
-                    )}
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                        <button
-                            onClick={() => void handleMarkAcademyComplete()}
-                            disabled={markingAcademyComplete || academyLessonCompleted || !knowledgeCheckAnswer.trim()}
-                            style={{
-                                background: "rgba(232,98,42,0.12)",
-                                border: "1px solid rgba(232,98,42,0.24)",
-                                borderRadius: 999,
-                                padding: "8px 14px",
-                                color: "#E8622A",
-                                fontSize: 12,
-                                fontWeight: 700,
-                                cursor: markingAcademyComplete || academyLessonCompleted ? "default" : "pointer",
-                            }}
-                        >
-                            {academyLessonCompleted ? "Completed" : markingAcademyComplete ? "Checking..." : "Make sure this landed"}
-                        </button>
-                        {activeAcademyEntry.sessionMode !== "knowledge_check" && (
-                            <button
-                                onClick={() => void switchAcademyMode("knowledge_check")}
-                                style={{
-                                    background: "rgba(255,255,255,0.04)",
-                                    border: "1px solid rgba(255,255,255,0.08)",
-                                    borderRadius: 999,
-                                    padding: "8px 14px",
-                                    color: "#C8C4BE",
-                                    fontSize: 12,
-                                    fontWeight: 700,
-                                    cursor: "pointer",
-                                }}
-                            >
-                                Open Forge check mode
-                            </button>
-                        )}
-                    </div>
-                </div>
-            )}
 
             {/* Messages */}
             <div
@@ -950,7 +892,7 @@ Start with a confident first lesson message that frames the topic, explains the 
                 <div style={{ position: "fixed", inset: 0, zIndex: 120, background: "rgba(4,4,5,0.84)", backdropFilter: "blur(12px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }}>
                     <div style={{ width: "min(520px, 100%)", background: "#0E0E10", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, padding: "20px 18px 18px" }}>
                         <div style={{ fontSize: 22, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 6 }}>
-                            {activeArchive?.id ? "Update Chat Archive" : "Save Chat with Forge"}
+                            {activeArchive?.id ? "Update Chat Archive" : "Archive Chat with Forge"}
                         </div>
                         <div style={{ fontSize: 12, color: "#666", lineHeight: 1.6, marginBottom: 14 }}>
                             {activeArchive?.id

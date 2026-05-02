@@ -15,6 +15,7 @@ import {
     revokeAccess,
     addAdminNote,
 } from '../lib/adminDb';
+import { loadAdminVaultUsage, type AdminVaultUsageSummary } from '../lib/adminVaultUsage';
 import { subscriptionLabel, planLabel } from '../lib/accessGate';
 import { hasAdminAccess, isOwnerRole, roleLabel } from '../lib/roles';
 
@@ -113,6 +114,62 @@ function StatsBar({ users }: { users: AdminUser[] }) {
                     </div>
                 </div>
             ))}
+        </div>
+    );
+}
+
+function VaultUsageBar({
+    usage,
+    loading,
+    error,
+}: {
+    usage: AdminVaultUsageSummary | null;
+    loading: boolean;
+    error: string | null;
+}) {
+    if (loading) {
+        return <div style={{ fontSize: 11, color: '#555', marginTop: 10 }}>Loading vault usage...</div>;
+    }
+
+    if (error) {
+        return <div style={{ fontSize: 11, color: '#A8705D', marginTop: 10 }}>{error}</div>;
+    }
+
+    if (!usage) return null;
+
+    const items = [
+        { label: 'Docs Produced', value: usage.documentsGenerated, color: '#E8622A' },
+        { label: 'Vault Created', value: usage.vaultDocumentsCreated, color: '#63B3ED' },
+        { label: 'Uploads', value: usage.filesUploaded, color: '#48BB78' },
+        { label: 'Artifacts', value: usage.artifactsSaved, color: '#F5A843' },
+        { label: 'Signature Requests', value: usage.signatureRequestsCreated, color: '#9B7FE8' },
+        { label: 'Completed', value: usage.documentsSignedCompleted, color: '#48BB78' },
+        { label: 'Wizard Runs', value: usage.needsWizardRuns, color: '#E8622A' },
+    ];
+
+    return (
+        <div style={{ marginTop: 12 }}>
+            <div style={{ fontSize: 10, color: '#555', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>
+                Document Vault · Last {usage.windowHours} Hours
+            </div>
+            <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 2 }}>
+                {items.map(item => (
+                    <div key={item.label} style={{
+                        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
+                        borderRadius: 10, padding: '8px 12px', textAlign: 'center', flexShrink: 0,
+                    }}>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: item.color, fontFamily: "'Lora', Georgia, serif" }}>
+                            {item.value}
+                        </div>
+                        <div style={{ fontSize: 9, color: '#444', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 2 }}>
+                            {item.label}
+                        </div>
+                    </div>
+                ))}
+            </div>
+            <div style={{ fontSize: 10, color: '#444', marginTop: 6 }}>
+                Mock signatures completed: {usage.mockDocumentsSignedCompleted}
+            </div>
         </div>
     );
 }
@@ -637,14 +694,33 @@ export default function AdminDashboard({ userId, onBack }: Props) {
     const [search, setSearch] = useState('');
     const [filter, setFilter] = useState('all');
     const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+    const [vaultUsage, setVaultUsage] = useState<AdminVaultUsageSummary | null>(null);
+    const [vaultUsageLoading, setVaultUsageLoading] = useState(true);
+    const [vaultUsageError, setVaultUsageError] = useState<string | null>(null);
 
-    useEffect(() => { fetchUsers(); }, []);
+    useEffect(() => {
+        fetchUsers();
+        fetchVaultUsage();
+    }, []);
 
     const fetchUsers = async () => {
         setLoading(true);
         const data = await loadAdminUsers();
         setUsers(data);
         setLoading(false);
+    };
+
+    const fetchVaultUsage = async () => {
+        setVaultUsageLoading(true);
+        setVaultUsageError(null);
+        try {
+            const data = await loadAdminVaultUsage();
+            setVaultUsage(data);
+        } catch (error) {
+            setVaultUsageError(error instanceof Error ? error.message : 'Unable to load vault usage.');
+        } finally {
+            setVaultUsageLoading(false);
+        }
     };
 
     const filtered = useMemo(() => applyFilter(users, filter, search), [users, filter, search]);
@@ -677,6 +753,7 @@ export default function AdminDashboard({ userId, onBack }: Props) {
 
                 {/* Stats */}
                 {!loading && <StatsBar users={users} />}
+                <VaultUsageBar usage={vaultUsage} loading={vaultUsageLoading} error={vaultUsageError} />
             </div>
 
             {/* Filter + search */}

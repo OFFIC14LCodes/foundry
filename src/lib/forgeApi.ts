@@ -35,7 +35,7 @@ export async function streamForgeAPI(
     messages: Array<{ role: string; content: MessageContent }>,
     systemPrompt: string,
     onChunk: (text: string) => void,
-    maxTokens = 1000
+    maxTokens = 2000
 ): Promise<string> {
     const moderatedMessages = messages.map((message) => (
         message.role === "user"

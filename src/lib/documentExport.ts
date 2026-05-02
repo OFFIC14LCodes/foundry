@@ -643,10 +643,18 @@ ${markdownToDocumentHtml(safeMarkdown, { skipFirstHeading: true })}
 </html>`;
 }
 
+export function buildStyledHtmlArtifact(markdown: string, meta: DocumentExportMeta) {
+    return {
+        blob: new Blob([buildStyledDocumentHtml(markdown, meta)], { type: "text/html;charset=utf-8" }),
+        fileName: getDownloadName(meta.title, "html"),
+    };
+}
+
 export function downloadStyledHtml(markdown: string, meta: DocumentExportMeta) {
+    const artifact = buildStyledHtmlArtifact(markdown, meta);
     downloadBlob(
-        new Blob([buildStyledDocumentHtml(markdown, meta)], { type: "text/html;charset=utf-8" }),
-        getDownloadName(meta.title, "html")
+        artifact.blob,
+        artifact.fileName
     );
 }
 
@@ -828,7 +836,7 @@ function createZip(files: Array<{ name: string; content: string }>) {
     return new Blob([...chunks, ...centralChunks, endRecord], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
 }
 
-export function downloadStyledDocx(markdown: string, meta: DocumentExportMeta) {
+export function buildStyledDocxArtifact(markdown: string, meta: DocumentExportMeta) {
     const safeMarkdown = sanitizeDocumentMarkdown(markdown, meta);
     const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
@@ -849,9 +857,17 @@ ${markdownToDocxBody(safeMarkdown.replace(/^#\s+.*(?:\r?\n)?/, ""))}
 <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
 </Relationships>`;
 
-    downloadBlob(createZip([
-        { name: "[Content_Types].xml", content: contentTypes },
-        { name: "_rels/.rels", content: rels },
-        { name: "word/document.xml", content: documentXml },
-    ]), getDownloadName(meta.title, "docx"));
+    return {
+        blob: createZip([
+            { name: "[Content_Types].xml", content: contentTypes },
+            { name: "_rels/.rels", content: rels },
+            { name: "word/document.xml", content: documentXml },
+        ]),
+        fileName: getDownloadName(meta.title, "docx"),
+    };
+}
+
+export function downloadStyledDocx(markdown: string, meta: DocumentExportMeta) {
+    const artifact = buildStyledDocxArtifact(markdown, meta);
+    downloadBlob(artifact.blob, artifact.fileName);
 }

@@ -1,6 +1,14 @@
 const DEFAULT_ELEVEN_MODEL = process.env.ELEVENLABS_MODEL_ID || "eleven_multilingual_v2";
 const OWNER_EMAIL = "foundryandforge.app@gmail.com";
 
+function normalizeEmail(email) {
+  return String(email || "").trim().toLowerCase();
+}
+
+function hasAdminRole(role) {
+  return role === "admin" || role === "owner";
+}
+
 export function getTtsConfig() {
   return {
     provider: process.env.TTS_PROVIDER || "elevenlabs",
@@ -181,9 +189,32 @@ export async function verifyAdminRequest(req) {
   }
 
   const user = await response.json();
-  const email = String(user?.email || "").trim().toLowerCase();
+  const email = normalizeEmail(user?.email);
 
-  if (email !== OWNER_EMAIL) {
+  if (email === OWNER_EMAIL) {
+    return user;
+  }
+
+  const profileResponse = await fetch(
+    `${supabaseUrl}/rest/v1/profiles?id=eq.${encodeURIComponent(user?.id || "")}&select=role,email`,
+    {
+      headers: {
+        apikey: supabaseAnonKey,
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!profileResponse.ok) {
+    throw createTtsError(403, "Admin access required");
+  }
+
+  const profileRows = await profileResponse.json();
+  const profile = Array.isArray(profileRows) ? profileRows[0] : null;
+  const profileEmail = normalizeEmail(profile?.email);
+  const profileRole = String(profile?.role || "").trim().toLowerCase();
+
+  if (!hasAdminRole(profileRole) && profileEmail !== OWNER_EMAIL) {
     throw createTtsError(403, "Admin access required");
   }
 

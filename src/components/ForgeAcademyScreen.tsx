@@ -6,9 +6,6 @@ import {
     getAcademySessionSubtitle,
     completeAcademyLesson,
     getCompletionBadgeLabel,
-    getKnowledgeCheckExpectedPoints,
-    getKnowledgeCheckPrompt,
-    evaluateKnowledgeCheckAnswer,
 } from "../lib/academyCompletion";
 import {
     buildYoutubeEmbedUrl,
@@ -522,12 +519,18 @@ export default function ForgeAcademyScreen({
     };
 
     const launchLessonFromPath = async (content: AcademyContent) => {
-        await handleLaunchForge(content, "learn");
+        const lastMode = localStorage.getItem(`academy-last-mode-${content.id}`);
+        if (lastMode === "forge") {
+            await handleLaunchForge(content, "learn");
+        } else {
+            await openContent(content, content.contentType === "video" ? "started_video" : "viewed");
+        }
     };
 
     const openContent = async (content: AcademyContent, action: "viewed" | "started_video" = "viewed") => {
         setSelectedSeries(null);
         setSelectedContent(content);
+        localStorage.setItem(`academy-last-mode-${content.id}`, "slides");
         try {
             await markLessonInProgress(content.id);
             await touchAcademyContentOpened(userId, content.id);
@@ -573,6 +576,7 @@ export default function ForgeAcademyScreen({
     const handleLaunchForge = async (content: AcademyContent, sessionMode: AcademySessionMode = "learn") => {
         if (!canLaunchForgeFromContent(content)) return;
         setBusyKey(`forge-${sessionMode}-${content.id}`);
+        localStorage.setItem(`academy-last-mode-${content.id}`, "forge");
         try {
             await markLessonInProgress(content.id);
             await touchAcademyContentForgeOpened(userId, content.id);
@@ -1056,7 +1060,6 @@ export default function ForgeAcademyScreen({
                     content={selectedContent}
                     progress={effectiveContentProgressById.get(selectedContent.id)}
                     onClose={() => setSelectedContent(null)}
-                    onCompleteLesson={(options) => handleCompleteContent(selectedContent, options)}
                     onLaunchForge={canLaunchForgeFromContent(selectedContent) ? (mode) => void handleLaunchForge(selectedContent, mode) : undefined}
                     busy={busyKey === `content-${selectedContent.id}` || isForgeBusyFor(selectedContent.id)}
                 />
@@ -2361,14 +2364,12 @@ function ContentDetailModal({
     content,
     progress,
     onClose,
-    onCompleteLesson,
     onLaunchForge,
     busy,
 }: {
     content: AcademyContent;
     progress?: AcademyUserContentProgress;
     onClose: () => void;
-    onCompleteLesson: (options: { knowledgeCheckedAt?: string | null; lastCheckResponse?: string | null; lastCheckFeedback?: string | null }) => Promise<void> | void;
     onLaunchForge?: (mode: AcademySessionMode) => void;
     busy: boolean;
 }) {
@@ -2377,41 +2378,21 @@ function ContentDetailModal({
     const thumbnailUrl = content.thumbnailUrl || buildYoutubeThumbnailUrl(content.youtubeVideoId);
     const slides = useMemo(() => buildLessonSlides(content), [content]);
     const [activeSlideIndex, setActiveSlideIndex] = useState(0);
-    const [knowledgeAnswer, setKnowledgeAnswer] = useState("");
-    const [knowledgeFeedback, setKnowledgeFeedback] = useState(progress?.lastCheckFeedback ?? "");
-    const [showKnowledgeCheck, setShowKnowledgeCheck] = useState(completed);
-    const [checkingKnowledge, setCheckingKnowledge] = useState(false);
 
     useEffect(() => {
-        setActiveSlideIndex(0);
-        setKnowledgeAnswer("");
-        setKnowledgeFeedback(progress?.lastCheckFeedback ?? "");
-        setShowKnowledgeCheck(progress?.status === "completed");
-    }, [content.id, progress?.lastCheckFeedback, progress?.status]);
+        const saved = parseInt(localStorage.getItem(`academy-slide-${content.id}`) ?? "0", 10);
+        setActiveSlideIndex(isNaN(saved) ? 0 : Math.min(saved, slides.length - 1));
+    }, [content.id]);
+
+    const goToSlide = (index: number) => {
+        setActiveSlideIndex(index);
+        localStorage.setItem(`academy-slide-${content.id}`, String(index));
+    };
 
     const activeSlide = slides[activeSlideIndex] ?? slides[0];
     const isLastSlide = activeSlideIndex >= slides.length - 1;
     const canOpenForge = Boolean(onLaunchForge && isLastSlide);
-    const knowledgePrompt = getKnowledgeCheckPrompt(content);
-    const expectedPoints = getKnowledgeCheckExpectedPoints(content);
-    const handleKnowledgeCheck = async () => {
-        if (!knowledgeAnswer.trim() || checkingKnowledge) return;
-        setCheckingKnowledge(true);
-        try {
-            const evaluation = await evaluateKnowledgeCheckAnswer(content, knowledgeAnswer.trim());
-            setKnowledgeFeedback(evaluation.feedback);
-            if (evaluation.passed) {
-                await Promise.resolve(onCompleteLesson({
-                    knowledgeCheckedAt: new Date().toISOString(),
-                    lastCheckResponse: knowledgeAnswer.trim(),
-                    lastCheckFeedback: evaluation.feedback,
-                }));
-                onClose();
-            }
-        } finally {
-            setCheckingKnowledge(false);
-        }
-    };
+    const canCheckUnderstanding = Boolean(onLaunchForge && !completed);
 
     return (
         <ModalShell onClose={onClose}>
@@ -2446,7 +2427,7 @@ function ContentDetailModal({
                                 <button
                                     key={`${slide.eyebrow}-${index}`}
                                     type="button"
-                                    onClick={() => setActiveSlideIndex(index)}
+                                    onClick={() => goToSlide(index)}
                                     style={{
                                         width: 34,
                                         height: 8,
@@ -2528,11 +2509,11 @@ function ContentDetailModal({
                             )}
 
                             <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                                <InlineButton tone="muted" onClick={() => setActiveSlideIndex((current) => Math.max(0, current - 1))} disabled={activeSlideIndex === 0}>
+                                <InlineButton tone="muted" onClick={() => goToSlide(Math.max(0, activeSlideIndex - 1))} disabled={activeSlideIndex === 0}>
                                     Back
                                 </InlineButton>
                                 {!isLastSlide && (
-                                    <InlineButton onClick={() => setActiveSlideIndex((current) => Math.min(slides.length - 1, current + 1))}>
+                                    <InlineButton onClick={() => goToSlide(Math.min(slides.length - 1, activeSlideIndex + 1))}>
                                         Next card
                                     </InlineButton>
                                 )}
@@ -2552,23 +2533,13 @@ function ContentDetailModal({
                             {busy ? "Opening..." : "Apply this now"}
                         </InlineButton>
                     )}
-                    {!completed ? (
-                        <InlineButton tone="success" onClick={() => { setShowKnowledgeCheck(true); void handleKnowledgeCheck(); }} disabled={busy || checkingKnowledge || !knowledgeAnswer.trim()}>
-                            {checkingKnowledge ? "Checking..." : "Check understanding"}
-                        </InlineButton>
-                    ) : (
+                    {completed ? (
                         <CompletionBadge label={getCompletionBadgeLabel(content)} />
-                    )}
-                    {canOpenForge && onLaunchForge && (
-                        <InlineButton tone="muted" onClick={() => onLaunchForge("knowledge_check")} disabled={busy}>
-                            Turn this into judgment
+                    ) : canCheckUnderstanding && onLaunchForge ? (
+                        <InlineButton tone="success" onClick={() => onLaunchForge("knowledge_check")} disabled={busy}>
+                            {busy ? "Opening..." : "Check my understanding"}
                         </InlineButton>
-                    )}
-                    {!showKnowledgeCheck && !completed && (
-                        <InlineButton tone="muted" onClick={() => setShowKnowledgeCheck(true)} disabled={busy}>
-                            Open check prompt
-                        </InlineButton>
-                    )}
+                    ) : null}
                     {content.resourceUrl && (
                         <a
                             href={content.resourceUrl}
@@ -2580,42 +2551,6 @@ function ContentDetailModal({
                         </a>
                     )}
                 </div>
-
-                {(showKnowledgeCheck || completed) && (
-                    <div style={{ display: "grid", gap: 12, background: "rgba(255,255,255,0.03)", border, borderRadius: 18, padding: 16 }}>
-                        <div style={{ display: "grid", gap: 6 }}>
-                            <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700 }}>
-                                Check your understanding
-                            </div>
-                            <div style={{ fontSize: 18, lineHeight: 1.15, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
-                                Forge wants to make sure this landed
-                            </div>
-                            <div style={{ fontSize: 14, color: "#D2CCC4", lineHeight: 1.8 }}>
-                                {knowledgePrompt}
-                            </div>
-                        </div>
-                        {expectedPoints.length > 0 && (
-                            <div style={{ display: "grid", gap: 8 }}>
-                                {expectedPoints.map((point) => (
-                                    <div key={point} style={{ background: "rgba(255,255,255,0.04)", border, borderRadius: 14, padding: "10px 12px", fontSize: 12, color: "#CFC7BF", lineHeight: 1.7 }}>
-                                        {point}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                        <textarea
-                            value={knowledgeAnswer}
-                            onChange={(event) => setKnowledgeAnswer(event.target.value)}
-                            placeholder="Answer in your own words. Focus on what the lesson was really trying to build in your judgment."
-                            style={{ ...textareaStyle, minHeight: 120, background: "rgba(11,11,13,0.8)" }}
-                        />
-                        {knowledgeFeedback && (
-                            <div style={{ background: completed ? "rgba(76,175,138,0.10)" : "rgba(255,255,255,0.04)", border: completed ? "1px solid rgba(76,175,138,0.20)" : border, borderRadius: 14, padding: "12px 14px", fontSize: 13, color: completed ? "#D8F0E6" : "#D4CEC7", lineHeight: 1.8 }}>
-                                {knowledgeFeedback}
-                            </div>
-                        )}
-                    </div>
-                )}
 
                 {!isLastSlide && onLaunchForge && (
                     <div style={{ fontSize: "var(--foundry-academy-md-font)", color: "#8D857C", lineHeight: 1.7 }}>

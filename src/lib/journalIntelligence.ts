@@ -47,29 +47,38 @@ Respond in this exact JSON format with no other text:
 Journal entry:
 ${content}`;
 
-    try {
-        const raw = await callForgeAPI(
-            [{ role: "user", content: prompt }],
-            "You are a concise analyst. Respond only with the JSON object requested. No markdown, no explanation.",
-            400
-        );
+    let lastErr: unknown;
 
-        // Strip markdown code fences if model wrapped the response
-        const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
-        const parsed = JSON.parse(cleaned);
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+        try {
+            const raw = await callForgeAPI(
+                [{ role: "user", content: prompt }],
+                "You are a concise analyst. Respond only with the JSON object requested. No markdown, no explanation.",
+                600
+            );
 
-        if (typeof parsed.summary !== "string") throw new Error("Invalid summary field");
+            // Strip markdown code fences if model wrapped the response
+            const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+            const parsed = JSON.parse(cleaned);
 
-        const themes: string[] = Array.isArray(parsed.themes)
-            ? parsed.themes.filter((t: unknown) => typeof t === "string" && VALID_THEMES.has(t))
-            : [];
+            if (typeof parsed.summary !== "string") throw new Error("Invalid summary field");
 
-        await updateJournalEntrySummary(entryId, userId, parsed.summary, themes);
-        return { summary: parsed.summary, themes };
-    } catch (err) {
-        console.error("summarizeJournalEntry parse error:", err);
-        return null;
+            const themes: string[] = Array.isArray(parsed.themes)
+                ? parsed.themes.filter((t: unknown) => typeof t === "string" && VALID_THEMES.has(t))
+                : [];
+
+            await updateJournalEntrySummary(entryId, userId, parsed.summary, themes);
+            return { summary: parsed.summary, themes };
+        } catch (err) {
+            lastErr = err;
+            if (attempt < 3) {
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+        }
     }
+
+    console.error("summarizeJournalEntry failed after 3 attempts:", lastErr);
+    return null;
 }
 
 // ── Context block for Forge ────────────────────────────────────

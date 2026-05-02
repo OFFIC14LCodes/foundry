@@ -5,7 +5,7 @@ import { useConversationalTts } from "../hooks/useConversationalTts";
 import { streamForgeAPI, callForgeAPI } from "../lib/forgeApi";
 import { getLanguageWarning, moderateUserText } from "../lib/languageModeration";
 import { buildPitchSystemPrompt, buildFeedbackSystemPrompt } from "../constants/pitchPrompt";
-import { saveConversationSummary } from "../db";
+import { loadPitchSessions, saveConversationSummary, saveJournalEntry, savePitchSession, type PitchSessionRecord } from "../db";
 import TypingDots from "./TypingDots";
 import ForgeAvatar from "./ForgeAvatar";
 import Logo from "./Logo";
@@ -25,6 +25,18 @@ interface PitchMessage {
     id?: number;
 }
 
+interface ParsedScores {
+    clarity: number;
+    confidence: number;
+    persuasiveness: number;
+    brevity: number;
+    overall: number;
+    strengths: string[];
+    improvements: string[];
+    fix: string;
+    encouragement: string;
+}
+
 // ─────────────────────────────────────────────────────────────
 // Constants
 // ─────────────────────────────────────────────────────────────
@@ -34,6 +46,80 @@ const SCENARIOS: { id: Scenario; label: string; sub: string; icon: any }[] = [
     { id: "elevator", label: "Elevator Pitch", sub: "60 seconds — make it count", icon: Icons.forge.advance },
     { id: "partner", label: "Partner Pitch", sub: "Find the right co-founder or partner", icon: Icons.sidebar.cofounder },
 ];
+
+const SCENARIO_CONTEXT: Record<Scenario, { persona: string; tips: string[]; color: string }> = {
+    investor: {
+        persona: "A seed-stage angel investor deciding whether this is worth a check.",
+        tips: ["Lead with the problem, not the product", "Be specific about market size", "Have a clear ask"],
+        color: "#E8622A",
+    },
+    customer: {
+        persona: "A skeptical first customer hearing about your product for the first time.",
+        tips: ["Focus on their pain, not your features", "Ask questions before pitching", "Name your price confidently"],
+        color: "#4CAF8A",
+    },
+    elevator: {
+        persona: "A seasoned entrepreneur with about 60 seconds before the elevator arrives.",
+        tips: ["One sentence on what you do", "One sentence on who it's for", "One clear call to action"],
+        color: "#9B59B6",
+    },
+    partner: {
+        persona: "A potential business partner evaluating whether this is worth their time.",
+        tips: ["Lead with complementary skills", "Be clear on equity expectations", "Show traction or momentum"],
+        color: "#3498DB",
+    },
+};
+
+function parseFeedbackScores(text: string): ParsedScores | null {
+    const match = text.match(/SCORES_JSON:(\{.+\})/);
+    if (!match) return null;
+    try {
+        const parsed = JSON.parse(match[1]);
+        return {
+            clarity: Number(parsed.clarity),
+            confidence: Number(parsed.confidence),
+            persuasiveness: Number(parsed.persuasiveness),
+            brevity: Number(parsed.brevity),
+            overall: Number(parsed.overall),
+            strengths: Array.isArray(parsed.strengths) ? parsed.strengths.map(String) : [],
+            improvements: Array.isArray(parsed.improvements) ? parsed.improvements.map(String) : [],
+            fix: String(parsed.fix ?? ""),
+            encouragement: String(parsed.encouragement ?? ""),
+        };
+    } catch {
+        return null;
+    }
+}
+
+function stripScoresJson(text: string) {
+    return text.replace(/\n?SCORES_JSON:.+$/s, "").trim();
+}
+
+function scoreColor(score?: number | null) {
+    if (!score) return "rgba(240,237,232,0.3)";
+    if (score >= 4) return "#4CAF8A";
+    if (score === 3) return "#E8622A";
+    return "rgba(232,98,42,0.7)";
+}
+
+function scenarioLabelFor(id: string) {
+    return SCENARIOS.find(s => s.id === id)?.label || "Pitch";
+}
+
+function formatSessionDate(iso: string) {
+    return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+function calcWordCount(text: string) {
+    return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+function averagePitchScore(session: PitchSessionRecord) {
+    const values = [session.clarityScore, session.confidenceScore, session.persuasivenessScore, session.brevityScore]
+        .filter((value): value is number => typeof value === "number");
+    if (!values.length) return null;
+    return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
 
 // ─────────────────────────────────────────────────────────────
 // Feedback renderer — handles **bold** and - bullet points
@@ -153,6 +239,153 @@ function StructuredPitchText({ text }: { text: string }) {
     return <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{blocks}</div>;
 }
 
+function ScoreCard({ label, value }: { label: string; value?: number | null }) {
+    const safeValue = value ?? 0;
+    const color = scoreColor(safeValue);
+    return (
+        <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: 16 }}>
+            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(240,237,232,0.5)", fontFamily: "'DM Sans', sans-serif", marginBottom: 8 }}>{label}</div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+                <span style={{ fontSize: 36, color, fontFamily: "'Playfair Display', Georgia, serif", lineHeight: 1 }}>{safeValue || "—"}</span>
+                <span style={{ fontSize: 14, color: "rgba(240,237,232,0.3)", fontFamily: "'DM Sans', sans-serif" }}>/5</span>
+            </div>
+            <div style={{ display: "flex", gap: 5, marginTop: 10 }}>
+                {[1, 2, 3, 4, 5].map(dot => (
+                    <span key={dot} style={{ width: 7, height: 7, borderRadius: "50%", background: dot <= safeValue ? color : "rgba(255,255,255,0.1)" }} />
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function OverallScoreCard({ value }: { value?: number | null }) {
+    const safeValue = value ?? 0;
+    const color = scoreColor(safeValue);
+    return (
+        <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: 18, marginBottom: 18 }}>
+            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(240,237,232,0.5)", fontFamily: "'DM Sans', sans-serif", marginBottom: 8 }}>Overall</div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginBottom: 12 }}>
+                <span style={{ fontSize: 48, color, fontFamily: "'Playfair Display', Georgia, serif", lineHeight: 1 }}>{safeValue || "—"}</span>
+                <span style={{ fontSize: 14, color: "rgba(240,237,232,0.3)", fontFamily: "'DM Sans', sans-serif" }}>/5</span>
+            </div>
+            <div style={{ height: 6, borderRadius: 3, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+                <div style={{ width: `${Math.max(0, Math.min(100, (safeValue / 5) * 100))}%`, height: "100%", background: color, borderRadius: 3 }} />
+            </div>
+        </div>
+    );
+}
+
+function FeedbackSections({ text, scores }: { text: string; scores: ParsedScores | null }) {
+    const withoutScores = text.replace(/\*\*Scores\*\*[\s\S]*$/i, "").trim();
+    const sections = withoutScores.split(/\*\*(What worked|What to sharpen|The one most important fix)\*\*/g);
+    const rendered: ReactNode[] = [];
+
+    for (let i = 1; i < sections.length; i += 2) {
+        const title = sections[i];
+        const body = sections[i + 1]?.trim() ?? "";
+        const lines = body.split("\n").map(line => line.trim()).filter(Boolean);
+        const isFix = title === "The one most important fix";
+        rendered.push(
+            <div key={title} style={{
+                background: isFix ? "rgba(232,98,42,0.08)" : "transparent",
+                border: isFix ? "1px solid rgba(232,98,42,0.2)" : "none",
+                borderRadius: isFix ? 10 : 0,
+                padding: isFix ? 14 : 0,
+                marginBottom: 18,
+            }}>
+                {isFix && <div style={{ fontSize: 11, textTransform: "uppercase", color: "#E8622A", fontFamily: "'DM Sans', sans-serif", marginBottom: 8 }}>🎯 Focus on this</div>}
+                <div style={{ fontSize: 15, color: "#F0EDE8", fontWeight: 600, fontFamily: "'Lora', Georgia, serif", marginBottom: 8 }}>{title}</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                    {lines.map((line, index) => {
+                        const cleaned = line.replace(/^- /, "");
+                        return (
+                            <div key={index} style={{ fontSize: 14, color: "rgba(240,237,232,0.8)", fontFamily: "'DM Sans', sans-serif", lineHeight: 1.7, paddingLeft: line.startsWith("- ") ? 8 : 0 }}>
+                                {line.startsWith("- ") ? `• ${cleaned}` : cleaned}
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <>
+            {rendered.length ? rendered : <FeedbackText text={withoutScores} />}
+            {scores?.encouragement && (
+                <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: 16, marginTop: 4, textAlign: "center", fontSize: 14, fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", color: "rgba(240,237,232,0.7)", lineHeight: 1.7 }}>
+                    {scores.encouragement}
+                </div>
+            )}
+        </>
+    );
+}
+
+function TranscriptReplay({ messages }: { messages: PitchMessage[] }) {
+    return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {messages.map((msg, index) => (
+                <div key={index} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start" }}>
+                    <div style={{
+                        maxWidth: "82%",
+                        background: msg.role === "user" ? "rgba(232,98,42,0.12)" : "rgba(255,255,255,0.04)",
+                        color: msg.role === "user" ? "rgba(240,237,232,0.8)" : "rgba(240,237,232,0.6)",
+                        borderRadius: 10,
+                        padding: "8px 12px",
+                        fontSize: 13,
+                        lineHeight: 1.55,
+                        fontFamily: "'DM Sans', sans-serif",
+                        whiteSpace: "pre-wrap",
+                    }}>{msg.text}</div>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+function PitchMessageBubble({ msg }: { msg: PitchMessage }) {
+    const isCoachingNote = msg.role === "forge" && msg.text.trim().startsWith("[COACHING NOTE]:");
+    const displayText = isCoachingNote ? msg.text.replace(/^\[COACHING NOTE\]:\s*/i, "") : msg.text;
+
+    if (isCoachingNote) {
+        return (
+            <div style={{
+                padding: "10px 12px",
+                borderRadius: 10,
+                background: "rgba(76,175,138,0.08)",
+                border: "1px solid rgba(76,175,138,0.2)",
+                color: "rgba(240,237,232,0.75)",
+                fontSize: 13,
+                lineHeight: 1.65,
+            }}>
+                <div style={{ color: "#4CAF8A", fontSize: 11, fontFamily: "'DM Sans', sans-serif", marginBottom: 5 }}>💡 Quick coaching note</div>
+                <StructuredPitchText text={displayText} />
+            </div>
+        );
+    }
+
+    return (
+        <div
+            style={{
+                padding: "10px 14px",
+                borderRadius: msg.role === "user" ? "16px 16px 4px 16px" : "4px 16px 16px 16px",
+                background: msg.role === "user" ? "rgba(232,98,42,0.12)" : "rgba(255,255,255,0.04)",
+                border: msg.role === "user" ? "1px solid rgba(232,98,42,0.2)" : "1px solid rgba(255,255,255,0.06)",
+                fontSize: 13,
+                lineHeight: 1.65,
+                color: msg.role === "user" ? "#F0EDE8" : "#C8C4BE",
+            }}
+        >
+            {msg.text
+                ? msg.role === "forge"
+                    ? <StructuredPitchText text={displayText} />
+                    : <div style={{ whiteSpace: "pre-wrap" }}>{displayText}</div>
+                : (msg.id ? <TypingDots /> : null)
+            }
+        </div>
+    );
+}
+
 // ─────────────────────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────────────────────
@@ -176,10 +409,20 @@ export default function PitchPracticeScreen({
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
     const [feedback, setFeedback] = useState<string | null>(null);
+    const [scores, setScores] = useState<ParsedScores | null>(null);
     const [archiveSaved, setArchiveSaved] = useState(false);
     const [archiveSaving, setArchiveSaving] = useState(false);
     const [forgeVoiceOn, setForgeVoiceOn] = useState(true);
     const [sessionTime, setSessionTime] = useState(0);
+    const [setupTab, setSetupTab] = useState<"practice" | "history">("practice");
+    const [history, setHistory] = useState<PitchSessionRecord[]>([]);
+    const [historyLoading, setHistoryLoading] = useState(false);
+    const [historyModal, setHistoryModal] = useState<PitchSessionRecord | null>(null);
+    const [transcriptOpen, setTranscriptOpen] = useState(false);
+    const [copiedFeedback, setCopiedFeedback] = useState(false);
+    const [journalSaved, setJournalSaved] = useState(false);
+    const [voiceError, setVoiceError] = useState<string | null>(null);
+    const [showScenarioContext, setShowScenarioContext] = useState(false);
     const [languageWarning, setLanguageWarning] = useState<string | null>(null);
     const [confirmedProfanityInput, setConfirmedProfanityInput] = useState<string | null>(null);
 
@@ -196,6 +439,28 @@ export default function PitchPracticeScreen({
         finalizeStream,
         speakText,
     } = useConversationalTts(mode === "voice" && forgeVoiceOn);
+
+    const voiceSupported = speechSupported;
+
+    useEffect(() => {
+        let cancelled = false;
+        const loadHistory = async () => {
+            setHistoryLoading(true);
+            const sessions = await loadPitchSessions(userId, 20);
+            if (!cancelled) {
+                setHistory(sessions);
+                setHistoryLoading(false);
+            }
+        };
+        void loadHistory();
+        return () => { cancelled = true; };
+    }, [userId]);
+
+    useEffect(() => {
+        if (!voiceError) return;
+        const timeout = window.setTimeout(() => setVoiceError(null), 5000);
+        return () => window.clearTimeout(timeout);
+    }, [voiceError]);
 
     // Auto-scroll to bottom
     useEffect(() => {
@@ -220,16 +485,25 @@ export default function PitchPracticeScreen({
         if (trialUsesRemaining !== null && trialUsesRemaining <= 0) return;
         onConsumeTrialUse?.();
         setMessages([]);
+        setFeedback(null);
+        setScores(null);
+        setTranscriptOpen(false);
+        setCopiedFeedback(false);
+        setJournalSaved(false);
         setSessionTime(0);
         setPhase("session");
         setLoading(true);
+        setVoiceError(null);
+        setShowScenarioContext(true);
 
         const openerId = Date.now();
         const openerMsg: PitchMessage = { role: "forge", text: "", id: openerId };
-        setMessages([openerMsg]);
 
         const systemPrompt = buildPitchSystemPrompt(profile, scenario);
         try {
+            await new Promise(resolve => window.setTimeout(resolve, 3000));
+            setShowScenarioContext(false);
+            setMessages([openerMsg]);
             if (mode === "voice" && forgeVoiceOn) beginVoiceStream();
             const finalText = await streamForgeAPI(
                 [{ role: "user", content: "Begin the session. Introduce yourself in one sentence as the audience, then invite me to pitch you. Keep it brief and natural." }],
@@ -242,6 +516,7 @@ export default function PitchPracticeScreen({
             setMessages(prev => prev.map(m => m.id === openerId ? { ...m, text: finalText, id: undefined } : m));
             if (mode === "voice" && forgeVoiceOn) await finalizeStream(finalText);
         } catch {
+            setShowScenarioContext(false);
             const fallback = "Ready when you are. Go ahead and pitch me.";
             setMessages([{ role: "forge", text: fallback }]);
             if (mode === "voice" && forgeVoiceOn) await speakText(fallback);
@@ -315,15 +590,47 @@ export default function PitchPracticeScreen({
 
         const systemPrompt = buildFeedbackSystemPrompt(profile, scenario, messages);
         try {
-            const result = await callForgeAPI(
+            const rawFeedback = await callForgeAPI(
                 [{ role: "user", content: "Please provide the coaching feedback now." }],
-                systemPrompt
+                systemPrompt,
+                1500
             );
-            setFeedback(result);
-            await savePitchFeedback(result);
+            const parsedScores = parseFeedbackScores(rawFeedback);
+            const displayFeedback = stripScoresJson(rawFeedback);
+            setScores(parsedScores);
+            setFeedback(displayFeedback);
+            await savePitchSession(userId, {
+                scenario,
+                mode,
+                duration_seconds: sessionTime,
+                transcript: messages.map(m => ({ role: m.role, text: m.text })),
+                feedback: displayFeedback,
+                clarity_score: parsedScores?.clarity ?? null,
+                confidence_score: parsedScores?.confidence ?? null,
+                persuasiveness_score: parsedScores?.persuasiveness ?? null,
+                brevity_score: parsedScores?.brevity ?? null,
+                overall_score: parsedScores?.overall ?? null,
+                key_strengths: parsedScores?.strengths ?? [],
+                key_improvements: parsedScores?.improvements ?? [],
+                most_important_fix: parsedScores?.fix ?? null,
+                encouragement: parsedScores?.encouragement ?? null,
+            }).then(saved => {
+                if (saved) setHistory(prev => [saved, ...prev.filter(item => item.id !== saved.id)]);
+            });
+            await savePitchFeedback(displayFeedback);
         } catch {
             const fallback = "Something went wrong generating your feedback. Review the conversation above and note what felt unclear or unconvincing — that's your starting point.";
+            setScores(null);
             setFeedback(fallback);
+            await savePitchSession(userId, {
+                scenario,
+                mode,
+                duration_seconds: sessionTime,
+                transcript: messages.map(m => ({ role: m.role, text: m.text })),
+                feedback: fallback,
+            }).then(saved => {
+                if (saved) setHistory(prev => [saved, ...prev.filter(item => item.id !== saved.id)]);
+            });
             await savePitchFeedback(fallback);
         }
         setLoading(false);
@@ -349,6 +656,22 @@ export default function PitchPracticeScreen({
         }
     };
 
+    const handleVoiceRecognitionError = (error?: string) => {
+        switch (error) {
+            case "not-allowed":
+                setVoiceError("Microphone access was denied. Enable it in your browser settings.");
+                break;
+            case "no-speech":
+                setVoiceError("No speech detected. Tap the mic and speak clearly.");
+                break;
+            case "network":
+                setVoiceError("Network error. Check your connection and try again.");
+                break;
+            default:
+                setVoiceError("Microphone error. Try speaking again or switch to text mode.");
+        }
+    };
+
     // ── Voice input handler ──
     const handleMicPress = () => {
         if (loading || speaking) return;
@@ -359,7 +682,7 @@ export default function PitchPracticeScreen({
         cancelSpeech();
         startListening(
             (transcript) => setInput(transcript.trim()),
-            () => { /* mic error — silent fail, user can try again */ }
+            handleVoiceRecognitionError
         );
     };
 
@@ -370,7 +693,7 @@ export default function PitchPracticeScreen({
         cancelSpeech();
         startListening(
             (transcript) => setInput(transcript.trim()),
-            () => { /* mic error — silent fail, user can try again */ }
+            handleVoiceRecognitionError
         );
     };
 
@@ -380,11 +703,42 @@ export default function PitchPracticeScreen({
         stopListening();
         setMessages([]);
         setFeedback(null);
+        setScores(null);
         setArchiveSaved(false);
         setArchiveSaving(false);
+        setTranscriptOpen(false);
+        setCopiedFeedback(false);
+        setJournalSaved(false);
+        setVoiceError(null);
+        setShowScenarioContext(false);
         setSessionTime(0);
         setPhase("setup");
     };
+
+    const copyFeedback = async () => {
+        if (!feedback) return;
+        await navigator.clipboard.writeText(feedback);
+        setCopiedFeedback(true);
+        window.setTimeout(() => setCopiedFeedback(false), 2000);
+    };
+
+    const saveFeedbackToJournal = async () => {
+        if (!feedback || journalSaved) return;
+        const title = `Pitch Practice — ${scenarioLabelFor(scenario)} — ${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
+        const content = `${title}\n\n${feedback}`;
+        const saved = await saveJournalEntry(userId, content, Number(profile?.currentStage) || 1, calcWordCount(content));
+        if (saved) setJournalSaved(true);
+    };
+
+    const latestScenarioComparison = (() => {
+        if (history.length < 2) return null;
+        const latest = history[0];
+        const previousSame = history.slice(1).find(item => item.scenario === latest.scenario);
+        if (!latest?.overallScore || !previousSame?.overallScore) return null;
+        if (latest.overallScore > previousSame.overallScore) return `📈 Improving on ${scenarioLabelFor(latest.scenario).toLowerCase()} pitches`;
+        if (latest.overallScore < previousSame.overallScore) return "Keep practicing — consistency builds confidence";
+        return "Holding steady — push for the next level";
+    })();
 
     // ═══════════════════════════════════════════════════════════
     // SETUP PHASE
@@ -424,6 +778,30 @@ export default function PitchPracticeScreen({
                         </div>
                     )}
 
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 22 }}>
+                        {(["practice", "history"] as const).map(tab => (
+                            <button
+                                key={tab}
+                                onClick={() => setSetupTab(tab)}
+                                style={{
+                                    padding: "10px 12px",
+                                    borderRadius: 10,
+                                    border: setupTab === tab ? "1px solid rgba(232,98,42,0.45)" : "1px solid rgba(255,255,255,0.07)",
+                                    background: setupTab === tab ? "rgba(232,98,42,0.1)" : "rgba(255,255,255,0.025)",
+                                    color: setupTab === tab ? "#E8622A" : "rgba(240,237,232,0.55)",
+                                    fontSize: 12,
+                                    fontWeight: 700,
+                                    fontFamily: "'DM Sans', sans-serif",
+                                    cursor: "pointer",
+                                }}
+                            >
+                                {tab === "practice" ? "Practice" : "History"}
+                            </button>
+                        ))}
+                    </div>
+
+                    {setupTab === "practice" ? (
+                    <>
                     {/* Intro */}
                     <div style={{ marginBottom: 28, animation: "fadeSlideUp 0.4s ease both", textAlign: "left" }}>
                         <div style={{ fontSize: 23, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 8, lineHeight: 1.2 }}>
@@ -433,6 +811,11 @@ export default function PitchPracticeScreen({
                             Forge plays the audience. You pitch. Get honest feedback on your clarity, confidence, and persuasiveness — before the stakes are real.
                         </div>
                     </div>
+                    {!voiceSupported && (
+                        <div style={{ marginTop: -14, marginBottom: 20, fontSize: 12, color: "rgba(240,237,232,0.4)", fontFamily: "'DM Sans', sans-serif", lineHeight: 1.6 }}>
+                            Voice mode requires Chrome or Edge. Text mode works in all browsers.
+                        </div>
+                    )}
 
                     {/* Mode Selector */}
                     <div style={{ marginBottom: 24, animation: "fadeSlideUp 0.4s ease 0.05s both" }}>
@@ -556,7 +939,101 @@ export default function PitchPracticeScreen({
                     >
                         {trialUsesRemaining !== null && trialUsesRemaining <= 0 ? "Preview limit reached" : "Start Session →"}
                     </button>
+                    </>
+                    ) : (
+                        <div style={{ animation: "fadeSlideUp 0.35s ease both" }}>
+                            {history.length >= 3 && (
+                                <div style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: 16, marginBottom: 16 }}>
+                                    <div style={{ fontSize: 15, color: "#F0EDE8", fontFamily: "'Lora', Georgia, serif", fontWeight: 600, marginBottom: 14 }}>
+                                        {latestScenarioComparison ?? "Your pitch score trend"}
+                                    </div>
+                                    <div style={{ height: 120, display: "flex", alignItems: "flex-end", gap: 8, borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: 8 }}>
+                                        {history.slice(0, 8).reverse().map(session => {
+                                            const value = session.overallScore ?? 0;
+                                            const color = SCENARIO_CONTEXT[session.scenario as Scenario]?.color ?? "#E8622A";
+                                            return (
+                                                <div key={session.id} title={`${scenarioLabelFor(session.scenario)}: ${value}/5`} style={{ flex: 1, display: "flex", alignItems: "flex-end", justifyContent: "center", height: "100%" }}>
+                                                    <div style={{ width: "70%", height: `${Math.max(4, (value / 5) * 100)}%`, background: color, borderRadius: "6px 6px 0 0", opacity: value ? 0.85 : 0.25 }} />
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: 14, marginBottom: 16 }}>
+                                <div style={{ fontSize: 13, color: "#F0EDE8", fontFamily: "'Lora', Georgia, serif", fontWeight: 600, marginBottom: 10 }}>Your best scores</div>
+                                {(["investor", "customer", "elevator", "partner"] as Scenario[]).map(id => {
+                                    const best = history
+                                        .filter(session => session.scenario === id)
+                                        .sort((a, b) => ((averagePitchScore(b) ?? 0) - (averagePitchScore(a) ?? 0)))[0];
+                                    const bestAverage = best ? averagePitchScore(best) : null;
+                                    return (
+                                        <div key={id} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 10, padding: "7px 0", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+                                            <div style={{ fontSize: 12, color: "rgba(240,237,232,0.65)", fontFamily: "'DM Sans', sans-serif" }}>{scenarioLabelFor(id)}</div>
+                                            <div style={{ fontSize: 12, color: best ? "#D9B15D" : "rgba(240,237,232,0.3)", fontFamily: "'DM Sans', sans-serif" }}>
+                                                {best && bestAverage !== null ? `★ ${bestAverage.toFixed(1)} overall   ${formatSessionDate(best.createdAt)}` : "★ —  No sessions yet"}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {historyLoading ? (
+                                <div style={{ color: "#555", fontSize: 13 }}>Loading pitch history...</div>
+                            ) : history.length === 0 ? (
+                                <div style={{ color: "#666", fontSize: 13, lineHeight: 1.7 }}>No pitch sessions saved yet. Run a practice session and your scores will appear here.</div>
+                            ) : (
+                                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                                    {history.map(session => (
+                                        <div key={session.id} style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: 14 }}>
+                                            <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginBottom: 8 }}>
+                                                <div>
+                                                    <div style={{ fontSize: 14, color: "#F0EDE8", fontWeight: 600 }}>{scenarioLabelFor(session.scenario)}</div>
+                                                    <div style={{ fontSize: 12, color: "rgba(240,237,232,0.4)", fontFamily: "'DM Sans', sans-serif" }}>{formatSessionDate(session.createdAt)} · {session.mode}</div>
+                                                </div>
+                                                <div style={{ color: scoreColor(session.overallScore), fontSize: 24, fontFamily: "'Playfair Display', Georgia, serif" }}>{session.overallScore ?? "—"}</div>
+                                            </div>
+                                            <div style={{ display: "flex", gap: 5, marginBottom: 10 }}>
+                                                {[session.clarityScore, session.confidenceScore, session.persuasivenessScore, session.brevityScore].map((value, index) => (
+                                                    <span key={index} style={{ width: 8, height: 8, borderRadius: "50%", background: scoreColor(value) }} />
+                                                ))}
+                                            </div>
+                                            <button onClick={() => setHistoryModal(session)} style={{ background: "transparent", border: "none", color: "#E8622A", fontSize: 12, cursor: "pointer", padding: 0 }}>View Feedback →</button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
+                {historyModal && (
+                    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.82)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }}>
+                        <div style={{ width: "100%", maxWidth: 720, maxHeight: "86vh", overflowY: "auto", background: "rgb(12,12,14)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 16, padding: 20 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 14 }}>
+                                <div>
+                                    <div style={{ fontSize: 18, color: "#F0EDE8", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>{scenarioLabelFor(historyModal.scenario)}</div>
+                                    <div style={{ fontSize: 12, color: "rgba(240,237,232,0.4)", fontFamily: "'DM Sans', sans-serif" }}>{formatSessionDate(historyModal.createdAt)} · {historyModal.mode}</div>
+                                </div>
+                                <button onClick={() => setHistoryModal(null)} style={{ background: "transparent", border: "none", color: "#888", fontSize: 22, cursor: "pointer" }}>×</button>
+                            </div>
+                            <OverallScoreCard value={historyModal.overallScore} />
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
+                                <ScoreCard label="Clarity" value={historyModal.clarityScore} />
+                                <ScoreCard label="Confidence" value={historyModal.confidenceScore} />
+                                <ScoreCard label="Persuasiveness" value={historyModal.persuasivenessScore} />
+                                <ScoreCard label="Brevity" value={historyModal.brevityScore} />
+                            </div>
+                            {historyModal.feedback && (
+                                <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: 16, marginBottom: 16 }}>
+                                    <FeedbackText text={historyModal.feedback} />
+                                </div>
+                            )}
+                            <div style={{ fontSize: 13, color: "rgba(240,237,232,0.5)", fontFamily: "'DM Sans', sans-serif", marginBottom: 10 }}>Session Transcript</div>
+                            <TranscriptReplay messages={historyModal.transcript} />
+                        </div>
+                    </div>
+                )}
             </div>
         );
     }
@@ -598,8 +1075,49 @@ export default function PitchPracticeScreen({
                                 </div>
                             </div>
 
+                            {scores && (
+                                <>
+                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10, animation: "fadeSlideUp 0.4s ease 0.03s both" }}>
+                                        <ScoreCard label="Clarity" value={scores.clarity} />
+                                        <ScoreCard label="Confidence" value={scores.confidence} />
+                                        <ScoreCard label="Persuasiveness" value={scores.persuasiveness} />
+                                        <ScoreCard label="Brevity" value={scores.brevity} />
+                                    </div>
+                                    <OverallScoreCard value={scores.overall} />
+                                </>
+                            )}
+
                             <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "20px 18px", marginBottom: 16, animation: "fadeSlideUp 0.4s ease 0.05s both" }}>
-                                {feedback ? <FeedbackText text={feedback} /> : null}
+                                {feedback ? <FeedbackSections text={feedback} scores={scores} /> : null}
+                            </div>
+
+                            <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, marginBottom: 14, overflow: "hidden" }}>
+                                <button onClick={() => setTranscriptOpen(prev => !prev)} style={{ width: "100%", background: "transparent", border: "none", color: "rgba(240,237,232,0.5)", fontSize: 13, fontFamily: "'DM Sans', sans-serif", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px", cursor: "pointer" }}>
+                                    <span>Session Transcript</span>
+                                    <span>{transcriptOpen ? "↑" : "↓"}</span>
+                                </button>
+                                {transcriptOpen && (
+                                    <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", padding: 14 }}>
+                                        <TranscriptReplay messages={messages} />
+                                    </div>
+                                )}
+                            </div>
+
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10, animation: "fadeSlideUp 0.4s ease 0.08s both" }}>
+                                <button
+                                    onClick={saveFeedbackToJournal}
+                                    disabled={!feedback || journalSaved}
+                                    style={{ padding: "12px", background: journalSaved ? "rgba(76,175,138,0.12)" : "rgba(255,255,255,0.04)", border: journalSaved ? "1px solid rgba(76,175,138,0.25)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 12, color: journalSaved ? "#4CAF8A" : "#C8C4BE", fontSize: 12, cursor: journalSaved ? "default" : "pointer", fontWeight: 600 }}
+                                >
+                                    {journalSaved ? "Saved to Journal ✓" : "Save to Journal"}
+                                </button>
+                                <button
+                                    onClick={copyFeedback}
+                                    disabled={!feedback}
+                                    style={{ padding: "12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, color: copiedFeedback ? "#4CAF8A" : "#C8C4BE", fontSize: 12, cursor: "pointer", fontWeight: 600 }}
+                                >
+                                    {copiedFeedback ? "Copied ✓" : "Copy Feedback"}
+                                </button>
                             </div>
 
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, animation: "fadeSlideUp 0.4s ease 0.1s both" }}>
@@ -627,6 +1145,15 @@ export default function PitchPracticeScreen({
     // SESSION PHASE
     // ═══════════════════════════════════════════════════════════
     const scenarioLabel = SCENARIOS.find(s => s.id === scenario)?.label || "Pitch";
+    const elevatorRemaining = Math.max(0, 60 - sessionTime);
+    const timerDisplay = scenario === "elevator" ? formatTime(elevatorRemaining) : formatTime(sessionTime);
+    const timerStateColor = scenario === "elevator" && sessionTime >= 60
+        ? "#E8622A"
+        : sessionTime >= 600
+            ? "rgba(232,98,42,0.7)"
+            : sessionTime >= 300
+                ? "#E8622A"
+                : "#F0EDE8";
 
     return (
         <div style={{ height: "100dvh", display: "flex", flexDirection: "column", background: "#080809", fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8", overflow: "hidden" }}>
@@ -636,8 +1163,14 @@ export default function PitchPracticeScreen({
                     <Logo variant="flame" style={{ width: 32, height: 32, objectFit: "contain" }} />
                     <div>
                         <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "'Playfair Display', Georgia, serif" }}>{scenarioLabel}</div>
-                        <div style={{ fontSize: 10, color: "#555" }}>{formatTime(sessionTime)} · {mode === "voice" ? "Voice" : "Text"}</div>
+                        <div style={{ fontSize: 10, color: "#555" }}>{mode === "voice" ? "Voice" : "Text"}</div>
                     </div>
+                </div>
+                <div style={{ textAlign: "center", flex: 1 }}>
+                    <div style={{ fontSize: 20, color: timerStateColor, fontFamily: "'Playfair Display', Georgia, serif", animation: sessionTime >= 600 ? "forgePulse 1.2s infinite" : "none" }}>{timerDisplay}</div>
+                    {scenario === "elevator" && sessionTime >= 60 && (
+                        <div style={{ fontSize: 10, color: "#E8622A", fontFamily: "'DM Sans', sans-serif" }}>Time's up — wrap it up!</div>
+                    )}
                 </div>
                 <button
                     onClick={endSession}
@@ -649,6 +1182,20 @@ export default function PitchPracticeScreen({
 
             {/* Messages */}
             <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 8px" }}>
+                {showScenarioContext && (
+                    <div style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: 18, marginBottom: 14, animation: "fadeSlideUp 0.3s ease both" }}>
+                        <div style={{ fontSize: 11, color: "rgba(240,237,232,0.4)", fontFamily: "'DM Sans', sans-serif", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>You're pitching to</div>
+                        <div style={{ fontSize: 16, color: "#F0EDE8", fontFamily: "'Lora', Georgia, serif", fontWeight: 600, marginBottom: 14 }}>
+                            {SCENARIO_CONTEXT[scenario].persona}
+                        </div>
+                        <div style={{ fontSize: 12, color: "rgba(240,237,232,0.45)", fontFamily: "'DM Sans', sans-serif", marginBottom: 8 }}>Tips for this scenario:</div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                            {SCENARIO_CONTEXT[scenario].tips.map(tip => (
+                                <div key={tip} style={{ fontSize: 13, color: "rgba(240,237,232,0.7)", fontFamily: "'DM Sans', sans-serif", lineHeight: 1.5 }}>• {tip}</div>
+                            ))}
+                        </div>
+                    </div>
+                )}
                 {messages.map((msg, i) => (
                     <div
                         key={i}
@@ -666,24 +1213,7 @@ export default function PitchPracticeScreen({
                             </div>
                         )}
                         <div style={{ display: "flex", flexDirection: "column", maxWidth: "78%" }}>
-                            <div
-                                style={{
-                                    padding: "10px 14px",
-                                    borderRadius: msg.role === "user" ? "16px 16px 4px 16px" : "4px 16px 16px 16px",
-                                    background: msg.role === "user" ? "rgba(232,98,42,0.12)" : "rgba(255,255,255,0.04)",
-                                    border: msg.role === "user" ? "1px solid rgba(232,98,42,0.2)" : "1px solid rgba(255,255,255,0.06)",
-                                    fontSize: 13,
-                                    lineHeight: 1.65,
-                                    color: msg.role === "user" ? "#F0EDE8" : "#C8C4BE",
-                                }}
-                            >
-                                {msg.text
-                                    ? msg.role === "forge"
-                                        ? <StructuredPitchText text={msg.text} />
-                                        : <div style={{ whiteSpace: "pre-wrap" }}>{msg.text}</div>
-                                    : (msg.id ? <TypingDots /> : null)
-                                }
-                            </div>
+                            <PitchMessageBubble msg={msg} />
                             {msg.role === "forge" && msg.text && <MessageActions text={msg.text} />}
                         </div>
                     </div>
@@ -702,11 +1232,11 @@ export default function PitchPracticeScreen({
             </div>
 
             {/* Voice status bar */}
-            {mode === "voice" && (listening || speaking) && (
+            {mode === "voice" && (
                 <div style={{ padding: "7px 16px", background: "rgba(232,98,42,0.07)", borderTop: "1px solid rgba(232,98,42,0.12)", display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                    <div style={{ width: 7, height: 7, borderRadius: "50%", background: listening ? "#4CAF8A" : "#E8622A", animation: "forgePulse 1s infinite" }} />
-                    <span style={{ fontSize: 11, color: "#777" }}>
-                        {listening ? "Listening..." : "Forge is speaking..."}
+                    <div style={{ width: listening ? 8 : speaking ? 18 : 7, height: 7, borderRadius: listening ? "50%" : speaking ? 999 : "50%", background: listening ? "#D8563A" : speaking ? "#E8622A" : "rgba(240,237,232,0.25)", animation: listening || speaking ? "forgePulse 1s infinite" : "none" }} />
+                    <span style={{ fontSize: 13, color: "#777", fontFamily: "'DM Sans', sans-serif" }}>
+                        {listening ? "Listening... speak now" : speaking ? "Forge is responding..." : "Tap to speak"}
                     </span>
                     {speaking && (
                         <button onClick={cancelSpeech} style={{ marginLeft: "auto", background: "none", border: "none", color: "#555", fontSize: 11, cursor: "pointer" }}>
@@ -718,6 +1248,11 @@ export default function PitchPracticeScreen({
 
             {/* Input Area */}
             <div style={{ padding: "10px 12px max(12px, calc(8px + env(safe-area-inset-bottom)))", borderTop: "1px solid rgba(255,255,255,0.05)", flexShrink: 0, background: "#080809" }}>
+                {voiceError && (
+                    <div style={{ background: "rgba(232,98,42,0.08)", border: "1px solid rgba(232,98,42,0.25)", borderRadius: 8, padding: "10px 14px", color: "rgba(240,237,232,0.8)", fontSize: 13, fontFamily: "'DM Sans', sans-serif", marginBottom: 10 }}>
+                        {voiceError}
+                    </div>
+                )}
                 {mode === "voice" ? (
                     <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingBottom: 4 }}>
                         <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>

@@ -1,8 +1,6 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Suspense, lazy, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { supabase } from "./supabase";
 import AuthScreen from "./AuthScreen";
-import JournalScreen from "./JournalScreen";
-import BriefingsScreen from "./BriefingsScreen";
 import {
   loadProfile, saveProfile,
   loadAllStageProgress, saveStageProgress,
@@ -21,6 +19,7 @@ import {
   markNotificationRead,
   recordMeaningfulActivity,
   loadBillingSubscription,
+  deleteDocumentVaultStorageForUser,
   saveDecision,
   loadDecisions,
   loadRecentSummaries,
@@ -66,22 +65,6 @@ import MilestonesPanel from "./components/MilestonesPanel";
 import StageBriefing from "./components/StageBriefing";
 import HubScreen from "./components/HubScreen";
 import { Icons } from "./icons";
-import PitchPracticeScreen from "./components/PitchPracticeScreen";
-import DocumentProductionScreen from "./components/DocumentProductionScreen";
-import MarketIntelligenceScreen from "./components/MarketIntelligenceScreen";
-import CofounderModeScreen from "./components/CofounderModeScreen";
-import ForgeChatRoom from "./components/ForgeChatRoom";
-import AdminHubScreen from "./components/AdminHubScreen";
-import ForgeAcademyScreen from "./components/ForgeAcademyScreen";
-import BusinessModelCanvasScreen from "./components/BusinessModelCanvasScreen";
-import AppTourScreen from "./components/AppTourScreen";
-import ArchivePanel from "./components/ArchivePanel";
-import SettingsScreen from "./components/settings/SettingsScreen";
-import PrivacyPolicyScreen from "./components/settings/PrivacyPolicyScreen";
-import EulaScreen from "./components/settings/EulaScreen";
-import TermsAndConditionsScreen from "./components/settings/TermsAndConditionsScreen";
-import AcceptableUsePolicyScreen from "./components/settings/AcceptableUsePolicyScreen";
-import DisclaimerScreen from "./components/settings/DisclaimerScreen";
 import Logo from "./components/Logo";
 import ForgeBubble from "./components/ForgeBubble";
 import LoadingForgeAnimation from "./components/LoadingForgeAnimation";
@@ -154,6 +137,28 @@ import {
 } from "./lib/notifications";
 import type { AcademyTopicLaunch } from "./lib/academy";
 import { clearFoundryClientStorage, createEmptyMessagesByStage, createEmptyStageProgress } from "./lib/session";
+import type { DocumentScreenContext } from "./components/DocumentProductionScreen";
+import type { AcademyScreenContext } from "./components/ForgeAcademyScreen";
+
+const JournalScreen = lazy(() => import("./JournalScreen"));
+const BriefingsScreen = lazy(() => import("./BriefingsScreen"));
+const PitchPracticeScreen = lazy(() => import("./components/PitchPracticeScreen"));
+const DocumentProductionScreen = lazy(() => import("./components/DocumentProductionScreen"));
+const MarketIntelligenceScreen = lazy(() => import("./components/MarketIntelligenceScreen"));
+const CofounderModeScreen = lazy(() => import("./components/CofounderModeScreen"));
+const ForgeChatRoom = lazy(() => import("./components/ForgeChatRoom"));
+const AdminHubScreen = lazy(() => import("./components/AdminHubScreen"));
+const ForgeAcademyScreen = lazy(() => import("./components/ForgeAcademyScreen"));
+const FinancialDashboardScreen = lazy(() => import("./components/FinancialDashboardScreen"));
+const BusinessModelCanvasScreen = lazy(() => import("./components/BusinessModelCanvasScreen"));
+const AppTourScreen = lazy(() => import("./components/AppTourScreen"));
+const ArchivePanel = lazy(() => import("./components/ArchivePanel"));
+const SettingsScreen = lazy(() => import("./components/settings/SettingsScreen"));
+const PrivacyPolicyScreen = lazy(() => import("./components/settings/PrivacyPolicyScreen"));
+const EulaScreen = lazy(() => import("./components/settings/EulaScreen"));
+const TermsAndConditionsScreen = lazy(() => import("./components/settings/TermsAndConditionsScreen"));
+const AcceptableUsePolicyScreen = lazy(() => import("./components/settings/AcceptableUsePolicyScreen"));
+const DisclaimerScreen = lazy(() => import("./components/settings/DisclaimerScreen"));
 
 // callForgeAPI and streamForgeAPI are imported from ./lib/forgeApi
 
@@ -212,7 +217,7 @@ async function buildRichContext(
   activeStage,
   completedByStage,
   messagesByStage,
-  cofoundersContext?: string | null,
+  userTeamId?: string | null,
   currentPrompt?: string,
   recentSummaries?: StageSummary[],
   foundryDecisions?: FounderDecision[],
@@ -222,6 +227,10 @@ async function buildRichContext(
   financialSummary?: FinancialSummary | null,
   businessModelCanvas?: BusinessModelCanvasRecord | null,
 ) {
+  let cofoundersContext: string | null = null;
+  if (userTeamId) {
+    try { cofoundersContext = await getRecentCofounderContext(userTeamId, 20); } catch { /* ignore */ }
+  }
   const stageData = STAGES_DATA[activeStage - 1];
   const completedMilestones = completedByStage[activeStage] || [];
 
@@ -379,6 +388,34 @@ ${journalBlock ? `${journalBlock}\n\n` : ""}${bmcBlock ? `${bmcBlock}\n\n` : ""}
     context,
     bookMatches: bookContextPackage.matches,
   };
+}
+
+function ScreenLoadingFallback({
+  fullscreen = true,
+  message = "Loading workspace...",
+}: {
+  fullscreen?: boolean;
+  message?: string;
+}) {
+  return (
+    <div style={{
+      background: "#080809",
+      minHeight: fullscreen ? "100vh" : "100%",
+      height: fullscreen ? "100vh" : "100%",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 12,
+      padding: 24,
+    }}>
+      <Logo variant="flame" style={{ width: 48, height: 48, objectFit: "contain", opacity: 0.88 }} />
+      <LoadingForgeAnimation size={62} />
+      <div style={{ fontSize: 12, color: "#5B5650", fontFamily: "'Lora', Georgia, serif", letterSpacing: "0.08em" }}>
+        {message}
+      </div>
+    </div>
+  );
 }
 
 // Market intel is injected at call-sites rather than inside buildRichContext
@@ -800,7 +837,7 @@ function ForgeScreen({
   const [glossaryTerms, setGlossaryTerms] = useState<GlossaryTerm[]>([]);
   const [conceptModal, setConceptModal] = useState<{ name: string } | null>(null);
   const [briefingDismissed, setBriefingDismissed] = useState(false);
-  const [cofoundersContext, setCofoundersContext] = useState<string | null>(null);
+
   const [summariesByStage, setSummariesByStage] = useState<Record<number, any[]>>({ 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] });
   const [summaryModal, setSummaryModal] = useState<any | null>(null);
   const [saveArchiveModalOpen, setSaveArchiveModalOpen] = useState(false);
@@ -832,11 +869,6 @@ function ForgeScreen({
     setSummaryTitleInput(getArchiveDisplayTitle(summaryModal.title, summaryModal.summary, "Saved Archive"));
   }, [summaryModal?.id]);
 
-  // Load shared team context for Forge injection
-  useEffect(() => {
-    if (!teamId) { setCofoundersContext(null); return; }
-    getRecentCofounderContext(teamId, 20).then(ctx => setCofoundersContext(ctx || null));
-  }, [teamId]);
 
   useEffect(() => {
     const stage = Number(profile?.currentStage) || 1;
@@ -980,7 +1012,7 @@ function ForgeScreen({
       try {
         const seedContext = appendMarketContext(await buildRichContext(
           profile, activeStage, completedByStage, messagesByStage,
-          cofoundersContext, seedMessage, recentSummaries, foundryDecisions, userId, stageProgressDates, journalEntries, financialSummary, businessModelCanvas
+          teamId, seedMessage, recentSummaries, foundryDecisions, userId, stageProgressDates, journalEntries, financialSummary, businessModelCanvas
         ), marketReport);
         const seedReply = await callForgeAPI(
           [{ role: "user", content: seedMessage }],
@@ -1006,7 +1038,7 @@ function ForgeScreen({
 
     void runSeed();
     return () => { cancelled = true; };
-  }, [forgeSeedPrompt, forgeSeedNonce, forgeSeedStage, activeStage, loading, profile, completedByStage, messagesByStage, cofoundersContext, recentSummaries, foundryDecisions, userId, stageProgressDates, journalEntries, financialSummary, businessModelCanvas, marketReport]);
+  }, [forgeSeedPrompt, forgeSeedNonce, forgeSeedStage, activeStage, loading, profile, completedByStage, messagesByStage, teamId, recentSummaries, foundryDecisions, userId, stageProgressDates, journalEntries, financialSummary, businessModelCanvas, marketReport]);
 
   useEffect(() => {
     const stageMessages = messagesByStage[activeStage] || [];
@@ -1028,7 +1060,7 @@ function ForgeScreen({
         const seedMessage = journalSeedPrompt;
         const seedContext = appendMarketContext(await buildRichContext(
           profile, activeStage, completedByStage, messagesByStage,
-          cofoundersContext, seedMessage, recentSummaries, foundryDecisions, userId, stageProgressDates, journalEntries, financialSummary, businessModelCanvas
+          teamId, seedMessage, recentSummaries, foundryDecisions, userId, stageProgressDates, journalEntries, financialSummary, businessModelCanvas
         ), marketReport);
         setLoading(true);
         try {
@@ -1096,7 +1128,7 @@ Start with a short recap of what they told Foundry during onboarding: the busine
         activeStage,
         completedByStage,
         messagesByStage,
-        cofoundersContext,
+        teamId,
         greetingPrompt,
         recentSummaries,
         foundryDecisions,
@@ -1649,7 +1681,7 @@ Where do you want to start?`;
         activeStage,
         completedByStage,
         messagesByStage,
-        cofoundersContext,
+        teamId,
         text,
         recentSummaries,
         foundryDecisions,
@@ -2461,7 +2493,7 @@ ${forgeReply}`;
                 </div>
               ) : allEntries.length === 0 ? (
                 <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "18px 16px", color: "#888", fontSize: 13, lineHeight: 1.7 }}>
-                  No saved archives yet. Use Save Chat from the chat tab whenever you want to store a named snapshot.
+                  No saved archives yet. Use Archive Chat from the chat tab whenever you want to store a named snapshot.
                 </div>
               ) : (
                 <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "18px 16px", color: "#888", fontSize: 13, lineHeight: 1.7 }}>
@@ -2539,7 +2571,7 @@ ${forgeReply}`;
         <div style={{ position: "fixed", inset: 0, zIndex: 85, background: "rgba(4,4,5,0.84)", backdropFilter: "blur(12px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }}>
           <div style={{ width: "min(520px, 100%)", background: "#0E0E10", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, padding: "20px 18px 18px" }}>
             <div style={{ fontSize: 22, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 6 }}>
-              {archiveSession?.entry ? "Update Archive" : "Save Chat to Archive"}
+              {archiveSession?.entry ? "Update Archive" : "Archive Chat"}
             </div>
             <div style={{ fontSize: 12, color: "#666", lineHeight: 1.6, marginBottom: 14 }}>
               {archiveSession?.entry
@@ -2632,7 +2664,7 @@ ${forgeReply}`;
                   flexShrink: 0,
                 }}
               >
-                {savingArchive ? "Saving..." : "Save Chat"}
+                {savingArchive ? "Archiving..." : "Archive Chat"}
               </button>
             </div>
             <ChatInput
@@ -2701,12 +2733,13 @@ export default function FoundryApp() {
   const [showBriefings, setShowBriefings] = useState(false);
   const [showPitchPractice, setShowPitchPractice] = useState(false);
   const [showDocuments, setShowDocuments] = useState(false);
-  const [documentContext, setDocumentContext] = useState<import("./components/DocumentProductionScreen").DocumentScreenContext | null>(null);
+  const [documentContext, setDocumentContext] = useState<DocumentScreenContext | null>(null);
   const [showMarketIntel, setShowMarketIntel] = useState(false);
   const [showCofounder, setShowCofounder] = useState(false);
   const [showAcademy, setShowAcademy] = useState(false);
-  const [academyContext, setAcademyContext] = useState<import("./components/ForgeAcademyScreen").AcademyScreenContext | null>(null);
+  const [academyContext, setAcademyContext] = useState<AcademyScreenContext | null>(null);
   const [showBusinessModelCanvas, setShowBusinessModelCanvas] = useState(false);
+  const [showFinancialDashboard, setShowFinancialDashboard] = useState(false);
   const [businessModelCanvas, setBusinessModelCanvas] = useState<BusinessModelCanvasRecord | null>(null);
   const [showChatRoom, setShowChatRoom] = useState(false);
   const [settingsView, setSettingsView] = useState<null | "settings" | "privacy" | "eula" | "termsAndConditions" | "acceptableUse" | "disclaimer">(null);
@@ -3308,6 +3341,7 @@ export default function FoundryApp() {
   const handleReset = async () => {
     // Clear Supabase data for this user
     if (user) {
+      await deleteDocumentVaultStorageForUser(user.id);
       await Promise.all([
         supabase.from("profiles").delete().eq("id", user.id),
         supabase.from("stage_progress").delete().eq("user_id", user.id),
@@ -3320,6 +3354,14 @@ export default function FoundryApp() {
         supabase.from("business_model_canvas").delete().eq("user_id", user.id),
         supabase.from("plaid_items").delete().eq("user_id", user.id),
         supabase.from("plaid_transactions").delete().eq("user_id", user.id),
+        supabase.from("document_signature_events").delete().eq("user_id", user.id),
+        supabase.from("document_signature_requests").delete().eq("user_id", user.id),
+        supabase.from("document_files").delete().eq("user_id", user.id),
+        supabase.from("document_versions").delete().eq("user_id", user.id),
+        supabase.from("documents").delete().eq("user_id", user.id),
+        supabase.from("document_folders").delete().eq("user_id", user.id),
+        supabase.from("product_usage_events").delete().eq("user_id", user.id),
+        supabase.from("produced_documents").delete().eq("user_id", user.id),
       ]);
     }
     // Clear localStorage
@@ -3446,6 +3488,11 @@ export default function FoundryApp() {
       return;
     }
     setShowBusinessModelCanvas(true);
+  };
+
+  const openFinancialDashboard = () => {
+    markMeaningfulActivity();
+    setShowFinancialDashboard(true);
   };
 
   const openAcademy = () => {
@@ -3803,7 +3850,18 @@ export default function FoundryApp() {
             onAcceptPlaidTransactionAsExpense={handleAcceptPlaidTransactionAsExpense}
             onAcceptPlaidTransactionAsRevenue={handleAcceptPlaidTransactionAsRevenue}
             onIgnorePlaidTransaction={handleIgnorePlaidTransaction}
+            onOpenFinancialDashboard={openFinancialDashboard}
           />
+        )}
+        {showFinancialDashboard && user && profile && (
+          <Suspense fallback={<ScreenLoadingFallback message="Loading financial dashboard..." />}>
+            <FinancialDashboardScreen
+              userId={(user as any).id}
+              profile={profile}
+              onBack={() => setShowFinancialDashboard(false)}
+              onPlaidConnected={handlePlaidConnected}
+            />
+          </Suspense>
         )}
         {screen === "forge" && profile && (
           <ForgeScreen
@@ -3857,200 +3915,236 @@ export default function FoundryApp() {
         )}
       </div>
       {showAppTour && (
-        <AppTourScreen
-          profileName={profile?.name}
-          onComplete={() => setShowAppTour(false)}
-        />
+        <Suspense fallback={<ScreenLoadingFallback message="Loading app tour..." />}>
+          <AppTourScreen
+            profileName={profile?.name}
+            onComplete={() => setShowAppTour(false)}
+          />
+        </Suspense>
       )}
       {showArchivePanel && user && (
-        <ArchivePanel
-          userId={(user as any).id}
-          onBack={() => setShowArchivePanel(false)}
-          onContinueChatEntry={(entry) => {
-            setShowArchivePanel(false);
-            continueArchiveInChatRoom(entry);
-          }}
-        />
+        <Suspense fallback={<ScreenLoadingFallback message="Loading archive..." />}>
+          <ArchivePanel
+            userId={(user as any).id}
+            onBack={() => setShowArchivePanel(false)}
+            onContinueChatEntry={(entry) => {
+              setShowArchivePanel(false);
+              continueArchiveInChatRoom(entry);
+            }}
+          />
+        </Suspense>
       )}
       {showMarketIntel && profile && user && (
         <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "#080809", overflowY: "auto" }}>
-          <MarketIntelligenceScreen
-            profile={profile}
-            userId={(user as any).id}
-            report={marketReport}
-            onReportChange={setMarketReport}
-            onBack={() => setShowMarketIntel(false)}
-            generationLimit={isFreeTier ? FREE_TIER_MARKET_REPORT_LIMIT : null}
-          />
+          <Suspense fallback={<ScreenLoadingFallback message="Loading market intelligence..." />}>
+            <MarketIntelligenceScreen
+              profile={profile}
+              userId={(user as any).id}
+              report={marketReport}
+              onReportChange={setMarketReport}
+              onBack={() => setShowMarketIntel(false)}
+              generationLimit={isFreeTier ? FREE_TIER_MARKET_REPORT_LIMIT : null}
+            />
+          </Suspense>
         </div>
       )}
       {showDocuments && profile && (
         <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "#080809", overflowY: "auto" }}>
-          <DocumentProductionScreen
-            userId={(user as any).id}
-            profile={profile}
-            onBack={() => setShowDocuments(false)}
-            onContextChange={setDocumentContext}
-            generationLocked={isFreeTier}
-            generationLockMessage={isFreeTier ? "Document Production stays browseable during Stage 1, but document generation unlocks once you move beyond the free idea-stage tier." : null}
-          />
+          <Suspense fallback={<ScreenLoadingFallback message="Loading document vault..." />}>
+            <DocumentProductionScreen
+              userId={(user as any).id}
+              profile={profile}
+              onBack={() => setShowDocuments(false)}
+              onContextChange={setDocumentContext}
+              generationLocked={isFreeTier}
+              generationLockMessage={isFreeTier ? "Document Production stays browseable during Stage 1, but document generation unlocks once you move beyond the free idea-stage tier." : null}
+            />
+          </Suspense>
         </div>
       )}
       {showPitchPractice && profile && (
         <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "#080809", overflowY: "auto" }}>
-          <PitchPracticeScreen
-            userId={(user as any).id}
-            profile={profile}
-            onBack={() => setShowPitchPractice(false)}
-            trialUsesRemaining={pitchPracticeUsesRemaining}
-            onConsumeTrialUse={handleConsumePitchPracticeTrialUse}
-          />
+          <Suspense fallback={<ScreenLoadingFallback message="Loading pitch practice..." />}>
+            <PitchPracticeScreen
+              userId={(user as any).id}
+              profile={profile}
+              onBack={() => setShowPitchPractice(false)}
+              trialUsesRemaining={pitchPracticeUsesRemaining}
+              onConsumeTrialUse={handleConsumePitchPracticeTrialUse}
+            />
+          </Suspense>
         </div>
       )}
       {showJournal && user && (
-        <JournalScreen
-          userId={user.id}
-          entries={journalEntries}
-          onEntriesChange={setJournalEntries}
-          onBack={() => setShowJournal(false)}
-          profile={profile}
-          onAskForge={handleAskForgeAboutJournal}
-        />
+        <Suspense fallback={<ScreenLoadingFallback message="Loading journal..." />}>
+          <JournalScreen
+            userId={user.id}
+            entries={journalEntries}
+            onEntriesChange={setJournalEntries}
+            onBack={() => setShowJournal(false)}
+            profile={profile}
+            onAskForge={handleAskForgeAboutJournal}
+          />
+        </Suspense>
       )}
       {showBriefings && user && (
-        <BriefingsScreen
-          userId={user.id}
-          profile={profile}
-          briefings={briefings}
-          onBriefingsChange={setBriefings}
-          onBack={() => setShowBriefings(false)}
-          completedByStage={completedByStage}
-          generationLimit={isFreeTier ? FREE_TIER_BRIEFING_LIMIT : null}
-          recentSummaries={recentSummaries}
-          foundryDecisions={foundryDecisions}
-          journalEntries={journalEntries}
-          activeNudge={activeNudge}
-          stageProgressDates={stageProgressDates}
-        />
+        <Suspense fallback={<ScreenLoadingFallback message="Loading briefings..." />}>
+          <BriefingsScreen
+            userId={user.id}
+            profile={profile}
+            briefings={briefings}
+            onBriefingsChange={setBriefings}
+            onBack={() => setShowBriefings(false)}
+            completedByStage={completedByStage}
+            generationLimit={isFreeTier ? FREE_TIER_BRIEFING_LIMIT : null}
+            recentSummaries={recentSummaries}
+            foundryDecisions={foundryDecisions}
+            journalEntries={journalEntries}
+            activeNudge={activeNudge}
+            stageProgressDates={stageProgressDates}
+          />
+        </Suspense>
       )}
       {showAcademy && profile && user && (
-        <ForgeAcademyScreen
-          userId={(user as any).id}
-          profile={profile}
-          onBack={() => setShowAcademy(false)}
-          onLaunchForgeConversation={launchAcademyConversation}
-          onOpenAskForgeAnything={openAcademyAskForgeAnything}
-          onContextChange={setAcademyContext}
-          onOpenArchive={() => setShowArchivePanel(true)}
-          maxPreviewStage={isFreeTier ? FREE_TIER_ACADEMY_STAGE_LIMIT : null}
-          trialNotice={isFreeTier ? "Free preview includes Forge Academy Stage 1 lessons only. The rest of Academy unlocks with paid access." : null}
-        />
+        <Suspense fallback={<ScreenLoadingFallback message="Loading Forge Academy..." />}>
+          <ForgeAcademyScreen
+            userId={(user as any).id}
+            profile={profile}
+            onBack={() => setShowAcademy(false)}
+            onLaunchForgeConversation={launchAcademyConversation}
+            onOpenAskForgeAnything={openAcademyAskForgeAnything}
+            onContextChange={setAcademyContext}
+            onOpenArchive={() => setShowArchivePanel(true)}
+            maxPreviewStage={isFreeTier ? FREE_TIER_ACADEMY_STAGE_LIMIT : null}
+            trialNotice={isFreeTier ? "Free preview includes Forge Academy Stage 1 lessons only. The rest of Academy unlocks with paid access." : null}
+          />
+        </Suspense>
       )}
       {showBusinessModelCanvas && profile && user && businessModelCanvas && (
-        <BusinessModelCanvasScreen
-          profile={profile}
-          canvas={businessModelCanvas}
-          onBack={() => setShowBusinessModelCanvas(false)}
-          onEditEntry={handleEditBusinessModelCanvasEntry}
-          onDeleteEntry={handleDeleteBusinessModelCanvasEntry}
-          onAddViaForge={openBusinessModelCanvasViaForge}
-        />
+        <Suspense fallback={<ScreenLoadingFallback message="Loading business model canvas..." />}>
+          <BusinessModelCanvasScreen
+            profile={profile}
+            canvas={businessModelCanvas}
+            onBack={() => setShowBusinessModelCanvas(false)}
+            onEditEntry={handleEditBusinessModelCanvasEntry}
+            onDeleteEntry={handleDeleteBusinessModelCanvasEntry}
+            onAddViaForge={openBusinessModelCanvasViaForge}
+          />
+        </Suspense>
       )}
       {showChatRoom && profile && (
         <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "#080809" }}>
-          <ForgeChatRoom
-            userId={(user as any).id}
-            profile={profile}
-            initialArchive={chatRoomArchive}
-            academyEntry={academyConversationEntry}
-            onMarkAcademyLessonCompleted={handleMarkAcademyLessonCompleted}
-            onBack={() => {
-              const returnToAcademy = Boolean(academyConversationEntry);
-              setShowChatRoom(false);
-              setChatRoomArchive(null);
-              setAcademyConversationEntry(null);
-              if (returnToAcademy) {
-                setShowAcademy(true);
-              }
-            }}
-            onArchiveSaved={(saved) => {
-              setBubbleSummaries((prev) => {
-                const exists = prev.some((item) => item.id === saved.id);
-                if (exists) {
-                  return prev.map((item) => item.id === saved.id ? saved : item);
+          <Suspense fallback={<ScreenLoadingFallback message="Loading Forge chat room..." />}>
+            <ForgeChatRoom
+              userId={(user as any).id}
+              profile={profile}
+              initialArchive={chatRoomArchive}
+              academyEntry={academyConversationEntry}
+              onMarkAcademyLessonCompleted={handleMarkAcademyLessonCompleted}
+              onBack={() => {
+                const returnToAcademy = Boolean(academyConversationEntry);
+                setShowChatRoom(false);
+                setChatRoomArchive(null);
+                setAcademyConversationEntry(null);
+                if (returnToAcademy) {
+                  setShowAcademy(true);
                 }
-                return prev;
-              });
-              setArchiveMutationTick((tick) => tick + 1);
-            }}
-          />
+              }}
+              onArchiveSaved={(saved) => {
+                setBubbleSummaries((prev) => {
+                  const exists = prev.some((item) => item.id === saved.id);
+                  if (exists) {
+                    return prev.map((item) => item.id === saved.id ? saved : item);
+                  }
+                  return prev;
+                });
+                setArchiveMutationTick((tick) => tick + 1);
+              }}
+            />
+          </Suspense>
         </div>
       )}
       {showCofounder && user && profile && (
-        <CofounderModeScreen
-          userId={(user as any).id}
-          profile={profile}
-          onBack={() => setShowCofounder(false)}
-          onTeamChanged={(id) => setUserTeamId(id)}
-        />
+        <Suspense fallback={<ScreenLoadingFallback message="Loading cofounder mode..." />}>
+          <CofounderModeScreen
+            userId={(user as any).id}
+            profile={profile}
+            onBack={() => setShowCofounder(false)}
+            onTeamChanged={(id) => setUserTeamId(id)}
+          />
+        </Suspense>
       )}
       {settingsView === "settings" && profile && (
         <div style={{ position: "fixed", inset: 0, zIndex: 120, background: "#080809", overflowY: "auto" }}>
-          <SettingsScreen
-            profile={profile}
-            authEmail={authUserEmail}
-            accessSummary={accessSummary}
-            billingSubscription={billingSubscription}
-            onBack={() => setSettingsView(null)}
-            onOpenPrivacy={() => setSettingsView("privacy")}
-            onOpenEula={() => setSettingsView("eula")}
-            onOpenTermsAndConditions={() => setSettingsView("termsAndConditions")}
-            onOpenAcceptableUse={() => setSettingsView("acceptableUse")}
-            onOpenDisclaimer={() => setSettingsView("disclaimer")}
-            notificationPreferences={notificationPreferences}
-            onNotificationPreferencesChange={handleNotificationPreferencesChange}
-            notifications={notifications}
-            onMarkNotificationRead={handleMarkNotificationRead}
-            onOpenManageSubscription={handleOpenManageSubscription}
-            billingActionMessage={billingMessage}
-            billingPortalLoading={billingPortalLoading}
-            onProfileSave={handleProfileSave}
-            onLogout={handleLogout}
-          />
+          <Suspense fallback={<ScreenLoadingFallback message="Loading settings..." />}>
+            <SettingsScreen
+              profile={profile}
+              authEmail={authUserEmail}
+              accessSummary={accessSummary}
+              billingSubscription={billingSubscription}
+              onBack={() => setSettingsView(null)}
+              onOpenPrivacy={() => setSettingsView("privacy")}
+              onOpenEula={() => setSettingsView("eula")}
+              onOpenTermsAndConditions={() => setSettingsView("termsAndConditions")}
+              onOpenAcceptableUse={() => setSettingsView("acceptableUse")}
+              onOpenDisclaimer={() => setSettingsView("disclaimer")}
+              notificationPreferences={notificationPreferences}
+              onNotificationPreferencesChange={handleNotificationPreferencesChange}
+              notifications={notifications}
+              onMarkNotificationRead={handleMarkNotificationRead}
+              onOpenManageSubscription={handleOpenManageSubscription}
+              billingActionMessage={billingMessage}
+              billingPortalLoading={billingPortalLoading}
+              onProfileSave={handleProfileSave}
+              onLogout={handleLogout}
+            />
+          </Suspense>
         </div>
       )}
       {settingsView === "privacy" && (
         <div style={{ position: "fixed", inset: 0, zIndex: 121, background: "#080809", overflowY: "auto" }}>
-          <PrivacyPolicyScreen onBack={() => setSettingsView("settings")} />
+          <Suspense fallback={<ScreenLoadingFallback message="Loading privacy policy..." />}>
+            <PrivacyPolicyScreen onBack={() => setSettingsView("settings")} />
+          </Suspense>
         </div>
       )}
       {settingsView === "eula" && (
         <div style={{ position: "fixed", inset: 0, zIndex: 121, background: "#080809", overflowY: "auto" }}>
-          <EulaScreen onBack={() => setSettingsView("settings")} />
+          <Suspense fallback={<ScreenLoadingFallback message="Loading EULA..." />}>
+            <EulaScreen onBack={() => setSettingsView("settings")} />
+          </Suspense>
         </div>
       )}
       {settingsView === "termsAndConditions" && (
         <div style={{ position: "fixed", inset: 0, zIndex: 121, background: "#080809", overflowY: "auto" }}>
-          <TermsAndConditionsScreen onBack={() => setSettingsView("settings")} />
+          <Suspense fallback={<ScreenLoadingFallback message="Loading terms..." />}>
+            <TermsAndConditionsScreen onBack={() => setSettingsView("settings")} />
+          </Suspense>
         </div>
       )}
       {settingsView === "acceptableUse" && (
         <div style={{ position: "fixed", inset: 0, zIndex: 121, background: "#080809", overflowY: "auto" }}>
-          <AcceptableUsePolicyScreen onBack={() => setSettingsView("settings")} />
+          <Suspense fallback={<ScreenLoadingFallback message="Loading acceptable use policy..." />}>
+            <AcceptableUsePolicyScreen onBack={() => setSettingsView("settings")} />
+          </Suspense>
         </div>
       )}
       {settingsView === "disclaimer" && (
         <div style={{ position: "fixed", inset: 0, zIndex: 121, background: "#080809", overflowY: "auto" }}>
-          <DisclaimerScreen onBack={() => setSettingsView("settings")} />
+          <Suspense fallback={<ScreenLoadingFallback message="Loading disclaimer..." />}>
+            <DisclaimerScreen onBack={() => setSettingsView("settings")} />
+          </Suspense>
         </div>
       )}
       {showAdminHub && user && canOpenAdminHub && (
-        <AdminHubScreen
-          userId={(user as any).id}
-          onBack={() => setShowAdminHub(false)}
-          notificationSettings={adminNotificationSettings}
-          onNotificationSettingsChange={handleAdminNotificationSettingsChange}
-        />
+        <Suspense fallback={<ScreenLoadingFallback message="Loading admin dashboard..." />}>
+          <AdminHubScreen
+            userId={(user as any).id}
+            onBack={() => setShowAdminHub(false)}
+            notificationSettings={adminNotificationSettings}
+            onNotificationSettingsChange={handleAdminNotificationSettingsChange}
+          />
+        </Suspense>
       )}
       <PaywallScreen
         open={paywallStage !== null}

@@ -4,9 +4,40 @@ import {
     Users, TrendUp, Buildings, Shield, Megaphone, Door,
     ArrowLeft, Star, MapPin,
 } from "@phosphor-icons/react";
-import { streamForgeAPI } from "../lib/forgeApi";
+import { callForgeAPI, streamForgeAPI } from "../lib/forgeApi";
 import { buildDocSystemPrompt, buildDocRequest, buildRefinementRequest } from "../constants/docPrompt";
-import { loadProducedDocuments, saveProducedDocument, type ProducedDocument } from "../db";
+import {
+    archiveVaultDocument,
+    createDocumentFolder,
+    createDocumentSignatureEvent,
+    createDocumentSignatureRequest,
+    createSignedDocumentFileUrl,
+    deleteDocumentFile,
+    deleteDocumentFolder,
+    loadDocumentFolders,
+    loadDocumentSignatureEvents,
+    loadDocumentSignatureRequests,
+    loadDocumentVersions,
+    loadDocumentFiles,
+    loadProducedDocuments,
+    loadVaultDocumentById,
+    loadVaultDocuments,
+    saveGeneratedDocumentArtifact,
+    saveProducedDocument,
+    restoreVaultDocumentVersion,
+    trackProductUsageEvent,
+    uploadDocumentFile,
+    type DocumentFile,
+    type DocumentFolder,
+    type DocumentSignatureEvent,
+    type DocumentSignatureRequest,
+    type DocumentVersion,
+    type ProducedDocument,
+    type VaultDocument,
+    moveDocumentToFolder,
+    updateDocumentFolder,
+    updateDocumentSignatureRequestStatus,
+} from "../db";
 import DocumentFieldsForm from "./DocumentFieldsForm";
 import {
     DOCUMENT_PREVIEW_CSS,
@@ -19,6 +50,19 @@ import {
     type DocumentExportMeta,
 } from "../lib/documentExport";
 import {
+    getProviderConfigurationStatus,
+    getSignatureProviderAdapter,
+    isProviderActive,
+    type SignatureProviderId,
+} from "../lib/documentSignatureProviders";
+import {
+    buildDocumentNeedFallbackRecommendations,
+    buildDocumentNeedWizardPrompt,
+    parseDocumentNeedRecommendationResponse,
+    type DocumentNeedGoal,
+    type DocumentNeedRecommendationResult,
+} from "../lib/documentNeedRecommendations";
+import {
     createDocumentInputDefaults,
     formatDocumentInputsForPrompt,
     getDocumentRequirement,
@@ -30,15 +74,74 @@ import {
     DOC_CATEGORIES, SMART_PROMPTS, DEFAULT_SMART_PROMPTS,
     type DocCategory, type DocItem,
 } from "../constants/docCategories";
+import DocumentNeedsWizard from "./document-vault/DocumentNeedsWizard";
+import DocumentFilesPanel from "./document-vault/DocumentFilesPanel";
+import DocumentSignaturesPanel from "./document-vault/DocumentSignaturesPanel";
+import VaultDetailPanel from "./document-vault/VaultDetailPanel";
+import VaultDocumentList from "./document-vault/VaultDocumentList";
+import VaultFolderSidebar from "./document-vault/VaultFolderSidebar";
+import {
+    DOCUMENT_STATUS_LABELS,
+    STAGE_LABELS,
+    type FolderFilter,
+    type StageFilter,
+    type VaultStatusFilter,
+} from "./document-vault/shared";
 
 // ─────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────
 type Phase = "categories" | "documents" | "configure" | "studio";
+type DocumentSurfaceMode = "vault" | "generate";
 
 interface GenRecord {
     instruction: string;
     doc: string;
+}
+
+function ModeTabs({
+    mode,
+    onChange,
+}: {
+    mode: DocumentSurfaceMode;
+    onChange: (mode: DocumentSurfaceMode) => void;
+}) {
+    return (
+        <div style={{
+            display: "flex",
+            gap: 8,
+            padding: "12px 16px",
+            borderBottom: "1px solid rgba(255,255,255,0.05)",
+            background: "rgba(8,8,9,0.94)",
+            position: "sticky",
+            top: 69,
+            zIndex: 9,
+            backdropFilter: "blur(12px)",
+        }}>
+            {([
+                { id: "vault", label: "Vault" },
+                { id: "generate", label: "Generate" },
+            ] as const).map((tab) => (
+                <button
+                    key={tab.id}
+                    onClick={() => onChange(tab.id)}
+                    style={{
+                        padding: "8px 14px",
+                        borderRadius: 999,
+                        border: mode === tab.id ? "1px solid rgba(232,98,42,0.28)" : "1px solid rgba(255,255,255,0.08)",
+                        background: mode === tab.id ? "rgba(232,98,42,0.1)" : "rgba(255,255,255,0.025)",
+                        color: mode === tab.id ? "#E8622A" : "#777",
+                        fontSize: 12,
+                        fontWeight: mode === tab.id ? 700 : 500,
+                        cursor: "pointer",
+                        fontFamily: "'Lora', Georgia, serif",
+                    }}
+                >
+                    {tab.label}
+                </button>
+            ))}
+        </div>
+    );
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -54,8 +157,24 @@ const TONES = [
     "Premium", "Friendly", "Technical", "Urgent", "Empathetic",
 ];
 
+const DOCUMENT_NEED_GOALS: Array<{ id: DocumentNeedGoal; label: string }> = [
+    { id: "starting_a_business", label: "Starting a business" },
+    { id: "preparing_to_launch", label: "Preparing to launch" },
+    { id: "hiring", label: "Hiring" },
+    { id: "getting_funding", label: "Getting funding" },
+    { id: "working_with_clients", label: "Working with clients" },
+    { id: "protecting_ip", label: "Protecting IP" },
+    { id: "taxes_finance", label: "Taxes / finance" },
+    { id: "other", label: "Other" },
+];
+
 // Max tokens for document generation — documents need more space than chat
 const DOC_MAX_TOKENS = 4000;
+
+function getCurrentStageId(profile: any) {
+    const stage = Number(profile?.currentStage);
+    return Number.isFinite(stage) && stage >= 1 && stage <= 6 ? Math.round(stage) : 1;
+}
 
 // ─────────────────────────────────────────────────────────────
 // Phosphor icon resolver
@@ -230,6 +349,8 @@ export default function DocumentProductionScreen({
     generationLocked?: boolean;
     generationLockMessage?: string | null;
 }) {
+    const [surfaceMode, setSurfaceMode] = useState<DocumentSurfaceMode>("vault");
+
     // ── Navigation ──────────────────────────────────────────
     const [phase, setPhase] = useState<Phase>("categories");
     const [selectedCategory, setSelectedCategory] = useState<DocCategory | null>(null);
@@ -257,24 +378,107 @@ export default function DocumentProductionScreen({
     const [currentDocumentId, setCurrentDocumentId] = useState<string | null>(null);
     const [documentsLoading, setDocumentsLoading] = useState(true);
     const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "unavailable">("idle");
+    const [vaultDocuments, setVaultDocuments] = useState<VaultDocument[]>([]);
+    const [vaultLoading, setVaultLoading] = useState(true);
+    const [vaultError, setVaultError] = useState<string | null>(null);
+    const [vaultFolders, setVaultFolders] = useState<DocumentFolder[]>([]);
+    const [vaultFoldersLoading, setVaultFoldersLoading] = useState(false);
+    const [vaultFoldersError, setVaultFoldersError] = useState<string | null>(null);
+    const [vaultFolderFilter, setVaultFolderFilter] = useState<FolderFilter>("all");
+    const [newFolderName, setNewFolderName] = useState("");
+    const [creatingFolder, setCreatingFolder] = useState(false);
+    const [folderActionId, setFolderActionId] = useState<string | null>(null);
+    const [vaultSearch, setVaultSearch] = useState("");
+    const [vaultStatusFilter, setVaultStatusFilter] = useState<VaultStatusFilter>("active");
+    const [vaultStageFilter, setVaultStageFilter] = useState<StageFilter>("all");
+    const [vaultCategoryFilter, setVaultCategoryFilter] = useState("all");
+    const [selectedVaultDocumentId, setSelectedVaultDocumentId] = useState<string | null>(null);
+    const [selectedVaultDocument, setSelectedVaultDocument] = useState<VaultDocument | null>(null);
+    const [vaultDetailLoading, setVaultDetailLoading] = useState(false);
+    const [vaultVersions, setVaultVersions] = useState<DocumentVersion[]>([]);
+    const [vaultVersionsLoading, setVaultVersionsLoading] = useState(false);
+    const [vaultVersionsError, setVaultVersionsError] = useState<string | null>(null);
+    const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
+    const [archivingDocumentId, setArchivingDocumentId] = useState<string | null>(null);
+    const [vaultFiles, setVaultFiles] = useState<DocumentFile[]>([]);
+    const [vaultFilesLoading, setVaultFilesLoading] = useState(false);
+    const [vaultFilesError, setVaultFilesError] = useState<string | null>(null);
+    const [uploadingFile, setUploadingFile] = useState(false);
+    const [fileActionId, setFileActionId] = useState<string | null>(null);
+    const [artifactSavingKind, setArtifactSavingKind] = useState<"generated_docx" | "generated_html" | null>(null);
+    const [signatureRequests, setSignatureRequests] = useState<DocumentSignatureRequest[]>([]);
+    const [signatureRequestsLoading, setSignatureRequestsLoading] = useState(false);
+    const [signatureRequestsError, setSignatureRequestsError] = useState<string | null>(null);
+    const [selectedSignatureRequestId, setSelectedSignatureRequestId] = useState<string | null>(null);
+    const [signatureEvents, setSignatureEvents] = useState<DocumentSignatureEvent[]>([]);
+    const [signatureEventsLoading, setSignatureEventsLoading] = useState(false);
+    const [signatureEventsError, setSignatureEventsError] = useState<string | null>(null);
+    const [signatureSignerName, setSignatureSignerName] = useState("");
+    const [signatureSignerEmail, setSignatureSignerEmail] = useState("");
+    const [signatureProvider, setSignatureProvider] = useState<SignatureProviderId>(() => {
+        // Default to the real active provider when one is configured, so the
+        // dropdown does not silently fall back to mock in a production environment.
+        const statuses = getProviderConfigurationStatus();
+        return statuses.find((p) => p.id !== "mock" && p.availableNow)?.id ?? "mock";
+    });
+    const [signatureFileId, setSignatureFileId] = useState("none");
+    const [signatureVersionId, setSignatureVersionId] = useState("none");
+    const [signatureExpiresAt, setSignatureExpiresAt] = useState("");
+    const [creatingSignatureRequest, setCreatingSignatureRequest] = useState(false);
+    const [signatureActionId, setSignatureActionId] = useState<string | null>(null);
+    const [showNeedsWizard, setShowNeedsWizard] = useState(false);
+    const [needsEntityType, setNeedsEntityType] = useState(() => String(
+        profile?.entityType
+        || profile?.businessType
+        || profile?.legalStructure
+        || ""
+    ));
+    const [needsState, setNeedsState] = useState(() => String(
+        profile?.state
+        || profile?.businessState
+        || profile?.locationState
+        || ""
+    ));
+    const [needsGoal, setNeedsGoal] = useState<DocumentNeedGoal>("starting_a_business");
+    const [needsNotes, setNeedsNotes] = useState("");
+    const [needsLoading, setNeedsLoading] = useState(false);
+    const [needsError, setNeedsError] = useState<string | null>(null);
+    const [needsResult, setNeedsResult] = useState<DocumentNeedRecommendationResult | null>(null);
+    const [dismissedRecommendationKeys, setDismissedRecommendationKeys] = useState<string[]>([]);
+    const [studioLaunchNotice, setStudioLaunchNotice] = useState<string | null>(null);
+    const [movingDocumentId, setMovingDocumentId] = useState<string | null>(null);
+    const [vaultHealthSummary, setVaultHealthSummary] = useState<string | null>(null);
+    const [vaultHealthLoading, setVaultHealthLoading] = useState(false);
+    const [restoringVersionId, setRestoringVersionId] = useState<string | null>(null);
+    const [versionRestoreMessage, setVersionRestoreMessage] = useState<string | null>(null);
+    const [legalDisclaimerDismissed, setLegalDisclaimerDismissed] = useState(false);
 
     const previewRef = useRef<HTMLDivElement>(null);
     const refineRef = useRef<HTMLTextAreaElement>(null);
     const saveStatusResetRef = useRef<number | null>(null);
     const currentDocumentIdRef = useRef<string | null>(null);
+    const vaultFileInputRef = useRef<HTMLInputElement>(null);
+    const searchInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         previewRef.current?.scrollTo({ top: 0, behavior: "smooth" });
     }, [currentDoc]);
 
     useEffect(() => {
+        const selectedVersion = vaultVersions.find((version) => version.id === selectedVersionId) ?? vaultVersions[0] ?? null;
         onContextChange?.({
-            phase,
-            categoryName: selectedCategory?.name ?? null,
-            documentName: selectedDoc?.name ?? null,
-            documentContent: currentDoc || null,
+            phase: surfaceMode === "vault" ? "vault" : phase,
+            categoryName: surfaceMode === "vault"
+                ? (selectedVaultDocument?.category ?? null)
+                : (selectedCategory?.name ?? null),
+            documentName: surfaceMode === "vault"
+                ? (selectedVaultDocument?.title ?? null)
+                : (selectedDoc?.name ?? null),
+            documentContent: surfaceMode === "vault"
+                ? (selectedVersion?.content ?? null)
+                : (currentDoc || null),
         });
-    }, [phase, selectedCategory, selectedDoc, currentDoc]);
+    }, [surfaceMode, phase, selectedCategory, selectedDoc, currentDoc, selectedVaultDocument, vaultVersions, selectedVersionId]);
 
     useEffect(() => {
         let cancelled = false;
@@ -288,10 +492,180 @@ export default function DocumentProductionScreen({
     }, [userId]);
 
     useEffect(() => {
+        if (!needsEntityType && (profile?.entityType || profile?.businessType || profile?.legalStructure)) {
+            setNeedsEntityType(String(profile.entityType || profile.businessType || profile.legalStructure || ""));
+        }
+        if (!needsState) {
+            const profileState = String(profile?.state || profile?.businessState || profile?.locationState || "");
+            if (profileState) {
+                setNeedsState(profileState);
+                return;
+            }
+            const documentState = vaultDocuments.find((document) => {
+                const metadata = document.metadata && typeof document.metadata === "object" ? document.metadata as Record<string, unknown> : {};
+                return typeof metadata.state === "string" && metadata.state.trim().length > 0;
+            });
+            const metadata = documentState?.metadata && typeof documentState.metadata === "object" ? documentState.metadata as Record<string, unknown> : {};
+            if (typeof metadata.state === "string") {
+                setNeedsState(metadata.state);
+            }
+        }
+    }, [needsEntityType, needsState, profile, vaultDocuments]);
+
+    useEffect(() => {
+        let cancelled = false;
+        setVaultFoldersLoading(true);
+        setVaultFoldersError(null);
+        loadDocumentFolders(userId).then((rows) => {
+            if (cancelled) return;
+            setVaultFolders(rows);
+            if (vaultFolderFilter !== "all" && vaultFolderFilter !== "unfiled" && !rows.some((folder) => folder.id === vaultFolderFilter)) {
+                setVaultFolderFilter("all");
+            }
+        }).catch((error) => {
+            if (cancelled) return;
+            setVaultFoldersError(error instanceof Error ? error.message : "Failed to load folders.");
+        }).finally(() => {
+            if (cancelled) return;
+            setVaultFoldersLoading(false);
+        });
+        return () => { cancelled = true; };
+    }, [userId]);
+
+    useEffect(() => {
+        let cancelled = false;
+        setVaultLoading(true);
+        setVaultError(null);
+        loadVaultDocuments(userId).then((rows) => {
+            if (cancelled) return;
+            setVaultDocuments(rows);
+            if (!selectedVaultDocumentId && rows[0]?.id) {
+                setSelectedVaultDocumentId(rows[0].id);
+            }
+            if (selectedVaultDocumentId && !rows.some((doc) => doc.id === selectedVaultDocumentId)) {
+                setSelectedVaultDocumentId(rows[0]?.id ?? null);
+            }
+        }).catch((error) => {
+            if (cancelled) return;
+            setVaultError(error instanceof Error ? error.message : "Failed to load vault documents.");
+        }).finally(() => {
+            if (cancelled) return;
+            setVaultLoading(false);
+        });
+        return () => { cancelled = true; };
+    }, [userId]);
+
+    useEffect(() => {
+        if (!selectedVaultDocumentId) {
+            setSelectedVaultDocument(null);
+            setVaultVersions([]);
+            setVaultFiles([]);
+            setSignatureRequests([]);
+            setSelectedVersionId(null);
+            setSelectedSignatureRequestId(null);
+            setSignatureEvents([]);
+            setVaultFilesError(null);
+            setSignatureRequestsError(null);
+            setSignatureEventsError(null);
+            return;
+        }
+
+        let cancelled = false;
+        setVaultDetailLoading(true);
+        setVaultVersionsLoading(true);
+        setVaultFilesLoading(true);
+        setSignatureRequestsLoading(true);
+        setVaultVersionsError(null);
+        setVaultFilesError(null);
+        setSignatureRequestsError(null);
+
+        Promise.all([
+            loadVaultDocumentById(userId, selectedVaultDocumentId),
+            loadDocumentVersions(userId, selectedVaultDocumentId),
+            loadDocumentFiles(userId, selectedVaultDocumentId),
+            loadDocumentSignatureRequests(userId, selectedVaultDocumentId),
+        ]).then(([doc, versions, files, requests]) => {
+            if (cancelled) return;
+            setSelectedVaultDocument(doc);
+            setVaultVersions(versions);
+            setVaultFiles(files);
+            setSignatureRequests(requests);
+            setSelectedVersionId((prev) => (
+                prev && versions.some((version) => version.id === prev)
+                    ? prev
+                    : (versions[0]?.id ?? null)
+            ));
+            setSelectedSignatureRequestId((prev) => (
+                prev && requests.some((request) => request.id === prev)
+                    ? prev
+                    : (requests[0]?.id ?? null)
+            ));
+        }).catch((error) => {
+            if (cancelled) return;
+            setVaultVersionsError(error instanceof Error ? error.message : "Failed to load document detail.");
+            setVaultFilesError(error instanceof Error ? error.message : "Failed to load document files.");
+            setSignatureRequestsError(error instanceof Error ? error.message : "Failed to load signature requests.");
+        }).finally(() => {
+            if (cancelled) return;
+            setVaultDetailLoading(false);
+            setVaultVersionsLoading(false);
+            setVaultFilesLoading(false);
+            setSignatureRequestsLoading(false);
+        });
+
+        return () => { cancelled = true; };
+    }, [userId, selectedVaultDocumentId]);
+
+    useEffect(() => {
+        if (!selectedSignatureRequestId) {
+            setSignatureEvents([]);
+            setSignatureEventsError(null);
+            return;
+        }
+
+        let cancelled = false;
+        setSignatureEventsLoading(true);
+        setSignatureEventsError(null);
+        loadDocumentSignatureEvents(userId, selectedSignatureRequestId).then((rows) => {
+            if (cancelled) return;
+            setSignatureEvents(rows);
+        }).catch((error) => {
+            if (cancelled) return;
+            setSignatureEventsError(error instanceof Error ? error.message : "Failed to load signature events.");
+        }).finally(() => {
+            if (cancelled) return;
+            setSignatureEventsLoading(false);
+        });
+
+        return () => { cancelled = true; };
+    }, [userId, selectedSignatureRequestId]);
+
+    useEffect(() => {
         return () => {
             if (saveStatusResetRef.current) window.clearTimeout(saveStatusResetRef.current);
         };
     }, []);
+
+    useEffect(() => {
+        setLegalDisclaimerDismissed(false);
+        setVersionRestoreMessage(null);
+    }, [selectedVaultDocumentId]);
+
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if (
+                surfaceMode === "vault"
+                && e.key === "/"
+                && document.activeElement?.tagName !== "INPUT"
+                && document.activeElement?.tagName !== "TEXTAREA"
+            ) {
+                e.preventDefault();
+                searchInputRef.current?.focus();
+            }
+        };
+        window.addEventListener("keydown", handler);
+        return () => window.removeEventListener("keydown", handler);
+    }, [surfaceMode]);
 
     const upsertDocumentList = (saved: ProducedDocument) => {
         setDocuments(prev => [saved, ...prev.filter(doc => doc.id !== saved.id)]);
@@ -318,7 +692,7 @@ export default function DocumentProductionScreen({
             request,
             content,
             history: nextHistory,
-        });
+        }, { fallbackStageId: currentStageId });
         if (!saved) {
             setSaveStatus("unavailable");
             return null;
@@ -328,10 +702,13 @@ export default function DocumentProductionScreen({
         setSaveStatus("saved");
         if (saveStatusResetRef.current) window.clearTimeout(saveStatusResetRef.current);
         saveStatusResetRef.current = window.setTimeout(() => setSaveStatus("idle"), 2000);
+        refreshVaultDocuments();
         return saved;
     };
 
     const openSavedDocument = (doc: ProducedDocument) => {
+        setSurfaceMode("generate");
+        setStudioLaunchNotice(null);
         setActiveDocumentId(doc.id);
         setDocType(doc.docType);
         setAudience(doc.audience);
@@ -342,6 +719,576 @@ export default function DocumentProductionScreen({
         setPhase("studio");
         setActiveTab("preview");
         setSaveStatus("idle");
+    };
+
+    const refreshVaultDocuments = async (preferredDocumentId?: string | null) => {
+        setVaultLoading(true);
+        setVaultError(null);
+        try {
+            const rows = await loadVaultDocuments(userId);
+            setVaultDocuments(rows);
+            if (preferredDocumentId) {
+                setSelectedVaultDocumentId(preferredDocumentId);
+            } else if (!selectedVaultDocumentId && rows[0]?.id) {
+                setSelectedVaultDocumentId(rows[0].id);
+            } else if (selectedVaultDocumentId && !rows.some((doc) => doc.id === selectedVaultDocumentId)) {
+                setSelectedVaultDocumentId(rows[0]?.id ?? null);
+            }
+        } catch (error) {
+            setVaultError(error instanceof Error ? error.message : "Failed to load vault documents.");
+        } finally {
+            setVaultLoading(false);
+        }
+    };
+
+    const refreshVaultFolders = async () => {
+        setVaultFoldersLoading(true);
+        setVaultFoldersError(null);
+        try {
+            const rows = await loadDocumentFolders(userId);
+            setVaultFolders(rows);
+            if (vaultFolderFilter !== "all" && vaultFolderFilter !== "unfiled" && !rows.some((folder) => folder.id === vaultFolderFilter)) {
+                setVaultFolderFilter("all");
+            }
+        } catch (error) {
+            setVaultFoldersError(error instanceof Error ? error.message : "Failed to load folders.");
+        } finally {
+            setVaultFoldersLoading(false);
+        }
+    };
+
+    const refreshVaultFiles = async (documentId?: string | null) => {
+        const targetDocumentId = documentId ?? selectedVaultDocumentId;
+        if (!targetDocumentId) {
+            setVaultFiles([]);
+            return;
+        }
+        setVaultFilesLoading(true);
+        setVaultFilesError(null);
+        try {
+            const rows = await loadDocumentFiles(userId, targetDocumentId);
+            setVaultFiles(rows);
+        } catch (error) {
+            setVaultFilesError(error instanceof Error ? error.message : "Failed to load document files.");
+        } finally {
+            setVaultFilesLoading(false);
+        }
+    };
+
+    const refreshSignatureRequests = async (documentId?: string | null) => {
+        const targetDocumentId = documentId ?? selectedVaultDocumentId;
+        if (!targetDocumentId) {
+            setSignatureRequests([]);
+            return;
+        }
+        setSignatureRequestsLoading(true);
+        setSignatureRequestsError(null);
+        try {
+            const rows = await loadDocumentSignatureRequests(userId, targetDocumentId);
+            setSignatureRequests(rows);
+            setSelectedSignatureRequestId((prev) => (
+                prev && rows.some((request) => request.id === prev)
+                    ? prev
+                    : (rows[0]?.id ?? null)
+            ));
+        } catch (error) {
+            setSignatureRequestsError(error instanceof Error ? error.message : "Failed to load signature requests.");
+        } finally {
+            setSignatureRequestsLoading(false);
+        }
+    };
+
+    const refreshSignatureEvents = async (requestId?: string | null) => {
+        const targetRequestId = requestId ?? selectedSignatureRequestId;
+        if (!targetRequestId) {
+            setSignatureEvents([]);
+            return;
+        }
+        setSignatureEventsLoading(true);
+        setSignatureEventsError(null);
+        try {
+            const rows = await loadDocumentSignatureEvents(userId, targetRequestId);
+            setSignatureEvents(rows);
+        } catch (error) {
+            setSignatureEventsError(error instanceof Error ? error.message : "Failed to load signature events.");
+        } finally {
+            setSignatureEventsLoading(false);
+        }
+    };
+
+    const openVaultVersionInStudio = (vaultDoc: VaultDocument, version?: DocumentVersion | null) => {
+        const activeVersion = version ?? vaultVersions.find((entry) => entry.id === selectedVersionId) ?? vaultVersions[0] ?? null;
+        if (!activeVersion) return;
+
+        setSurfaceMode("generate");
+        setDocType(vaultDoc.docType);
+        setAudience(vaultDoc.audience || "General");
+        setTone(vaultDoc.tone || "Professional");
+        setRequest("");
+        setDocState("");
+        setCurrentDoc(activeVersion.content);
+        setHistory([{ instruction: activeVersion.changeSummary || activeVersion.source, doc: activeVersion.content }]);
+        setPhase("studio");
+        setActiveTab("preview");
+        setSaveStatus("idle");
+        setStudioLaunchNotice(
+            activeVersion.id === vaultVersions[0]?.id
+                ? "Opened the latest vault snapshot in Studio. Refining here will create a new saved document instead of overwriting the vault record."
+                : `Opened Version ${activeVersion.versionNumber} from vault history. Refining here will create a new saved document instead of overwriting the current vault record.`
+        );
+
+        const linkedProducedDocument = vaultDoc.sourceProducedDocumentId
+            ? documents.find((doc) => doc.id === vaultDoc.sourceProducedDocumentId) ?? null
+            : null;
+        setActiveDocumentId(null);
+        if (linkedProducedDocument) {
+            setRequest(linkedProducedDocument.request ?? "");
+        }
+    };
+
+    const handleArchiveVaultDocument = async (documentId: string) => {
+        const confirmed = window.confirm("Archive this document? It will be hidden from the default vault view but kept in your history.");
+        if (!confirmed) return;
+        setArchivingDocumentId(documentId);
+        try {
+            const updated = await archiveVaultDocument(userId, documentId);
+            if (!updated) {
+                setVaultError("Unable to archive that document right now.");
+                return;
+            }
+            await refreshVaultDocuments();
+            if (selectedVaultDocument?.id === updated.id && vaultStatusFilter === "active") {
+                setSelectedVaultDocument(null);
+                setSelectedVaultDocumentId(null);
+            } else if (selectedVaultDocument?.id === updated.id) {
+                setSelectedVaultDocument(updated);
+            }
+        } finally {
+            setArchivingDocumentId(null);
+        }
+    };
+
+    const handleCreateFolder = async () => {
+        const trimmed = newFolderName.trim();
+        if (!trimmed) return;
+        setCreatingFolder(true);
+        setVaultFoldersError(null);
+        try {
+            const created = await createDocumentFolder(userId, trimmed);
+            if (!created) {
+                setVaultFoldersError("Unable to create that folder right now.");
+                return;
+            }
+            setVaultFolders((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
+            setNewFolderName("");
+            setVaultFolderFilter(created.id);
+        } finally {
+            setCreatingFolder(false);
+        }
+    };
+
+    const handleRenameFolder = async (folder: DocumentFolder) => {
+        const nextName = window.prompt("Rename folder", folder.name)?.trim();
+        if (!nextName || nextName === folder.name) return;
+        setFolderActionId(folder.id);
+        setVaultFoldersError(null);
+        try {
+            const updated = await updateDocumentFolder(userId, folder.id, { name: nextName });
+            if (!updated) {
+                setVaultFoldersError("Unable to rename that folder right now.");
+                return;
+            }
+            setVaultFolders((prev) => prev.map((entry) => entry.id === updated.id ? updated : entry).sort((a, b) => a.name.localeCompare(b.name)));
+        } finally {
+            setFolderActionId(null);
+        }
+    };
+
+    const handleDeleteFolder = async (folder: DocumentFolder) => {
+        const confirmed = window.confirm(`Delete "${folder.name}"? Documents inside it will move back to Unfiled.`);
+        if (!confirmed) return;
+        setFolderActionId(folder.id);
+        setVaultFoldersError(null);
+        try {
+            const deleted = await deleteDocumentFolder(userId, folder.id);
+            if (!deleted) {
+                setVaultFoldersError("Unable to delete that folder right now.");
+                return;
+            }
+            setVaultFolders((prev) => prev.filter((entry) => entry.id !== folder.id));
+            setVaultDocuments((prev) => prev.map((document) => document.folderId === folder.id ? { ...document, folderId: null } : document));
+            if (selectedVaultDocument?.folderId === folder.id) {
+                setSelectedVaultDocument({ ...selectedVaultDocument, folderId: null });
+            }
+            if (vaultFolderFilter === folder.id) {
+                setVaultFolderFilter("unfiled");
+            }
+        } finally {
+            setFolderActionId(null);
+        }
+    };
+
+    const handleMoveDocumentToFolder = async (documentId: string, folderId: string | null) => {
+        setMovingDocumentId(documentId);
+        setVaultError(null);
+        try {
+            const updated = await moveDocumentToFolder(userId, documentId, folderId);
+            if (!updated) {
+                setVaultError("Unable to move that document right now.");
+                return;
+            }
+            setVaultDocuments((prev) => prev.map((document) => document.id === updated.id ? updated : document));
+            if (selectedVaultDocument?.id === updated.id) {
+                setSelectedVaultDocument(updated);
+            }
+        } finally {
+            setMovingDocumentId(null);
+        }
+    };
+
+    const handleRestoreVaultVersion = async (version: DocumentVersion) => {
+        if (!effectiveSelectedVaultDocument) return;
+        setRestoringVersionId(version.id);
+        setVersionRestoreMessage(null);
+        try {
+            const restored = await restoreVaultDocumentVersion(userId, effectiveSelectedVaultDocument.id, version.id);
+            if (!restored) {
+                setVaultVersionsError("Unable to restore that version right now.");
+                return;
+            }
+            const versions = await loadDocumentVersions(userId, effectiveSelectedVaultDocument.id);
+            setVaultVersions(versions);
+            setSelectedVersionId(restored.id);
+            await refreshVaultDocuments(effectiveSelectedVaultDocument.id);
+            setVersionRestoreMessage(`Version ${version.versionNumber} restored as the latest version`);
+        } finally {
+            setRestoringVersionId(null);
+        }
+    };
+
+    const handleOpenVaultFile = async (fileId: string) => {
+        setFileActionId(fileId);
+        try {
+            const signedUrl = await createSignedDocumentFileUrl(userId, fileId);
+            if (!signedUrl) {
+                setVaultFilesError("Unable to open that file right now.");
+                return;
+            }
+            window.open(signedUrl, "_blank", "noopener,noreferrer");
+        } finally {
+            setFileActionId(null);
+        }
+    };
+
+    const handleDeleteVaultFile = async (fileId: string) => {
+        setFileActionId(fileId);
+        try {
+            const deleted = await deleteDocumentFile(userId, fileId);
+            if (!deleted) {
+                setVaultFilesError("Unable to delete that file right now.");
+                return;
+            }
+            setVaultFiles((prev) => prev.filter((file) => file.id !== fileId));
+        } finally {
+            setFileActionId(null);
+        }
+    };
+
+    const handleUploadVaultAttachment = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        event.target.value = "";
+        if (!file || !selectedVaultDocumentId) return;
+
+        setUploadingFile(true);
+        setVaultFilesError(null);
+        try {
+            const uploaded = await uploadDocumentFile(userId, selectedVaultDocumentId, file, {
+                versionId: selectedVaultVersion?.id ?? effectiveSelectedVaultDocument?.currentVersionId ?? null,
+                fileKind: "attachment",
+                metadata: {
+                    uploadedFrom: "vault_panel",
+                },
+            });
+            if (!uploaded) {
+                setVaultFilesError("Unable to upload that file right now.");
+                return;
+            }
+            setVaultFiles((prev) => [uploaded, ...prev]);
+        } finally {
+            setUploadingFile(false);
+        }
+    };
+
+    const handleSaveVaultArtifact = async (fileKind: "generated_docx" | "generated_html") => {
+        if (!effectiveSelectedVaultDocument || !latestVaultContent) return;
+
+        setArtifactSavingKind(fileKind);
+        setVaultFilesError(null);
+        try {
+            const saved = await saveGeneratedDocumentArtifact(
+                userId,
+                effectiveSelectedVaultDocument.id,
+                selectedVaultVersion?.id ?? effectiveSelectedVaultDocument.currentVersionId ?? null,
+                latestVaultContent,
+                fileKind,
+                {
+                    exportMeta: latestVaultMeta,
+                    metadata: {
+                        versionNumber: selectedVaultVersion?.versionNumber ?? null,
+                        source: selectedVaultVersion?.source ?? null,
+                    },
+                },
+            );
+            if (!saved) {
+                setVaultFilesError(fileKind === "generated_docx"
+                    ? "Unable to save the DOCX artifact right now."
+                    : "Unable to save the HTML artifact right now.");
+                return;
+            }
+            setVaultFiles((prev) => [saved, ...prev.filter((file) => file.id !== saved.id)]);
+        } finally {
+            setArtifactSavingKind(null);
+        }
+    };
+
+    const handleCreateSignatureRequest = async () => {
+        if (!effectiveSelectedVaultDocument) return;
+        if (!signatureSignerName.trim() || !signatureSignerEmail.trim()) {
+            setSignatureRequestsError("Signer name and email are required.");
+            return;
+        }
+
+        // Helper: reset to the real provider when one is active, else mock.
+        const resetProvider = () => {
+            const next = getProviderConfigurationStatus().find((p) => p.id !== "mock" && p.availableNow)?.id ?? "mock";
+            setSignatureProvider(next);
+        };
+
+        setCreatingSignatureRequest(true);
+        setSignatureRequestsError(null);
+        try {
+            if (signatureProvider === "mock") {
+                // ── Mock path: local DB-only flow for development ──────────
+                const created = await createDocumentSignatureRequest(userId, {
+                    documentId: effectiveSelectedVaultDocument.id,
+                    versionId: signatureVersionId !== "none" ? signatureVersionId : (selectedVaultVersion?.id ?? effectiveSelectedVaultDocument.currentVersionId ?? null),
+                    fileId: signatureFileId !== "none" ? signatureFileId : null,
+                    provider: "mock",
+                    signerName: signatureSignerName.trim(),
+                    signerEmail: signatureSignerEmail.trim(),
+                    status: "draft",
+                    expiresAt: signatureExpiresAt || null,
+                    metadata: { createdFrom: "vault_signature_panel" },
+                });
+                if (!created) {
+                    setSignatureRequestsError("Unable to create a signature request right now.");
+                    return;
+                }
+                await createDocumentSignatureEvent(userId, created.id, {
+                    documentId: effectiveSelectedVaultDocument.id,
+                    provider: created.provider,
+                    eventType: "request_created",
+                    eventStatus: created.status,
+                    payload: {
+                        signerName: created.signerName,
+                        signerEmail: created.signerEmail,
+                        fileId: created.fileId,
+                        versionId: created.versionId,
+                    },
+                });
+                setSignatureSignerName("");
+                setSignatureSignerEmail("");
+                resetProvider();
+                setSignatureFileId("none");
+                setSignatureVersionId("none");
+                setSignatureExpiresAt("");
+                await refreshSignatureRequests(effectiveSelectedVaultDocument.id);
+                setSelectedSignatureRequestId(created.id);
+                await refreshSignatureEvents(created.id);
+                await refreshVaultDocuments(effectiveSelectedVaultDocument.id);
+                return;
+            }
+
+            // ── Real provider path: call via Edge Function adapter ─────────
+            if (!isProviderActive(signatureProvider)) {
+                setSignatureRequestsError(
+                    `Provider "${signatureProvider}" is not active. Set VITE_SIGNATURE_PROVIDER=${signatureProvider} in your .env to activate it.`
+                );
+                return;
+            }
+
+            const adapter = getSignatureProviderAdapter(signatureProvider);
+            const result = await adapter.createSignatureRequest({
+                requestId: crypto.randomUUID(),
+                documentId: effectiveSelectedVaultDocument.id,
+                versionId: signatureVersionId !== "none" ? signatureVersionId : (selectedVaultVersion?.id ?? effectiveSelectedVaultDocument.currentVersionId ?? null),
+                fileId: signatureFileId !== "none" ? signatureFileId : null,
+                signerName: signatureSignerName.trim(),
+                signerEmail: signatureSignerEmail.trim(),
+                metadata: { createdFrom: "vault_signature_panel" },
+            });
+
+            if (!result.ok) {
+                setSignatureRequestsError(
+                    result.error?.message ?? `Failed to create signature request via ${signatureProvider}.`
+                );
+                return;
+            }
+
+            const signatureRequestId = result.metadata?.signatureRequestId as string | null;
+            if (!signatureRequestId) {
+                setSignatureRequestsError("Provider returned success but did not supply a signature request ID. Check Edge Function logs.");
+                return;
+            }
+
+            // Record a local creation event so the timeline is populated.
+            await createDocumentSignatureEvent(userId, signatureRequestId, {
+                documentId: effectiveSelectedVaultDocument.id,
+                provider: signatureProvider,
+                eventType: "request_created",
+                eventStatus: result.status ?? "draft",
+                payload: {
+                    signerName: signatureSignerName.trim(),
+                    signerEmail: signatureSignerEmail.trim(),
+                    fileId: signatureFileId !== "none" ? signatureFileId : null,
+                    versionId: signatureVersionId !== "none" ? signatureVersionId : null,
+                    providerRequestId: result.providerRequestId,
+                    _mock: result.metadata?._mock,
+                },
+            });
+
+            setSignatureSignerName("");
+            setSignatureSignerEmail("");
+            resetProvider();
+            setSignatureFileId("none");
+            setSignatureVersionId("none");
+            setSignatureExpiresAt("");
+            await refreshSignatureRequests(effectiveSelectedVaultDocument.id);
+            setSelectedSignatureRequestId(signatureRequestId);
+            await refreshSignatureEvents(signatureRequestId);
+            await refreshVaultDocuments(effectiveSelectedVaultDocument.id);
+        } finally {
+            setCreatingSignatureRequest(false);
+        }
+    };
+
+    const handleSignatureStatusAction = async (
+        request: DocumentSignatureRequest,
+        status: SignatureRequestStatus,
+        eventType: string,
+    ) => {
+        setSignatureActionId(request.id);
+        setSignatureRequestsError(null);
+        try {
+            const updated = await updateDocumentSignatureRequestStatus(userId, request.id, status, {
+                mockLifecycle: true,
+                lastAction: eventType,
+            });
+            if (!updated) {
+                setSignatureRequestsError("Unable to update that signature request right now.");
+                return;
+            }
+            await createDocumentSignatureEvent(userId, request.id, {
+                documentId: request.documentId,
+                provider: updated.provider,
+                eventType,
+                eventStatus: status,
+                payload: {
+                    signerName: updated.signerName,
+                    signerEmail: updated.signerEmail,
+                    fileId: updated.fileId,
+                    versionId: updated.versionId,
+                },
+            });
+            setSignatureRequests((prev) => prev.map((entry) => entry.id === updated.id ? updated : entry));
+            await refreshSignatureEvents(updated.id);
+            await refreshVaultDocuments(request.documentId);
+            if (selectedVaultDocumentId === request.documentId) {
+                const refreshed = await loadVaultDocumentById(userId, request.documentId);
+                if (refreshed) setSelectedVaultDocument(refreshed);
+            }
+        } finally {
+            setSignatureActionId(null);
+        }
+    };
+
+    const openTemplateInGenerate = (categoryId: string, documentId: string) => {
+        const category = DOC_CATEGORIES.find((entry) => entry.id === categoryId);
+        const document = category?.documents.find((entry) => entry.id === documentId);
+        if (!category || !document) return;
+        setSurfaceMode("generate");
+        setShowNeedsWizard(false);
+        setNeedsError(null);
+        setSelectedCategory(category);
+        setSelectedDoc(document);
+        setDocType(document.name);
+        const suggested = getSuggestedDocumentSettings(document, category);
+        setAudience(suggested.audience);
+        setTone(suggested.tone);
+        setRequest("");
+        setDocState("");
+        setDocInputs(createDocumentInputDefaults(document, category, profile));
+        setAutoFillCurrentDate(true);
+        setShowValidation(false);
+        setPhase("configure");
+        window.setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 0);
+    };
+
+    const handleReviewExistingRecommendation = (documentId: string | null) => {
+        if (!documentId) return;
+        const document = vaultDocuments.find((entry) => entry.id === documentId) ?? null;
+        if (document?.status === "archived") {
+            setVaultStatusFilter("all");
+        }
+        setSurfaceMode("vault");
+        setShowNeedsWizard(false);
+        setSelectedVaultDocumentId(documentId);
+    };
+
+    const handleDismissRecommendation = (key: string) => {
+        setDismissedRecommendationKeys((prev) => prev.includes(key) ? prev : [...prev, key]);
+    };
+
+    const runNeedsWizard = async () => {
+        const wizardInput = {
+            entityType: needsEntityType.trim(),
+            state: needsState.trim(),
+            currentStage: Math.max(1, Number(profile?.currentStage) || 1),
+            goal: needsGoal,
+            notes: needsNotes.trim(),
+            businessName: profile?.businessName || profile?.idea || "",
+            industry: profile?.industry || "",
+        };
+
+        setNeedsLoading(true);
+        setNeedsError(null);
+        setDismissedRecommendationKeys([]);
+        void trackProductUsageEvent(userId, "document_vault", "needs_wizard_run", {
+            goal: wizardInput.goal,
+            stage: wizardInput.currentStage,
+            entityType: wizardInput.entityType || null,
+            state: wizardInput.state || null,
+            vaultDocumentCount: vaultDocuments.length,
+        });
+        try {
+            const prompt = buildDocumentNeedWizardPrompt(wizardInput, vaultDocuments);
+            const raw = await callForgeAPI(
+                [{ role: "user", content: prompt }],
+                "Return JSON only. Do not add markdown fences. Do not give legal or tax advice. Identify common founder documents only.",
+                1800
+            );
+            const parsed = parseDocumentNeedRecommendationResponse(raw, wizardInput, vaultDocuments);
+            if (parsed) {
+                setNeedsResult(parsed);
+            } else {
+                setNeedsResult(buildDocumentNeedFallbackRecommendations(wizardInput, vaultDocuments));
+            }
+        } catch {
+            setNeedsResult(buildDocumentNeedFallbackRecommendations(wizardInput, vaultDocuments));
+            setNeedsError("Forge could not finish the recommendation pass, so Foundry used its built-in document checklist instead.");
+        } finally {
+            setNeedsLoading(false);
+        }
     };
 
     // ── Navigate to a category ───────────────────────────────
@@ -370,6 +1317,7 @@ export default function DocumentProductionScreen({
     // ── Generate document ────────────────────────────────────
     const generate = async () => {
         if (generating || generationLocked) return;
+        setStudioLaunchNotice(null);
         const requirement = selectedDoc && selectedCategory ? getDocumentRequirement(selectedDoc, selectedCategory) : null;
         const validation = requirement ? validateDocumentInputs(requirement, docInputs) : { valid: true, missingRequired: [], errors: {} };
         if (!validation.valid) {
@@ -420,6 +1368,7 @@ export default function DocumentProductionScreen({
     // ── Refine document ──────────────────────────────────────
     const refine = async () => {
         if (!refineInput.trim() || refining || generating) return;
+        setStudioLaunchNotice(null);
         const instruction = refineInput.trim();
         setRefineInput("");
         setRefining(true);
@@ -453,6 +1402,7 @@ export default function DocumentProductionScreen({
     };
 
     const resetToCategories = () => {
+        setStudioLaunchNotice(null);
         setPhase("categories");
         setSelectedCategory(null);
         setSelectedDoc(null);
@@ -502,6 +1452,102 @@ export default function DocumentProductionScreen({
             : saveStatus === "unavailable"
                 ? "Save unavailable"
                 : "";
+    const currentStageId = getCurrentStageId(profile);
+    const currentStageLabel = STAGE_LABELS[currentStageId] ?? "Idea";
+    const folderNameById = new Map(vaultFolders.map((folder) => [folder.id, folder.name]));
+    const folderNameByIdRecord = Object.fromEntries(vaultFolders.map((folder) => [folder.id, folder.name])) as Record<string, string>;
+    const vaultCategories = Array.from(new Set(vaultDocuments.map((doc) => doc.category || doc.docType).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+    const filteredVaultDocuments = vaultDocuments.filter((doc) => {
+        const searchValue = vaultSearch.trim().toLowerCase();
+        const matchesSearch = !searchValue
+            || doc.title.toLowerCase().includes(searchValue)
+            || doc.docType.toLowerCase().includes(searchValue)
+            || (doc.category || "").toLowerCase().includes(searchValue)
+            || (doc.folderId ? (folderNameById.get(doc.folderId) || "").toLowerCase().includes(searchValue) : false);
+        const matchesStatus = vaultStatusFilter === "all"
+            ? true
+            : vaultStatusFilter === "active"
+                ? doc.status !== "archived"
+                : doc.status === vaultStatusFilter;
+        const categoryValue = doc.category || doc.docType;
+        const matchesCategory = vaultCategoryFilter === "all" || categoryValue === vaultCategoryFilter;
+        const matchesStage = vaultStageFilter === "all" || doc.stageId === Number(vaultStageFilter);
+        const matchesFolder = vaultFolderFilter === "all"
+            ? true
+            : vaultFolderFilter === "unfiled"
+                ? !doc.folderId
+                : doc.folderId === vaultFolderFilter;
+        return matchesSearch && matchesStatus && matchesCategory && matchesStage && matchesFolder;
+    });
+    const effectiveSelectedVaultDocument = selectedVaultDocumentId
+        ? filteredVaultDocuments.find((doc) => doc.id === selectedVaultDocumentId) ?? selectedVaultDocument
+        : selectedVaultDocument;
+    const selectedVaultVersion = vaultVersions.find((version) => version.id === selectedVersionId) ?? vaultVersions[0] ?? null;
+    const selectedSignatureRequest = signatureRequests.find((request) => request.id === selectedSignatureRequestId) ?? signatureRequests[0] ?? null;
+    const selectedSignatureFile = selectedSignatureRequest?.fileId
+        ? vaultFiles.find((file) => file.id === selectedSignatureRequest.fileId) ?? null
+        : null;
+    const selectedSignatureVersion = selectedSignatureRequest?.versionId
+        ? vaultVersions.find((version) => version.id === selectedSignatureRequest.versionId) ?? null
+        : null;
+    const linkedProducedDocumentForVault = effectiveSelectedVaultDocument?.sourceProducedDocumentId
+        ? documents.find((document) => document.id === effectiveSelectedVaultDocument.sourceProducedDocumentId) ?? null
+        : null;
+    const selectedVaultMetadata = effectiveSelectedVaultDocument?.metadata && typeof effectiveSelectedVaultDocument.metadata === "object"
+        ? effectiveSelectedVaultDocument.metadata as Record<string, unknown>
+        : {};
+    const providerConfigurationStatus = getProviderConfigurationStatus();
+    const visibleNeedsResult = needsResult ? {
+        ...needsResult,
+        mustHave: needsResult.mustHave.filter((item) => !dismissedRecommendationKeys.includes(item.key)),
+        shouldHave: needsResult.shouldHave.filter((item) => !dismissedRecommendationKeys.includes(item.key)),
+        optionalFuture: needsResult.optionalFuture.filter((item) => !dismissedRecommendationKeys.includes(item.key)),
+    } : null;
+    const latestVaultContent = selectedVaultVersion?.content ?? "";
+    const latestVaultMeta: DocumentExportMeta = {
+        title: selectedVaultVersion?.title || effectiveSelectedVaultDocument?.title || "Document",
+        businessName: businessName || String(selectedVaultMetadata.businessName || "") || profile.businessName || profile.idea || "",
+        docType: effectiveSelectedVaultDocument?.docType || docType || "Document",
+        date: formatLongDate(todayIso),
+        legalDate: formatLegalDate(todayIso),
+        state: typeof selectedVaultMetadata.state === "string" ? selectedVaultMetadata.state : undefined,
+    };
+
+    const generateVaultHealthSummary = async () => {
+        if (vaultDocuments.length < 3 || vaultHealthLoading) return;
+        setVaultHealthLoading(true);
+        try {
+            const categoriesCovered = Array.from(new Set(vaultDocuments.map((document) => document.category || document.docType).filter(Boolean)));
+            const signedCount = vaultDocuments.filter((document) => document.status === "signed").length;
+            const unstagedCount = vaultDocuments.filter((document) => !document.stageId).length;
+            const prompt = [
+                "In 2 sentences maximum, give this founder a plain-English summary of their document vault. Be specific about what they have and what might be missing for their stage.",
+                "Do not use generic advice. Start with the most useful observation.",
+                "",
+                `Current stage: ${currentStageLabel}`,
+                `Total documents: ${vaultDocuments.length}`,
+                `Categories covered: ${categoriesCovered.join(", ") || "none"}`,
+                `Has any signed documents: ${signedCount > 0 ? "yes" : "no"}`,
+                `Documents without stage assignment: ${unstagedCount}`,
+            ].join("\n");
+            const summary = await callForgeAPI(
+                [{ role: "user", content: prompt }],
+                "You are Forge, a concise founder operating partner. Return only the summary text.",
+                120,
+            );
+            setVaultHealthSummary(summary.trim());
+        } catch (error) {
+            console.error("Vault health summary error:", error);
+        } finally {
+            setVaultHealthLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (surfaceMode === "vault" && vaultDocuments.length >= 3 && !vaultHealthSummary && !vaultHealthLoading) {
+            void generateVaultHealthSummary();
+        }
+    }, [surfaceMode, vaultDocuments.length, vaultHealthSummary, vaultHealthLoading]);
 
     const handleDocInputChange = (fieldId: string, value: any) => {
         setDocInputs(prev => ({ ...prev, [fieldId]: value }));
@@ -519,6 +1565,293 @@ export default function DocumentProductionScreen({
             { ...prev, documentDate: todayIso, signatureDate: todayIso }
         ));
     };
+
+    if (surfaceMode === "vault") {
+        const hasSearchOrFilter = vaultSearch.trim().length > 0 || vaultStatusFilter !== "active" || vaultCategoryFilter !== "all" || vaultStageFilter !== "all";
+
+        return (
+            <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8" }}>
+                <ScreenHeader
+                    onBack={onBack}
+                    backLabel="Hub"
+                    title="Document Vault"
+                    subtitle="Generated documents, version history, and future signing workflows"
+                />
+                <ModeTabs mode={surfaceMode} onChange={setSurfaceMode} />
+
+                <div className="foundry-app-page__content" style={{ maxWidth: "min(1180px, 100%)", margin: "0 auto", padding: "18px 16px 80px" }}>
+                    <DocumentNeedsWizard
+                        show={showNeedsWizard}
+                        onToggle={() => setShowNeedsWizard((prev) => !prev)}
+                        needsEntityType={needsEntityType}
+                        setNeedsEntityType={setNeedsEntityType}
+                        needsState={needsState}
+                        setNeedsState={setNeedsState}
+                        currentStage={Math.max(1, Number(profile?.currentStage) || 1)}
+                        needsGoal={needsGoal}
+                        setNeedsGoal={setNeedsGoal}
+                        needsNotes={needsNotes}
+                        setNeedsNotes={setNeedsNotes}
+                        goals={DOCUMENT_NEED_GOALS}
+                        needsLoading={needsLoading}
+                        needsError={needsError}
+                        visibleNeedsResult={visibleNeedsResult}
+                        vaultDocuments={vaultDocuments}
+                        onRun={runNeedsWizard}
+                        onGenerate={openTemplateInGenerate}
+                        onReview={handleReviewExistingRecommendation}
+                        onDismiss={handleDismissRecommendation}
+                    />
+
+                    {vaultDocuments.length >= 3 && (
+                        <div style={{ marginBottom: 18, padding: 16, borderRadius: 12, background: "rgba(232,98,42,0.06)", border: "1px solid rgba(232,98,42,0.15)", position: "relative" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 8 }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(240,237,232,0.4)" }}>
+                                    <span style={{ width: 18, height: 18, borderRadius: "50%", background: "rgba(232,98,42,0.16)", display: "inline-flex", alignItems: "center", justifyContent: "center", color: "#E8622A", fontSize: 11 }}>F</span>
+                                    Forge
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        setVaultHealthSummary(null);
+                                        void generateVaultHealthSummary();
+                                    }}
+                                    disabled={vaultHealthLoading}
+                                    aria-label="Refresh vault summary"
+                                    style={{ background: "transparent", border: "none", color: "rgba(240,237,232,0.3)", cursor: vaultHealthLoading ? "wait" : "pointer", fontSize: 18, lineHeight: 1 }}
+                                >
+                                    ↻
+                                </button>
+                            </div>
+                            <div style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 14, color: "#F0EDE8", lineHeight: 1.7 }}>
+                                {vaultHealthSummary || (vaultHealthLoading ? "Forge is reading your vault..." : "Refresh to generate a vault summary.")}
+                            </div>
+                        </div>
+                    )}
+
+                    <div style={{ display: "grid", gridTemplateColumns: "minmax(320px, 0.95fr) minmax(0, 1.35fr)", gap: 18, alignItems: "start" }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                            <VaultFolderSidebar
+                                folders={vaultFolders}
+                                loading={vaultFoldersLoading}
+                                error={vaultFoldersError}
+                                selectedFolderFilter={vaultFolderFilter}
+                                onSelectFolder={setVaultFolderFilter}
+                                folderActionId={folderActionId}
+                                onRenameFolder={handleRenameFolder}
+                                onDeleteFolder={handleDeleteFolder}
+                                newFolderName={newFolderName}
+                                onNewFolderNameChange={setNewFolderName}
+                                onCreateFolder={handleCreateFolder}
+                                creatingFolder={creatingFolder}
+                                search={vaultSearch}
+                                onSearchChange={setVaultSearch}
+                                statusFilter={vaultStatusFilter}
+                                onStatusFilterChange={setVaultStatusFilter}
+                                stageFilter={vaultStageFilter}
+                                onStageFilterChange={setVaultStageFilter}
+                                categoryFilter={vaultCategoryFilter}
+                                onCategoryFilterChange={setVaultCategoryFilter}
+                                searchInputRef={searchInputRef}
+                                categories={vaultCategories}
+                                documentStatusLabels={DOCUMENT_STATUS_LABELS}
+                            />
+
+                            <VaultDocumentList
+                                documents={vaultDocuments}
+                                filteredDocuments={filteredVaultDocuments}
+                                loading={vaultLoading}
+                                error={vaultError}
+                                selectedDocumentId={effectiveSelectedVaultDocument?.id ?? null}
+                                onSelectDocument={setSelectedVaultDocumentId}
+                                onRefresh={() => refreshVaultDocuments()}
+                                onArchive={handleArchiveVaultDocument}
+                                archivingDocumentId={archivingDocumentId}
+                                hasSearchOrFilter={hasSearchOrFilter}
+                                folderNameById={folderNameByIdRecord}
+                                onOpenNeedsWizard={() => setShowNeedsWizard(true)}
+                                onGenerateDocument={() => setSurfaceMode("generate")}
+                            />
+                        </div>
+
+                        <VaultDetailPanel
+                            document={effectiveSelectedVaultDocument}
+                            loading={vaultDetailLoading}
+                            folderNameById={folderNameByIdRecord}
+                            versionCount={vaultVersions.length}
+                            folders={vaultFolders}
+                            movingDocumentId={movingDocumentId}
+                            onMoveToFolder={handleMoveDocumentToFolder}
+                            selectedVersion={selectedVaultVersion}
+                            versions={vaultVersions}
+                            versionsLoading={vaultVersionsLoading}
+                            versionsError={vaultVersionsError}
+                            onSelectVersion={setSelectedVersionId}
+                            onRestoreVersion={handleRestoreVaultVersion}
+                            restoringVersionId={restoringVersionId}
+                            previewNode={(
+                                <div style={{ border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, background: "rgba(255,255,255,0.018)", overflow: "hidden" }}>
+                                    <div style={{ padding: "12px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
+                                        <div>
+                                            <div style={{ fontSize: 13, color: "#F0EDE8", fontWeight: 600 }}>Latest Content Preview</div>
+                                            <div style={{ fontSize: 10, color: "#666", marginTop: 2 }}>
+                                                {selectedVaultVersion ? `Version ${selectedVaultVersion.versionNumber} · ${selectedVaultVersion.source}` : "No linked version selected yet"}
+                                            </div>
+                                        </div>
+                                        {selectedVaultVersion && effectiveSelectedVaultDocument && (
+                                            <button
+                                                onClick={() => openVaultVersionInStudio(effectiveSelectedVaultDocument, selectedVaultVersion)}
+                                                style={{ background: "rgba(232,98,42,0.08)", border: "1px solid rgba(232,98,42,0.18)", borderRadius: 8, padding: "7px 10px", color: "#E8622A", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}
+                                            >
+                                                {selectedVaultVersion.id === vaultVersions[0]?.id ? "Open Latest in Studio" : `Open Version ${selectedVaultVersion.versionNumber} in Studio`}
+                                            </button>
+                                        )}
+                                    </div>
+                                    <div style={{ padding: 16 }}>
+                                        {!legalDisclaimerDismissed && (
+                                            <div style={{ marginBottom: 12, background: "rgba(232,98,42,0.08)", border: "1px solid rgba(232,98,42,0.25)", borderRadius: 8, padding: "12px 14px", color: "rgba(240,237,232,0.7)", fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, lineHeight: 1.6, display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start" }}>
+                                                <div>
+                                                    <strong style={{ color: "#F0EDE8" }}>⚠ AI-Generated Document</strong>
+                                                    <div>This document was created by Forge and has not been reviewed by an attorney. For legal documents, have a qualified attorney review before signing or sending.</div>
+                                                </div>
+                                                <button
+                                                    onClick={() => setLegalDisclaimerDismissed(true)}
+                                                    style={{ background: "transparent", border: "none", color: "rgba(240,237,232,0.5)", cursor: "pointer", fontSize: 13 }}
+                                                >
+                                                    X
+                                                </button>
+                                            </div>
+                                        )}
+                                        {versionRestoreMessage && (
+                                            <div style={{ marginBottom: 12, padding: "10px 12px", borderRadius: 8, background: "rgba(76,175,138,0.08)", border: "1px solid rgba(76,175,138,0.2)", color: "#4CAF8A", fontSize: 12, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+                                                {versionRestoreMessage}
+                                            </div>
+                                        )}
+                                        {latestVaultContent ? (
+                                            <>
+                                                <div style={{
+                                                    maxHeight: 430,
+                                                    overflowY: "auto",
+                                                    background: "#F8F5F0",
+                                                    borderRadius: 12,
+                                                    padding: "28px 28px 24px",
+                                                    boxShadow: "0 4px 30px rgba(0,0,0,0.35)",
+                                                }}>
+                                                    <DocPreview content={latestVaultContent} meta={latestVaultMeta} />
+                                                </div>
+                                                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
+                                                    <button
+                                                        onClick={() => printStyledPdf(latestVaultContent, latestVaultMeta)}
+                                                        style={{ padding: "9px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#C8C4BE", fontSize: 12, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}
+                                                    >
+                                                        Download PDF
+                                                    </button>
+                                                    <button
+                                                        onClick={() => downloadStyledDocx(latestVaultContent, latestVaultMeta)}
+                                                        style={{ padding: "9px 12px", background: "rgba(232,98,42,0.08)", border: "1px solid rgba(232,98,42,0.18)", borderRadius: 10, color: "#E8622A", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}
+                                                    >
+                                                        Download DOCX
+                                                    </button>
+                                                    <button
+                                                        onClick={() => downloadStyledHtml(latestVaultContent, latestVaultMeta)}
+                                                        style={{ padding: "9px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#C8C4BE", fontSize: 12, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}
+                                                    >
+                                                        Styled HTML
+                                                    </button>
+                                                </div>
+                                                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10, alignItems: "center" }}>
+                                                    <button
+                                                        onClick={() => handleSaveVaultArtifact("generated_docx")}
+                                                        disabled={artifactSavingKind !== null}
+                                                        style={{ padding: "8px 11px", background: "rgba(232,98,42,0.08)", border: "1px solid rgba(232,98,42,0.16)", borderRadius: 10, color: artifactSavingKind === "generated_docx" ? "#F0EDE8" : "#E8622A", fontSize: 11, fontWeight: 600, cursor: artifactSavingKind ? "wait" : "pointer", fontFamily: "'Lora', Georgia, serif" }}
+                                                    >
+                                                        {artifactSavingKind === "generated_docx" ? "Saving DOCX..." : "Save DOCX Artifact"}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleSaveVaultArtifact("generated_html")}
+                                                        disabled={artifactSavingKind !== null}
+                                                        style={{ padding: "8px 11px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: artifactSavingKind === "generated_html" ? "#F0EDE8" : "#C8C4BE", fontSize: 11, cursor: artifactSavingKind ? "wait" : "pointer", fontFamily: "'Lora', Georgia, serif" }}
+                                                    >
+                                                        {artifactSavingKind === "generated_html" ? "Saving HTML..." : "Save HTML Artifact"}
+                                                    </button>
+                                                    <span style={{ fontSize: 10, color: "#666", lineHeight: 1.5 }}>
+                                                        PDF stays browser-controlled for now, so only DOCX and HTML artifacts are saved to the vault.
+                                                    </span>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <div style={{ padding: "32px 18px", textAlign: "center", color: "#666", fontSize: 12, lineHeight: 1.6 }}>
+                                                <div style={{ marginBottom: linkedProducedDocumentForVault ? 10 : 0 }}>
+                                                    No version content is linked yet for this vault record. If this is an older mirrored document, open the original saved document from Generate or create a fresh version from Studio.
+                                                </div>
+                                                {linkedProducedDocumentForVault && (
+                                                    <button
+                                                        onClick={() => openSavedDocument(linkedProducedDocumentForVault)}
+                                                        style={{ padding: "8px 11px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#C8C4BE", fontSize: 11, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}
+                                                    >
+                                                        Open original saved document
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                            filesPanel={(
+                                <DocumentFilesPanel
+                                    files={vaultFiles}
+                                    loading={vaultFilesLoading}
+                                    error={vaultFilesError}
+                                    uploadingFile={uploadingFile}
+                                    fileActionId={fileActionId}
+                                    onOpenUploadPicker={() => vaultFileInputRef.current?.click()}
+                                    onRefresh={() => refreshVaultFiles(effectiveSelectedVaultDocument?.id ?? null)}
+                                    fileInputRef={vaultFileInputRef}
+                                    onUploadChange={handleUploadVaultAttachment}
+                                    onOpenFile={handleOpenVaultFile}
+                                    onDeleteFile={handleDeleteVaultFile}
+                                    disabled={!effectiveSelectedVaultDocument}
+                                />
+                            )}
+                            signaturesPanel={(
+                                <DocumentSignaturesPanel
+                                    providerConfigurationStatus={providerConfigurationStatus}
+                                    signatureProvider={signatureProvider}
+                                    onSignatureProviderChange={setSignatureProvider}
+                                    signatureSignerName={signatureSignerName}
+                                    onSignatureSignerNameChange={setSignatureSignerName}
+                                    signatureSignerEmail={signatureSignerEmail}
+                                    onSignatureSignerEmailChange={setSignatureSignerEmail}
+                                    signatureExpiresAt={signatureExpiresAt}
+                                    onSignatureExpiresAtChange={setSignatureExpiresAt}
+                                    signatureFileId={signatureFileId}
+                                    onSignatureFileIdChange={setSignatureFileId}
+                                    signatureVersionId={signatureVersionId}
+                                    onSignatureVersionIdChange={setSignatureVersionId}
+                                    onCreateSignatureRequest={handleCreateSignatureRequest}
+                                    creatingSignatureRequest={creatingSignatureRequest}
+                                    requests={signatureRequests}
+                                    requestsLoading={signatureRequestsLoading}
+                                    requestsError={signatureRequestsError}
+                                    selectedRequest={selectedSignatureRequest}
+                                    onSelectRequest={setSelectedSignatureRequestId}
+                                    events={signatureEvents}
+                                    eventsLoading={signatureEventsLoading}
+                                    eventsError={signatureEventsError}
+                                    files={vaultFiles}
+                                    versions={vaultVersions}
+                                    selectedFile={selectedSignatureFile}
+                                    selectedVersion={selectedSignatureVersion}
+                                    onRefresh={() => refreshSignatureRequests(effectiveSelectedVaultDocument?.id ?? null)}
+                                    onStatusAction={handleSignatureStatusAction}
+                                    signatureActionId={signatureActionId}
+                                />
+                            )}
+                        />
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     // ═══════════════════════════════════════════════════════════
     // SCREEN 1 — CATEGORY SELECTION
@@ -545,10 +1878,11 @@ export default function DocumentProductionScreen({
                         <ArrowLeft size={"var(--foundry-app-header-icon-size)"} /> Hub
                     </button>
                     <div>
-                        <div style={{ fontSize: "var(--foundry-app-header-title-font)", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>Document Production</div>
-                        <div style={{ fontSize: "var(--foundry-app-header-meta-font)", color: "#555" }}>Professional document studio · {DOC_CATEGORIES.reduce((n, c) => n + c.documents.length, 0)} documents</div>
+                        <div style={{ fontSize: "var(--foundry-app-header-title-font)", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>Document Vault</div>
+                        <div style={{ fontSize: "var(--foundry-app-header-meta-font)", color: "#555" }}>Vault dashboard plus Forge generation · {DOC_CATEGORIES.reduce((n, c) => n + c.documents.length, 0)} documents</div>
                     </div>
                 </div>
+                <ModeTabs mode={surfaceMode} onChange={setSurfaceMode} />
 
                 <div className="foundry-app-page__content" style={{ maxWidth: "var(--foundry-doc-content-width)", margin: "0 auto", padding: "24px 16px 80px" }}>
                     {/* Intro */}
@@ -670,6 +2004,7 @@ export default function DocumentProductionScreen({
                         ) : undefined
                     }
                 />
+                <ModeTabs mode={surfaceMode} onChange={setSurfaceMode} />
 
                 <div className="foundry-app-page__content" style={{ maxWidth: "var(--foundry-doc-content-width)", margin: "0 auto", padding: "20px 16px 80px" }}>
                     {/* Category context */}
@@ -740,6 +2075,7 @@ export default function DocumentProductionScreen({
                     title={selectedDoc.name}
                     subtitle="Configure and generate"
                 />
+                <ModeTabs mode={surfaceMode} onChange={setSurfaceMode} />
 
                 <div className="foundry-app-page__content" style={{ maxWidth: "var(--foundry-doc-content-width)", margin: "0 auto", padding: "20px 16px 100px" }}>
                     {generationLocked && generationLockMessage && (
@@ -970,6 +2306,14 @@ export default function DocumentProductionScreen({
                     New Doc
                 </button>
             </div>
+
+            <ModeTabs mode={surfaceMode} onChange={setSurfaceMode} />
+
+            {studioLaunchNotice && (
+                <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(99,179,237,0.14)", background: "rgba(99,179,237,0.08)", fontSize: 11, color: "#CFE5F5", lineHeight: 1.6 }}>
+                    {studioLaunchNotice}
+                </div>
+            )}
 
             {/* Tab bar */}
             <div style={{ display: "flex", borderBottom: "1px solid rgba(255,255,255,0.05)", flexShrink: 0 }}>

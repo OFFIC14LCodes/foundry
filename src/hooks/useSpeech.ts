@@ -4,7 +4,7 @@ export interface SpeechHook {
     supported: boolean;
     listening: boolean;
     speaking: boolean;
-    startListening: (onResult: (text: string) => void, onError?: () => void) => void;
+    startListening: (onResult: (text: string) => void, onError?: (error?: string) => void) => void;
     stopListening: () => void;
     speak: (text: string, onEnd?: () => void) => void;
     cancelSpeech: () => void;
@@ -19,7 +19,7 @@ export function useSpeech(): SpeechHook {
     const [speaking, setSpeaking] = useState(false);
     const recognitionRef = useRef<any>(null);
 
-    const startListening = (onResult: (text: string) => void, onError?: () => void) => {
+    const startListening = (onResult: (text: string) => void, onError?: (error?: string) => void) => {
         if (!supported) { onError?.(); return; }
         const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
         const recognition = new SR();
@@ -31,9 +31,9 @@ export function useSpeech(): SpeechHook {
             const transcript = e.results[0]?.[0]?.transcript || "";
             if (transcript) onResult(transcript);
         };
-        recognition.onerror = () => {
+        recognition.onerror = (e: any) => {
             setListening(false);
-            onError?.();
+            onError?.(e?.error);
         };
         recognition.onend = () => setListening(false);
 

@@ -1,5 +1,11 @@
 import { supabase } from "./supabase";
 import { OWNER_EMAIL, hasAdminAccess, isOwnerRole, normalizeEmail, normalizeUserRole } from "./lib/roles";
+import { DOC_CATEGORIES } from "./constants/docCategories";
+import {
+    buildStyledDocxArtifact,
+    buildStyledHtmlArtifact,
+    type DocumentExportMeta,
+} from "./lib/documentExport";
 import {
     MEANINGFUL_ACTIVITY_THROTTLE_MS,
     DEFAULT_ADMIN_NOTIFICATION_SETTINGS,
@@ -23,10 +29,26 @@ function getLocalDateKey(date = new Date()) {
 
 let dailyChatSummariesAvailable: boolean | null = null;
 let producedDocumentsAvailable: boolean | null = null;
+let documentVaultAvailable: boolean | null = null;
+let pitchSessionsAvailable: boolean | null = null;
+
+const DOCUMENT_FILE_BUCKET = "document-files";
 
 function isMissingRelationError(error: any, relationName: string) {
     const message = String(error?.message ?? "").toLowerCase();
     return error?.code === "PGRST205" || message.includes(relationName.toLowerCase()) || message.includes("could not find the table");
+}
+
+function isMissingDocumentVaultRelationError(error: any) {
+    return [
+        "documents",
+        "document_versions",
+        "document_files",
+        "document_folders",
+        "document_signature_requests",
+        "document_signature_events",
+        "product_usage_events",
+    ].some((relationName) => isMissingRelationError(error, relationName));
 }
 
 // ── PROFILE ──────────────────────────────────────────────────
@@ -455,6 +477,156 @@ export async function deleteConversationSummary(userId: string, summaryId: strin
     return true;
 }
 
+// ── PITCH PRACTICE SESSIONS ─────────────────────────────────
+
+export type PitchSessionTranscriptMessage = {
+    role: "user" | "forge";
+    text: string;
+};
+
+export type PitchSessionRecord = {
+    id: string;
+    userId: string;
+    scenario: string;
+    mode: string;
+    durationSeconds: number | null;
+    transcript: PitchSessionTranscriptMessage[];
+    feedback: string | null;
+    clarityScore: number | null;
+    confidenceScore: number | null;
+    persuasivenessScore: number | null;
+    brevityScore: number | null;
+    overallScore: number | null;
+    keyStrengths: string[];
+    keyImprovements: string[];
+    mostImportantFix: string | null;
+    encouragement: string | null;
+    createdAt: string;
+};
+
+export type PitchSessionInput = {
+    scenario: string;
+    mode: string;
+    duration_seconds?: number | null;
+    transcript: PitchSessionTranscriptMessage[];
+    feedback?: string | null;
+    clarity_score?: number | null;
+    confidence_score?: number | null;
+    persuasiveness_score?: number | null;
+    brevity_score?: number | null;
+    overall_score?: number | null;
+    key_strengths?: string[];
+    key_improvements?: string[];
+    most_important_fix?: string | null;
+    encouragement?: string | null;
+};
+
+function mapPitchSession(row: any): PitchSessionRecord {
+    return {
+        id: row.id,
+        userId: row.user_id,
+        scenario: row.scenario,
+        mode: row.mode,
+        durationSeconds: row.duration_seconds ?? null,
+        transcript: Array.isArray(row.transcript) ? row.transcript : [],
+        feedback: row.feedback ?? null,
+        clarityScore: row.clarity_score ?? null,
+        confidenceScore: row.confidence_score ?? null,
+        persuasivenessScore: row.persuasiveness_score ?? null,
+        brevityScore: row.brevity_score ?? null,
+        overallScore: row.overall_score ?? null,
+        keyStrengths: Array.isArray(row.key_strengths) ? row.key_strengths : [],
+        keyImprovements: Array.isArray(row.key_improvements) ? row.key_improvements : [],
+        mostImportantFix: row.most_important_fix ?? null,
+        encouragement: row.encouragement ?? null,
+        createdAt: row.created_at,
+    };
+}
+
+export async function savePitchSession(userId: string, session: PitchSessionInput): Promise<PitchSessionRecord | null> {
+    if (pitchSessionsAvailable === false) return null;
+
+    const { data, error } = await supabase
+        .from("pitch_sessions")
+        .insert({
+            user_id: userId,
+            scenario: session.scenario,
+            mode: session.mode,
+            duration_seconds: session.duration_seconds ?? null,
+            transcript: session.transcript ?? [],
+            feedback: session.feedback ?? null,
+            clarity_score: session.clarity_score ?? null,
+            confidence_score: session.confidence_score ?? null,
+            persuasiveness_score: session.persuasiveness_score ?? null,
+            brevity_score: session.brevity_score ?? null,
+            overall_score: session.overall_score ?? null,
+            key_strengths: session.key_strengths ?? [],
+            key_improvements: session.key_improvements ?? [],
+            most_important_fix: session.most_important_fix ?? null,
+            encouragement: session.encouragement ?? null,
+        })
+        .select()
+        .single();
+
+    if (error) {
+        if (isMissingRelationError(error, "pitch_sessions")) {
+            pitchSessionsAvailable = false;
+            return null;
+        }
+        console.error("savePitchSession error:", error.message);
+        return null;
+    }
+
+    pitchSessionsAvailable = true;
+    return mapPitchSession(data);
+}
+
+export async function loadPitchSessions(userId: string, limit = 20): Promise<PitchSessionRecord[]> {
+    if (pitchSessionsAvailable === false) return [];
+
+    const { data, error } = await supabase
+        .from("pitch_sessions")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+
+    if (error) {
+        if (isMissingRelationError(error, "pitch_sessions")) {
+            pitchSessionsAvailable = false;
+            return [];
+        }
+        console.error("loadPitchSessions error:", error.message);
+        return [];
+    }
+
+    pitchSessionsAvailable = true;
+    return (data ?? []).map(mapPitchSession);
+}
+
+export async function loadPitchSessionById(userId: string, sessionId: string): Promise<PitchSessionRecord | null> {
+    if (pitchSessionsAvailable === false) return null;
+
+    const { data, error } = await supabase
+        .from("pitch_sessions")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("id", sessionId)
+        .single();
+
+    if (error || !data) {
+        if (error && isMissingRelationError(error, "pitch_sessions")) {
+            pitchSessionsAvailable = false;
+            return null;
+        }
+        if (error) console.error("loadPitchSessionById error:", error.message);
+        return null;
+    }
+
+    pitchSessionsAvailable = true;
+    return mapPitchSession(data);
+}
+
 export async function deleteJournalEntry(userId: string, entryId: string) {
     const { error } = await supabase
         .from("journal_entries")
@@ -465,6 +637,173 @@ export async function deleteJournalEntry(userId: string, entryId: string) {
     if (error) console.error("deleteJournalEntry error:", error.message);
 }
 // ── MARKET INTELLIGENCE ───────────────────────────────────────
+// These structured tables will power future Market Intelligence upgrades and
+// should not break the existing daily report flow backed by market_reports.
+
+export type Competitor = {
+    id: string;
+    userId: string;
+    name: string;
+    description: string;
+    website: string | null;
+    createdAt: string;
+};
+
+export type CompetitorSnapshot = {
+    id: string;
+    competitorId: string;
+    summary: string;
+    strengths: unknown[];
+    weaknesses: unknown[];
+    pricingNotes: string | null;
+    positioning: string | null;
+    createdAt: string;
+};
+
+export type MarketTrend = {
+    id: string;
+    userId: string;
+    name: string;
+    description: string;
+    impactLevel: string;
+    timeframe: string;
+    createdAt: string;
+};
+
+export type IndustryBenchmark = {
+    id: string;
+    userId: string;
+    metric: string;
+    value: string;
+    unit: string | null;
+    description: string;
+    createdAt: string;
+};
+
+export type MarketReportSource = {
+    id: string;
+    reportId: string;
+    title: string;
+    url: string;
+    snippet: string;
+    createdAt: string;
+};
+
+// This is the bridge between freeform daily market reports and the future
+// structured Market Intelligence system. Future versions can use Forge or a
+// server-side research API to extract structured data from market_reports
+// content. This must not affect the current market_reports generation/save flow.
+export type NormalizedCompetitorInsight = {
+    name: string;
+    description: string;
+    website: string | null;
+    summary: string;
+    strengths: string[];
+    weaknesses: string[];
+    pricingNotes: string | null;
+    positioning: string | null;
+};
+
+export type NormalizedTrendInsight = {
+    name: string;
+    description: string;
+    impactLevel: string;
+    timeframe: string;
+};
+
+export type NormalizedBenchmarkInsight = {
+    metric: string;
+    value: string;
+    unit: string | null;
+    description: string;
+};
+
+export type NormalizedSourceInsight = {
+    title: string;
+    url: string;
+    snippet: string;
+};
+
+export type NormalizedMarketIntelligence = {
+    reportId: string;
+    userId: string;
+    industry: string | null;
+    date: string;
+    content: string;
+    competitors: NormalizedCompetitorInsight[];
+    trends: NormalizedTrendInsight[];
+    benchmarks: NormalizedBenchmarkInsight[];
+    sources: NormalizedSourceInsight[];
+};
+
+export type SaveNormalizedMarketIntelligenceResult = {
+    competitorsInserted: number;
+    competitorSnapshotsInserted: number;
+    trendsInserted: number;
+    benchmarksInserted: number;
+    sourcesInserted: number;
+    skipped: number;
+    errors: string[];
+};
+
+function mapCompetitor(row: any): Competitor {
+    return {
+        id: row.id,
+        userId: row.user_id,
+        name: row.name,
+        description: row.description ?? "",
+        website: row.website ?? null,
+        createdAt: row.created_at,
+    };
+}
+
+function mapCompetitorSnapshot(row: any): CompetitorSnapshot {
+    return {
+        id: row.id,
+        competitorId: row.competitor_id,
+        summary: row.summary ?? "",
+        strengths: Array.isArray(row.strengths) ? row.strengths : [],
+        weaknesses: Array.isArray(row.weaknesses) ? row.weaknesses : [],
+        pricingNotes: row.pricing_notes ?? null,
+        positioning: row.positioning ?? null,
+        createdAt: row.created_at,
+    };
+}
+
+function mapMarketTrend(row: any): MarketTrend {
+    return {
+        id: row.id,
+        userId: row.user_id,
+        name: row.name,
+        description: row.description ?? "",
+        impactLevel: row.impact_level ?? "medium",
+        timeframe: row.timeframe ?? "current",
+        createdAt: row.created_at,
+    };
+}
+
+function mapIndustryBenchmark(row: any): IndustryBenchmark {
+    return {
+        id: row.id,
+        userId: row.user_id,
+        metric: row.metric,
+        value: row.value,
+        unit: row.unit ?? null,
+        description: row.description ?? "",
+        createdAt: row.created_at,
+    };
+}
+
+function mapMarketReportSource(row: any): MarketReportSource {
+    return {
+        id: row.id,
+        reportId: row.report_id,
+        title: row.title,
+        url: row.url,
+        snippet: row.snippet ?? "",
+        createdAt: row.created_at,
+    };
+}
 
 export async function loadTodayMarketReport(userId: string) {
     const today = getLocalDateKey();
@@ -475,7 +814,7 @@ export async function loadTodayMarketReport(userId: string) {
         .eq("date", today)
         .single();
     if (error || !data) return null;
-    return { content: data.content, industry: data.industry, date: data.date, createdAt: data.created_at };
+    return { id: data.id, content: data.content, industry: data.industry, date: data.date, createdAt: data.created_at };
 }
 
 export async function loadLatestMarketReport(userId: string) {
@@ -487,7 +826,7 @@ export async function loadLatestMarketReport(userId: string) {
         .limit(1)
         .maybeSingle();
     if (error || !data) return null;
-    return { content: data.content, industry: data.industry, date: data.date, createdAt: data.created_at };
+    return { id: data.id, content: data.content, industry: data.industry, date: data.date, createdAt: data.created_at };
 }
 
 export async function loadMarketReportHistory(userId: string) {
@@ -499,6 +838,7 @@ export async function loadMarketReportHistory(userId: string) {
 
     if (error || !data) return [];
     return data.map((row) => ({
+        id: row.id,
         content: row.content,
         industry: row.industry,
         date: row.date,
@@ -525,7 +865,575 @@ export async function saveMarketReport(userId: string, content: string, industry
         .single();
     if (error) { console.error("saveMarketReport error:", error.message); return null; }
     await recordMeaningfulActivity(userId, undefined, { force: true });
-    return { content: data.content, industry: data.industry, date: data.date, createdAt: data.created_at };
+    return { id: data.id, content: data.content, industry: data.industry, date: data.date, createdAt: data.created_at };
+}
+
+export async function createCompetitor(
+    userId: string,
+    payload: { name: string; description?: string; website?: string | null },
+): Promise<Competitor | null> {
+    const { data, error } = await supabase
+        .from("competitors")
+        .insert({
+            user_id: userId,
+            name: payload.name,
+            description: payload.description ?? "",
+            website: payload.website ?? null,
+        })
+        .select()
+        .single();
+
+    if (error || !data) {
+        console.error("createCompetitor error:", error?.message);
+        return null;
+    }
+    return mapCompetitor(data);
+}
+
+export async function loadCompetitor(userId: string, competitorId: string): Promise<Competitor | null> {
+    const { data, error } = await supabase
+        .from("competitors")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("id", competitorId)
+        .maybeSingle();
+
+    if (error || !data) return null;
+    return mapCompetitor(data);
+}
+
+export async function loadCompetitorsByUser(userId: string): Promise<Competitor[]> {
+    const { data, error } = await supabase
+        .from("competitors")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+
+    if (error || !data) return [];
+    return data.map(mapCompetitor);
+}
+
+export async function createCompetitorSnapshot(
+    userId: string,
+    competitorId: string,
+    payload: {
+        summary?: string;
+        strengths?: unknown[];
+        weaknesses?: unknown[];
+        pricingNotes?: string | null;
+        positioning?: string | null;
+    },
+): Promise<CompetitorSnapshot | null> {
+    const competitor = await loadCompetitor(userId, competitorId);
+    if (!competitor) {
+        console.error("createCompetitorSnapshot error:", "Competitor not found or not owned by user.");
+        return null;
+    }
+
+    const { data, error } = await supabase
+        .from("competitor_snapshots")
+        .insert({
+            competitor_id: competitorId,
+            summary: payload.summary ?? "",
+            strengths: payload.strengths ?? [],
+            weaknesses: payload.weaknesses ?? [],
+            pricing_notes: payload.pricingNotes ?? null,
+            positioning: payload.positioning ?? null,
+        })
+        .select()
+        .single();
+
+    if (error || !data) {
+        console.error("createCompetitorSnapshot error:", error?.message);
+        return null;
+    }
+    return mapCompetitorSnapshot(data);
+}
+
+export async function loadCompetitorSnapshot(userId: string, snapshotId: string): Promise<CompetitorSnapshot | null> {
+    const { data, error } = await supabase
+        .from("competitor_snapshots")
+        .select("id, competitor_id, summary, strengths, weaknesses, pricing_notes, positioning, created_at, competitors!inner(user_id)")
+        .eq("competitors.user_id", userId)
+        .eq("id", snapshotId)
+        .maybeSingle();
+
+    if (error || !data) return null;
+    return mapCompetitorSnapshot(data);
+}
+
+export async function loadCompetitorSnapshotsByUser(userId: string): Promise<CompetitorSnapshot[]> {
+    const { data, error } = await supabase
+        .from("competitor_snapshots")
+        .select("id, competitor_id, summary, strengths, weaknesses, pricing_notes, positioning, created_at, competitors!inner(user_id)")
+        .eq("competitors.user_id", userId)
+        .order("created_at", { ascending: false });
+
+    if (error || !data) return [];
+    return data.map(mapCompetitorSnapshot);
+}
+
+export async function createMarketTrend(
+    userId: string,
+    payload: { name: string; description?: string; impactLevel?: string; timeframe?: string },
+): Promise<MarketTrend | null> {
+    const { data, error } = await supabase
+        .from("market_trends")
+        .insert({
+            user_id: userId,
+            name: payload.name,
+            description: payload.description ?? "",
+            impact_level: payload.impactLevel ?? "medium",
+            timeframe: payload.timeframe ?? "current",
+        })
+        .select()
+        .single();
+
+    if (error || !data) {
+        console.error("createMarketTrend error:", error?.message);
+        return null;
+    }
+    return mapMarketTrend(data);
+}
+
+export async function loadMarketTrend(userId: string, trendId: string): Promise<MarketTrend | null> {
+    const { data, error } = await supabase
+        .from("market_trends")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("id", trendId)
+        .maybeSingle();
+
+    if (error || !data) return null;
+    return mapMarketTrend(data);
+}
+
+export async function loadMarketTrendsByUser(userId: string): Promise<MarketTrend[]> {
+    const { data, error } = await supabase
+        .from("market_trends")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+
+    if (error || !data) return [];
+    return data.map(mapMarketTrend);
+}
+
+export async function createIndustryBenchmark(
+    userId: string,
+    payload: { metric: string; value: string; unit?: string | null; description?: string },
+): Promise<IndustryBenchmark | null> {
+    const { data, error } = await supabase
+        .from("industry_benchmarks")
+        .insert({
+            user_id: userId,
+            metric: payload.metric,
+            value: payload.value,
+            unit: payload.unit ?? null,
+            description: payload.description ?? "",
+        })
+        .select()
+        .single();
+
+    if (error || !data) {
+        console.error("createIndustryBenchmark error:", error?.message);
+        return null;
+    }
+    return mapIndustryBenchmark(data);
+}
+
+export async function loadIndustryBenchmark(userId: string, benchmarkId: string): Promise<IndustryBenchmark | null> {
+    const { data, error } = await supabase
+        .from("industry_benchmarks")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("id", benchmarkId)
+        .maybeSingle();
+
+    if (error || !data) return null;
+    return mapIndustryBenchmark(data);
+}
+
+export async function loadIndustryBenchmarksByUser(userId: string): Promise<IndustryBenchmark[]> {
+    const { data, error } = await supabase
+        .from("industry_benchmarks")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+
+    if (error || !data) return [];
+    return data.map(mapIndustryBenchmark);
+}
+
+export async function createMarketReportSource(
+    userId: string,
+    reportId: string,
+    payload: { title: string; url: string; snippet?: string },
+): Promise<MarketReportSource | null> {
+    const report = await supabase
+        .from("market_reports")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("id", reportId)
+        .maybeSingle();
+
+    if (report.error || !report.data) {
+        console.error("createMarketReportSource error:", report.error?.message ?? "Market report not found or not owned by user.");
+        return null;
+    }
+
+    const { data, error } = await supabase
+        .from("market_report_sources")
+        .insert({
+            report_id: reportId,
+            title: payload.title,
+            url: payload.url,
+            snippet: payload.snippet ?? "",
+        })
+        .select()
+        .single();
+
+    if (error || !data) {
+        console.error("createMarketReportSource error:", error?.message);
+        return null;
+    }
+    return mapMarketReportSource(data);
+}
+
+export async function loadMarketReportSource(userId: string, sourceId: string): Promise<MarketReportSource | null> {
+    const { data, error } = await supabase
+        .from("market_report_sources")
+        .select("id, report_id, title, url, snippet, created_at, market_reports!inner(user_id)")
+        .eq("market_reports.user_id", userId)
+        .eq("id", sourceId)
+        .maybeSingle();
+
+    if (error || !data) return null;
+    return mapMarketReportSource(data);
+}
+
+export async function loadMarketReportSourcesByUser(userId: string): Promise<MarketReportSource[]> {
+    const { data, error } = await supabase
+        .from("market_report_sources")
+        .select("id, report_id, title, url, snippet, created_at, market_reports!inner(user_id)")
+        .eq("market_reports.user_id", userId)
+        .order("created_at", { ascending: false });
+
+    if (error || !data) return [];
+    return data.map(mapMarketReportSource);
+}
+
+export async function normalizeMarketReportToStructuredData(
+    userId: string,
+    reportId: string,
+): Promise<NormalizedMarketIntelligence | null> {
+    const { data, error } = await supabase
+        .from("market_reports")
+        .select("id, user_id, industry, date, content")
+        .eq("user_id", userId)
+        .eq("id", reportId)
+        .maybeSingle();
+
+    if (error || !data) return null;
+
+    return {
+        reportId: data.id,
+        userId: data.user_id,
+        industry: data.industry ?? null,
+        date: data.date,
+        content: data.content ?? "",
+        competitors: [],
+        trends: [],
+        benchmarks: [],
+        sources: [],
+    };
+}
+
+// This helper is the final bridge between extracted structured intelligence
+// and the database, but it is intentionally not called yet. Future wiring can
+// invoke it after extraction succeeds without changing the current
+// market_reports generation/save flow.
+export async function saveNormalizedMarketIntelligence(
+    userId: string,
+    normalized: NormalizedMarketIntelligence,
+): Promise<SaveNormalizedMarketIntelligenceResult> {
+    const result: SaveNormalizedMarketIntelligenceResult = {
+        competitorsInserted: 0,
+        competitorSnapshotsInserted: 0,
+        trendsInserted: 0,
+        benchmarksInserted: 0,
+        sourcesInserted: 0,
+        skipped: 0,
+        errors: [],
+    };
+
+    for (const competitor of normalized.competitors ?? []) {
+        const name = competitor.name?.trim();
+        if (!name) {
+            result.skipped += 1;
+            continue;
+        }
+
+        try {
+            const normalizedDescription = competitor.description?.trim() ?? "";
+            const normalizedWebsite = competitor.website?.trim() || null;
+            const { data: existingCompetitorRows, error: existingCompetitorError } = await supabase
+                .from("competitors")
+                .select("*")
+                .eq("user_id", userId)
+                .eq("name", name)
+                .limit(1);
+
+            if (existingCompetitorError) {
+                result.skipped += 1;
+                result.errors.push(`Failed to check existing competitor (${name}): ${existingCompetitorError.message}`);
+                continue;
+            }
+
+            let targetCompetitor = existingCompetitorRows?.[0] ? mapCompetitor(existingCompetitorRows[0]) : null;
+            if (!targetCompetitor) {
+                targetCompetitor = await createCompetitor(userId, {
+                    name,
+                    description: normalizedDescription,
+                    website: normalizedWebsite,
+                });
+
+                if (!targetCompetitor) {
+                    result.skipped += 1;
+                    result.errors.push(`Failed to insert competitor: ${name}`);
+                    continue;
+                }
+
+                result.competitorsInserted += 1;
+            } else {
+                result.skipped += 1;
+            }
+
+            const hasSnapshotData = Boolean(
+                competitor.summary?.trim() ||
+                (competitor.strengths?.length ?? 0) > 0 ||
+                (competitor.weaknesses?.length ?? 0) > 0 ||
+                competitor.pricingNotes?.trim() ||
+                competitor.positioning?.trim(),
+            );
+
+            if (!hasSnapshotData) continue;
+
+            const normalizedSummary = competitor.summary?.trim() ?? "";
+            const normalizedStrengths = (competitor.strengths ?? []).filter((value): value is string => Boolean(value?.trim?.())).map((value) => value.trim());
+            const normalizedWeaknesses = (competitor.weaknesses ?? []).filter((value): value is string => Boolean(value?.trim?.())).map((value) => value.trim());
+            const normalizedPricingNotes = competitor.pricingNotes?.trim() || null;
+            const normalizedPositioning = competitor.positioning?.trim() || null;
+
+            const { data: existingSnapshotRows, error: existingSnapshotError } = await supabase
+                .from("competitor_snapshots")
+                .select("*")
+                .eq("competitor_id", targetCompetitor.id)
+                .order("created_at", { ascending: false })
+                .limit(25);
+
+            if (existingSnapshotError) {
+                result.skipped += 1;
+                result.errors.push(`Failed to check existing competitor snapshot (${name}): ${existingSnapshotError.message}`);
+                continue;
+            }
+
+            const duplicateSnapshot = (existingSnapshotRows ?? []).some((row) => {
+                const snapshot = mapCompetitorSnapshot(row);
+                return snapshot.summary === normalizedSummary
+                    && JSON.stringify(snapshot.strengths) === JSON.stringify(normalizedStrengths)
+                    && JSON.stringify(snapshot.weaknesses) === JSON.stringify(normalizedWeaknesses)
+                    && snapshot.pricingNotes === normalizedPricingNotes
+                    && snapshot.positioning === normalizedPositioning;
+            });
+
+            if (duplicateSnapshot) {
+                result.skipped += 1;
+                continue;
+            }
+
+            const snapshot = await createCompetitorSnapshot(userId, targetCompetitor.id, {
+                summary: normalizedSummary,
+                strengths: normalizedStrengths,
+                weaknesses: normalizedWeaknesses,
+                pricingNotes: normalizedPricingNotes,
+                positioning: normalizedPositioning,
+            });
+
+            if (!snapshot) {
+                result.skipped += 1;
+                result.errors.push(`Failed to insert competitor snapshot: ${name}`);
+                continue;
+            }
+
+            result.competitorSnapshotsInserted += 1;
+        } catch (error: any) {
+            result.skipped += 1;
+            result.errors.push(`Competitor save error (${name}): ${error?.message ?? "Unknown error"}`);
+        }
+    }
+
+    for (const trend of normalized.trends ?? []) {
+        const name = trend.name?.trim();
+        if (!name) {
+            result.skipped += 1;
+            continue;
+        }
+
+        try {
+            const normalizedDescription = trend.description?.trim() ?? "";
+            const normalizedImpactLevel = trend.impactLevel?.trim() || "medium";
+            const normalizedTimeframe = trend.timeframe?.trim() || "current";
+            const { data: existingTrendRows, error: existingTrendError } = await supabase
+                .from("market_trends")
+                .select("id")
+                .eq("user_id", userId)
+                .eq("name", name)
+                .eq("impact_level", normalizedImpactLevel)
+                .eq("timeframe", normalizedTimeframe)
+                .limit(1);
+
+            if (existingTrendError) {
+                result.skipped += 1;
+                result.errors.push(`Failed to check existing trend (${name}): ${existingTrendError.message}`);
+                continue;
+            }
+
+            if ((existingTrendRows?.length ?? 0) > 0) {
+                result.skipped += 1;
+                continue;
+            }
+
+            const createdTrend = await createMarketTrend(userId, {
+                name,
+                description: normalizedDescription,
+                impactLevel: normalizedImpactLevel,
+                timeframe: normalizedTimeframe,
+            });
+
+            if (!createdTrend) {
+                result.skipped += 1;
+                result.errors.push(`Failed to insert trend: ${name}`);
+                continue;
+            }
+
+            result.trendsInserted += 1;
+        } catch (error: any) {
+            result.skipped += 1;
+            result.errors.push(`Trend save error (${name}): ${error?.message ?? "Unknown error"}`);
+        }
+    }
+
+    for (const benchmark of normalized.benchmarks ?? []) {
+        const metric = benchmark.metric?.trim();
+        const value = benchmark.value?.trim();
+        if (!metric || !value) {
+            result.skipped += 1;
+            continue;
+        }
+
+        try {
+            const normalizedUnit = benchmark.unit?.trim() || null;
+            const { data: existingBenchmarkRows, error: existingBenchmarkError } = await supabase
+                .from("industry_benchmarks")
+                .select("id")
+                .eq("user_id", userId)
+                .eq("metric", metric)
+                .eq("value", value)
+                .eq("unit", normalizedUnit)
+                .limit(1);
+
+            if (existingBenchmarkError) {
+                result.skipped += 1;
+                result.errors.push(`Failed to check existing benchmark (${metric}): ${existingBenchmarkError.message}`);
+                continue;
+            }
+
+            if ((existingBenchmarkRows?.length ?? 0) > 0) {
+                result.skipped += 1;
+                continue;
+            }
+
+            const createdBenchmark = await createIndustryBenchmark(userId, {
+                metric,
+                value,
+                unit: normalizedUnit,
+                description: benchmark.description?.trim() ?? "",
+            });
+
+            if (!createdBenchmark) {
+                result.skipped += 1;
+                result.errors.push(`Failed to insert benchmark: ${metric}`);
+                continue;
+            }
+
+            result.benchmarksInserted += 1;
+        } catch (error: any) {
+            result.skipped += 1;
+            result.errors.push(`Benchmark save error (${metric}): ${error?.message ?? "Unknown error"}`);
+        }
+    }
+
+    const reportId = normalized.reportId?.trim();
+    for (const source of normalized.sources ?? []) {
+        const title = source.title?.trim();
+        const url = source.url?.trim();
+        if (!reportId || !title || !url) {
+            result.skipped += 1;
+            continue;
+        }
+
+        try {
+            const { data: existingSourceRows, error: existingSourceError } = await supabase
+                .from("market_report_sources")
+                .select("id")
+                .eq("report_id", reportId)
+                .eq("title", title)
+                .eq("url", url)
+                .limit(1);
+
+            if (existingSourceError) {
+                result.skipped += 1;
+                result.errors.push(`Failed to check existing source (${title}): ${existingSourceError.message}`);
+                continue;
+            }
+
+            if ((existingSourceRows?.length ?? 0) > 0) {
+                result.skipped += 1;
+                continue;
+            }
+
+            const createdSource = await createMarketReportSource(userId, reportId, {
+                title,
+                url,
+                snippet: source.snippet?.trim() ?? "",
+            });
+
+            if (!createdSource) {
+                result.skipped += 1;
+                result.errors.push(`Failed to insert source: ${title}`);
+                continue;
+            }
+
+            result.sourcesInserted += 1;
+        } catch (error: any) {
+            result.skipped += 1;
+            result.errors.push(`Source save error (${title}): ${error?.message ?? "Unknown error"}`);
+        }
+    }
+
+    const insertedCount =
+        result.competitorsInserted +
+        result.competitorSnapshotsInserted +
+        result.trendsInserted +
+        result.benchmarksInserted +
+        result.sourcesInserted;
+
+    if (insertedCount === 0 && result.skipped > 0 && result.errors.length === 0) {
+        result.errors.push("No structured insights could be saved from the extraction output.");
+    }
+
+    return result;
 }
 
 // ── BRIEFINGS ─────────────────────────────────────────────────
@@ -539,6 +1447,7 @@ export type SavedBriefing = {
     highlights: Record<string, unknown> | null;
     sourceCounts: Record<string, number> | null;
     generatedAt: string | null;
+    streakCount: number;
 };
 
 export async function loadBriefings(userId: string): Promise<SavedBriefing[]> {
@@ -558,6 +1467,7 @@ export async function loadBriefings(userId: string): Promise<SavedBriefing[]> {
         highlights: (row.highlights ?? null) as Record<string, unknown> | null,
         sourceCounts: (row.source_counts ?? null) as Record<string, number> | null,
         generatedAt: row.generated_at ?? null,
+        streakCount: row.streak_count ?? 1,
     }));
 }
 
@@ -572,6 +1482,20 @@ export async function saveBriefing(
         generatedAt?: string | null;
     },
 ): Promise<SavedBriefing | null> {
+    const { data: previousBriefing } = await supabase
+        .from("briefings")
+        .select("created_at, streak_count")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+    const previousCreatedAtMs = previousBriefing?.created_at ? new Date(previousBriefing.created_at).getTime() : NaN;
+    const previousStreak = Number(previousBriefing?.streak_count ?? 0);
+    const withinEightDays = Number.isFinite(previousCreatedAtMs)
+        && Date.now() - previousCreatedAtMs <= 8 * 24 * 60 * 60 * 1000;
+    const streakCount = withinEightDays ? Math.max(1, previousStreak) + 1 : 1;
+
     const { data, error } = await supabase
         .from("briefings")
         .insert({
@@ -582,6 +1506,7 @@ export async function saveBriefing(
             highlights: metadata?.highlights ?? null,
             source_counts: metadata?.sourceCounts ?? null,
             generated_at: metadata?.generatedAt ?? null,
+            streak_count: streakCount,
         })
         .select()
         .single();
@@ -597,6 +1522,7 @@ export async function saveBriefing(
         highlights: (data.highlights ?? null) as Record<string, unknown> | null,
         sourceCounts: (data.source_counts ?? null) as Record<string, number> | null,
         generatedAt: data.generated_at ?? null,
+        streakCount: data.streak_count ?? streakCount,
     };
 }
 
@@ -616,6 +1542,187 @@ export type ProducedDocument = {
     updatedAt: string;
 };
 
+export type DocumentStatus =
+    | "draft"
+    | "generated"
+    | "reviewed"
+    | "sent_for_signature"
+    | "partially_signed"
+    | "signed"
+    | "declined"
+    | "archived";
+
+export type DocumentFileKind =
+    | "source_upload"
+    | "generated_pdf"
+    | "generated_docx"
+    | "generated_html"
+    | "signed_pdf"
+    | "attachment";
+
+export type SignatureRequestStatus =
+    | "draft"
+    | "sent"
+    | "viewed"
+    | "completed"
+    | "declined"
+    | "expired"
+    | "canceled"
+    | "error";
+
+export type DocumentVersionSource =
+    | "produced_document_generate"
+    | "produced_document_refine"
+    | "vault_manual"
+    | "system_migration"
+    | "signature_provider"
+    | "restored";
+
+export type VaultDocument = {
+    id: string;
+    userId: string;
+    businessId: string | null;
+    folderId: string | null;
+    sourceProducedDocumentId: string | null;
+    title: string;
+    docType: string;
+    category: string | null;
+    status: DocumentStatus;
+    stageId: number | null;
+    audience: string | null;
+    tone: string | null;
+    currentVersionId: string | null;
+    createdAt: string;
+    updatedAt: string;
+    archivedAt: string | null;
+    metadata: Record<string, unknown>;
+};
+
+export type DocumentVersion = {
+    id: string;
+    documentId: string;
+    userId: string;
+    versionNumber: number;
+    title: string;
+    content: string;
+    changeSummary: string | null;
+    source: string;
+    createdAt: string;
+    metadata: Record<string, unknown>;
+};
+
+export type DocumentFile = {
+    id: string;
+    documentId: string;
+    userId: string;
+    versionId: string | null;
+    storageBucket: string;
+    storagePath: string;
+    filename: string;
+    mimeType: string;
+    fileSize: number;
+    fileKind: DocumentFileKind;
+    createdAt: string;
+    metadata: Record<string, unknown>;
+};
+
+export type UploadDocumentFileOptions = {
+    versionId?: string | null;
+    fileKind?: DocumentFileKind;
+    metadata?: Record<string, unknown>;
+    mimeType?: string;
+    filename?: string;
+};
+
+export type DocumentFolder = {
+    id: string;
+    userId: string;
+    businessId: string | null;
+    parentFolderId: string | null;
+    name: string;
+    createdAt: string;
+    updatedAt: string;
+    archivedAt: string | null;
+    metadata: Record<string, unknown>;
+};
+
+export type DocumentSignatureRequest = {
+    id: string;
+    documentId: string;
+    userId: string;
+    versionId: string | null;
+    fileId: string | null;
+    provider: string | null;
+    providerRequestId: string | null;
+    status: SignatureRequestStatus;
+    signerName: string | null;
+    signerEmail: string | null;
+    sentAt: string | null;
+    completedAt: string | null;
+    declinedAt: string | null;
+    expiresAt: string | null;
+    createdAt: string;
+    updatedAt: string;
+    metadata: Record<string, unknown>;
+};
+
+export type DocumentSignatureEvent = {
+    id: string;
+    signatureRequestId: string;
+    documentId: string;
+    userId: string;
+    provider: string | null;
+    eventType: string;
+    eventStatus: SignatureRequestStatus | null;
+    payload: Record<string, unknown>;
+    occurredAt: string;
+    createdAt: string;
+};
+
+export type CreateDocumentSignatureRequestInput = {
+    documentId: string;
+    versionId?: string | null;
+    fileId?: string | null;
+    provider?: string | null;
+    providerRequestId?: string | null;
+    signerName?: string | null;
+    signerEmail?: string | null;
+    status?: SignatureRequestStatus;
+    expiresAt?: string | null;
+    metadata?: Record<string, unknown>;
+};
+
+export type CreateDocumentSignatureEventInput = {
+    documentId: string;
+    provider?: string | null;
+    eventType: string;
+    eventStatus?: SignatureRequestStatus | null;
+    occurredAt?: string | null;
+    payload?: Record<string, unknown>;
+};
+
+const DOCUMENT_STATUS_VALUES: DocumentStatus[] = [
+    "draft",
+    "generated",
+    "reviewed",
+    "sent_for_signature",
+    "partially_signed",
+    "signed",
+    "declined",
+    "archived",
+];
+
+const DOCUMENT_TEMPLATE_LOOKUP = (() => {
+    const entries = new Map<string, { categoryId: string; templateId: string }>();
+    DOC_CATEGORIES.forEach((category) => {
+        category.documents.forEach((doc) => {
+            entries.set(doc.name.trim().toLowerCase(), { categoryId: category.id, templateId: doc.id });
+            entries.set(doc.id.trim().toLowerCase(), { categoryId: category.id, templateId: doc.id });
+        });
+    });
+    return entries;
+})();
+
 function mapProducedDocument(row: any): ProducedDocument {
     return {
         id: row.id,
@@ -630,6 +1737,1147 @@ function mapProducedDocument(row: any): ProducedDocument {
         createdAt: row.created_at,
         updatedAt: row.updated_at,
     };
+}
+
+function mapVaultDocument(row: any): VaultDocument {
+    return {
+        id: row.id,
+        userId: row.user_id,
+        businessId: row.business_id ?? null,
+        folderId: row.folder_id ?? null,
+        sourceProducedDocumentId: row.source_produced_document_id ?? null,
+        title: row.title,
+        docType: row.doc_type,
+        category: row.category ?? null,
+        status: row.status as DocumentStatus,
+        stageId: row.stage_id == null ? null : Number(row.stage_id),
+        audience: row.audience ?? null,
+        tone: row.tone ?? null,
+        currentVersionId: row.current_version_id ?? null,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        archivedAt: row.archived_at ?? null,
+        metadata: row.metadata && typeof row.metadata === "object" ? row.metadata : {},
+    };
+}
+
+function mapDocumentVersion(row: any): DocumentVersion {
+    return {
+        id: row.id,
+        documentId: row.document_id,
+        userId: row.user_id,
+        versionNumber: Number(row.version_number ?? 0),
+        title: row.title,
+        content: row.content,
+        changeSummary: row.change_summary ?? null,
+        source: row.source,
+        createdAt: row.created_at,
+        metadata: row.metadata && typeof row.metadata === "object" ? row.metadata : {},
+    };
+}
+
+function mapDocumentFile(row: any): DocumentFile {
+    return {
+        id: row.id,
+        documentId: row.document_id,
+        userId: row.user_id,
+        versionId: row.version_id ?? null,
+        storageBucket: row.storage_bucket,
+        storagePath: row.storage_path,
+        filename: row.filename,
+        mimeType: row.mime_type,
+        fileSize: Number(row.file_size ?? 0),
+        fileKind: row.file_kind as DocumentFileKind,
+        createdAt: row.created_at,
+        metadata: row.metadata && typeof row.metadata === "object" ? row.metadata : {},
+    };
+}
+
+function mapDocumentSignatureRequest(row: any): DocumentSignatureRequest {
+    return {
+        id: row.id,
+        documentId: row.document_id,
+        userId: row.user_id,
+        versionId: row.version_id ?? null,
+        fileId: row.file_id ?? null,
+        provider: row.provider ?? null,
+        providerRequestId: row.provider_request_id ?? null,
+        status: row.status as SignatureRequestStatus,
+        signerName: row.signer_name ?? null,
+        signerEmail: row.signer_email ?? null,
+        sentAt: row.sent_at ?? null,
+        completedAt: row.completed_at ?? null,
+        declinedAt: row.declined_at ?? null,
+        expiresAt: row.expires_at ?? null,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        metadata: row.metadata && typeof row.metadata === "object" ? row.metadata : {},
+    };
+}
+
+function mapDocumentSignatureEvent(row: any): DocumentSignatureEvent {
+    return {
+        id: row.id,
+        signatureRequestId: row.signature_request_id,
+        documentId: row.document_id,
+        userId: row.user_id,
+        provider: row.provider ?? null,
+        eventType: row.event_type,
+        eventStatus: row.event_status ?? null,
+        payload: row.payload && typeof row.payload === "object" ? row.payload : {},
+        occurredAt: row.occurred_at,
+        createdAt: row.created_at,
+    };
+}
+
+function mapDocumentFolder(row: any): DocumentFolder {
+    return {
+        id: row.id,
+        userId: row.user_id,
+        businessId: row.business_id ?? null,
+        parentFolderId: row.parent_folder_id ?? null,
+        name: row.name,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        archivedAt: row.archived_at ?? null,
+        metadata: row.metadata && typeof row.metadata === "object" ? row.metadata : {},
+    };
+}
+
+function sanitizeStorageFileName(filename: string) {
+    const trimmed = String(filename || "document").trim();
+    const normalized = trimmed.normalize("NFKD").replace(/[^\x20-\x7E]/g, "");
+    const collapsed = normalized.replace(/\s+/g, "_");
+    const safe = collapsed.replace(/[^a-zA-Z0-9._-]/g, "_").replace(/_+/g, "_");
+    return safe || "document";
+}
+
+function buildDocumentStoragePath(userId: string, documentId: string, filename: string) {
+    const safeName = sanitizeStorageFileName(filename);
+    const uniquePrefix = `${Date.now()}-${crypto.randomUUID()}`;
+    return `users/${userId}/documents/${documentId}/${uniquePrefix}-${safeName}`;
+}
+
+function isDocumentStoragePathForUser(userId: string, path: string) {
+    return path.startsWith(`users/${userId}/`);
+}
+
+function buildDocumentArtifactMeta(document: VaultDocument | null, exportMeta?: DocumentExportMeta): DocumentExportMeta {
+    const metadata = document?.metadata && typeof document.metadata === "object" ? document.metadata : {};
+    const businessName = typeof metadata.businessName === "string" ? metadata.businessName : "";
+    const state = typeof metadata.state === "string" ? metadata.state : undefined;
+    return {
+        title: exportMeta?.title || document?.title || "Document",
+        businessName: exportMeta?.businessName || businessName,
+        docType: exportMeta?.docType || document?.docType || "Document",
+        state: exportMeta?.state || state,
+        date: exportMeta?.date || new Date().toLocaleDateString("en-US"),
+        legalDate: exportMeta?.legalDate || new Date().toLocaleDateString("en-US"),
+    };
+}
+
+function inferDocumentCategory(docType: string) {
+    const normalized = String(docType || "").trim().toLowerCase();
+    return DOCUMENT_TEMPLATE_LOOKUP.get(normalized)?.categoryId ?? null;
+}
+
+function inferDocumentStageId(categoryId: string | null, fallbackStageId?: number | null) {
+    switch (categoryId) {
+        case "legal-formation":
+        case "contracts-agreements":
+        case "compliance-regulatory":
+        case "intellectual-property":
+            return 3;
+        case "business-planning":
+            return 2;
+        case "tax-federal":
+        case "banking-finance":
+        case "employment-hr":
+        case "real-estate-operations":
+            return 4;
+        case "fundraising-investment":
+            return 6;
+        case "communication-marketing":
+            return 5;
+        default: {
+            const fallback = Number(fallbackStageId);
+            return Number.isFinite(fallback) && fallback >= 1 && fallback <= 6 ? Math.round(fallback) : null;
+        }
+    }
+}
+
+function inferDocumentTemplateId(docType: string) {
+    const normalized = String(docType || "").trim().toLowerCase();
+    return DOCUMENT_TEMPLATE_LOOKUP.get(normalized)?.templateId ?? null;
+}
+
+function buildProducedDocumentMetadata(document: ProducedDocument, existing?: VaultDocument | null): Record<string, unknown> {
+    const existingMetadata = existing?.metadata && typeof existing.metadata === "object" ? existing.metadata : {};
+    return {
+        ...existingMetadata,
+        compatibilitySource: "produced_documents",
+        legacyProducedDocumentId: document.id,
+        templateId: inferDocumentTemplateId(document.docType),
+        audience: document.audience,
+        tone: document.tone,
+        request: document.request,
+        historyLength: document.history.length,
+        lastLegacyUpdatedAt: document.updatedAt,
+    };
+}
+
+function getPreservedDocumentStatus(existing?: VaultDocument | null): DocumentStatus {
+    if (!existing) return "generated";
+    if (["sent_for_signature", "partially_signed", "signed", "declined", "archived"].includes(existing.status)) {
+        return existing.status;
+    }
+    return "generated";
+}
+
+function buildProducedDocumentChangeSummary(document: ProducedDocument, source: DocumentVersionSource) {
+    if (source === "produced_document_generate") {
+        return "Initial generated document from Document Production.";
+    }
+
+    const latestInstruction = document.history[document.history.length - 1]?.instruction?.trim();
+    if (!latestInstruction) return "Updated from Document Production.";
+
+    return latestInstruction.length > 220
+        ? `${latestInstruction.slice(0, 217)}...`
+        : latestInstruction;
+}
+
+async function loadLatestDocumentVersionRow(userId: string, documentId: string) {
+    if (documentVaultAvailable === false) return null;
+
+    const { data, error } = await supabase
+        .from("document_versions")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("document_id", documentId)
+        .order("version_number", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+    if (error) {
+        if (isMissingDocumentVaultRelationError(error)) {
+            documentVaultAvailable = false;
+            return null;
+        }
+        console.error("loadLatestDocumentVersionRow error:", error.message);
+        return null;
+    }
+
+    documentVaultAvailable = true;
+    return data ? mapDocumentVersion(data) : null;
+}
+
+export async function loadVaultDocuments(userId: string): Promise<VaultDocument[]> {
+    if (documentVaultAvailable === false) return [];
+
+    const { data, error } = await supabase
+        .from("documents")
+        .select("*")
+        .eq("user_id", userId)
+        .order("updated_at", { ascending: false });
+
+    if (error) {
+        if (isMissingDocumentVaultRelationError(error)) {
+            documentVaultAvailable = false;
+            return [];
+        }
+        console.error("loadVaultDocuments error:", error.message);
+        return [];
+    }
+
+    documentVaultAvailable = true;
+    return (data ?? []).map(mapVaultDocument);
+}
+
+export async function loadDocumentFolders(userId: string): Promise<DocumentFolder[]> {
+    if (documentVaultAvailable === false) return [];
+
+    const { data, error } = await supabase
+        .from("document_folders")
+        .select("*")
+        .eq("user_id", userId)
+        .is("archived_at", null)
+        .order("name", { ascending: true });
+
+    if (error) {
+        if (isMissingDocumentVaultRelationError(error)) {
+            documentVaultAvailable = false;
+            return [];
+        }
+        console.error("loadDocumentFolders error:", error.message);
+        return [];
+    }
+
+    documentVaultAvailable = true;
+    return (data ?? []).map(mapDocumentFolder);
+}
+
+export async function createDocumentFolder(userId: string, name: string): Promise<DocumentFolder | null> {
+    if (documentVaultAvailable === false) return null;
+
+    const trimmed = String(name || "").trim();
+    if (!trimmed) return null;
+
+    const { data, error } = await supabase
+        .from("document_folders")
+        .insert({
+            user_id: userId,
+            name: trimmed,
+        })
+        .select("*")
+        .single();
+
+    if (error) {
+        if (isMissingDocumentVaultRelationError(error)) {
+            documentVaultAvailable = false;
+            return null;
+        }
+        console.error("createDocumentFolder error:", error.message);
+        return null;
+    }
+
+    documentVaultAvailable = true;
+    return mapDocumentFolder(data);
+}
+
+export async function updateDocumentFolder(
+    userId: string,
+    folderId: string,
+    updates: { name?: string; archivedAt?: string | null; metadata?: Record<string, unknown> },
+): Promise<DocumentFolder | null> {
+    if (documentVaultAvailable === false) return null;
+
+    const payload: Record<string, unknown> = {};
+    if (typeof updates.name === "string") payload.name = updates.name.trim();
+    if ("archivedAt" in updates) payload.archived_at = updates.archivedAt ?? null;
+    if (updates.metadata) payload.metadata = updates.metadata;
+
+    const { data, error } = await supabase
+        .from("document_folders")
+        .update(payload)
+        .eq("user_id", userId)
+        .eq("id", folderId)
+        .select("*")
+        .single();
+
+    if (error) {
+        if (isMissingDocumentVaultRelationError(error)) {
+            documentVaultAvailable = false;
+            return null;
+        }
+        console.error("updateDocumentFolder error:", error.message);
+        return null;
+    }
+
+    documentVaultAvailable = true;
+    return mapDocumentFolder(data);
+}
+
+export async function moveDocumentToFolder(
+    userId: string,
+    documentId: string,
+    folderId: string | null,
+): Promise<VaultDocument | null> {
+    if (documentVaultAvailable === false) return null;
+
+    const { data, error } = await supabase
+        .from("documents")
+        .update({
+            folder_id: folderId,
+            updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", userId)
+        .eq("id", documentId)
+        .select("*")
+        .single();
+
+    if (error) {
+        if (isMissingDocumentVaultRelationError(error)) {
+            documentVaultAvailable = false;
+            return null;
+        }
+        console.error("moveDocumentToFolder error:", error.message);
+        return null;
+    }
+
+    documentVaultAvailable = true;
+    return mapVaultDocument(data);
+}
+
+export async function deleteDocumentFolder(userId: string, folderId: string): Promise<boolean> {
+    if (documentVaultAvailable === false) return false;
+
+    const { error: moveError } = await supabase
+        .from("documents")
+        .update({
+            folder_id: null,
+            updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", userId)
+        .eq("folder_id", folderId);
+
+    if (moveError) {
+        if (isMissingDocumentVaultRelationError(moveError)) {
+            documentVaultAvailable = false;
+            return false;
+        }
+        console.error("deleteDocumentFolder unfile documents error:", moveError.message);
+        return false;
+    }
+
+    const { error } = await supabase
+        .from("document_folders")
+        .delete()
+        .eq("user_id", userId)
+        .eq("id", folderId);
+
+    if (error) {
+        if (isMissingDocumentVaultRelationError(error)) {
+            documentVaultAvailable = false;
+            return false;
+        }
+        console.error("deleteDocumentFolder error:", error.message);
+        return false;
+    }
+
+    documentVaultAvailable = true;
+    return true;
+}
+
+export async function loadVaultDocumentById(userId: string, documentId: string): Promise<VaultDocument | null> {
+    if (documentVaultAvailable === false) return null;
+
+    const { data, error } = await supabase
+        .from("documents")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("id", documentId)
+        .maybeSingle();
+
+    if (error) {
+        if (isMissingDocumentVaultRelationError(error)) {
+            documentVaultAvailable = false;
+            return null;
+        }
+        console.error("loadVaultDocumentById error:", error.message);
+        return null;
+    }
+
+    documentVaultAvailable = true;
+    return data ? mapVaultDocument(data) : null;
+}
+
+export async function createVaultDocumentFromProducedDocument(
+    userId: string,
+    producedDocument: ProducedDocument,
+    fallbackStageId?: number | null,
+): Promise<VaultDocument | null> {
+    if (documentVaultAvailable === false) return null;
+
+    const { data: existingRow, error: existingError } = await supabase
+        .from("documents")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("source_produced_document_id", producedDocument.id)
+        .maybeSingle();
+
+    if (existingError) {
+        if (isMissingDocumentVaultRelationError(existingError)) {
+            documentVaultAvailable = false;
+            return null;
+        }
+        console.error("createVaultDocumentFromProducedDocument lookup error:", existingError.message);
+        return null;
+    }
+
+    const existing = existingRow ? mapVaultDocument(existingRow) : null;
+    const now = new Date().toISOString();
+    const category = inferDocumentCategory(producedDocument.docType);
+    const payload = {
+        user_id: userId,
+        source_produced_document_id: producedDocument.id,
+        title: producedDocument.title,
+        doc_type: producedDocument.docType,
+        category,
+        status: getPreservedDocumentStatus(existing),
+        stage_id: existing?.stageId ?? inferDocumentStageId(category, fallbackStageId),
+        audience: producedDocument.audience,
+        tone: producedDocument.tone,
+        archived_at: existing?.archivedAt ?? null,
+        metadata: buildProducedDocumentMetadata(producedDocument, existing),
+        updated_at: now,
+    };
+
+    const query = existing?.id
+        ? supabase.from("documents").update(payload).eq("id", existing.id).eq("user_id", userId)
+        : supabase.from("documents").insert(payload);
+
+    const { data, error } = await query.select("*").single();
+
+    if (error) {
+        if (isMissingDocumentVaultRelationError(error)) {
+            documentVaultAvailable = false;
+            return null;
+        }
+        console.error("createVaultDocumentFromProducedDocument error:", error.message);
+        return null;
+    }
+
+    documentVaultAvailable = true;
+    return mapVaultDocument(data);
+}
+
+export async function saveDocumentVersion(
+    userId: string,
+    documentId: string,
+    versionPayload: {
+        title: string;
+        content: string;
+        changeSummary?: string | null;
+        source: DocumentVersionSource | string;
+        metadata?: Record<string, unknown>;
+        status?: DocumentStatus;
+    }
+): Promise<DocumentVersion | null> {
+    if (documentVaultAvailable === false) return null;
+
+    const latest = await loadLatestDocumentVersionRow(userId, documentId);
+    if (latest && latest.title === versionPayload.title && latest.content === versionPayload.content) {
+        if (versionPayload.status) {
+            await updateVaultDocumentStatus(userId, documentId, versionPayload.status);
+        }
+        return latest;
+    }
+
+    const nextVersionNumber = latest ? latest.versionNumber + 1 : 1;
+    const { data, error } = await supabase
+        .from("document_versions")
+        .insert({
+            document_id: documentId,
+            user_id: userId,
+            version_number: nextVersionNumber,
+            title: versionPayload.title,
+            content: versionPayload.content,
+            change_summary: versionPayload.changeSummary ?? null,
+            source: versionPayload.source,
+            metadata: versionPayload.metadata ?? {},
+        })
+        .select("*")
+        .single();
+
+    if (error) {
+        if (isMissingDocumentVaultRelationError(error)) {
+            documentVaultAvailable = false;
+            return null;
+        }
+        console.error("saveDocumentVersion error:", error.message);
+        return null;
+    }
+
+    const version = mapDocumentVersion(data);
+    const updatePayload: Record<string, unknown> = {
+        title: version.title,
+        current_version_id: version.id,
+        updated_at: new Date().toISOString(),
+    };
+    if (versionPayload.status) {
+        updatePayload.status = versionPayload.status;
+        updatePayload.archived_at = versionPayload.status === "archived" ? new Date().toISOString() : null;
+    }
+
+    const { error: documentUpdateError } = await supabase
+        .from("documents")
+        .update(updatePayload)
+        .eq("id", documentId)
+        .eq("user_id", userId);
+
+    if (documentUpdateError) {
+        if (isMissingDocumentVaultRelationError(documentUpdateError)) {
+            documentVaultAvailable = false;
+            return version;
+        }
+        console.error("saveDocumentVersion document update error:", documentUpdateError.message);
+    }
+
+    documentVaultAvailable = true;
+    return version;
+}
+
+export async function restoreVaultDocumentVersion(
+    userId: string,
+    documentId: string,
+    versionId: string,
+): Promise<DocumentVersion | null> {
+    const version = (await loadDocumentVersions(userId, documentId)).find((entry) => entry.id === versionId) ?? null;
+    if (!version) return null;
+
+    await supabase
+        .from("documents")
+        .update({
+            current_version_id: version.id,
+            updated_at: new Date().toISOString(),
+        })
+        .eq("id", documentId)
+        .eq("user_id", userId);
+
+    return saveDocumentVersion(userId, documentId, {
+        title: version.title,
+        content: version.content,
+        changeSummary: `Restored from version ${version.versionNumber}`,
+        source: "restored",
+        status: "generated",
+        metadata: {
+            restoredFromVersionId: version.id,
+            restoredFromVersionNumber: version.versionNumber,
+        },
+    });
+}
+
+export async function loadDocumentVersions(userId: string, documentId: string): Promise<DocumentVersion[]> {
+    if (documentVaultAvailable === false) return [];
+
+    const { data, error } = await supabase
+        .from("document_versions")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("document_id", documentId)
+        .order("version_number", { ascending: false });
+
+    if (error) {
+        if (isMissingDocumentVaultRelationError(error)) {
+            documentVaultAvailable = false;
+            return [];
+        }
+        console.error("loadDocumentVersions error:", error.message);
+        return [];
+    }
+
+    documentVaultAvailable = true;
+    return (data ?? []).map(mapDocumentVersion);
+}
+
+export async function loadDocumentFiles(userId: string, documentId: string): Promise<DocumentFile[]> {
+    if (documentVaultAvailable === false) return [];
+
+    const { data, error } = await supabase
+        .from("document_files")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("document_id", documentId)
+        .order("created_at", { ascending: false });
+
+    if (error) {
+        if (isMissingDocumentVaultRelationError(error)) {
+            documentVaultAvailable = false;
+            return [];
+        }
+        console.error("loadDocumentFiles error:", error.message);
+        return [];
+    }
+
+    documentVaultAvailable = true;
+    return (data ?? []).map(mapDocumentFile);
+}
+
+export async function uploadDocumentFile(
+    userId: string,
+    documentId: string,
+    file: File,
+    options: UploadDocumentFileOptions = {},
+): Promise<DocumentFile | null> {
+    if (documentVaultAvailable === false) return null;
+
+    const filename = options.filename || file.name || "document";
+    const storagePath = buildDocumentStoragePath(userId, documentId, filename);
+    const contentType = options.mimeType || file.type || "application/octet-stream";
+    const fileKind = options.fileKind ?? "attachment";
+
+    const { error: uploadError } = await supabase
+        .storage
+        .from(DOCUMENT_FILE_BUCKET)
+        .upload(storagePath, file, {
+            cacheControl: "3600",
+            upsert: false,
+            contentType,
+        });
+
+    if (uploadError) {
+        console.error("uploadDocumentFile storage error:", uploadError.message);
+        return null;
+    }
+
+    const { data, error } = await supabase
+        .from("document_files")
+        .insert({
+            document_id: documentId,
+            user_id: userId,
+            version_id: options.versionId ?? null,
+            storage_bucket: DOCUMENT_FILE_BUCKET,
+            storage_path: storagePath,
+            filename,
+            mime_type: contentType,
+            file_size: Number(file.size || 0),
+            file_kind: fileKind,
+            metadata: options.metadata ?? {},
+        })
+        .select("*")
+        .single();
+
+    if (error) {
+        console.error("uploadDocumentFile metadata error:", error.message);
+        await supabase.storage.from(DOCUMENT_FILE_BUCKET).remove([storagePath]);
+        return null;
+    }
+
+    documentVaultAvailable = true;
+    return mapDocumentFile(data);
+}
+
+export async function createSignedDocumentFileUrl(userId: string, fileId: string, expiresIn = 3600): Promise<string | null> {
+    if (documentVaultAvailable === false) return null;
+
+    const { data, error } = await supabase
+        .from("document_files")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("id", fileId)
+        .maybeSingle();
+
+    if (error) {
+        if (isMissingDocumentVaultRelationError(error)) {
+            documentVaultAvailable = false;
+            return null;
+        }
+        console.error("createSignedDocumentFileUrl lookup error:", error.message);
+        return null;
+    }
+    if (!data) return null;
+
+    const row = mapDocumentFile(data);
+    const { data: signedData, error: signedError } = await supabase
+        .storage
+        .from(row.storageBucket)
+        .createSignedUrl(row.storagePath, expiresIn);
+
+    if (signedError) {
+        console.error("createSignedDocumentFileUrl error:", signedError.message);
+        return null;
+    }
+
+    return signedData?.signedUrl ?? null;
+}
+
+export async function deleteDocumentFile(userId: string, fileId: string): Promise<boolean> {
+    if (documentVaultAvailable === false) return false;
+
+    const { data, error } = await supabase
+        .from("document_files")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("id", fileId)
+        .maybeSingle();
+
+    if (error) {
+        if (isMissingDocumentVaultRelationError(error)) {
+            documentVaultAvailable = false;
+            return false;
+        }
+        console.error("deleteDocumentFile lookup error:", error.message);
+        return false;
+    }
+    if (!data) return false;
+
+    const row = mapDocumentFile(data);
+    if (isDocumentStoragePathForUser(userId, row.storagePath)) {
+        const { error: storageError } = await supabase.storage.from(row.storageBucket).remove([row.storagePath]);
+        if (storageError) {
+            console.error("deleteDocumentFile storage error:", storageError.message);
+            return false;
+        }
+    }
+
+    const { error: deleteError } = await supabase
+        .from("document_files")
+        .delete()
+        .eq("id", fileId)
+        .eq("user_id", userId);
+
+    if (deleteError) {
+        console.error("deleteDocumentFile metadata error:", deleteError.message);
+        return false;
+    }
+
+    return true;
+}
+
+export async function saveGeneratedDocumentArtifact(
+    userId: string,
+    documentId: string,
+    versionId: string | null,
+    content: string,
+    fileKind: DocumentFileKind,
+    options?: {
+        exportMeta?: DocumentExportMeta;
+        metadata?: Record<string, unknown>;
+    },
+): Promise<DocumentFile | null> {
+    if (fileKind === "generated_pdf") {
+        // PDF export currently relies on the browser print dialog, so there is no deterministic PDF binary to persist here yet.
+        console.warn("saveGeneratedDocumentArtifact does not support generated_pdf until server-side PDF rendering exists.");
+        return null;
+    }
+    if (fileKind !== "generated_docx" && fileKind !== "generated_html") {
+        console.warn(`saveGeneratedDocumentArtifact received unsupported file kind: ${fileKind}`);
+        return null;
+    }
+
+    const document = await loadVaultDocumentById(userId, documentId);
+    const artifactMeta = buildDocumentArtifactMeta(document, options?.exportMeta);
+    const artifact = fileKind === "generated_docx"
+        ? buildStyledDocxArtifact(content, artifactMeta)
+        : buildStyledHtmlArtifact(content, artifactMeta);
+
+    const file = new File([artifact.blob], artifact.fileName, {
+        type: artifact.blob.type || (fileKind === "generated_docx"
+            ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            : "text/html;charset=utf-8"),
+        lastModified: Date.now(),
+    });
+
+    return uploadDocumentFile(userId, documentId, file, {
+        versionId,
+        fileKind,
+        filename: artifact.fileName,
+        mimeType: file.type,
+        metadata: {
+            ...(options?.metadata ?? {}),
+            artifactSource: "vault_export",
+        },
+    });
+}
+
+export async function deleteDocumentVaultStorageForUser(userId: string): Promise<void> {
+    if (documentVaultAvailable === false) return;
+
+    const { data, error } = await supabase
+        .from("document_files")
+        .select("storage_bucket, storage_path")
+        .eq("user_id", userId);
+
+    if (error) {
+        if (isMissingDocumentVaultRelationError(error)) {
+            documentVaultAvailable = false;
+            return;
+        }
+        console.error("deleteDocumentVaultStorageForUser lookup error:", error.message);
+        return;
+    }
+
+    const files = (data ?? []).filter((row) => typeof row.storage_bucket === "string" && typeof row.storage_path === "string");
+    const grouped = new Map<string, string[]>();
+    files.forEach((row) => {
+        if (!isDocumentStoragePathForUser(userId, row.storage_path)) return;
+        const bucketPaths = grouped.get(row.storage_bucket) ?? [];
+        bucketPaths.push(row.storage_path);
+        grouped.set(row.storage_bucket, bucketPaths);
+    });
+
+    await Promise.all(Array.from(grouped.entries()).map(async ([bucket, paths]) => {
+        for (let index = 0; index < paths.length; index += 100) {
+            const chunk = paths.slice(index, index + 100);
+            const { error: removeError } = await supabase.storage.from(bucket).remove(chunk);
+            if (removeError) {
+                console.error("deleteDocumentVaultStorageForUser remove error:", removeError.message);
+                break;
+            }
+        }
+    }));
+}
+
+export async function createDocumentSignatureRequest(
+    userId: string,
+    payload: CreateDocumentSignatureRequestInput,
+): Promise<DocumentSignatureRequest | null> {
+    if (documentVaultAvailable === false) return null;
+
+    const { data, error } = await supabase
+        .from("document_signature_requests")
+        .insert({
+            document_id: payload.documentId,
+            user_id: userId,
+            version_id: payload.versionId ?? null,
+            file_id: payload.fileId ?? null,
+            provider: payload.provider ?? "mock",
+            provider_request_id: payload.providerRequestId ?? null,
+            status: payload.status ?? "draft",
+            signer_name: payload.signerName ?? null,
+            signer_email: payload.signerEmail ?? null,
+            expires_at: payload.expiresAt ?? null,
+            metadata: payload.metadata ?? {},
+        })
+        .select("*")
+        .single();
+
+    if (error) {
+        if (isMissingDocumentVaultRelationError(error)) {
+            documentVaultAvailable = false;
+            return null;
+        }
+        console.error("createDocumentSignatureRequest error:", error.message);
+        return null;
+    }
+
+    documentVaultAvailable = true;
+    return mapDocumentSignatureRequest(data);
+}
+
+export async function loadDocumentSignatureRequests(userId: string, documentId: string): Promise<DocumentSignatureRequest[]> {
+    if (documentVaultAvailable === false) return [];
+
+    const { data, error } = await supabase
+        .from("document_signature_requests")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("document_id", documentId)
+        .order("created_at", { ascending: false });
+
+    if (error) {
+        if (isMissingDocumentVaultRelationError(error)) {
+            documentVaultAvailable = false;
+            return [];
+        }
+        console.error("loadDocumentSignatureRequests error:", error.message);
+        return [];
+    }
+
+    documentVaultAvailable = true;
+    return (data ?? []).map(mapDocumentSignatureRequest);
+}
+
+export async function createDocumentSignatureEvent(
+    userId: string,
+    requestId: string,
+    eventPayload: CreateDocumentSignatureEventInput,
+): Promise<DocumentSignatureEvent | null> {
+    if (documentVaultAvailable === false) return null;
+
+    const { data, error } = await supabase
+        .from("document_signature_events")
+        .insert({
+            signature_request_id: requestId,
+            document_id: eventPayload.documentId,
+            user_id: userId,
+            provider: eventPayload.provider ?? null,
+            event_type: eventPayload.eventType,
+            event_status: eventPayload.eventStatus ?? null,
+            occurred_at: eventPayload.occurredAt ?? new Date().toISOString(),
+            payload: eventPayload.payload ?? {},
+        })
+        .select("*")
+        .single();
+
+    if (error) {
+        if (isMissingDocumentVaultRelationError(error)) {
+            documentVaultAvailable = false;
+            return null;
+        }
+        console.error("createDocumentSignatureEvent error:", error.message);
+        return null;
+    }
+
+    documentVaultAvailable = true;
+    return mapDocumentSignatureEvent(data);
+}
+
+export async function loadDocumentSignatureEvents(userId: string, requestId: string): Promise<DocumentSignatureEvent[]> {
+    if (documentVaultAvailable === false) return [];
+
+    const { data, error } = await supabase
+        .from("document_signature_events")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("signature_request_id", requestId)
+        .order("occurred_at", { ascending: false });
+
+    if (error) {
+        if (isMissingDocumentVaultRelationError(error)) {
+            documentVaultAvailable = false;
+            return [];
+        }
+        console.error("loadDocumentSignatureEvents error:", error.message);
+        return [];
+    }
+
+    documentVaultAvailable = true;
+    return (data ?? []).map(mapDocumentSignatureEvent);
+}
+
+export async function updateDocumentSignatureRequestStatus(
+    userId: string,
+    requestId: string,
+    status: SignatureRequestStatus,
+    metadata?: Record<string, unknown>,
+): Promise<DocumentSignatureRequest | null> {
+    if (documentVaultAvailable === false) return null;
+
+    const { data: existingRow, error: existingError } = await supabase
+        .from("document_signature_requests")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("id", requestId)
+        .maybeSingle();
+
+    if (existingError) {
+        if (isMissingDocumentVaultRelationError(existingError)) {
+            documentVaultAvailable = false;
+            return null;
+        }
+        console.error("updateDocumentSignatureRequestStatus lookup error:", existingError.message);
+        return null;
+    }
+    if (!existingRow) return null;
+
+    const existing = mapDocumentSignatureRequest(existingRow);
+    const now = new Date().toISOString();
+    const mergedMetadata = {
+        ...(existing.metadata ?? {}),
+        ...(metadata ?? {}),
+    };
+
+    const updates: Record<string, unknown> = {
+        status,
+        metadata: mergedMetadata,
+    };
+
+    if (status === "sent" && !existing.sentAt) updates.sent_at = now;
+    if (status === "completed" && !existing.completedAt) updates.completed_at = now;
+    if (status === "declined" && !existing.declinedAt) updates.declined_at = now;
+
+    const { data, error } = await supabase
+        .from("document_signature_requests")
+        .update(updates)
+        .eq("user_id", userId)
+        .eq("id", requestId)
+        .select("*")
+        .single();
+
+    if (error) {
+        if (isMissingDocumentVaultRelationError(error)) {
+            documentVaultAvailable = false;
+            return null;
+        }
+        console.error("updateDocumentSignatureRequestStatus error:", error.message);
+        return null;
+    }
+
+    const updated = mapDocumentSignatureRequest(data);
+    if (status === "sent") {
+        await updateVaultDocumentStatus(userId, updated.documentId, "sent_for_signature");
+    } else if (status === "completed") {
+        await updateVaultDocumentStatus(userId, updated.documentId, "signed");
+    } else if (status === "declined") {
+        await updateVaultDocumentStatus(userId, updated.documentId, "declined");
+    } else if (status === "canceled") {
+        const document = await loadVaultDocumentById(userId, updated.documentId);
+        if (document && document.status !== "signed") {
+            // Intentionally avoid downgrading already-signed documents.
+        }
+    }
+
+    documentVaultAvailable = true;
+    return updated;
+}
+
+export async function updateVaultDocumentStatus(
+    userId: string,
+    documentId: string,
+    status: DocumentStatus
+): Promise<VaultDocument | null> {
+    if (documentVaultAvailable === false) return null;
+    if (!DOCUMENT_STATUS_VALUES.includes(status)) {
+        throw new Error(`Invalid document status: ${status}`);
+    }
+
+    const { data, error } = await supabase
+        .from("documents")
+        .update({
+            status,
+            archived_at: status === "archived" ? new Date().toISOString() : null,
+            updated_at: new Date().toISOString(),
+        })
+        .eq("id", documentId)
+        .eq("user_id", userId)
+        .select("*")
+        .single();
+
+    if (error) {
+        if (isMissingDocumentVaultRelationError(error)) {
+            documentVaultAvailable = false;
+            return null;
+        }
+        console.error("updateVaultDocumentStatus error:", error.message);
+        return null;
+    }
+
+    documentVaultAvailable = true;
+    return mapVaultDocument(data);
+}
+
+export async function archiveVaultDocument(userId: string, documentId: string): Promise<VaultDocument | null> {
+    return updateVaultDocumentStatus(userId, documentId, "archived");
+}
+
+export async function trackProductUsageEvent(
+    userId: string,
+    feature: string,
+    eventName: string,
+    metadata: Record<string, unknown> = {},
+): Promise<void> {
+    const { error } = await supabase
+        .from("product_usage_events")
+        .insert({
+            user_id: userId,
+            feature,
+            event_name: eventName,
+            metadata,
+        });
+
+    if (error) {
+        if (isMissingRelationError(error, "product_usage_events")) {
+            return;
+        }
+        console.error("trackProductUsageEvent error:", error.message);
+    }
+}
+
+async function syncProducedDocumentToVault(userId: string, producedDocument: ProducedDocument, fallbackStageId?: number | null): Promise<void> {
+    if (documentVaultAvailable === false) return;
+
+    const vaultDocument = await createVaultDocumentFromProducedDocument(userId, producedDocument, fallbackStageId);
+    if (!vaultDocument) return;
+
+    const latestVersion = await loadLatestDocumentVersionRow(userId, vaultDocument.id);
+    const versionSource: DocumentVersionSource = latestVersion ? "produced_document_refine" : "produced_document_generate";
+
+    await saveDocumentVersion(userId, vaultDocument.id, {
+        title: producedDocument.title,
+        content: producedDocument.content,
+        changeSummary: buildProducedDocumentChangeSummary(producedDocument, versionSource),
+        source: versionSource,
+        status: getPreservedDocumentStatus(vaultDocument),
+        metadata: {
+            sourceProducedDocumentId: producedDocument.id,
+            legacyUpdatedAt: producedDocument.updatedAt,
+            legacyHistoryLength: producedDocument.history.length,
+            audience: producedDocument.audience,
+            tone: producedDocument.tone,
+        },
+    });
 }
 
 export async function loadProducedDocuments(userId: string): Promise<ProducedDocument[]> {
@@ -665,7 +2913,8 @@ export async function saveProducedDocument(
         request: string;
         content: string;
         history: Array<{ instruction: string; doc: string }>;
-    }
+    },
+    options?: { fallbackStageId?: number | null },
 ): Promise<ProducedDocument | null> {
     if (producedDocumentsAvailable === false) return null;
 
@@ -700,7 +2949,15 @@ export async function saveProducedDocument(
 
     await recordMeaningfulActivity(userId, undefined, { force: true });
     producedDocumentsAvailable = true;
-    return mapProducedDocument(data);
+    const savedDocument = mapProducedDocument(data);
+
+    try {
+        await syncProducedDocumentToVault(userId, savedDocument, options?.fallbackStageId);
+    } catch (vaultError) {
+        console.error("syncProducedDocumentToVault error:", vaultError);
+    }
+
+    return savedDocument;
 }
 
 // ── NOTIFICATION PREFERENCES ─────────────────────────────────

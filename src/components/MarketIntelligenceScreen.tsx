@@ -1,18 +1,48 @@
 import { useEffect, useRef, useState } from "react";
-import { cleanAIText } from "../lib/cleanAIText";
-import { streamForgeAPI } from "../lib/forgeApi";
-import { buildMarketReportPrompt, MARKET_REPORT_SYSTEM } from "../constants/marketPrompt";
-import { loadLatestMarketReport, loadMarketReportHistory, saveMarketReport } from "../db";
+import { callForgeAPI, streamForgeAPI } from "../lib/forgeApi";
+import {
+    buildMarketReportPrompt,
+    buildSearchQueries,
+    MARKET_REPORT_SYSTEM,
+    type SearchResult,
+} from "../constants/marketPrompt";
+import {
+    loadCompetitorsByUser,
+    loadIndustryBenchmarksByUser,
+    loadLatestMarketReport,
+    loadMarketReportHistory,
+    loadMarketReportSourcesByUser,
+    loadMarketTrendsByUser,
+    saveMarketReport,
+    type Competitor,
+    type IndustryBenchmark,
+    type MarketReportSource,
+    type MarketTrend,
+} from "../db";
+import { savePreParsedMarketIntelligence } from "../lib/marketIntelligencePipeline";
+import {
+    buildMarketIntelligenceExtractionPrompt,
+    MARKET_INTELLIGENCE_EXTRACTION_SYSTEM,
+} from "../lib/marketIntelligenceExtractor";
+import DailyBriefPanel from "./market-intelligence/DailyBriefPanel";
+import MarketIntelligenceTabs from "./market-intelligence/MarketIntelligenceTabs";
+import StructuredBenchmarksPanel from "./market-intelligence/StructuredBenchmarksPanel";
+import StructuredCompetitorsPanel from "./market-intelligence/StructuredCompetitorsPanel";
+import StructuredReportSelector from "./market-intelligence/StructuredReportSelector";
+import StructuredSourcesPanel from "./market-intelligence/StructuredSourcesPanel";
+import StructuredTrendsPanel from "./market-intelligence/StructuredTrendsPanel";
+import {
+    formatReportDate,
+    getReportPreview,
+    hasUsableContent,
+    type MarketReport,
+    type MarketTab,
+} from "./market-intelligence/shared";
+const MARKET_INTELLIGENCE_ANALYZE_PRODUCTION_ENABLED = true;
+const MARKET_INTELLIGENCE_AUTOMATIC_EXTRACTION_ENABLED =
+    import.meta.env.DEV || MARKET_INTELLIGENCE_ANALYZE_PRODUCTION_ENABLED;
 
-// ─────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────
-interface MarketReport {
-    content: string;
-    industry: string;
-    date: string;
-    createdAt?: string;
-}
+type GenerationPhase = "idle" | "searching" | "generating";
 
 // ─────────────────────────────────────────────────────────────
 // Helpers
@@ -29,101 +59,70 @@ function isToday(date: string): boolean {
     return date === todayStr();
 }
 
-function hasUsableContent(report: MarketReport | null | undefined): boolean {
-    if (!report?.content) return false;
-    const content = report.content.trim();
-    return content.length > 0 && content !== "Something went wrong.";
-}
-
-function formatReportDate(date: string): string {
-    const d = new Date(`${date}T12:00:00`);
-    return d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
-}
-
-// ─────────────────────────────────────────────────────────────
-// Inline renderer — **bold** → <strong>
-// ─────────────────────────────────────────────────────────────
-function renderInline(text: string) {
-    const parts = text.split(/\*\*(.+?)\*\*/g);
-    return parts.map((part, i) =>
-        i % 2 === 1
-            ? <strong key={i} style={{ color: "#F0EDE8", fontWeight: 700 }}>{part}</strong>
-            : <span key={i}>{part}</span>
-    );
-}
-
-// ─────────────────────────────────────────────────────────────
-// Report content renderer — markdown → styled JSX
-// ─────────────────────────────────────────────────────────────
-function ReportSection({ content }: { content: string }) {
-    const lines = cleanAIText(content).split("\n");
-    const elements: React.ReactNode[] = [];
-    let i = 0;
-
-    while (i < lines.length) {
-        const line = lines[i];
-
-        if (line.startsWith("## ")) {
-            elements.push(
-                <div key={i} style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#E8622A", fontWeight: 700, marginTop: i > 0 ? 26 : 0, marginBottom: 8, paddingBottom: 5, borderBottom: "1px solid rgba(232,98,42,0.15)", fontFamily: "'Lora', Georgia, serif" }}>
-                    {line.slice(3)}
-                </div>
-            );
-        } else if (line.startsWith("**") && line.endsWith("**")) {
-            elements.push(
-                <div key={i} style={{ fontSize: 12, fontWeight: 700, color: "#C8C4BE", marginTop: 10, marginBottom: 4, fontFamily: "'Lora', Georgia, serif" }}>
-                    {renderInline(line)}
-                </div>
-            );
-        } else if (line.startsWith("- ") || line.startsWith("* ")) {
-            const bullets: string[] = [];
-            while (i < lines.length && (lines[i].startsWith("- ") || lines[i].startsWith("* "))) {
-                bullets.push(lines[i].slice(2));
-                i++;
-            }
-            elements.push(
-                <ul key={`ul-${i}`} style={{ margin: "4px 0 8px 14px", padding: 0 }}>
-                    {bullets.map((b, j) => (
-                        <li key={j} style={{ fontSize: 13, color: "#C8C4BE", lineHeight: 1.75, marginBottom: 4, fontFamily: "'Lora', Georgia, serif" }}>
-                            {renderInline(b)}
-                        </li>
-                    ))}
-                </ul>
-            );
-            continue;
-        } else if (line.trim() === "") {
-            // skip — spacing from element margins
-        } else {
-            elements.push(
-                <p key={i} style={{ fontSize: 13, color: "#C8C4BE", lineHeight: 1.8, marginBottom: 8, fontFamily: "'Lora', Georgia, serif" }}>
-                    {renderInline(line)}
-                </p>
-            );
-        }
-
-        i++;
-    }
-
-    return <>{elements}</>;
-}
-
 function upsertReport(history: MarketReport[], nextReport: MarketReport) {
     const next = [nextReport, ...history.filter((entry) => entry.date !== nextReport.date)];
     return next.sort((a, b) => b.date.localeCompare(a.date));
 }
 
-function getReportPreview(content: string, maxLength = 110) {
-    const cleaned = cleanAIText(content)
-        .replace(/^#{1,6}\s+/gm, "")
-        .replace(/\*\*(.*?)\*\*/g, "$1")
-        .replace(/\*(.*?)\*/g, "$1")
-        .replace(/`{1,3}/g, "")
-        .replace(/^[-*]\s+/gm, "")
-        .replace(/\s+/g, " ")
-        .trim();
+function getReportAgeDays(report: MarketReport) {
+    const timestamp = report.createdAt || `${report.date}T12:00:00`;
+    const generatedAt = new Date(timestamp).getTime();
+    if (Number.isNaN(generatedAt)) return 999;
+    return Math.max(0, Math.floor((Date.now() - generatedAt) / 86_400_000));
+}
 
-    if (cleaned.length <= maxLength) return cleaned;
-    return `${cleaned.slice(0, maxLength).trim()}...`;
+function getFreshness(report: MarketReport) {
+    const ageDays = getReportAgeDays(report);
+
+    if (ageDays < 1) {
+        return { status: "fresh" as const, label: "Fresh", color: "#4CAF8A" };
+    }
+
+    if (ageDays <= 7) {
+        return {
+            status: "aging" as const,
+            label: `${ageDays} day${ageDays === 1 ? "" : "s"} old`,
+            color: "#F5A843",
+        };
+    }
+
+    return { status: "outdated" as const, label: "Outdated - regenerate for current data", color: "#77716A" };
+}
+
+async function fetchMarketSearchResults(queries: string[]): Promise<SearchResult[]> {
+    const response = await fetch("/api/market-search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ queries }),
+    });
+
+    if (!response.ok) {
+        throw new Error(`Market search failed with status ${response.status}`);
+    }
+
+    const payload = await response.json();
+    if (!payload?.ok || !Array.isArray(payload.results)) {
+        throw new Error("Market search returned no usable live sources.");
+    }
+
+    return payload.results as SearchResult[];
+}
+
+function countSourcesByReport(sources: MarketReportSource[]) {
+    return sources.reduce<Record<string, number>>((counts, source) => {
+        counts[source.reportId] = (counts[source.reportId] || 0) + 1;
+        return counts;
+    }, {});
+}
+
+function buildFounderContext(profile: any) {
+    return {
+        industry: profile.industry ?? null,
+        businessName: profile.businessName ?? null,
+        idea: profile.idea ?? null,
+        currentStage: profile.currentStage ?? null,
+        strategyLabel: profile.strategyLabel ?? null,
+    };
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -145,13 +144,75 @@ export default function MarketIntelligenceScreen({
     generationLimit?: number | null;
 }) {
     const [generating, setGenerating] = useState(false);
+    const [generationPhase, setGenerationPhase] = useState<GenerationPhase>("idle");
     const [streamedContent, setStreamedContent] = useState("");
     const [mounted, setMounted] = useState(false);
     const [currentReport, setCurrentReport] = useState<MarketReport | null>(report);
     const [reportHistory, setReportHistory] = useState<MarketReport[]>(report ? [report] : []);
     const [saveError, setSaveError] = useState<string | null>(null);
     const [isNarrow, setIsNarrow] = useState(() => window.innerWidth < 640);
+    const [activeTab, setActiveTab] = useState<MarketTab>("brief");
+    const [competitors, setCompetitors] = useState<Competitor[]>([]);
+    const [trends, setTrends] = useState<MarketTrend[]>([]);
+    const [benchmarks, setBenchmarks] = useState<IndustryBenchmark[]>([]);
+    const [sources, setSources] = useState<MarketReportSource[]>([]);
+    const [sourceCountsByReportId, setSourceCountsByReportId] = useState<Record<string, number>>({});
+    const [structuredLoading, setStructuredLoading] = useState(false);
+    const [structuredError, setStructuredError] = useState<string | null>(null);
+    const [automaticExtractionRunning, setAutomaticExtractionRunning] = useState(false);
     const latestLocalMutationRef = useRef(0);
+
+    const loadStructuredData = async (
+        reportForSources: MarketReport | null,
+        options?: { silent?: boolean; shouldCancel?: () => boolean },
+    ) => {
+        if (!options?.silent) {
+            setStructuredLoading(true);
+            setStructuredError(null);
+        }
+
+        const shouldCancel = options?.shouldCancel;
+        if (shouldCancel?.()) return;
+
+        try {
+            const [nextCompetitors, nextTrends, nextBenchmarks, nextSources] = await Promise.all([
+                loadCompetitorsByUser(userId),
+                loadMarketTrendsByUser(userId),
+                loadIndustryBenchmarksByUser(userId),
+                loadMarketReportSourcesByUser(userId),
+            ]);
+
+            if (shouldCancel?.()) return;
+
+            setCompetitors(nextCompetitors);
+            setTrends(nextTrends);
+            setBenchmarks(nextBenchmarks);
+            setSourceCountsByReportId(countSourcesByReport(nextSources));
+            setSources(
+                reportForSources?.id
+                    ? nextSources.filter((source) => source.reportId === reportForSources.id)
+                    : [],
+            );
+            console.log("[Market Intelligence] Structured data loaded", JSON.stringify({
+                reportId: reportForSources?.id ?? null,
+                competitorsLength: nextCompetitors.length,
+                trendsLength: nextTrends.length,
+                benchmarksLength: nextBenchmarks.length,
+                allSourcesLength: nextSources.length,
+                currentReportSourcesLength: reportForSources?.id
+                    ? nextSources.filter((source) => source.reportId === reportForSources.id).length
+                    : 0,
+            }));
+        } catch (error) {
+            console.error("Structured market intelligence load error:", error);
+            if (shouldCancel?.()) return;
+            setStructuredError("Structured market intelligence is unavailable right now. Daily Brief still works normally.");
+        } finally {
+            if (!options?.silent && !shouldCancel?.()) {
+                setStructuredLoading(false);
+            }
+        }
+    };
 
     useEffect(() => {
         const mq = window.matchMedia("(max-width: 639px)");
@@ -192,6 +253,18 @@ export default function MarketIntelligenceScreen({
         return () => { cancelled = true; };
     }, [userId]);
 
+    useEffect(() => {
+        let cancelled = false;
+
+        const run = async () => {
+            await loadStructuredData(currentReport, { shouldCancel: () => cancelled });
+        };
+
+        run();
+
+        return () => { cancelled = true; };
+    }, [userId, currentReport?.id]);
+
     const hasSavedReport = hasUsableContent(currentReport);
     const isCurrentReport = hasSavedReport && !!currentReport && isToday(currentReport.date);
     const hasOutdatedReport = hasSavedReport && !!currentReport && !isToday(currentReport.date);
@@ -207,19 +280,86 @@ export default function MarketIntelligenceScreen({
         setSaveError(null);
     };
 
-    const generate = async () => {
-        if (generating || isCurrentReport || !canGenerateReport) return;
+    const runAutomaticExtraction = (savedReport: MarketReport) => {
+        if (!MARKET_INTELLIGENCE_AUTOMATIC_EXTRACTION_ENABLED || !savedReport.id) return;
+
+        setAutomaticExtractionRunning(true);
+        console.log("[Market Intelligence] Automatic extraction trigger reached", JSON.stringify({
+            reportId: savedReport.id,
+            contentLength: savedReport.content.length,
+        }));
+
+        void (async () => {
+            try {
+                const founderContext = buildFounderContext(profile);
+                const extractionPrompt = buildMarketIntelligenceExtractionPrompt(
+                    savedReport.content,
+                    founderContext,
+                );
+                const rawExtractionText = await callForgeAPI(
+                    [{ role: "user", content: extractionPrompt }],
+                    MARKET_INTELLIGENCE_EXTRACTION_SYSTEM,
+                    2000,
+                );
+
+                console.log("[Extraction Raw]", rawExtractionText);
+
+                console.log("[Market Intelligence] Extraction Forge response", JSON.stringify({
+                    reportId: savedReport.id,
+                    responseType: typeof rawExtractionText,
+                    isNull: rawExtractionText === null,
+                    preview: typeof rawExtractionText === "string" ? rawExtractionText.slice(0, 500) : rawExtractionText,
+                }));
+
+                console.log("[Market Intelligence] Saving extracted insights", JSON.stringify({
+                    reportId: savedReport.id,
+                    reportContent: savedReport.content,
+                    extractionLength: rawExtractionText.length,
+                }));
+
+                const summary = await savePreParsedMarketIntelligence(
+                    userId,
+                    savedReport.id!,
+                    rawExtractionText,
+                );
+
+                if (import.meta.env.DEV) {
+                    console.info("Automatic market intelligence extraction summary", summary);
+                }
+                console.log("[Market Intelligence] Extraction save result", JSON.stringify(summary));
+            } catch (error) {
+                console.error("Automatic market intelligence extraction failed:", error);
+            } finally {
+                await loadStructuredData(savedReport, { silent: true });
+                setAutomaticExtractionRunning(false);
+            }
+        })();
+    };
+
+    const generate = async (options?: { force?: boolean; ignoreLimit?: boolean }) => {
+        if (generating || (!options?.force && isCurrentReport) || (!options?.ignoreLimit && !canGenerateReport)) return;
         setGenerating(true);
+        setGenerationPhase("searching");
         setStreamedContent("");
         setSaveError(null);
-
-        const prompt = buildMarketReportPrompt(profile);
+        let searchResults: SearchResult[] = [];
 
         try {
+            try {
+                const queries = buildSearchQueries(profile);
+                searchResults = await fetchMarketSearchResults(queries);
+            } catch (searchError) {
+                console.error("Market search unavailable; continuing without live sources:", searchError);
+                searchResults = [];
+            }
+
+            setGenerationPhase("generating");
+            const prompt = buildMarketReportPrompt(profile, searchResults);
             const final = await streamForgeAPI(
                 [{ role: "user", content: prompt }],
                 MARKET_REPORT_SYSTEM,
-                (chunk) => setStreamedContent(chunk)
+                (chunk) => setStreamedContent(chunk),
+                4000
             );
 
             const optimisticReport: MarketReport = {
@@ -240,6 +380,11 @@ export default function MarketIntelligenceScreen({
                 setCurrentReport(saved);
                 setReportHistory((prev) => upsertReport(prev, saved));
                 onReportChange(saved);
+                console.log("[Market Intelligence] Report saved; starting automatic extraction", JSON.stringify({
+                    reportId: saved.id,
+                    contentLength: saved.content.length,
+                }));
+                runAutomaticExtraction(saved);
             } else {
                 setSaveError("This report is staying visible now, but the database save did not complete. Refresh later and verify it appears in Saved Reports.");
             }
@@ -253,12 +398,10 @@ export default function MarketIntelligenceScreen({
         }
 
         setGenerating(false);
+        setGenerationPhase("idle");
     };
 
-    const displayContent = generating
-        ? streamedContent || currentReport?.content || ""
-        : currentReport?.content || "";
-    const displayDate = currentReport?.date;
+    const showDailyBrief = activeTab === "brief";
 
     return (
         <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8", display: "flex", flexDirection: "column" }}>
@@ -290,210 +433,224 @@ export default function MarketIntelligenceScreen({
 
             {/* Content */}
             <div className="foundry-app-page__content" style={{ flex: 1, overflowY: "auto", padding: "20px 16px 60px", maxWidth: 980, width: "100%", margin: "0 auto" }}>
-                {generationLimit !== null && (
-                    <div style={{
-                        marginBottom: 14,
-                        padding: "12px 14px",
-                        borderRadius: 12,
-                        background: hasReachedLimit ? "rgba(232,98,42,0.07)" : "rgba(232,98,42,0.05)",
-                        border: hasReachedLimit ? "1px solid rgba(232,98,42,0.2)" : "1px solid rgba(232,98,42,0.14)",
-                        fontSize: 12,
-                        color: hasReachedLimit ? "#D9B9A6" : "#BDAFA2",
-                        lineHeight: 1.65,
-                    }}>
-                        {hasReachedLimit
-                            ? `Free preview includes ${generationLimit} saved market reports. You have reached that limit.`
-                            : `Free preview includes up to ${generationLimit} market reports so early founders can test the workflow without opening the full research library.`}
-                    </div>
-                )}
-
-                {/* Mobile: horizontal history strip above main content */}
-                {isNarrow && reportHistory.length > 0 && (
-                    <div style={{ marginBottom: 14 }}>
-                        <div style={{ fontSize: 12, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8, fontWeight: 600 }}>Saved Reports</div>
-                        <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 6, WebkitOverflowScrolling: "touch" as any }}>
-                            {reportHistory.map((entry) => {
-                                const selected = currentReport?.date === entry.date;
-                                return (
-                                    <button
-                                        key={entry.date}
-                                        onClick={() => selectReport(entry)}
-                                        style={{
-                                            flexShrink: 0,
-                                            textAlign: "left",
-                                            background: selected ? "rgba(232,98,42,0.12)" : "rgba(255,255,255,0.02)",
-                                            border: selected ? "1px solid rgba(232,98,42,0.24)" : "1px solid rgba(255,255,255,0.06)",
-                                            borderRadius: 10,
-                                            padding: "10px 14px",
-                                            color: "#F0EDE8",
-                                            cursor: "pointer",
-                                            maxWidth: 220,
-                                        }}
-                                    >
-                                        <div style={{ fontSize: 13, fontWeight: 600, color: selected ? "#E8622A" : "#C8C4BE", whiteSpace: "nowrap" }}>
-                                            {formatReportDate(entry.date)}
-                                        </div>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-                )}
-
-                <div style={{ display: isNarrow ? "block" : "grid", gridTemplateColumns: reportHistory.length > 0 ? "minmax(0, 1fr) 260px" : "minmax(0, 1fr)", gap: 18, alignItems: "start" }}>
-                    <div>
-
-                {/* Empty state — no report at all */}
-                {!hasSavedReport && !generating && (
-                    <div style={{ opacity: mounted ? 1 : 0, transition: "opacity 0.4s ease" }}>
-                        <div style={{ marginBottom: 28, animation: "fadeSlideUp 0.4s ease both", textAlign: "left" }}>
-                            <div style={{ fontSize: 22, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 6, lineHeight: 1.25 }}>
-                                Daily Market Brief
-                            </div>
-                            <div style={{ fontSize: 13, color: "#666", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", lineHeight: 1.75, maxWidth: 480, margin: 0 }}>
-                                Forge generates a focused intelligence report on your market — trends, competitors, risks, and opportunities — tailored to your stage and business context.
-                            </div>
-                        </div>
-
-                        <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "18px 20px", marginBottom: 20, animation: "fadeSlideUp 0.4s ease 0.05s both" }}>
-                            <div style={{ fontSize: 10, color: "#444", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>What you'll get</div>
-                            {["Market overview for your specific industry", "Key trends reshaping the space", "Competitive landscape at your stage", "Financial and funding signals", "Risks and opportunities right now", "What matters most — given your stage and strategy"].map((item, i) => (
-                                <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8 }}>
-                                    <div style={{ width: 14, height: 14, borderRadius: "50%", background: "rgba(232,98,42,0.15)", border: "1px solid rgba(232,98,42,0.25)", flexShrink: 0, marginTop: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                        <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#E8622A" }} />
-                                    </div>
-                                    <span style={{ fontSize: 12, color: "#888", lineHeight: 1.5 }}>{item}</span>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div style={{ fontSize: 10, color: "#444", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", marginBottom: 18, lineHeight: 1.6, animation: "fadeSlideUp 0.4s ease 0.1s both" }}>
-                            Based on Forge's knowledge of your industry — not a live data feed. Generated once per day, then available to Forge in your conversations.
-                        </div>
-
-                        <button
-                            onClick={generate}
-                            disabled={!canGenerateReport}
-                            style={{ width: "100%", padding: "15px", background: canGenerateReport ? "linear-gradient(135deg, #E8622A, #c9521e)" : "rgba(255,255,255,0.06)", border: "none", borderRadius: 14, color: canGenerateReport ? "#fff" : "#555", fontSize: 15, fontWeight: 700, cursor: canGenerateReport ? "pointer" : "default", fontFamily: "'Lora', Georgia, serif", animation: "fadeSlideUp 0.4s ease 0.15s both" }}
-                        >
-                            {hasReachedLimit ? "Preview limit reached" : "Generate Today's Report →"}
-                        </button>
-                    </div>
-                )}
-
-                {/* Outdated banner + regenerate */}
-                {hasOutdatedReport && !generating && currentReport && (
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 14px", background: "rgba(245,168,67,0.05)", border: "1px solid rgba(245,168,67,0.15)", borderRadius: 10, marginBottom: 18, animation: "fadeSlideUp 0.3s ease both" }}>
-                        <div>
-                            <div style={{ fontSize: 11, color: "#F5A843", fontWeight: 600, marginBottom: 2 }}>Report from {formatReportDate(currentReport.date)}</div>
-                            <div style={{ fontSize: 10, color: "#555" }}>Generate a fresh report for today</div>
-                        </div>
-                        <button
-                            onClick={generate}
-                            disabled={!canGenerateReport}
-                            style={{ background: canGenerateReport ? "rgba(245,168,67,0.12)" : "rgba(255,255,255,0.04)", border: canGenerateReport ? "1px solid rgba(245,168,67,0.25)" : "1px solid rgba(255,255,255,0.06)", borderRadius: 8, padding: "6px 14px", color: canGenerateReport ? "#F5A843" : "#555", fontSize: 11, fontWeight: 600, cursor: canGenerateReport ? "pointer" : "default", flexShrink: 0 }}
-                        >
-                            {hasReachedLimit ? "Preview limit reached" : "Refresh"}
-                        </button>
-                    </div>
-                )}
-
-                {/* Generating pulse state (before content starts streaming) */}
-                {generating && !streamedContent && (
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 14, padding: "70px 0", animation: "fadeIn 0.3s ease" }}>
-                        <div style={{ display: "flex", gap: 6 }}>
-                            {[0, 1, 2].map(i => (
-                                <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: "#E8622A", animation: "forgePulse 1.4s infinite ease-in-out", animationDelay: `${i * 0.2}s` }} />
-                            ))}
-                        </div>
-                        <div style={{ fontSize: 13, color: "#555", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic" }}>
-                            Forge is reading your market...
-                        </div>
-                    </div>
-                )}
-
-                {/* Report card */}
-                {displayContent && (
-                    <div style={{ animation: "fadeSlideUp 0.4s ease both" }}>
-                        {/* Report header */}
-                        <div style={{ marginBottom: 18 }}>
-                            <div style={{ fontSize: 20, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, lineHeight: 1.25, marginBottom: 4 }}>
-                                {profile.industry || "Market"} Intelligence
-                            </div>
-                            <div style={{ fontSize: 11, color: "#555" }}>
-                                {generating ? "Writing..." : displayDate ? formatReportDate(displayDate) : "Today"}
-                                {generating && (
-                                    <span style={{ marginLeft: 8, color: "#E8622A" }}>● Live</span>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Report body */}
-                        <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "20px 18px", marginBottom: 14 }}>
-                            <ReportSection content={displayContent} />
-                        </div>
-
-                        {/* Post-generation confirmation */}
-                        {!generating && isCurrentReport && (
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "rgba(76,175,138,0.05)", border: "1px solid rgba(76,175,138,0.12)", borderRadius: 10, marginBottom: 14, animation: "fadeSlideUp 0.3s ease both" }}>
-                                <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#4CAF8A", flexShrink: 0 }} />
-                                <div style={{ fontSize: 12, color: "#4CAF8A" }}>
-                                    Forge can now reference this report in your conversations.
-                                </div>
-                            </div>
-                        )}
-
-                        {saveError && (
-                            <div style={{ fontSize: 11, color: "#F5A843", lineHeight: 1.6, marginBottom: 12 }}>
-                                {saveError}
-                            </div>
-                        )}
-
-                        {/* Footer */}
-                        {!generating && (
-                            <div style={{ fontSize: 10, color: "#333", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", textAlign: "left", paddingTop: 8 }}>
-                                AI-synthesised intelligence based on industry knowledge · Not a live data feed
-                            </div>
-                        )}
-                    </div>
-                )}
-                    </div>
-
-                    {!isNarrow && reportHistory.length > 0 && (
-                        <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "16px 14px", position: "sticky", top: 78 }}>
-                            <div style={{ fontSize: 12, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10, fontWeight: 600 }}>
-                                Saved Reports
-                            </div>
-                            <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: "calc(100vh - 180px)", overflowY: "auto" }}>
-                                {reportHistory.map((entry) => {
-                                    const selected = currentReport?.date === entry.date;
-                                    return (
-                                        <button
-                                            key={entry.date}
-                                            onClick={() => selectReport(entry)}
-                                            style={{
-                                                textAlign: "left",
-                                                background: selected ? "rgba(232,98,42,0.12)" : "rgba(255,255,255,0.02)",
-                                                border: selected ? "1px solid rgba(232,98,42,0.24)" : "1px solid rgba(255,255,255,0.06)",
-                                                borderRadius: 10,
-                                                padding: "12px 14px",
-                                                color: "#F0EDE8",
-                                                cursor: "pointer",
-                                            }}
-                                        >
-                                            <div style={{ fontSize: 14, fontWeight: 600, color: selected ? "#E8622A" : "#C8C4BE", marginBottom: 6, lineHeight: 1.35 }}>
-                                                {formatReportDate(entry.date)}
-                                            </div>
-                                            <div style={{ fontSize: 12, color: "#77716A", lineHeight: 1.6 }}>
-                                                {getReportPreview(entry.content)}
-                                            </div>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+                    <MarketIntelligenceTabs activeTab={activeTab} onSelect={setActiveTab} />
+                    {!showDailyBrief && (
+                        <StructuredReportSelector reportHistory={reportHistory} currentReport={currentReport} onSelect={selectReport} />
                     )}
                 </div>
+
+                <div style={{ display: "flex", justifyContent: "flex-end", margin: "0 0 14px" }}>
+                    <button
+                        onClick={() => generate({ force: true, ignoreLimit: true })}
+                        disabled={generating}
+                        style={{
+                            background: generating ? "rgba(255,255,255,0.04)" : "rgba(232,98,42,0.1)",
+                            border: generating ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(232,98,42,0.22)",
+                            borderRadius: 9,
+                            padding: "7px 11px",
+                            color: generating ? "#555" : "#E8622A",
+                            fontSize: 11,
+                            fontWeight: 700,
+                            cursor: generating ? "default" : "pointer",
+                            fontFamily: "'DM Sans', system-ui, sans-serif",
+                        }}
+                    >
+                        {generating ? "Rerunning..." : "Temporary: Rerun Report"}
+                    </button>
+                </div>
+
+                {!showDailyBrief && (
+                    <div style={{ marginBottom: 16 }}>
+                        {automaticExtractionRunning && (
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#77716A", padding: "12px 2px 6px", fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+                                <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#E8622A", animation: "forgePulse 1.4s infinite ease-in-out" }} />
+                                <span>Analyzing report...</span>
+                            </div>
+                        )}
+                        {structuredLoading ? (
+                            <div style={{ fontSize: 12, color: "#77716A", padding: "18px 2px" }}>
+                                Loading structured market intelligence...
+                            </div>
+                        ) : structuredError ? (
+                            <div style={{
+                                fontSize: 12,
+                                color: "#F5A843",
+                                lineHeight: 1.7,
+                                background: "rgba(245,168,67,0.05)",
+                                border: "1px solid rgba(245,168,67,0.15)",
+                                borderRadius: 12,
+                                padding: "14px 16px",
+                            }}>
+                                {structuredError}
+                            </div>
+                        ) : activeTab === "competitors" ? (
+                            <StructuredCompetitorsPanel competitors={competitors} />
+                        ) : activeTab === "trends" ? (
+                            <StructuredTrendsPanel trends={trends} />
+                        ) : activeTab === "benchmarks" ? (
+                            <StructuredBenchmarksPanel benchmarks={benchmarks} />
+                        ) : (
+                            <StructuredSourcesPanel sources={sources} />
+                        )}
+                    </div>
+                )}
+
+                {showDailyBrief && (
+                    <>
+                        {isNarrow && reportHistory.length > 0 && (
+                            <div style={{ marginBottom: 14 }}>
+                                <div style={{ fontSize: 12, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8, fontWeight: 600 }}>Saved Reports</div>
+                                <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 6, WebkitOverflowScrolling: "touch" as any }}>
+                                    {reportHistory.map((entry) => {
+                                        const selected = currentReport?.date === entry.date;
+                                        const freshness = getFreshness(entry);
+                                        const sourceCount = entry.id ? sourceCountsByReportId[entry.id] || 0 : 0;
+                                        return (
+                                            <button
+                                                key={entry.id || entry.date}
+                                                onClick={() => selectReport(entry)}
+                                                style={{
+                                                    flexShrink: 0,
+                                                    textAlign: "left",
+                                                    background: selected ? "rgba(232,98,42,0.12)" : "rgba(255,255,255,0.02)",
+                                                    border: selected ? "1px solid rgba(232,98,42,0.24)" : "1px solid rgba(255,255,255,0.06)",
+                                                    borderRadius: 10,
+                                                    padding: "10px 14px",
+                                                    color: "#F0EDE8",
+                                                    cursor: "pointer",
+                                                    maxWidth: 220,
+                                                }}
+                                            >
+                                                <div style={{ fontSize: 13, fontWeight: 600, color: selected ? "#E8622A" : "#C8C4BE", whiteSpace: "nowrap" }}>
+                                                    {formatReportDate(entry.date)}
+                                                </div>
+                                                <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 6 }}>
+                                                    <div style={{ width: 6, height: 6, borderRadius: "50%", background: freshness.color }} />
+                                                    <span style={{ fontSize: 10, color: freshness.color, whiteSpace: "nowrap" }}>{freshness.label}</span>
+                                                </div>
+                                                {sourceCount > 0 && (
+                                                    <div style={{ display: "inline-flex", marginTop: 7, padding: "3px 7px", borderRadius: 999, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(240,237,232,0.5)", fontSize: 11, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+                                                        {sourceCount} source{sourceCount === 1 ? "" : "s"}
+                                                    </div>
+                                                )}
+                                                {freshness.status === "outdated" && (
+                                                    <span
+                                                        onClick={(event) => {
+                                                            event.stopPropagation();
+                                                            generate({ force: true });
+                                                        }}
+                                                        style={{
+                                                            display: "inline-flex",
+                                                            marginTop: 8,
+                                                            padding: "5px 9px",
+                                                            borderRadius: 8,
+                                                            border: "1px solid rgba(232,98,42,0.22)",
+                                                            color: "#E8622A",
+                                                            fontSize: 10,
+                                                            fontWeight: 700,
+                                                        }}
+                                                    >
+                                                        Regenerate
+                                                    </span>
+                                                )}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        <div style={{ display: isNarrow ? "block" : "grid", gridTemplateColumns: reportHistory.length > 0 ? "minmax(0, 1fr) 260px" : "minmax(0, 1fr)", gap: 18, alignItems: "start" }}>
+                            <div>
+                                <DailyBriefPanel
+                                    profileIndustry={profile.industry}
+                                    mounted={mounted}
+                                    generating={generating}
+                                    generationPhase={generationPhase}
+                                    streamedContent={streamedContent}
+                                    currentReport={currentReport}
+                                    currentReportDate={currentReport?.date}
+                                    isCurrentReport={isCurrentReport}
+                                    hasSavedReport={hasSavedReport}
+                                    hasOutdatedReport={hasOutdatedReport}
+                                    hasReachedLimit={hasReachedLimit}
+                                    canGenerateReport={canGenerateReport}
+                                    generationLimit={generationLimit}
+                                    saveError={saveError}
+                                    onGenerate={generate}
+                                />
+                            </div>
+
+                            {!isNarrow && reportHistory.length > 0 && (
+                                <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "16px 14px", position: "sticky", top: 78 }}>
+                                    <div style={{ fontSize: 12, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10, fontWeight: 600 }}>
+                                        Saved Reports
+                                    </div>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: "calc(100vh - 180px)", overflowY: "auto" }}>
+                                        {reportHistory.map((entry) => {
+                                            const selected = currentReport?.date === entry.date;
+                                            const freshness = getFreshness(entry);
+                                            const sourceCount = entry.id ? sourceCountsByReportId[entry.id] || 0 : 0;
+                                            return (
+                                                <button
+                                                    key={entry.id || entry.date}
+                                                    onClick={() => selectReport(entry)}
+                                                    style={{
+                                                        textAlign: "left",
+                                                        background: selected ? "rgba(232,98,42,0.12)" : "rgba(255,255,255,0.02)",
+                                                        border: selected ? "1px solid rgba(232,98,42,0.24)" : "1px solid rgba(255,255,255,0.06)",
+                                                        borderRadius: 10,
+                                                        padding: "12px 14px",
+                                                        color: "#F0EDE8",
+                                                        cursor: "pointer",
+                                                    }}
+                                                >
+                                                    <div style={{ fontSize: 14, fontWeight: 600, color: selected ? "#E8622A" : "#C8C4BE", marginBottom: 6, lineHeight: 1.35 }}>
+                                                        {formatReportDate(entry.date)}
+                                                    </div>
+                                                    <div style={{ fontSize: 12, color: "#77716A", lineHeight: 1.6 }}>
+                                                        {getReportPreview(entry.content)}
+                                                    </div>
+                                                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 10 }}>
+                                                        <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+                                                            <div style={{ width: 6, height: 6, borderRadius: "50%", background: freshness.color, flexShrink: 0 }} />
+                                                            <span style={{ fontSize: 10, color: freshness.color, lineHeight: 1.3 }}>{freshness.label}</span>
+                                                        </div>
+                                                        {freshness.status === "outdated" && (
+                                                            <span
+                                                                onClick={(event) => {
+                                                                    event.stopPropagation();
+                                                                    generate({ force: true });
+                                                                }}
+                                                                style={{
+                                                                    flexShrink: 0,
+                                                                    padding: "5px 8px",
+                                                                    borderRadius: 8,
+                                                                    border: "1px solid rgba(232,98,42,0.22)",
+                                                                    color: "#E8622A",
+                                                                    fontSize: 10,
+                                                                    fontWeight: 700,
+                                                                }}
+                                                            >
+                                                                Regenerate
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    {sourceCount > 0 && (
+                                                        <div style={{ display: "inline-flex", marginTop: 8, padding: "3px 7px", borderRadius: 999, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(240,237,232,0.5)", fontSize: 11, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+                                                            {sourceCount} source{sourceCount === 1 ? "" : "s"}
+                                                        </div>
+                                                    )}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );

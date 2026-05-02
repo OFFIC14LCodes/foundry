@@ -53,6 +53,7 @@ export default function HubScreen({
     onAcceptPlaidTransactionAsExpense,
     onAcceptPlaidTransactionAsRevenue,
     onIgnorePlaidTransaction,
+    onOpenFinancialDashboard,
 }) {
     const [showDecisionModal, setShowDecisionModal] = useState(false);
     const [showExpenseModal, setShowExpenseModal] = useState(false);
@@ -353,8 +354,8 @@ export default function HubScreen({
         },
         {
             icon: Icons.sidebar.documents,
-            label: "Document Production",
-            sub: "Professional documents",
+            label: "Document Vault",
+            sub: "Vault, versions, and generation",
             action: () => {
                 setSidebarOpen(false);
                 onOpenDocuments();
@@ -1077,6 +1078,28 @@ export default function HubScreen({
                             </div>
                         ))}
                     </div>
+
+                    {onOpenFinancialDashboard && (
+                        <button
+                            onClick={onOpenFinancialDashboard}
+                            style={{
+                                width: "100%",
+                                background: "rgba(255,255,255,0.03)",
+                                border: "1px solid rgba(255,255,255,0.08)",
+                                borderRadius: 10,
+                                padding: "10px 14px",
+                                color: "#A8A4A0",
+                                fontSize: 12,
+                                fontWeight: 600,
+                                cursor: "pointer",
+                                textAlign: "center",
+                                marginBottom: 12,
+                                letterSpacing: "0.02em",
+                            }}
+                        >
+                            Full Financial Dashboard →
+                        </button>
+                    )}
 
                     <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: 12, marginBottom: 12 }}>
                         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 8, flexWrap: "wrap" }}>
