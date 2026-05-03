@@ -39,7 +39,10 @@ import {
     touchAcademyContentOpened,
     upsertStageCertificate,
 } from "../lib/academyDb";
+import type { FoundryActionSuggestion } from "../lib/foundryActions";
+import { suggestActionFromAcademyLesson } from "../lib/foundryActions";
 import Logo from "./Logo";
+import ActionSuggestionCard from "./actions/ActionSuggestionCard";
 import type { AcademyBubbleContext } from "./ForgeBubble";
 
 export type AcademyScreenContext = AcademyBubbleContext;
@@ -54,6 +57,8 @@ type ForgeAcademyScreenProps = {
     onOpenArchive?: () => void;
     maxPreviewStage?: number | null;
     trialNotice?: string | null;
+    onCreateAction?: (suggestion: FoundryActionSuggestion) => Promise<unknown> | void;
+    onAskForgeAboutAction?: (suggestion: FoundryActionSuggestion) => void;
 };
 
 const surface = "rgba(255,255,255,0.03)";
@@ -136,6 +141,8 @@ export default function ForgeAcademyScreen({
     onOpenArchive,
     maxPreviewStage = null,
     trialNotice = null,
+    onCreateAction,
+    onAskForgeAboutAction,
 }: ForgeAcademyScreenProps) {
     const [workspace, setWorkspace] = useState<AcademyWorkspace>({
         categories: [],
@@ -163,6 +170,7 @@ export default function ForgeAcademyScreen({
     const [pathProgressRows, setPathProgressRows] = useState<UserLessonProgressRow[]>([]);
     const [pathProgressLoading, setPathProgressLoading] = useState(true);
     const [expandedEnrichmentStages, setExpandedEnrichmentStages] = useState<Record<number, boolean>>({});
+    const [actionNotice, setActionNotice] = useState<string | null>(null);
 
     useEffect(() => {
         const onResize = () => setIsMobile(window.innerWidth <= 900);
@@ -736,6 +744,13 @@ export default function ForgeAcademyScreen({
         }
     };
 
+    const createAcademyAction = async (suggestion: FoundryActionSuggestion) => {
+        if (!onCreateAction) return;
+        await onCreateAction(suggestion);
+        setActionNotice("Suggested action saved to Action Center.");
+        window.setTimeout(() => setActionNotice(null), 2200);
+    };
+
     if (loading) {
         return (
             <AcademyShell onBack={onBack} onOpenArchive={onOpenArchive}>
@@ -778,6 +793,11 @@ export default function ForgeAcademyScreen({
 
             {activeStageCertificate && (
                 <CertificateCard certificate={activeStageCertificate} />
+            )}
+            {actionNotice && (
+                <div style={{ maxWidth: 1180, margin: "0 auto 8px", padding: "10px 12px", borderRadius: 10, background: "rgba(76,175,138,0.08)", border: "1px solid rgba(76,175,138,0.2)", color: "#8BD8A9", fontSize: 12 }}>
+                    {actionNotice}
+                </div>
             )}
 
             {activeView === "path" && (
@@ -1179,6 +1199,8 @@ export default function ForgeAcademyScreen({
                     onClose={() => setSelectedContent(null)}
                     onLaunchForge={canLaunchForgeFromContent(selectedContent) ? (mode) => void handleLaunchForge(selectedContent, mode) : undefined}
                     onAnswerAssessment={(assessment, selectedIndex) => void handleAssessmentAnswer(selectedContent, assessment, selectedIndex)}
+                    onCreateAction={onCreateAction ? (suggestion) => void createAcademyAction(suggestion) : undefined}
+                    onAskForgeAboutAction={onAskForgeAboutAction}
                     busy={busyKey === `content-${selectedContent.id}` || isForgeBusyFor(selectedContent.id)}
                 />
             )}
@@ -2532,6 +2554,8 @@ function ContentDetailModal({
     onClose,
     onLaunchForge,
     onAnswerAssessment,
+    onCreateAction,
+    onAskForgeAboutAction,
     busy,
 }: {
     content: AcademyContent;
@@ -2541,6 +2565,8 @@ function ContentDetailModal({
     onClose: () => void;
     onLaunchForge?: (mode: AcademySessionMode) => void;
     onAnswerAssessment: (assessment: LessonAssessment, selectedIndex: number) => void;
+    onCreateAction?: (suggestion: FoundryActionSuggestion) => void;
+    onAskForgeAboutAction?: (suggestion: FoundryActionSuggestion) => void;
     busy: boolean;
 }) {
     const completed = progress?.status === "completed";
@@ -2740,7 +2766,13 @@ function ContentDetailModal({
                 )}
 
                 {completed && onLaunchForge && (
-                    <ApplyLessonCard content={content} onApply={() => onLaunchForge("apply")} busy={busy} />
+                    <ApplyLessonCard
+                        content={content}
+                        onApply={() => onLaunchForge("apply")}
+                        onCreateAction={onCreateAction}
+                        onAskForgeAboutAction={onAskForgeAboutAction}
+                        busy={busy}
+                    />
                 )}
             </div>
         </ModalShell>
@@ -2839,7 +2871,20 @@ function LessonAssessmentPanel({
     );
 }
 
-function ApplyLessonCard({ content, onApply, busy }: { content: AcademyContent; onApply: () => void; busy: boolean }) {
+function ApplyLessonCard({
+    content,
+    onApply,
+    onCreateAction,
+    onAskForgeAboutAction,
+    busy,
+}: {
+    content: AcademyContent;
+    onApply: () => void;
+    onCreateAction?: (suggestion: FoundryActionSuggestion) => void;
+    onAskForgeAboutAction?: (suggestion: FoundryActionSuggestion) => void;
+    busy: boolean;
+}) {
+    const suggestion = suggestActionFromAcademyLesson(content);
     return (
         <div style={{ background: "linear-gradient(180deg, rgba(99,179,237,0.10), rgba(255,255,255,0.025))", border: "1px solid rgba(99,179,237,0.18)", borderRadius: 22, padding: 18, display: "grid", gap: 10 }}>
             <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#8FC8F6", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700 }}>Apply this now</div>
@@ -2852,6 +2897,15 @@ function ApplyLessonCard({ content, onApply, busy }: { content: AcademyContent; 
                     {busy ? "Opening..." : "Open Forge prompt"}
                 </InlineButton>
             </div>
+            {(onCreateAction || onAskForgeAboutAction) && (
+                <ActionSuggestionCard
+                    action={suggestion}
+                    compact
+                    acceptLabel="Create action"
+                    onAccept={onCreateAction ? () => onCreateAction(suggestion) : undefined}
+                    onAskForge={onAskForgeAboutAction ? () => onAskForgeAboutAction(suggestion) : undefined}
+                />
+            )}
         </div>
     );
 }

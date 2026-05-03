@@ -13,6 +13,7 @@ import {
     loadMarketReportHistory,
     loadMarketReportSourcesByUser,
     loadMarketTrendsByUser,
+    loadMarketIntelligenceChangesByUser,
     loadCompetitorSnapshotsByUser,
     loadTrendSnapshotsByUser,
     saveMarketReport,
@@ -21,6 +22,7 @@ import {
     type IndustryBenchmark,
     type MarketReportSource,
     type MarketTrend,
+    type MarketIntelligenceChange,
     type TrendSnapshot,
 } from "../db";
 import { getMarketRefreshSchedule, updateMarketRefreshSchedule } from "../lib/founderSessionState";
@@ -31,6 +33,7 @@ import StructuredCompetitorsPanel from "./market-intelligence/StructuredCompetit
 import StructuredReportSelector from "./market-intelligence/StructuredReportSelector";
 import StructuredSourcesPanel from "./market-intelligence/StructuredSourcesPanel";
 import StructuredTrendsPanel from "./market-intelligence/StructuredTrendsPanel";
+import WhatChangedPanel from "./market-intelligence/WhatChangedPanel";
 import {
     formatReportDate,
     getReportPreview,
@@ -38,6 +41,7 @@ import {
     type MarketReport,
     type MarketTab,
 } from "./market-intelligence/shared";
+import type { FoundryActionSuggestion } from "../lib/foundryActions";
 type GenerationPhase = "idle" | "searching" | "generating";
 
 // ─────────────────────────────────────────────────────────────
@@ -144,6 +148,8 @@ export default function MarketIntelligenceScreen({
     report,
     onReportChange,
     onBack,
+    onCreateAction,
+    onAskForgeAboutAction,
     generationLimit = null,
 }: {
     profile: any;
@@ -151,6 +157,8 @@ export default function MarketIntelligenceScreen({
     report: MarketReport | null;
     onReportChange: (r: MarketReport | null) => void;
     onBack: () => void;
+    onCreateAction?: (suggestion: FoundryActionSuggestion) => Promise<unknown> | void;
+    onAskForgeAboutAction?: (suggestion: FoundryActionSuggestion) => void;
     generationLimit?: number | null;
 }) {
     const [generating, setGenerating] = useState(false);
@@ -168,13 +176,22 @@ export default function MarketIntelligenceScreen({
     const [sources, setSources] = useState<MarketReportSource[]>([]);
     const [competitorSnapshots, setCompetitorSnapshots] = useState<CompetitorSnapshot[]>([]);
     const [trendSnapshots, setTrendSnapshots] = useState<TrendSnapshot[]>([]);
+    const [marketChanges, setMarketChanges] = useState<MarketIntelligenceChange[]>([]);
     const [sourceCountsByReportId, setSourceCountsByReportId] = useState<Record<string, number>>({});
     const [structuredLoading, setStructuredLoading] = useState(false);
     const [structuredError, setStructuredError] = useState<string | null>(null);
     const [automaticExtractionRunning, setAutomaticExtractionRunning] = useState(false);
     const [scheduleSaving, setScheduleSaving] = useState(false);
     const [marketRefreshSchedule, setMarketRefreshSchedule] = useState<Record<string, unknown> | null>(null);
+    const [actionNotice, setActionNotice] = useState<string | null>(null);
     const latestLocalMutationRef = useRef(0);
+
+    const createSuggestedAction = async (suggestion: FoundryActionSuggestion) => {
+        if (!onCreateAction) return;
+        await onCreateAction(suggestion);
+        setActionNotice("Suggested action saved to Action Center.");
+        window.setTimeout(() => setActionNotice(null), 2200);
+    };
 
     const loadStructuredData = async (
         reportForSources: MarketReport | null,
@@ -189,13 +206,14 @@ export default function MarketIntelligenceScreen({
         if (shouldCancel?.()) return;
 
         try {
-            const [nextCompetitors, nextTrends, nextBenchmarks, nextSources, nextCompetitorSnapshots, nextTrendSnapshots] = await Promise.all([
+            const [nextCompetitors, nextTrends, nextBenchmarks, nextSources, nextCompetitorSnapshots, nextTrendSnapshots, nextMarketChanges] = await Promise.all([
                 loadCompetitorsByUser(userId),
                 loadMarketTrendsByUser(userId),
                 loadIndustryBenchmarksByUser(userId),
                 loadMarketReportSourcesByUser(userId),
                 loadCompetitorSnapshotsByUser(userId),
                 loadTrendSnapshotsByUser(userId),
+                loadMarketIntelligenceChangesByUser(userId, reportForSources?.id ?? null),
             ]);
 
             if (shouldCancel?.()) return;
@@ -205,6 +223,7 @@ export default function MarketIntelligenceScreen({
             setBenchmarks(nextBenchmarks);
             setCompetitorSnapshots(nextCompetitorSnapshots);
             setTrendSnapshots(nextTrendSnapshots);
+            setMarketChanges(nextMarketChanges);
             setSourceCountsByReportId(countSourcesByReport(nextSources));
             setSources(
                 reportForSources?.id
@@ -220,6 +239,7 @@ export default function MarketIntelligenceScreen({
                 currentReportSourcesLength: reportForSources?.id
                     ? nextSources.filter((source) => source.reportId === reportForSources.id).length
                     : 0,
+                marketChangesLength: nextMarketChanges.length,
             }));
         } catch (error) {
             console.error("Structured market intelligence load error:", error);
@@ -469,6 +489,11 @@ export default function MarketIntelligenceScreen({
                         {newCompetitorsSinceLastReport.length + highImpactTrendAlerts.length > alertItems.length ? " and more" : ""}
                     </div>
                 )}
+                {actionNotice && (
+                    <div style={{ marginBottom: 14, padding: "10px 12px", borderRadius: 10, background: "rgba(76,175,138,0.08)", border: "1px solid rgba(76,175,138,0.2)", color: "#8BD8A9", fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12 }}>
+                        {actionNotice}
+                    </div>
+                )}
 
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, margin: "0 0 14px", flexWrap: "wrap" }}>
                     <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 11px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.025)", cursor: scheduleSaving ? "wait" : "pointer" }}>
@@ -529,14 +554,19 @@ export default function MarketIntelligenceScreen({
                             }}>
                                 {structuredError}
                             </div>
-                        ) : activeTab === "competitors" ? (
-                            <StructuredCompetitorsPanel competitors={competitors} />
-                        ) : activeTab === "trends" ? (
-                            <StructuredTrendsPanel trends={trends} />
-                        ) : activeTab === "benchmarks" ? (
-                            <StructuredBenchmarksPanel benchmarks={benchmarks} />
                         ) : (
-                            <StructuredSourcesPanel sources={sources} />
+                            <div style={{ display: "grid", gap: 14 }}>
+                                <WhatChangedPanel changes={marketChanges} />
+                                {activeTab === "competitors" ? (
+                                    <StructuredCompetitorsPanel competitors={competitors} onCreateAction={createSuggestedAction} onAskForgeAboutAction={onAskForgeAboutAction} />
+                                ) : activeTab === "trends" ? (
+                                    <StructuredTrendsPanel trends={trends} onCreateAction={createSuggestedAction} onAskForgeAboutAction={onAskForgeAboutAction} />
+                                ) : activeTab === "benchmarks" ? (
+                                    <StructuredBenchmarksPanel benchmarks={benchmarks} onCreateAction={createSuggestedAction} onAskForgeAboutAction={onAskForgeAboutAction} />
+                                ) : (
+                                    <StructuredSourcesPanel sources={sources} />
+                                )}
+                            </div>
                         )}
                     </div>
                 )}

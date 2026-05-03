@@ -4,6 +4,9 @@ import Logo from "./components/Logo";
 import { STAGES_DATA } from "./constants/stages";
 import { loadAcademyWeeklyActivity, type AcademyWeeklyActivity } from "./lib/academyDb";
 import { buildWeeklyBriefingIntelligence, buildWeeklyBriefingPrompt } from "./lib/weeklyBriefingIntelligence";
+import type { FoundryActionSuggestion } from "./lib/foundryActions";
+import { suggestActionFromWeeklyBriefing } from "./lib/foundryActions";
+import ActionSuggestionCard from "./components/actions/ActionSuggestionCard";
 
 type ParsedBriefingSection = {
     number: number;
@@ -195,6 +198,8 @@ export default function BriefingsScreen({
     journalEntries,
     activeNudge,
     stageProgressDates,
+    onCreateAction,
+    onAskForgeAboutAction,
 }: {
     userId: string;
     profile: any;
@@ -208,6 +213,8 @@ export default function BriefingsScreen({
     journalEntries: any[];
     activeNudge: FounderNudge | null;
     stageProgressDates: Record<number, string>;
+    onCreateAction?: (suggestion: FoundryActionSuggestion) => Promise<unknown> | void;
+    onAskForgeAboutAction?: (suggestion: FoundryActionSuggestion) => void;
 }) {
     const [generating, setGenerating] = useState(false);
     const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -216,6 +223,7 @@ export default function BriefingsScreen({
     const [mounted, setMounted] = useState(false);
     const [academyWeeklyActivity, setAcademyWeeklyActivity] = useState<AcademyWeeklyActivity | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [actionNotice, setActionNotice] = useState<string | null>(null);
 
     useEffect(() => { setTimeout(() => setMounted(true), 100); }, []);
 
@@ -323,6 +331,18 @@ export default function BriefingsScreen({
         }
     };
 
+    const createBriefingAction = async (briefing: SavedBriefing) => {
+        if (!onCreateAction) return;
+        const suggestion = suggestActionFromWeeklyBriefing({
+            id: briefing.id,
+            content: briefing.content,
+            stageId: briefing.stageId,
+        });
+        await onCreateAction(suggestion);
+        setActionNotice("Suggested action saved to Action Center.");
+        window.setTimeout(() => setActionNotice(null), 2200);
+    };
+
     const formatDate = (isoString: string) => {
         const date = new Date(isoString);
         return date.toLocaleDateString("en-US", {
@@ -408,6 +428,11 @@ export default function BriefingsScreen({
                     <div style={{ flex: 1, color: "rgba(240,237,232,0.8)", fontSize: 13, fontFamily: "'DM Sans', sans-serif", lineHeight: 1.5 }}>{error}</div>
                     <button onClick={() => { setError(null); void generateBriefing(); }} style={{ background: "transparent", border: "none", color: "#E8622A", fontSize: 12, fontFamily: "'DM Sans', sans-serif", cursor: "pointer" }}>Try again</button>
                     <button onClick={() => setError(null)} style={{ background: "transparent", border: "none", color: "rgba(240,237,232,0.45)", fontSize: 18, cursor: "pointer", lineHeight: 1 }}>×</button>
+                </div>
+            )}
+            {actionNotice && (
+                <div style={{ margin: "12px auto 0", maxWidth: 680, width: "calc(100% - 32px)", boxSizing: "border-box", background: "rgba(76,175,138,0.08)", border: "1px solid rgba(76,175,138,0.2)", borderRadius: 10, padding: "10px 12px", color: "#8BD8A9", fontSize: 12, fontFamily: "'DM Sans', sans-serif" }}>
+                    {actionNotice}
                 </div>
             )}
 
@@ -567,6 +592,26 @@ export default function BriefingsScreen({
                                             expanded={!!sourceExpandedIds[briefing.id]}
                                             onToggle={() => setSourceExpandedIds(prev => ({ ...prev, [briefing.id]: !prev[briefing.id] }))}
                                         />
+                                        {(onCreateAction || onAskForgeAboutAction) && (
+                                            <div style={{ marginTop: 14 }}>
+                                                {(() => {
+                                                    const suggestion = suggestActionFromWeeklyBriefing({
+                                                        id: briefing.id,
+                                                        content: briefing.content,
+                                                        stageId: briefing.stageId,
+                                                    });
+                                                    return (
+                                                        <ActionSuggestionCard
+                                                            action={suggestion}
+                                                            compact
+                                                            acceptLabel="Create action"
+                                                            onAccept={onCreateAction ? () => void createBriefingAction(briefing) : undefined}
+                                                            onAskForge={onAskForgeAboutAction ? () => onAskForgeAboutAction(suggestion) : undefined}
+                                                        />
+                                                    );
+                                                })()}
+                                            </div>
+                                        )}
                                         <div style={{
                                             marginTop: 16, paddingTop: 12,
                                             borderTop: "1px solid rgba(255,255,255,0.05)",

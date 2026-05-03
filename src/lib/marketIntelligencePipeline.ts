@@ -25,7 +25,10 @@ export async function extractAndSaveMarketIntelligenceFromReport(
         competitorSnapshotsInserted: 0,
         trendsInserted: 0,
         benchmarksInserted: 0,
+        benchmarkSnapshotsInserted: 0,
         sourcesInserted: 0,
+        changesInserted: 0,
+        changeActionsCreated: 0,
         skipped: 0,
         errors: [],
     };

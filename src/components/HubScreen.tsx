@@ -28,6 +28,7 @@ export default function HubScreen({
     onOpenDocuments,
     onOpenMarketIntel,
     onOpenBusinessModelCanvas,
+    onOpenActionCenter,
     onOpenCofounder,
     cofounderUnreadCount = 0,
     onOpenSettings,
@@ -370,6 +371,16 @@ export default function HubScreen({
             action: () => {
                 setSidebarOpen(false);
                 onOpenBusinessModelCanvas?.();
+            },
+            available: true,
+        },
+        {
+            icon: Icons.sidebar.briefings,
+            label: "Action Center",
+            sub: "Turn insight into next moves",
+            action: () => {
+                setSidebarOpen(false);
+                onOpenActionCenter?.();
             },
             available: true,
         },

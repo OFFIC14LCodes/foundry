@@ -1,5 +1,8 @@
 import { useState } from "react";
 import type { Competitor } from "../../db";
+import type { FoundryActionSuggestion } from "../../lib/foundryActions";
+import { suggestActionFromMarketInsight } from "../../lib/foundryActions";
+import ActionSuggestionCard from "../actions/ActionSuggestionCard";
 import { StructuredEmptyState } from "./shared";
 
 type RichCompetitor = Competitor & {
@@ -16,7 +19,15 @@ function toTextList(value: unknown[] | undefined) {
     return value.map((item) => String(item).trim()).filter(Boolean);
 }
 
-export default function StructuredCompetitorsPanel({ competitors }: { competitors: RichCompetitor[] }) {
+export default function StructuredCompetitorsPanel({
+    competitors,
+    onCreateAction,
+    onAskForgeAboutAction,
+}: {
+    competitors: RichCompetitor[];
+    onCreateAction?: (suggestion: FoundryActionSuggestion) => void | Promise<unknown>;
+    onAskForgeAboutAction?: (suggestion: FoundryActionSuggestion) => void;
+}) {
     const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
     const [hoveredWebsite, setHoveredWebsite] = useState<string | null>(null);
 
@@ -42,6 +53,12 @@ export default function StructuredCompetitorsPanel({ competitors }: { competitor
                 const expanded = expandedIds.has(competitor.id);
                 const strengths = toTextList(competitor.strengths);
                 const weaknesses = toTextList(competitor.weaknesses);
+                const suggestion = suggestActionFromMarketInsight({
+                    kind: "competitor",
+                    id: competitor.id,
+                    name: competitor.name,
+                    description: competitor.summary || competitor.description,
+                });
 
                 return (
                     <div
@@ -162,6 +179,17 @@ export default function StructuredCompetitorsPanel({ competitors }: { competitor
                                         >
                                             Visit website ↗
                                         </a>
+                                    </div>
+                                )}
+                                {(onCreateAction || onAskForgeAboutAction) && (
+                                    <div style={{ marginTop: 14 }} onClick={(event) => event.stopPropagation()}>
+                                        <ActionSuggestionCard
+                                            action={suggestion}
+                                            compact
+                                            acceptLabel="Create action"
+                                            onAccept={onCreateAction ? () => void onCreateAction(suggestion) : undefined}
+                                            onAskForge={onAskForgeAboutAction ? () => onAskForgeAboutAction(suggestion) : undefined}
+                                        />
                                     </div>
                                 )}
                             </div>

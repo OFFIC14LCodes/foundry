@@ -8,6 +8,9 @@ import {
     type BusinessModelCanvasRecord,
     type BusinessModelCanvasSectionKey,
 } from "../lib/businessModelCanvas";
+import type { FoundryActionSuggestion } from "../lib/foundryActions";
+import { suggestActionFromCanvasWeakness } from "../lib/foundryActions";
+import ActionSuggestionCard from "./actions/ActionSuggestionCard";
 
 type Props = {
     profile: any;
@@ -16,6 +19,8 @@ type Props = {
     onEditEntry: (section: BusinessModelCanvasSectionKey, entryId: string, text: string) => Promise<void> | void;
     onDeleteEntry: (section: BusinessModelCanvasSectionKey, entryId: string) => Promise<void> | void;
     onAddViaForge: (section: BusinessModelCanvasSectionKey) => void;
+    onCreateAction?: (suggestion: FoundryActionSuggestion) => Promise<unknown> | void;
+    onAskForgeAboutAction?: (suggestion: FoundryActionSuggestion) => void;
 };
 
 export default function BusinessModelCanvasScreen({
@@ -25,6 +30,8 @@ export default function BusinessModelCanvasScreen({
     onEditEntry,
     onDeleteEntry,
     onAddViaForge,
+    onCreateAction,
+    onAskForgeAboutAction,
 }: Props) {
     const [selectedSection, setSelectedSection] = useState<BusinessModelCanvasSectionKey | null>(null);
     const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
@@ -38,6 +45,8 @@ export default function BusinessModelCanvasScreen({
 
     const selectedEntries = selectedSection ? canvas[selectedSection] || [] : [];
     const selectedLabel = selectedSection ? BUSINESS_MODEL_CANVAS_LABELS[selectedSection] : "";
+    const selectedWeakness = selectedSection ? weaknessLookup.get(selectedSection) ?? null : null;
+    const [actionNotice, setActionNotice] = useState<string | null>(null);
 
     const beginEdit = (entryId: string, text: string) => {
         setEditingEntryId(entryId);
@@ -54,6 +63,13 @@ export default function BusinessModelCanvasScreen({
         } finally {
             setSaving(false);
         }
+    };
+
+    const createWeaknessAction = async (suggestion: FoundryActionSuggestion) => {
+        if (!onCreateAction) return;
+        await onCreateAction(suggestion);
+        setActionNotice("Suggested action saved to Action Center.");
+        window.setTimeout(() => setActionNotice(null), 2200);
     };
 
     return (
@@ -101,6 +117,11 @@ export default function BusinessModelCanvasScreen({
                             </div>
                         </div>
                     </div>
+                    {actionNotice && (
+                        <div style={{ marginBottom: 14, padding: "10px 12px", borderRadius: 10, background: "rgba(76,175,138,0.08)", border: "1px solid rgba(76,175,138,0.2)", color: "#8BD8A9", fontSize: 12 }}>
+                            {actionNotice}
+                        </div>
+                    )}
 
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 14 }}>
                         {BUSINESS_MODEL_CANVAS_SECTIONS.map((section) => {
@@ -186,6 +207,15 @@ export default function BusinessModelCanvasScreen({
                         </div>
 
                         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                            {selectedWeakness && (onCreateAction || onAskForgeAboutAction) && (
+                                <ActionSuggestionCard
+                                    action={suggestActionFromCanvasWeakness(selectedWeakness)}
+                                    compact
+                                    acceptLabel="Create action"
+                                    onAccept={onCreateAction ? () => void createWeaknessAction(suggestActionFromCanvasWeakness(selectedWeakness)) : undefined}
+                                    onAskForge={onAskForgeAboutAction ? () => onAskForgeAboutAction(suggestActionFromCanvasWeakness(selectedWeakness)) : undefined}
+                                />
+                            )}
                             {selectedEntries.length === 0 && (
                                 <div style={{ padding: 14, borderRadius: 12, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)", fontSize: 13, color: "#9D978E", lineHeight: 1.7 }}>
                                     There is nothing solid here yet. Use Forge to pressure-test this section instead of filling it like a worksheet.

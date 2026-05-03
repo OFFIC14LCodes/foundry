@@ -1,5 +1,8 @@
 import { useState } from "react";
 import type { MarketTrend } from "../../db";
+import type { FoundryActionSuggestion } from "../../lib/foundryActions";
+import { suggestActionFromMarketInsight } from "../../lib/foundryActions";
+import ActionSuggestionCard from "../actions/ActionSuggestionCard";
 import { StructuredEmptyState } from "./shared";
 
 function getImpactDisplay(impactLevel: string) {
@@ -46,7 +49,15 @@ function formatFirstSeen(value?: string | null) {
     return `First seen ${date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
 }
 
-export default function StructuredTrendsPanel({ trends }: { trends: MarketTrend[] }) {
+export default function StructuredTrendsPanel({
+    trends,
+    onCreateAction,
+    onAskForgeAboutAction,
+}: {
+    trends: MarketTrend[];
+    onCreateAction?: (suggestion: FoundryActionSuggestion) => void | Promise<unknown>;
+    onAskForgeAboutAction?: (suggestion: FoundryActionSuggestion) => void;
+}) {
     const [hoveredTrendId, setHoveredTrendId] = useState<string | null>(null);
 
     if (trends.length === 0) {
@@ -62,6 +73,13 @@ export default function StructuredTrendsPanel({ trends }: { trends: MarketTrend[
                 {trends.map((trend) => {
                     const impact = getImpactDisplay(trend.impactLevel);
                     const timeframe = getTimeframeDisplay(trend.timeframe);
+                    const suggestion = suggestActionFromMarketInsight({
+                        kind: "trend",
+                        id: trend.id,
+                        name: trend.name,
+                        description: trend.description,
+                        impactLevel: trend.impactLevel,
+                    });
 
                     return (
                         <div key={trend.id} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "16px 16px 14px" }}>
@@ -118,6 +136,17 @@ export default function StructuredTrendsPanel({ trends }: { trends: MarketTrend[
                                     <span>{trend.recurrenceCount ?? 0}x · {formatFirstSeen(trend.firstSeenAt)}</span>
                                 </span>
                             </div>
+                            {(onCreateAction || onAskForgeAboutAction) && (
+                                <div style={{ marginTop: 12 }}>
+                                    <ActionSuggestionCard
+                                        action={suggestion}
+                                        compact
+                                        acceptLabel="Create action"
+                                        onAccept={onCreateAction ? () => void onCreateAction(suggestion) : undefined}
+                                        onAskForge={onAskForgeAboutAction ? () => onAskForgeAboutAction(suggestion) : undefined}
+                                    />
+                                </div>
+                            )}
                         </div>
                     );
                 })}

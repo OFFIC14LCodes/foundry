@@ -14,6 +14,13 @@ import {
     type AppNotification,
     type UserNotificationPreferences,
 } from "./lib/notifications";
+import {
+    detectMarketIntelligenceChanges,
+    suggestActionFromMarketChange,
+    type MarketIntelligenceDetectedChange,
+    type MarketIntelligenceChangeEntityType,
+    type MarketIntelligenceChangeType,
+} from "./lib/marketIntelligenceChanges";
 
 // ─────────────────────────────────────────────────────────────
 // FOUNDRY DATABASE LAYER
@@ -1017,6 +1024,16 @@ export type IndustryBenchmark = {
     createdAt: string;
 };
 
+export type MarketBenchmarkSnapshot = {
+    id: string;
+    userId: string;
+    reportId: string;
+    metric: string;
+    value: string;
+    unit: string | null;
+    createdAt: string;
+};
+
 export type MarketReportSource = {
     id: string;
     reportId: string;
@@ -1024,6 +1041,22 @@ export type MarketReportSource = {
     url: string;
     snippet: string;
     createdAt: string;
+};
+
+export type MarketIntelligenceChange = {
+    id: string;
+    userId: string;
+    reportId: string;
+    actionId: string | null;
+    entityType: MarketIntelligenceChangeEntityType;
+    entityName: string;
+    changeType: MarketIntelligenceChangeType;
+    changeSummary: string;
+    changeReason: string | null;
+    createdAt: string;
+    actionStatus?: string | null;
+    actionOutcomeType?: string | null;
+    actionOutcomeNotes?: string | null;
 };
 
 // This is the bridge between freeform daily market reports and the future
@@ -1079,7 +1112,10 @@ export type SaveNormalizedMarketIntelligenceResult = {
     trendsInserted: number;
     trendSnapshotsInserted: number;
     benchmarksInserted: number;
+    benchmarkSnapshotsInserted: number;
     sourcesInserted: number;
+    changesInserted: number;
+    changeActionsCreated: number;
     skipped: number;
     errors: string[];
 };
@@ -1144,6 +1180,37 @@ function mapIndustryBenchmark(row: any): IndustryBenchmark {
         unit: row.unit ?? null,
         description: row.description ?? "",
         createdAt: row.created_at,
+    };
+}
+
+function mapMarketBenchmarkSnapshot(row: any): MarketBenchmarkSnapshot {
+    return {
+        id: row.id,
+        userId: row.user_id,
+        reportId: row.report_id,
+        metric: row.metric,
+        value: row.value,
+        unit: row.unit ?? null,
+        createdAt: row.created_at,
+    };
+}
+
+function mapMarketIntelligenceChange(row: any): MarketIntelligenceChange {
+    const linkedAction = Array.isArray(row.foundry_actions) ? row.foundry_actions[0] : row.foundry_actions;
+    return {
+        id: row.id,
+        userId: row.user_id,
+        reportId: row.report_id,
+        actionId: row.action_id ?? null,
+        entityType: row.entity_type,
+        entityName: row.entity_name,
+        changeType: row.change_type,
+        changeSummary: row.change_summary ?? "",
+        changeReason: row.change_reason ?? null,
+        createdAt: row.created_at,
+        actionStatus: linkedAction?.status ?? null,
+        actionOutcomeType: linkedAction?.outcome_type ?? null,
+        actionOutcomeNotes: linkedAction?.outcome_notes ?? null,
     };
 }
 
@@ -1532,6 +1599,69 @@ export async function loadIndustryBenchmarksByUser(userId: string): Promise<Indu
     return data.map(mapIndustryBenchmark);
 }
 
+export async function createMarketBenchmarkSnapshot(
+    userId: string,
+    reportId: string,
+    payload: { metric: string; value: string; unit?: string | null },
+): Promise<MarketBenchmarkSnapshot | null> {
+    const metric = payload.metric.trim();
+    const value = payload.value.trim();
+    if (!metric || !value) return null;
+
+    const { data: ownedReport, error: reportError } = await supabase
+        .from("market_reports")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("id", reportId)
+        .maybeSingle();
+
+    if (reportError || !ownedReport) return null;
+
+    const { data, error } = await supabase
+        .from("market_benchmark_snapshots")
+        .insert({
+            user_id: userId,
+            report_id: reportId,
+            metric,
+            value,
+            unit: payload.unit?.trim() || null,
+        })
+        .select()
+        .single();
+
+    if (error || !data) {
+        if (error?.code === "23505") {
+            const { data: existing } = await supabase
+                .from("market_benchmark_snapshots")
+                .select("*")
+                .eq("user_id", userId)
+                .eq("report_id", reportId)
+                .ilike("metric", metric)
+                .maybeSingle();
+            return existing ? mapMarketBenchmarkSnapshot(existing) : null;
+        }
+        console.error("createMarketBenchmarkSnapshot error:", error?.message);
+        return null;
+    }
+
+    return mapMarketBenchmarkSnapshot(data);
+}
+
+export async function loadMarketBenchmarkSnapshotsByReport(
+    userId: string,
+    reportId: string,
+): Promise<MarketBenchmarkSnapshot[]> {
+    const { data, error } = await supabase
+        .from("market_benchmark_snapshots")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("report_id", reportId)
+        .order("created_at", { ascending: false });
+
+    if (error || !data) return [];
+    return data.map(mapMarketBenchmarkSnapshot);
+}
+
 export async function createMarketReportSource(
     userId: string,
     reportId: string,
@@ -1616,6 +1746,151 @@ export async function normalizeMarketReportToStructuredData(
     };
 }
 
+async function loadPreviousMarketIntelligenceForChangeDetection(
+    userId: string,
+    current: NormalizedMarketIntelligence,
+): Promise<Pick<NormalizedMarketIntelligence, "competitors" | "trends" | "benchmarks"> | null> {
+    const reportId = current.reportId?.trim();
+    if (!reportId) return null;
+
+    let previousReportQuery = supabase
+        .from("market_reports")
+        .select("id,date")
+        .eq("user_id", userId)
+        .neq("id", reportId)
+        .order("date", { ascending: false })
+        .limit(1);
+
+    if (current.date) {
+        previousReportQuery = previousReportQuery.lt("date", current.date);
+    }
+
+    const { data: previousReports, error: previousReportError } = await previousReportQuery;
+    if (previousReportError || !previousReports?.[0]?.id) return null;
+
+    const previousReportId = previousReports[0].id;
+    const [competitorSnapshots, trendSnapshots, benchmarkSnapshots] = await Promise.all([
+        supabase
+            .from("competitor_snapshots")
+            .select("summary,strengths,weaknesses,pricing_notes,positioning,competitors!inner(user_id,name,description,website)")
+            .eq("competitors.user_id", userId)
+            .eq("report_id", previousReportId),
+        supabase
+            .from("trend_snapshots")
+            .select("*")
+            .eq("user_id", userId)
+            .eq("report_id", previousReportId),
+        supabase
+            .from("market_benchmark_snapshots")
+            .select("*")
+            .eq("user_id", userId)
+            .eq("report_id", previousReportId),
+    ]);
+
+    if (competitorSnapshots.error || trendSnapshots.error || benchmarkSnapshots.error) return null;
+
+    return {
+        competitors: (competitorSnapshots.data ?? []).map((row: any) => {
+            const competitor = Array.isArray(row.competitors) ? row.competitors[0] : row.competitors;
+            return {
+                name: competitor?.name ?? "",
+                description: competitor?.description ?? "",
+                website: competitor?.website ?? null,
+                summary: row.summary ?? "",
+                strengths: Array.isArray(row.strengths) ? row.strengths : [],
+                weaknesses: Array.isArray(row.weaknesses) ? row.weaknesses : [],
+                pricingNotes: row.pricing_notes ?? null,
+                positioning: row.positioning ?? null,
+            };
+        }),
+        trends: (trendSnapshots.data ?? []).map((row: any) => ({
+            name: row.trend_name ?? "",
+            description: row.notes ?? "",
+            impactLevel: row.impact_level ?? "medium",
+            timeframe: "current",
+        })),
+        benchmarks: (benchmarkSnapshots.data ?? []).map((row: any) => ({
+            metric: row.metric ?? "",
+            value: row.value ?? "",
+            unit: row.unit ?? null,
+            description: "",
+        })),
+    };
+}
+
+async function createMarketIntelligenceChange(
+    userId: string,
+    reportId: string,
+    change: MarketIntelligenceDetectedChange,
+): Promise<MarketIntelligenceChange | null> {
+    const { data, error } = await supabase
+        .from("market_intelligence_changes")
+        .insert({
+            user_id: userId,
+            report_id: reportId,
+            entity_type: change.entityType,
+            entity_name: change.entityName,
+            change_type: change.changeType,
+            change_summary: change.changeSummary,
+            change_reason: change.changeReason ?? null,
+        })
+        .select("*")
+        .single();
+
+    if (error) {
+        if (error.code !== "23505") {
+            console.error("createMarketIntelligenceChange error:", error.message);
+        }
+        return null;
+    }
+
+    return data ? mapMarketIntelligenceChange(data) : null;
+}
+
+async function linkMarketIntelligenceChangeAction(userId: string, changeId: string, actionId: string) {
+    const { data: action, error: actionError } = await supabase
+        .from("foundry_actions")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("id", actionId)
+        .maybeSingle();
+
+    if (actionError || !action) {
+        console.error("linkMarketIntelligenceChangeAction error:", actionError?.message ?? "Action not found or not owned by user.");
+        return;
+    }
+
+    const { error } = await supabase
+        .from("market_intelligence_changes")
+        .update({ action_id: actionId })
+        .eq("user_id", userId)
+        .eq("id", changeId);
+
+    if (error) console.error("linkMarketIntelligenceChangeAction error:", error.message);
+}
+
+export async function loadMarketIntelligenceChangesByUser(
+    userId: string,
+    reportId?: string | null,
+): Promise<MarketIntelligenceChange[]> {
+    let query = supabase
+        .from("market_intelligence_changes")
+        .select("*,foundry_actions(status,outcome_type,outcome_notes)")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+    if (reportId) query = query.eq("report_id", reportId);
+
+    const { data, error } = await query;
+    if (error) {
+        console.error("loadMarketIntelligenceChangesByUser error:", error.message);
+        return [];
+    }
+
+    return (data ?? []).map(mapMarketIntelligenceChange);
+}
+
 // This helper is the final bridge between extracted structured intelligence
 // and the database, but it is intentionally not called yet. Future wiring can
 // invoke it after extraction succeeds without changing the current
@@ -1630,11 +1905,16 @@ export async function saveNormalizedMarketIntelligence(
         trendsInserted: 0,
         trendSnapshotsInserted: 0,
         benchmarksInserted: 0,
+        benchmarkSnapshotsInserted: 0,
         sourcesInserted: 0,
+        changesInserted: 0,
+        changeActionsCreated: 0,
         skipped: 0,
         errors: [],
     };
     const reportId = normalized.reportId?.trim();
+    const previousStructured = await loadPreviousMarketIntelligenceForChangeDetection(userId, normalized);
+    const detectedChanges = detectMarketIntelligenceChanges(previousStructured, normalized);
 
     for (const competitor of normalized.competitors ?? []) {
         const name = competitor.name?.trim();
@@ -1832,6 +2112,17 @@ export async function saveNormalizedMarketIntelligence(
 
         try {
             const normalizedUnit = benchmark.unit?.trim() || null;
+            if (reportId) {
+                const benchmarkSnapshot = await createMarketBenchmarkSnapshot(userId, reportId, {
+                    metric,
+                    value,
+                    unit: normalizedUnit,
+                });
+                if (benchmarkSnapshot) {
+                    result.benchmarkSnapshotsInserted += 1;
+                }
+            }
+
             const { data: existingBenchmarkRows, error: existingBenchmarkError } = await supabase
                 .from("industry_benchmarks")
                 .select("id")
@@ -1919,13 +2210,45 @@ export async function saveNormalizedMarketIntelligence(
         }
     }
 
+    if (reportId) {
+        const allDetectedChanges = [
+            ...detectedChanges.added,
+            ...detectedChanges.removed,
+            ...detectedChanges.changed,
+        ];
+
+        for (const change of allDetectedChanges) {
+            const savedChange = await createMarketIntelligenceChange(userId, reportId, change);
+            if (!savedChange) continue;
+
+            result.changesInserted += 1;
+
+            try {
+                const { createFoundryAction } = await import("./lib/foundryActions");
+                const action = await createFoundryAction(
+                    userId,
+                    suggestActionFromMarketChange({ ...change, id: savedChange.id }),
+                );
+                if (action?.id) {
+                    result.changeActionsCreated += 1;
+                    await linkMarketIntelligenceChangeAction(userId, savedChange.id, action.id);
+                }
+            } catch (error: any) {
+                result.errors.push(`Change action creation failed (${change.entityName}): ${error?.message ?? "Unknown error"}`);
+            }
+        }
+    }
+
     const insertedCount =
         result.competitorsInserted +
         result.competitorSnapshotsInserted +
         result.trendsInserted +
         result.trendSnapshotsInserted +
         result.benchmarksInserted +
-        result.sourcesInserted;
+        result.benchmarkSnapshotsInserted +
+        result.sourcesInserted +
+        result.changesInserted +
+        result.changeActionsCreated;
 
     if (insertedCount === 0 && result.skipped > 0 && result.errors.length === 0) {
         result.errors.push("No structured insights could be saved from the extraction output.");

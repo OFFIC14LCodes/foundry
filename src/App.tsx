@@ -136,6 +136,8 @@ import {
   type UserNotificationPreferences,
 } from "./lib/notifications";
 import type { AcademyTopicLaunch } from "./lib/academy";
+import type { FoundryActionSuggestion } from "./lib/foundryActions";
+import { buildForgePromptForAction, buildRecentActionOutcomesContext, createFoundryAction, loadRecentActionOutcomesForForge } from "./lib/foundryActions";
 import { clearFoundryClientStorage, createEmptyMessagesByStage, createEmptyStageProgress } from "./lib/session";
 import type { DocumentScreenContext } from "./components/DocumentProductionScreen";
 import type { AcademyScreenContext } from "./components/ForgeAcademyScreen";
@@ -151,6 +153,7 @@ const AdminHubScreen = lazy(() => import("./components/AdminHubScreen"));
 const ForgeAcademyScreen = lazy(() => import("./components/ForgeAcademyScreen"));
 const FinancialDashboardScreen = lazy(() => import("./components/FinancialDashboardScreen"));
 const BusinessModelCanvasScreen = lazy(() => import("./components/BusinessModelCanvasScreen"));
+const ActionCenterScreen = lazy(() => import("./components/ActionCenterScreen"));
 const AppTourScreen = lazy(() => import("./components/AppTourScreen"));
 const ArchivePanel = lazy(() => import("./components/ArchivePanel"));
 const SettingsScreen = lazy(() => import("./components/settings/SettingsScreen"));
@@ -230,6 +233,12 @@ async function buildRichContext(
   let cofoundersContext: string | null = null;
   if (userTeamId) {
     try { cofoundersContext = await getRecentCofounderContext(userTeamId, 20); } catch { /* ignore */ }
+  }
+  let recentActionOutcomesBlock = "";
+  if (userId) {
+    try {
+      recentActionOutcomesBlock = buildRecentActionOutcomesContext(await loadRecentActionOutcomesForForge(userId, 8));
+    } catch { /* ignore */ }
   }
   const stageData = STAGES_DATA[activeStage - 1];
   const completedMilestones = completedByStage[activeStage] || [];
@@ -381,6 +390,9 @@ ${memorySections.join("\n\n")}` : ""}
 
 ${longitudinalBlock ? `${longitudinalBlock}` : ""}
 
+${recentActionOutcomesBlock ? `${recentActionOutcomesBlock}
+
+` : ""}
 ${journalBlock ? `${journalBlock}\n\n` : ""}${bmcBlock ? `${bmcBlock}\n\n` : ""}STAGE REFERENCES: When referencing work from another stage, wrap it like [STAGE_REF:N]text[/STAGE_REF]. Use naturally when prior work is relevant — not on every mention.${onboardingReviewSection}${cofounderSection}${methodSection}
   `.trim();
 
@@ -2769,6 +2781,7 @@ export default function FoundryApp() {
   const [academyContext, setAcademyContext] = useState<AcademyScreenContext | null>(null);
   const [showBusinessModelCanvas, setShowBusinessModelCanvas] = useState(false);
   const [showFinancialDashboard, setShowFinancialDashboard] = useState(false);
+  const [showActionCenter, setShowActionCenter] = useState(false);
   const [businessModelCanvas, setBusinessModelCanvas] = useState<BusinessModelCanvasRecord | null>(null);
   const [showChatRoom, setShowChatRoom] = useState(false);
   const [settingsView, setSettingsView] = useState<null | "settings" | "privacy" | "eula" | "termsAndConditions" | "acceptableUse" | "disclaimer">(null);
@@ -2859,6 +2872,7 @@ export default function FoundryApp() {
     setShowChatRoom(false);
     setShowAcademy(false);
     setShowBusinessModelCanvas(false);
+    setShowActionCenter(false);
     setSettingsView(null);
     setShowAdminHub(false);
     setUserTeamId(null);
@@ -3438,6 +3452,7 @@ export default function FoundryApp() {
       await Promise.all([
         supabase.from("profiles").delete().eq("id", user.id),
         supabase.from("stage_progress").delete().eq("user_id", user.id),
+        supabase.from("foundry_actions").delete().eq("user_id", user.id),
         supabase.from("messages").delete().eq("user_id", user.id),
         supabase.from("founder_financial_accounts").delete().eq("user_id", user.id),
         supabase.from("founder_expenses").delete().eq("user_id", user.id),
@@ -3586,6 +3601,44 @@ export default function FoundryApp() {
   const openFinancialDashboard = () => {
     markMeaningfulActivity();
     setShowFinancialDashboard(true);
+  };
+
+  const openActionCenter = () => {
+    markMeaningfulActivity();
+    setShowActionCenter(true);
+  };
+
+  const closeOverlayScreens = () => {
+    setShowFinancialDashboard(false);
+    setShowBriefings(false);
+    setShowPitchPractice(false);
+    setShowDocuments(false);
+    setShowMarketIntel(false);
+    setShowCofounder(false);
+    setShowAcademy(false);
+    setShowBusinessModelCanvas(false);
+    setShowActionCenter(false);
+    setShowChatRoom(false);
+    setShowArchivePanel(false);
+  };
+
+  const askForgeAboutAction = (action: FoundryActionSuggestion | string) => {
+    const prompt = typeof action === "string" ? action : buildForgePromptForAction(action);
+    markMeaningfulActivity(true);
+    closeOverlayScreens();
+    setAcademyConversationEntry(null);
+    setChatRoomArchive(null);
+    setForgeSeedStage(profile?.currentStage || 1);
+    setForgeSeedPrompt(prompt);
+    setForgeSeedNonce((value) => value + 1);
+    setScreenPersisted("forge");
+  };
+
+  const createActionSuggestion = async (suggestion: FoundryActionSuggestion) => {
+    const activeUserId = (user as any)?.id as string | undefined;
+    if (!activeUserId) return null;
+    markMeaningfulActivity(true);
+    return createFoundryAction(activeUserId, suggestion);
   };
 
   const openAcademy = () => {
@@ -3961,6 +4014,7 @@ export default function FoundryApp() {
             onOpenDocuments={openDocuments}
             onOpenMarketIntel={openMarketIntel}
             onOpenBusinessModelCanvas={openBusinessModelCanvas}
+            onOpenActionCenter={openActionCenter}
             onOpenCofounder={openCofounder}
             cofounderUnreadCount={cofounderUnreadCount}
             onOpenAcademy={openAcademy}
@@ -3989,13 +4043,22 @@ export default function FoundryApp() {
             onOpenFinancialDashboard={openFinancialDashboard}
           />
         )}
-        {showFinancialDashboard && user && profile && (
-          <Suspense fallback={<ScreenLoadingFallback message="Loading financial dashboard..." />}>
-            <FinancialDashboardScreen
+      {showFinancialDashboard && user && profile && (
+        <Suspense fallback={<ScreenLoadingFallback message="Loading financial dashboard..." />}>
+          <FinancialDashboardScreen
               userId={(user as any).id}
               profile={profile}
               onBack={() => setShowFinancialDashboard(false)}
               onPlaidConnected={handlePlaidConnected}
+            />
+          </Suspense>
+        )}
+        {showActionCenter && user && (
+          <Suspense fallback={<ScreenLoadingFallback message="Loading action center..." />}>
+            <ActionCenterScreen
+              userId={(user as any).id}
+              onBack={() => setShowActionCenter(false)}
+              onAskForge={askForgeAboutAction}
             />
           </Suspense>
         )}
@@ -4082,6 +4145,8 @@ export default function FoundryApp() {
               report={marketReport}
               onReportChange={setMarketReport}
               onBack={() => setShowMarketIntel(false)}
+              onCreateAction={createActionSuggestion}
+              onAskForgeAboutAction={askForgeAboutAction}
               generationLimit={isFreeTier ? FREE_TIER_MARKET_REPORT_LIMIT : null}
             />
           </Suspense>
@@ -4141,6 +4206,8 @@ export default function FoundryApp() {
             journalEntries={journalEntries}
             activeNudge={activeNudge}
             stageProgressDates={stageProgressDates}
+            onCreateAction={createActionSuggestion}
+            onAskForgeAboutAction={askForgeAboutAction}
           />
         </Suspense>
       )}
@@ -4156,6 +4223,8 @@ export default function FoundryApp() {
             onOpenArchive={() => setShowArchivePanel(true)}
             maxPreviewStage={isFreeTier ? FREE_TIER_ACADEMY_STAGE_LIMIT : null}
             trialNotice={isFreeTier ? "Free preview includes Forge Academy Stage 1 lessons only. The rest of Academy unlocks with paid access." : null}
+            onCreateAction={createActionSuggestion}
+            onAskForgeAboutAction={askForgeAboutAction}
           />
         </Suspense>
       )}
@@ -4168,6 +4237,8 @@ export default function FoundryApp() {
             onEditEntry={handleEditBusinessModelCanvasEntry}
             onDeleteEntry={handleDeleteBusinessModelCanvasEntry}
             onAddViaForge={openBusinessModelCanvasViaForge}
+            onCreateAction={createActionSuggestion}
+            onAskForgeAboutAction={askForgeAboutAction}
           />
         </Suspense>
       )}
