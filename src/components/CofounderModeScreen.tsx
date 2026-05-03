@@ -7,7 +7,7 @@ import { Icons } from '../icons';
 import ForgeAvatar from './ForgeAvatar';
 import { MessageActions } from './AnimatedChatText';
 import MicButton from './MicButton';
-import type { CofounderTeam, CofounderMember, CofounderMessage, CofounderTask } from '../lib/cofounderDb';
+import type { CofounderTeam, CofounderMember, CofounderMessage, CofounderTask, CofounderTaskComment, CofounderDecision, CofounderFileLink } from '../lib/cofounderDb';
 import {
     getTeamForUser,
     createTeam,
@@ -26,6 +26,15 @@ import {
     createCofounderTask,
     updateCofounderTask,
     deleteCofounderTask,
+    loadTaskComments,
+    addTaskComment,
+    deleteTaskComment,
+    loadDecisions,
+    createDecision,
+    deleteDecision,
+    loadFileLinks,
+    addFileLink,
+    deleteFileLink,
 } from '../lib/cofounderDb';
 
 // ─────────────────────────────────────────────────────────────
@@ -34,7 +43,7 @@ import {
 
 type LocalMessage = CofounderMessage & { failed?: boolean };
 type TaskFilter = 'all' | 'mine' | 'todo' | 'inprogress' | 'done';
-type TabId = 'chat' | 'tasks' | 'team';
+type TabId = 'chat' | 'tasks' | 'decisions' | 'files' | 'team';
 
 // ─────────────────────────────────────────────────────────────
 // ROLE CONFIG
@@ -78,12 +87,20 @@ function sameDay(a: string, b: string): boolean {
     return new Date(a).toDateString() === new Date(b).toDateString();
 }
 
-function getPresence(member: CofounderMember): 'active' | 'away' | null {
+function getPresence(member: CofounderMember): 'active' | 'today' | 'away' | null {
     if (!member.last_seen_at) return null;
-    const mins = (Date.now() - new Date(member.last_seen_at).getTime()) / 60000;
-    if (mins <= 5) return 'active';
-    if (mins <= 60) return 'away';
-    return null;
+    const now = new Date();
+    const lastSeen = new Date(member.last_seen_at);
+    const mins = (now.getTime() - lastSeen.getTime()) / 60000;
+    if (mins <= 2) return 'active';
+    if (now.toDateString() === lastSeen.toDateString()) return 'today';
+    return 'away';
+}
+
+function presenceDotColor(p: 'active' | 'today' | 'away'): string {
+    if (p === 'active') return '#48BB78';
+    if (p === 'today') return '#F5A843';
+    return '#444';
 }
 
 function isOverdue(dueDate: string | null): boolean {
@@ -175,6 +192,30 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
     const [newTaskPriority, setNewTaskPriority] = useState<CofounderTask['priority']>('normal');
     const [newTaskDueDate, setNewTaskDueDate] = useState('');
 
+    // ── Task comments ────────────────────────────────────────────
+    const [taskComments, setTaskComments] = useState<Record<string, CofounderTaskComment[]>>({});
+    const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
+    const [loadingComments, setLoadingComments] = useState<Record<string, boolean>>({});
+
+    // ── Decisions ────────────────────────────────────────────────
+    const [decisions, setDecisions] = useState<CofounderDecision[]>([]);
+    const [addDecisionOpen, setAddDecisionOpen] = useState(false);
+    const [expandedDecisionId, setExpandedDecisionId] = useState<string | null>(null);
+    const [decisionFromMsg, setDecisionFromMsg] = useState<LocalMessage | null>(null);
+    const [newDecisionTitle, setNewDecisionTitle] = useState('');
+    const [newDecisionDescription, setNewDecisionDescription] = useState('');
+    const [newDecisionOptions, setNewDecisionOptions] = useState('');
+    const [newDecisionChosen, setNewDecisionChosen] = useState('');
+    const [newDecisionRationale, setNewDecisionRationale] = useState('');
+    const [savingDecision, setSavingDecision] = useState(false);
+
+    // ── File links ───────────────────────────────────────────────
+    const [fileLinks, setFileLinks] = useState<CofounderFileLink[]>([]);
+    const [addFileOpen, setAddFileOpen] = useState(false);
+    const [newFileLabel, setNewFileLabel] = useState('');
+    const [newFileUrl, setNewFileUrl] = useState('');
+    const [savingFile, setSavingFile] = useState(false);
+
     // ── Message hover (timestamps) ───────────────────────────────
     const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
 
@@ -209,28 +250,35 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
     };
 
     const loadWorkspace = async (t: CofounderTeam) => {
-        const [fetchedMembers, fetchedMessages, fetchedInvite, fetchedTasks] = await Promise.all([
+        const [fetchedMembers, fetchedMessages, fetchedInvite, fetchedTasks, fetchedDecisions, fetchedFiles] = await Promise.all([
             getTeamMembers(t.id),
             loadCofounderMessages(t.id, 60, 0),
             getActiveInviteForTeam(t.id),
             loadCofounderTasks(t.id),
+            loadDecisions(t.id),
+            loadFileLinks(t.id),
         ]);
         setTeam(t);
         setMembers(fetchedMembers);
         setMessages(fetchedMessages);
         setTasks(fetchedTasks);
+        setDecisions(fetchedDecisions);
+        setFileLinks(fetchedFiles);
         setHasMoreMessages(fetchedMessages.length === 60);
         setMessageOffset(60);
         setCurrentMember(fetchedMembers.find(m => m.user_id === userId) ?? null);
         if (fetchedInvite) setActiveInvite({ id: fetchedInvite.id, token: fetchedInvite.token });
     };
 
-    // ── Update last_seen_at on mount ────────────────────────────
+    // ── Presence heartbeat (update last_seen_at every 60s) ──────
 
     useEffect(() => {
-        if (currentMember?.id) {
+        if (!currentMember?.id) return;
+        updateMemberLastSeen(currentMember.id).catch(() => {});
+        const interval = setInterval(() => {
             updateMemberLastSeen(currentMember.id).catch(() => {});
-        }
+        }, 60000);
+        return () => clearInterval(interval);
     }, [currentMember?.id]);
 
     // ── Real-time subscription ───────────────────────────────────
@@ -247,6 +295,29 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
                         if (prev.some(m => m.id === payload.new.id)) return prev;
                         return [...prev, payload.new as LocalMessage];
                     });
+                }
+            )
+            .subscribe();
+        return () => { supabase.removeChannel(channel); };
+    }, [team?.id]);
+
+    // ── Realtime: task updates ───────────────────────────────────
+
+    useEffect(() => {
+        if (!team) return;
+        const channel = supabase
+            .channel(`cftasks:${team.id}`)
+            .on(
+                'postgres_changes' as any,
+                { event: '*', schema: 'public', table: 'cofounder_tasks', filter: `team_id=eq.${team.id}` },
+                (payload: any) => {
+                    if (payload.eventType === 'INSERT') {
+                        setTasks(prev => prev.some(t => t.id === payload.new.id) ? prev : [payload.new as CofounderTask, ...prev]);
+                    } else if (payload.eventType === 'UPDATE') {
+                        setTasks(prev => prev.map(t => t.id === payload.new.id ? { ...t, ...payload.new } : t));
+                    } else if (payload.eventType === 'DELETE') {
+                        setTasks(prev => prev.filter(t => t.id !== payload.old.id));
+                    }
                 }
             )
             .subscribe();
@@ -274,12 +345,13 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
         return () => clearTimeout(t);
     }, [createTeamError]);
 
-    // ── Expanded task description sync ───────────────────────────
+    // ── Expanded task description sync + load comments ───────────
 
     useEffect(() => {
         if (expandedTaskId) {
             const t = tasks.find(t => t.id === expandedTaskId);
             setEditingDescription(t?.description ?? '');
+            handleLoadComments(expandedTaskId);
         }
     }, [expandedTaskId]);
 
@@ -600,6 +672,96 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
         }
     };
 
+    // ── Task comment handlers ────────────────────────────────────
+
+    const handleLoadComments = async (taskId: string) => {
+        if (taskComments[taskId] !== undefined) return;
+        setLoadingComments(prev => ({ ...prev, [taskId]: true }));
+        const comments = await loadTaskComments(taskId);
+        setTaskComments(prev => ({ ...prev, [taskId]: comments }));
+        setLoadingComments(prev => ({ ...prev, [taskId]: false }));
+    };
+
+    const handleAddComment = async (taskId: string) => {
+        const content = (commentInputs[taskId] ?? '').trim();
+        if (!content || !currentMember) return;
+        setCommentInputs(prev => ({ ...prev, [taskId]: '' }));
+        const comment = await addTaskComment(taskId, userId, content);
+        if (comment) {
+            setTaskComments(prev => ({ ...prev, [taskId]: [...(prev[taskId] ?? []), comment] }));
+        }
+    };
+
+    const handleDeleteComment = async (taskId: string, commentId: string) => {
+        const ok = await deleteTaskComment(commentId);
+        if (ok) setTaskComments(prev => ({ ...prev, [taskId]: (prev[taskId] ?? []).filter(c => c.id !== commentId) }));
+    };
+
+    // ── Decision handlers ────────────────────────────────────────
+
+    const openDecisionForm = (msg?: LocalMessage) => {
+        setDecisionFromMsg(msg ?? null);
+        setNewDecisionTitle(msg ? msg.content.slice(0, 100) : '');
+        setNewDecisionDescription(msg ? msg.content : '');
+        setNewDecisionOptions('');
+        setNewDecisionChosen('');
+        setNewDecisionRationale('');
+        setAddDecisionOpen(true);
+    };
+
+    const handleAddDecision = async () => {
+        if (!newDecisionTitle.trim() || !team || !currentMember || savingDecision) return;
+        setSavingDecision(true);
+        const options = newDecisionOptions.trim()
+            ? newDecisionOptions.split('\n').map(s => s.trim()).filter(Boolean)
+            : null;
+        const decision = await createDecision({
+            workspace_id: team.id,
+            created_by: userId,
+            source_message_id: decisionFromMsg?.id ?? null,
+            title: newDecisionTitle.trim(),
+            description: newDecisionDescription.trim() || null,
+            options,
+            chosen_option: newDecisionChosen.trim() || null,
+            rationale: newDecisionRationale.trim() || null,
+            decided_at: new Date().toISOString(),
+        });
+        if (decision) {
+            setDecisions(prev => [decision, ...prev]);
+            setAddDecisionOpen(false);
+            setActiveTab('decisions');
+        }
+        setSavingDecision(false);
+    };
+
+    const handleDeleteDecision = async (id: string) => {
+        const ok = await deleteDecision(id);
+        if (ok) {
+            setDecisions(prev => prev.filter(d => d.id !== id));
+            if (expandedDecisionId === id) setExpandedDecisionId(null);
+        }
+    };
+
+    // ── File link handlers ───────────────────────────────────────
+
+    const handleAddFileLink = async () => {
+        if (!newFileLabel.trim() || !newFileUrl.trim() || !team || !currentMember || savingFile) return;
+        setSavingFile(true);
+        const link = await addFileLink(team.id, userId, newFileLabel.trim(), newFileUrl.trim());
+        if (link) {
+            setFileLinks(prev => [link, ...prev]);
+            setAddFileOpen(false);
+            setNewFileLabel('');
+            setNewFileUrl('');
+        }
+        setSavingFile(false);
+    };
+
+    const handleDeleteFileLink = async (id: string) => {
+        const ok = await deleteFileLink(id);
+        if (ok) setFileLinks(prev => prev.filter(f => f.id !== id));
+    };
+
     // ── Shared styles ────────────────────────────────────────────
 
     const card = {
@@ -777,7 +939,7 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
                                     {m.display_name.charAt(0).toUpperCase()}
                                 </div>
                                 {presence && (
-                                    <div style={{ position: 'absolute', bottom: 0, right: 0, width: 7, height: 7, borderRadius: '50%', background: presence === 'active' ? '#48BB78' : '#F5A843', border: '1.5px solid #080809' }} />
+                                    <div style={{ position: 'absolute', bottom: 0, right: 0, width: 7, height: 7, borderRadius: '50%', background: presenceDotColor(presence), border: '1.5px solid #080809' }} />
                                 )}
                             </div>
                         );
@@ -787,14 +949,20 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
             </div>
 
             {/* Tab bar */}
-            <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.06)', background: '#080809', flexShrink: 0 }}>
-                {(['chat', 'tasks', 'team'] as const).map(tab => (
+            <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.06)', background: '#080809', flexShrink: 0, overflowX: 'auto' }}>
+                {([
+                    { id: 'chat', label: 'Chat' },
+                    { id: 'tasks', label: 'Tasks' },
+                    { id: 'decisions', label: 'Decisions' },
+                    { id: 'files', label: 'Files' },
+                    { id: 'team', label: 'Team' },
+                ] as { id: TabId; label: string }[]).map(tab => (
                     <button
-                        key={tab}
-                        onClick={() => setActiveTab(tab)}
-                        style={{ flex: 1, padding: '11px 0', background: 'transparent', border: 'none', borderBottom: activeTab === tab ? '2px solid #E8622A' : '2px solid transparent', color: activeTab === tab ? '#F0EDE8' : '#555', fontSize: 12, fontWeight: activeTab === tab ? 600 : 400, cursor: 'pointer', transition: 'all 0.15s', fontFamily: "'Lora', Georgia, serif" }}
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        style={{ flex: '0 0 auto', minWidth: 60, padding: '11px 14px', background: 'transparent', border: 'none', borderBottom: activeTab === tab.id ? '2px solid #E8622A' : '2px solid transparent', color: activeTab === tab.id ? '#F0EDE8' : '#555', fontSize: 12, fontWeight: activeTab === tab.id ? 600 : 400, cursor: 'pointer', transition: 'all 0.15s', fontFamily: "'Lora', Georgia, serif", whiteSpace: 'nowrap' }}
                     >
-                        {tab === 'chat' ? 'Team Chat' : tab === 'tasks' ? 'Tasks' : 'Team & Invite'}
+                        {tab.label}
                     </button>
                 ))}
             </div>
@@ -827,7 +995,7 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
                                                     {member.display_name.charAt(0).toUpperCase()}
                                                 </div>
                                                 {presence && (
-                                                    <div style={{ position: 'absolute', bottom: 1, right: 1, width: 9, height: 9, borderRadius: '50%', background: presence === 'active' ? '#48BB78' : '#F5A843', border: '2px solid #080809' }} />
+                                                    <div style={{ position: 'absolute', bottom: 1, right: 1, width: 9, height: 9, borderRadius: '50%', background: presenceDotColor(presence), border: '2px solid #080809' }} />
                                                 )}
                                             </div>
                                             <div style={{ flex: 1, minWidth: 0 }}>
@@ -1040,9 +1208,151 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
                                                 </div>
                                             </div>
 
+                                            {/* Comments */}
+                                            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 12, marginTop: 4, marginBottom: 12 }}>
+                                                <div style={{ fontSize: 10, color: '#555', marginBottom: 8 }}>Comments</div>
+                                                {loadingComments[task.id] && <div style={{ fontSize: 11, color: '#444', fontFamily: 'DM Sans, sans-serif' }}>Loading...</div>}
+                                                {(taskComments[task.id] ?? []).map(c => {
+                                                    const commenter = members.find(m => m.user_id === c.user_id);
+                                                    return (
+                                                        <div key={c.id} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'flex-start' }}>
+                                                            <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#888', flexShrink: 0, marginTop: 1 }}>
+                                                                {(commenter?.display_name ?? '?').charAt(0).toUpperCase()}
+                                                            </div>
+                                                            <div style={{ flex: 1, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 8, padding: '6px 10px' }}>
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
+                                                                    <span style={{ fontSize: 10, color: '#666' }}>{commenter?.display_name ?? 'Unknown'}</span>
+                                                                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                                                                        <span style={{ fontSize: 10, color: '#333' }}>{formatTime(c.created_at)}</span>
+                                                                        {c.user_id === userId && (
+                                                                            <button onClick={() => handleDeleteComment(task.id, c.id)} style={{ fontSize: 10, color: 'rgba(232,98,42,0.4)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>×</button>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                                <div style={{ fontSize: 12, color: '#C8C4BE', fontFamily: "'Lora', Georgia, serif", lineHeight: 1.5 }}>{c.content}</div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                                <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                                                    <input
+                                                        value={commentInputs[task.id] ?? ''}
+                                                        onChange={e => setCommentInputs(prev => ({ ...prev, [task.id]: e.target.value }))}
+                                                        onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAddComment(task.id); } }}
+                                                        placeholder="Add a comment..."
+                                                        style={{ flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '6px 10px', color: '#F0EDE8', fontSize: 12, fontFamily: "'Lora', Georgia, serif", outline: 'none' }}
+                                                    />
+                                                    <button onClick={() => handleAddComment(task.id)} disabled={!(commentInputs[task.id] ?? '').trim()} style={{ ...btnPrimary, padding: '6px 12px', fontSize: 11, opacity: !(commentInputs[task.id] ?? '').trim() ? 0.4 : 1 }}>Post</button>
+                                                </div>
+                                            </div>
+
                                             {/* Delete */}
                                             <button onClick={() => handleDeleteTask(task.id)} style={{ fontSize: 11, color: 'rgba(232,98,42,0.5)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', padding: 0 }}>Delete task</button>
                                         </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
+            {/* ── DECISIONS TAB ── */}
+            {activeTab === 'decisions' && (
+                <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 32 }}>
+                    <div style={{ maxWidth: 600, margin: '0 auto', padding: '16px 16px 0' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                            <div style={{ fontSize: 18, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: '#F0EDE8' }}>Decision Log</div>
+                            <button onClick={() => openDecisionForm()} style={{ ...btnPrimary, padding: '8px 14px', fontSize: 12 }}>Log Decision +</button>
+                        </div>
+                        {decisions.length === 0 && (
+                            <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+                                <div style={{ fontSize: 28, marginBottom: 12 }}>🧭</div>
+                                <div style={{ fontSize: 13, color: 'rgba(240,237,232,0.4)', lineHeight: 1.7, fontFamily: 'DM Sans, sans-serif' }}>No decisions logged yet. Record key choices so your team stays aligned.</div>
+                            </div>
+                        )}
+                        {decisions.map(d => {
+                            const expanded = expandedDecisionId === d.id;
+                            const maker = members.find(m => m.user_id === d.created_by);
+                            return (
+                                <div key={d.id} style={{ marginBottom: 8, animation: 'fadeSlideUp 0.2s ease' }}>
+                                    <div onClick={() => setExpandedDecisionId(expanded ? null : d.id)} style={{ padding: '12px 14px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: expanded ? '12px 12px 0 0' : 12, cursor: 'pointer' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ fontSize: 14, color: '#F0EDE8', fontFamily: 'DM Sans, sans-serif', lineHeight: 1.4, marginBottom: 4 }}>{d.title}</div>
+                                                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                                                    {d.chosen_option && <span style={{ fontSize: 10, color: '#48BB78', background: 'rgba(72,187,120,0.1)', border: '1px solid rgba(72,187,120,0.2)', borderRadius: 20, padding: '1px 8px' }}>✓ {d.chosen_option}</span>}
+                                                    <span style={{ fontSize: 10, color: '#444', fontFamily: 'DM Sans, sans-serif' }}>{maker?.display_name ?? 'Unknown'} · {new Date(d.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                                                </div>
+                                            </div>
+                                            <span style={{ fontSize: 12, color: '#555', flexShrink: 0 }}>{expanded ? '▲' : '▼'}</span>
+                                        </div>
+                                    </div>
+                                    {expanded && (
+                                        <div style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.07)', borderTop: 'none', borderRadius: '0 0 12px 12px', padding: '12px 14px' }}>
+                                            {d.description && <div style={{ fontSize: 13, color: '#C8C4BE', fontFamily: "'Lora', Georgia, serif", lineHeight: 1.6, marginBottom: 12 }}>{d.description}</div>}
+                                            {d.options && d.options.length > 0 && (
+                                                <div style={{ marginBottom: 12 }}>
+                                                    <div style={{ fontSize: 10, color: '#555', marginBottom: 6 }}>Options considered</div>
+                                                    {d.options.map((opt, i) => (
+                                                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                                                            <div style={{ width: 6, height: 6, borderRadius: '50%', background: opt === d.chosen_option ? '#48BB78' : '#333', flexShrink: 0 }} />
+                                                            <span style={{ fontSize: 12, color: opt === d.chosen_option ? '#F0EDE8' : '#666', fontFamily: 'DM Sans, sans-serif' }}>{opt}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                            {d.rationale && (
+                                                <div style={{ marginBottom: 12 }}>
+                                                    <div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>Rationale</div>
+                                                    <div style={{ fontSize: 12, color: '#888', fontFamily: "'Lora', Georgia, serif", lineHeight: 1.6, fontStyle: 'italic' }}>{d.rationale}</div>
+                                                </div>
+                                            )}
+                                            <button onClick={() => handleDeleteDecision(d.id)} style={{ fontSize: 11, color: 'rgba(232,98,42,0.5)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', padding: 0 }}>Delete</button>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
+            {/* ── FILES TAB ── */}
+            {activeTab === 'files' && (
+                <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 32 }}>
+                    <div style={{ maxWidth: 600, margin: '0 auto', padding: '16px 16px 0' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                            <div style={{ fontSize: 18, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: '#F0EDE8' }}>Shared Files</div>
+                            <button onClick={() => setAddFileOpen(true)} style={{ ...btnPrimary, padding: '8px 14px', fontSize: 12 }}>Add Link +</button>
+                        </div>
+                        <div style={{ fontSize: 12, color: '#444', fontFamily: 'DM Sans, sans-serif', marginBottom: 16, lineHeight: 1.5 }}>Share links to Google Docs, Figma files, Notion pages, or any resource your team needs.</div>
+                        {fileLinks.length === 0 && (
+                            <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+                                <div style={{ fontSize: 28, marginBottom: 12 }}>📎</div>
+                                <div style={{ fontSize: 13, color: 'rgba(240,237,232,0.4)', lineHeight: 1.7, fontFamily: 'DM Sans, sans-serif' }}>No files shared yet. Add links to keep your team's resources in one place.</div>
+                            </div>
+                        )}
+                        {fileLinks.map(f => {
+                            const sharer = members.find(m => m.user_id === f.user_id);
+                            const canDelete = f.user_id === userId || isOwner;
+                            let favicon = '';
+                            try {
+                                const u = new URL(f.url);
+                                if (u.hostname.includes('figma')) favicon = '🎨';
+                                else if (u.hostname.includes('notion')) favicon = '📝';
+                                else if (u.hostname.includes('google')) favicon = '📄';
+                                else favicon = '🔗';
+                            } catch { favicon = '🔗'; }
+                            return (
+                                <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, marginBottom: 8, animation: 'fadeSlideUp 0.2s ease' }}>
+                                    <span style={{ fontSize: 20, flexShrink: 0 }}>{favicon}</span>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <a href={f.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#F0EDE8', fontFamily: 'DM Sans, sans-serif', fontWeight: 500, textDecoration: 'none', display: 'block', marginBottom: 2 }} onMouseEnter={e => (e.currentTarget.style.textDecoration = 'underline')} onMouseLeave={e => (e.currentTarget.style.textDecoration = 'none')}>{f.label}</a>
+                                        <div style={{ fontSize: 10, color: '#444', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sharer?.display_name ?? 'Unknown'} · {new Date(f.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
+                                    </div>
+                                    {canDelete && (
+                                        <button onClick={() => handleDeleteFileLink(f.id)} style={{ fontSize: 13, color: 'rgba(240,237,232,0.25)', background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0 }}>×</button>
                                     )}
                                 </div>
                             );
@@ -1106,6 +1416,7 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
                                                     ? () => handleForgeReply(messages.filter(m => m.id !== msg.id), msg.id)
                                                     : undefined
                                             }
+                                            onLogDecision={msg.role === 'member' && !msg.failed ? () => openDecisionForm(msg) : undefined}
                                         />
                                     </div>
                                 );
@@ -1192,6 +1503,69 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
                 </div>
             )}
 
+            {/* ── ADD DECISION PANEL ── */}
+            {addDecisionOpen && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100 }} onClick={() => setAddDecisionOpen(false)}>
+                    <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px 20px 0 0', padding: 24, width: '100%', maxWidth: 600, animation: 'slideUp 0.25s ease', paddingBottom: 'max(24px, calc(24px + env(safe-area-inset-bottom)))', maxHeight: '85vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+                        <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.1)', margin: '0 auto 20px' }} />
+                        <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "'Lora', Georgia, serif", marginBottom: 4 }}>Log Decision</div>
+                        {decisionFromMsg && <div style={{ fontSize: 11, color: '#555', fontFamily: 'DM Sans, sans-serif', marginBottom: 16, fontStyle: 'italic' }}>From message by {decisionFromMsg.sender_name}</div>}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                            <div>
+                                <div style={{ fontSize: 11, color: '#555', marginBottom: 6 }}>Title *</div>
+                                <input value={newDecisionTitle} onChange={e => setNewDecisionTitle(e.target.value)} placeholder="What was decided?" autoFocus style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 14px', color: '#F0EDE8', fontSize: 13, fontFamily: "'Lora', Georgia, serif", outline: 'none', boxSizing: 'border-box' }} />
+                            </div>
+                            <div>
+                                <div style={{ fontSize: 11, color: '#555', marginBottom: 6 }}>Context / Description</div>
+                                <textarea value={newDecisionDescription} onChange={e => setNewDecisionDescription(e.target.value)} placeholder="What led to this decision?" rows={3} style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 14px', color: '#C8C4BE', fontSize: 12, fontFamily: "'Lora', Georgia, serif", resize: 'none', outline: 'none', boxSizing: 'border-box' }} />
+                            </div>
+                            <div>
+                                <div style={{ fontSize: 11, color: '#555', marginBottom: 4 }}>Options considered <span style={{ color: '#333' }}>(one per line)</span></div>
+                                <textarea value={newDecisionOptions} onChange={e => setNewDecisionOptions(e.target.value)} placeholder={"Option A\nOption B\nOption C"} rows={3} style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 14px', color: '#C8C4BE', fontSize: 12, fontFamily: "'Lora', Georgia, serif", resize: 'none', outline: 'none', boxSizing: 'border-box' }} />
+                            </div>
+                            <div>
+                                <div style={{ fontSize: 11, color: '#555', marginBottom: 6 }}>Chosen option</div>
+                                <input value={newDecisionChosen} onChange={e => setNewDecisionChosen(e.target.value)} placeholder="What was ultimately chosen?" style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 14px', color: '#F0EDE8', fontSize: 13, fontFamily: "'Lora', Georgia, serif", outline: 'none', boxSizing: 'border-box' }} />
+                            </div>
+                            <div>
+                                <div style={{ fontSize: 11, color: '#555', marginBottom: 6 }}>Rationale</div>
+                                <textarea value={newDecisionRationale} onChange={e => setNewDecisionRationale(e.target.value)} placeholder="Why was this chosen?" rows={2} style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 14px', color: '#C8C4BE', fontSize: 12, fontFamily: "'Lora', Georgia, serif", resize: 'none', outline: 'none', boxSizing: 'border-box' }} />
+                            </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
+                            <button onClick={() => setAddDecisionOpen(false)} style={{ ...btnSecondary, flex: 1, padding: '12px' }}>Cancel</button>
+                            <button onClick={handleAddDecision} disabled={!newDecisionTitle.trim() || savingDecision} style={{ ...btnPrimary, flex: 2, padding: '12px', opacity: !newDecisionTitle.trim() ? 0.5 : 1 }}>
+                                {savingDecision ? 'Logging...' : 'Log Decision'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── ADD FILE LINK PANEL ── */}
+            {addFileOpen && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100 }} onClick={() => setAddFileOpen(false)}>
+                    <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px 20px 0 0', padding: 24, width: '100%', maxWidth: 600, animation: 'slideUp 0.25s ease', paddingBottom: 'max(24px, calc(24px + env(safe-area-inset-bottom)))' }} onClick={e => e.stopPropagation()}>
+                        <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.1)', margin: '0 auto 20px' }} />
+                        <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "'Lora', Georgia, serif", marginBottom: 18 }}>Add File Link</div>
+                        <div style={{ marginBottom: 14 }}>
+                            <div style={{ fontSize: 11, color: '#555', marginBottom: 6 }}>Label *</div>
+                            <input value={newFileLabel} onChange={e => setNewFileLabel(e.target.value)} placeholder="e.g. Q2 Pitch Deck, Brand Guidelines" autoFocus style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '11px 14px', color: '#F0EDE8', fontSize: 13, fontFamily: "'Lora', Georgia, serif", outline: 'none', boxSizing: 'border-box' }} />
+                        </div>
+                        <div style={{ marginBottom: 20 }}>
+                            <div style={{ fontSize: 11, color: '#555', marginBottom: 6 }}>URL *</div>
+                            <input value={newFileUrl} onChange={e => setNewFileUrl(e.target.value)} placeholder="https://..." type="url" style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '11px 14px', color: '#F0EDE8', fontSize: 13, fontFamily: "'Lora', Georgia, serif", outline: 'none', boxSizing: 'border-box' }} />
+                        </div>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                            <button onClick={() => setAddFileOpen(false)} style={{ ...btnSecondary, flex: 1, padding: '12px' }}>Cancel</button>
+                            <button onClick={handleAddFileLink} disabled={!newFileLabel.trim() || !newFileUrl.trim() || savingFile} style={{ ...btnPrimary, flex: 2, padding: '12px', opacity: (!newFileLabel.trim() || !newFileUrl.trim()) ? 0.5 : 1 }}>
+                                {savingFile ? 'Adding...' : 'Add Link'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* ── ADD TASK PANEL ── */}
             {addTaskOpen && (
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100 }} onClick={() => setAddTaskOpen(false)}>
@@ -1269,9 +1643,10 @@ interface ChatMessageProps {
     onMouseEnter: () => void;
     onMouseLeave: () => void;
     onRetry?: () => void;
+    onLogDecision?: () => void;
 }
 
-function ChatMessage({ msg, isOwn, isHovered, onMouseEnter, onMouseLeave, onRetry }: ChatMessageProps) {
+function ChatMessage({ msg, isOwn, isHovered, onMouseEnter, onMouseLeave, onRetry, onLogDecision }: ChatMessageProps) {
     const isForge = msg.role === 'forge';
     const color = isForge ? '#C8A96E' : (ROLE_COLORS[msg.sender_role] ?? '#888');
     const failed = msg.failed;
@@ -1338,7 +1713,12 @@ function ChatMessage({ msg, isOwn, isHovered, onMouseEnter, onMouseLeave, onRetr
                         <div style={{ fontSize: 11, color: 'rgba(232,98,42,0.6)', fontFamily: 'DM Sans, sans-serif', marginTop: 4 }}>Failed to send · Tap to retry</div>
                     )}
                     {isHovered && !failed && (
-                        <div style={{ fontSize: 11, color: '#333', fontFamily: 'DM Sans, sans-serif', marginTop: 2 }}>{formatTime(msg.created_at)}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 2 }}>
+                            <span style={{ fontSize: 11, color: '#333', fontFamily: 'DM Sans, sans-serif' }}>{formatTime(msg.created_at)}</span>
+                            {onLogDecision && (
+                                <button onClick={onLogDecision} style={{ fontSize: 10, color: 'rgba(240,237,232,0.35)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', padding: 0 }}>Log as decision</button>
+                            )}
+                        </div>
                     )}
                 </div>
             )}

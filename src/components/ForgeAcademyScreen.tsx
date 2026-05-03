@@ -6,6 +6,8 @@ import {
     getAcademySessionSubtitle,
     completeAcademyLesson,
     getCompletionBadgeLabel,
+    getLessonAssessmentScore,
+    isAcademyLessonFullyComplete,
 } from "../lib/academyCompletion";
 import {
     buildYoutubeEmbedUrl,
@@ -23,14 +25,19 @@ import {
     type AcademyUserContentProgress,
     type AcademyUserHistory,
     type AcademyWorkspace,
+    type AssessmentAttempt,
+    type LessonAssessment,
+    type StageCertificate,
 } from "../lib/academy";
 import { STAGE_COLORS } from "../constants/glossary";
 import { loadGlossaryTerms, type GlossaryTerm } from "../lib/glossaryDb";
 import {
     loadAcademyWorkspace,
+    recordAssessmentAttempt,
     recordAcademyHistory,
     touchAcademyContentForgeOpened,
     touchAcademyContentOpened,
+    upsertStageCertificate,
 } from "../lib/academyDb";
 import Logo from "./Logo";
 import type { AcademyBubbleContext } from "./ForgeBubble";
@@ -138,6 +145,9 @@ export default function ForgeAcademyScreen({
         contentProgress: [],
         seriesItemProgress: [],
         history: [],
+        assessments: [],
+        assessmentAttempts: [],
+        stageCertificates: [],
     });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -284,6 +294,30 @@ export default function ForgeAcademyScreen({
         });
         return merged;
     }, [contentProgressById, pathProgressRows]);
+    const completionAwareContentProgressById = useMemo(() => {
+        const mapped = new Map<string, AcademyUserContentProgress>();
+        effectiveContentProgressById.forEach((entry, contentId) => {
+            if (entry.status === "completed" && !isAcademyLessonFullyComplete(entry, workspace.assessmentAttempts, contentId)) {
+                mapped.set(contentId, {
+                    ...entry,
+                    status: "in_progress",
+                    completedAt: null,
+                });
+                return;
+            }
+            mapped.set(contentId, entry);
+        });
+        return mapped;
+    }, [effectiveContentProgressById, workspace.assessmentAttempts]);
+    const assessmentsByLessonId = useMemo(() => {
+        const mapped = new Map<string, LessonAssessment[]>();
+        workspace.assessments.forEach((assessment) => {
+            const existing = mapped.get(assessment.lessonId) ?? [];
+            existing.push(assessment);
+            mapped.set(assessment.lessonId, existing);
+        });
+        return mapped;
+    }, [workspace.assessments]);
 
     const filteredContent = useMemo(() => {
         return visibleContent.filter((entry) => {
@@ -303,7 +337,7 @@ export default function ForgeAcademyScreen({
 
     const featuredTopics = filteredContent.filter((entry) => {
         if (entry.contentType !== "topic" || !entry.featured) return false;
-        const status = effectiveContentProgressById.get(entry.id)?.status;
+        const status = completionAwareContentProgressById.get(entry.id)?.status;
         return status !== "in_progress" && status !== "completed";
     }).slice(0, 6);
     const lessonSeries = filteredSeries.slice(0, 6);
@@ -311,10 +345,10 @@ export default function ForgeAcademyScreen({
     const resources = filteredContent.filter((entry) => entry.contentType === "resource").slice(0, 6);
     const mindset = filteredContent.filter((entry) => entry.contentType === "mindset").slice(0, 6);
     const continueLearning = filteredContent
-        .filter((entry) => effectiveContentProgressById.get(entry.id)?.status === "in_progress")
+        .filter((entry) => completionAwareContentProgressById.get(entry.id)?.status === "in_progress")
         .sort((a, b) => {
-            const aOpened = effectiveContentProgressById.get(a.id)?.lastOpenedAt ?? "";
-            const bOpened = effectiveContentProgressById.get(b.id)?.lastOpenedAt ?? "";
+            const aOpened = completionAwareContentProgressById.get(a.id)?.lastOpenedAt ?? "";
+            const bOpened = completionAwareContentProgressById.get(b.id)?.lastOpenedAt ?? "";
             return bOpened.localeCompare(aOpened);
         })
         .slice(0, 4);
@@ -330,17 +364,17 @@ export default function ForgeAcademyScreen({
         .filter((entry) => !continueLearning.some((item) => item.id === entry.id))
         .slice(0, 4);
 
-    const completedContentCount = Array.from(effectiveContentProgressById.values()).filter((entry) => entry.status === "completed" && visibleContentIds.has(entry.contentId)).length;
+    const completedContentCount = Array.from(completionAwareContentProgressById.values()).filter((entry) => entry.status === "completed" && visibleContentIds.has(entry.contentId)).length;
     const totalLessonsCount = visibleContent.length;
     const completedSeriesItems = visibleSeries.reduce((count, series) => (
-        count + series.items.filter((item) => item.content && effectiveContentProgressById.get(item.content.id)?.status === "completed").length
+        count + series.items.filter((item) => item.content && completionAwareContentProgressById.get(item.content.id)?.status === "completed").length
     ), 0);
     const recentHistory = workspace.history.filter((entry) => (
         (!entry.contentId || visibleContentIds.has(entry.contentId)) &&
         (!entry.seriesId || visibleSeriesById.has(entry.seriesId))
     )).slice(0, 4);
     const nextSeriesUp = lessonSeries
-        .map((series) => ({ series, nextItem: getNextSeriesItem(series, effectiveContentProgressById) }))
+        .map((series) => ({ series, nextItem: getNextSeriesItem(series, completionAwareContentProgressById) }))
         .filter((entry) => entry.nextItem)
         .slice(0, 3);
 
@@ -351,6 +385,9 @@ export default function ForgeAcademyScreen({
             knowledgeCheckedAt?: string | null;
             lastCheckResponse?: string | null;
             lastCheckFeedback?: string | null;
+            assessmentPassed?: boolean;
+            correctCount?: number | null;
+            attemptedCount?: number | null;
         }
     ) => {
         const existing = pathProgressByContentId.get(contentId) ?? null;
@@ -445,8 +482,8 @@ export default function ForgeAcademyScreen({
             const enrichmentBlocks = allBlocks.filter((block) => block.type === "series" ? !block.items[0]?.isCore : !block.lesson.isCore);
             const coreLessons = stageLessons.filter((lesson) => lesson.isCore);
             const enrichmentLessons = stageLessons.filter((lesson) => !lesson.isCore);
-            const completedCoreCount = coreLessons.filter((lesson) => effectiveContentProgressById.get(lesson.id)?.status === "completed").length;
-            const completedLessonCount = stageLessons.filter((lesson) => effectiveContentProgressById.get(lesson.id)?.status === "completed").length;
+            const completedCoreCount = coreLessons.filter((lesson) => completionAwareContentProgressById.get(lesson.id)?.status === "completed").length;
+            const completedLessonCount = stageLessons.filter((lesson) => completionAwareContentProgressById.get(lesson.id)?.status === "completed").length;
 
             return {
                 stage,
@@ -462,12 +499,12 @@ export default function ForgeAcademyScreen({
                 totalCoreCount: coreLessons.length,
             };
         });
-    }, [effectiveContentProgressById, visibleContent, visibleSeries]);
+    }, [completionAwareContentProgressById, visibleContent, visibleSeries]);
 
     const pathRecommendation = useMemo<PathRecommendation | null>(() => {
         const allCoreLessons = pathStageGroups.flatMap((group) => group.coreLessons);
-        const inProgressLesson = allCoreLessons.find((lesson) => effectiveContentProgressById.get(lesson.id)?.status === "in_progress")
-            ?? visibleContent.find((lesson) => effectiveContentProgressById.get(lesson.id)?.status === "in_progress")
+        const inProgressLesson = allCoreLessons.find((lesson) => completionAwareContentProgressById.get(lesson.id)?.status === "in_progress")
+            ?? visibleContent.find((lesson) => completionAwareContentProgressById.get(lesson.id)?.status === "in_progress")
             ?? null;
         if (inProgressLesson) {
             return {
@@ -479,19 +516,19 @@ export default function ForgeAcademyScreen({
 
         const firstIncompleteStage = pathStageGroups.find((group) => group.totalCoreCount === 0 || group.completedCoreCount < group.totalCoreCount) ?? null;
         if (firstIncompleteStage) {
-            const nextLesson = firstIncompleteStage.coreLessons.find((lesson) => (effectiveContentProgressById.get(lesson.id)?.status ?? "not_started") !== "completed") ?? firstIncompleteStage.coreLessons[0] ?? null;
+            const nextLesson = firstIncompleteStage.coreLessons.find((lesson) => (completionAwareContentProgressById.get(lesson.id)?.status ?? "not_started") !== "completed") ?? firstIncompleteStage.coreLessons[0] ?? null;
             if (nextLesson) {
                 return {
                     lesson: nextLesson,
                     reason: `Stage ${firstIncompleteStage.stage} is your active stretch right now. This is the next core lesson that moves the path forward.`,
-                    action: effectiveContentProgressById.get(nextLesson.id)?.status === "in_progress" ? "Continue" : "Start",
+                    action: completionAwareContentProgressById.get(nextLesson.id)?.status === "in_progress" ? "Continue" : "Start",
                 };
             }
         }
 
         const nextEnrichmentLesson = pathStageGroups
             .flatMap((group) => group.enrichmentLessons)
-            .find((lesson) => (effectiveContentProgressById.get(lesson.id)?.status ?? "not_started") !== "completed") ?? null;
+            .find((lesson) => (completionAwareContentProgressById.get(lesson.id)?.status ?? "not_started") !== "completed") ?? null;
         if (nextEnrichmentLesson) {
             return {
                 lesson: nextEnrichmentLesson,
@@ -507,12 +544,42 @@ export default function ForgeAcademyScreen({
                 action: "Start",
             }
             : null;
-    }, [effectiveContentProgressById, pathStageGroups, visibleContent]);
+    }, [completionAwareContentProgressById, pathStageGroups, visibleContent]);
 
     const activePathStage = pathRecommendation?.lesson.pathStage
         ?? pathStageGroups.find((group) => group.totalCoreCount === 0 || group.completedCoreCount < group.totalCoreCount)?.stage
         ?? 1;
+    const activeStageGroup = pathStageGroups.find((group) => group.stage === activePathStage) ?? pathStageGroups[0] ?? null;
+    const lessonsWithPassedAssessments = visibleContent.filter((lesson) => getLessonAssessmentScore(workspace.assessmentAttempts, lesson.id).passed).length;
+    const currentStreak = useMemo(() => calculateAcademyStreak(workspace.history, workspace.assessmentAttempts), [workspace.history, workspace.assessmentAttempts]);
+    const stageCompletionPercentage = activeStageGroup?.totalCoreCount
+        ? Math.round((activeStageGroup.completedCoreCount / activeStageGroup.totalCoreCount) * 100)
+        : 0;
+    const activeStageCertificate = workspace.stageCertificates.find((certificate) => certificate.stageId === activePathStage) ?? null;
     const isForgeBusyFor = (contentId: string) => Boolean(busyKey?.startsWith("forge-") && busyKey?.endsWith(`-${contentId}`));
+
+    useEffect(() => {
+        if (!activeStageGroup || activeStageGroup.totalCoreCount === 0 || activeStageGroup.completedCoreCount < activeStageGroup.totalCoreCount) return;
+        if (workspace.stageCertificates.some((certificate) => certificate.stageId === activeStageGroup.stage)) return;
+        const founderName = String(profile?.founderName ?? profile?.name ?? profile?.fullName ?? "Founder");
+        upsertStageCertificate({
+            userId,
+            stageId: activeStageGroup.stage,
+            founderName,
+            stageName: activeStageGroup.title,
+            metadata: {
+                completedCoreLessons: activeStageGroup.completedCoreCount,
+                totalCoreLessons: activeStageGroup.totalCoreCount,
+            },
+        })
+            .then((certificate) => {
+                setWorkspace((prev) => ({
+                    ...prev,
+                    stageCertificates: [certificate, ...prev.stageCertificates.filter((entry) => entry.stageId !== certificate.stageId)],
+                }));
+            })
+            .catch((certificateError) => console.error("academy certificate save error:", certificateError));
+    }, [activeStageGroup, profile, userId, workspace.stageCertificates]);
 
     const toggleEnrichmentStage = (stage: number) => {
         setExpandedEnrichmentStages((prev) => ({ ...prev, [stage]: !prev[stage] }));
@@ -610,24 +677,60 @@ export default function ForgeAcademyScreen({
                 feedback: options?.lastCheckFeedback ?? null,
                 completedAt: options?.knowledgeCheckedAt ?? new Date().toISOString(),
                 source: "lesson_modal",
+                assessmentPassed: options?.assessmentPassed ?? false,
+                correctCount: options?.correctCount ?? null,
+                attemptedCount: options?.attemptedCount ?? null,
             });
             setWorkspace((prev) => ({
                 ...prev,
                 contentProgress: mergeContentProgress(prev.contentProgress, result.contentProgress),
-                history: [{
-                    id: `local-${Date.now()}`,
-                    userId,
-                    contentId: content.id,
-                    seriesId: null,
-                    seriesItemId: null,
-                    action: "completed",
-                    metadata: { title: content.title, source: "lesson_modal" },
-                    createdAt: new Date().toISOString(),
-                }, ...prev.history].slice(0, 18),
+                history: result.contentProgress.status === "completed"
+                    ? [{
+                        id: `local-${Date.now()}`,
+                        userId,
+                        contentId: content.id,
+                        seriesId: null,
+                        seriesItemId: null,
+                        action: "completed",
+                        metadata: { title: content.title, source: "lesson_modal" },
+                        createdAt: new Date().toISOString(),
+                    }, ...prev.history].slice(0, 18)
+                    : prev.history,
             }));
             setPathProgressRows((prev) => [result.lessonProgress as UserLessonProgressRow, ...prev.filter((entry) => entry.content_id !== content.id)]);
         } catch (progressError) {
             console.error("academy complete content error:", progressError);
+        } finally {
+            setBusyKey(null);
+        }
+    };
+
+    const handleAssessmentAnswer = async (content: AcademyContent, assessment: LessonAssessment, selectedIndex: number) => {
+        const isCorrect = selectedIndex === assessment.correctAnswerIndex;
+        setBusyKey(`assessment-${assessment.id}`);
+        try {
+            const attempt = await recordAssessmentAttempt(userId, content.id, assessment.id, selectedIndex, isCorrect);
+            const nextAttempts = [
+                attempt,
+                ...workspace.assessmentAttempts.filter((entry) => !(entry.assessmentId === assessment.id && entry.id === attempt.id)),
+            ];
+            const score = getLessonAssessmentScore(nextAttempts, content.id);
+            setWorkspace((prev) => ({
+                ...prev,
+                assessmentAttempts: nextAttempts,
+            }));
+            if (score.attemptedCount >= 3) {
+                await handleCompleteContent(content, {
+                    knowledgeCheckedAt: new Date().toISOString(),
+                    lastCheckResponse: `Assessment score: ${score.correctCount}/${score.attemptedCount}`,
+                    lastCheckFeedback: score.passed ? "Passed Academy lesson assessment." : "Assessment needs another pass before completion.",
+                    assessmentPassed: score.passed,
+                    correctCount: score.correctCount,
+                    attemptedCount: score.attemptedCount,
+                });
+            }
+        } catch (attemptError) {
+            console.error("academy assessment attempt error:", attemptError);
         } finally {
             setBusyKey(null);
         }
@@ -665,12 +768,24 @@ export default function ForgeAcademyScreen({
                 <FilterPill active={activeView === "guide"} onClick={() => setActiveView("guide")}>Guide</FilterPill>
             </div>
 
+            <AcademyStatsBar
+                completedLessons={completedContentCount}
+                assessmentsPassed={lessonsWithPassedAssessments}
+                currentStreak={currentStreak}
+                stageCompletionPercentage={stageCompletionPercentage}
+                stageLabel={activeStageGroup?.title ?? `Stage ${activePathStage}`}
+            />
+
+            {activeStageCertificate && (
+                <CertificateCard certificate={activeStageCertificate} />
+            )}
+
             {activeView === "path" && (
                 <PathView
                     stages={pathStageGroups}
                     recommendation={pathRecommendation}
                     activeStage={activePathStage}
-                    progressByContentId={effectiveContentProgressById}
+                    progressByContentId={completionAwareContentProgressById}
                     loading={pathProgressLoading}
                     busyKey={busyKey}
                     onOpenLesson={(content) => void openContent(content, content.contentType === "video" ? "started_video" : "viewed")}
@@ -798,7 +913,7 @@ export default function ForgeAcademyScreen({
                                     <ContentCard
                                         key={entry.id}
                                         content={entry}
-                                        progress={effectiveContentProgressById.get(entry.id)}
+                                        progress={completionAwareContentProgressById.get(entry.id)}
                                         onOpen={() => void openContent(entry, entry.contentType === "video" ? "started_video" : "viewed")}
                                         onLaunchForge={() => void handleLaunchForge(entry, "learn")}
                                         onApplyNow={() => void handleLaunchForge(entry, "apply")}
@@ -831,7 +946,7 @@ export default function ForgeAcademyScreen({
                                     <ContentCard
                                         key={entry.id}
                                         content={entry}
-                                        progress={effectiveContentProgressById.get(entry.id)}
+                                        progress={completionAwareContentProgressById.get(entry.id)}
                                         onOpen={() => void openContent(entry)}
                                         onLaunchForge={() => void handleLaunchForge(entry, "learn")}
                                         onApplyNow={() => void handleLaunchForge(entry, "apply")}
@@ -854,7 +969,7 @@ export default function ForgeAcademyScreen({
                                 <SeriesCard
                                     key={entry.id}
                                     series={entry}
-                                    progressByContentId={effectiveContentProgressById}
+                                    progressByContentId={completionAwareContentProgressById}
                                     onOpen={() => void openSeries(entry)}
                                 />
                             )}
@@ -873,7 +988,7 @@ export default function ForgeAcademyScreen({
                                 <ContentCard
                                     key={entry.id}
                                     content={entry}
-                                    progress={effectiveContentProgressById.get(entry.id)}
+                                    progress={completionAwareContentProgressById.get(entry.id)}
                                     onOpen={() => void openContent(entry, entry.contentType === "video" ? "started_video" : "viewed")}
                                     onLaunchForge={() => void handleLaunchForge(entry, "learn")}
                                     onApplyNow={() => void handleLaunchForge(entry, "apply")}
@@ -896,7 +1011,7 @@ export default function ForgeAcademyScreen({
                                 <ContentCard
                                     key={entry.id}
                                     content={entry}
-                                    progress={effectiveContentProgressById.get(entry.id)}
+                                    progress={completionAwareContentProgressById.get(entry.id)}
                                     onOpen={() => void openContent(entry, "started_video")}
                                     onLaunchForge={() => void handleLaunchForge(entry, "learn")}
                                     onApplyNow={() => void handleLaunchForge(entry, "apply")}
@@ -918,7 +1033,7 @@ export default function ForgeAcademyScreen({
                                 <ContentCard
                                     key={entry.id}
                                     content={entry}
-                                    progress={effectiveContentProgressById.get(entry.id)}
+                                    progress={completionAwareContentProgressById.get(entry.id)}
                                     onOpen={() => void openContent(entry)}
                                     onLaunchForge={() => void handleLaunchForge(entry, "learn")}
                                     onApplyNow={() => void handleLaunchForge(entry, "apply")}
@@ -940,7 +1055,7 @@ export default function ForgeAcademyScreen({
                                 <ContentCard
                                     key={entry.id}
                                     content={entry}
-                                    progress={effectiveContentProgressById.get(entry.id)}
+                                    progress={completionAwareContentProgressById.get(entry.id)}
                                     onOpen={() => void openContent(entry)}
                                     onLaunchForge={() => void handleLaunchForge(entry, "learn")}
                                     onApplyNow={() => void handleLaunchForge(entry, "apply")}
@@ -1058,9 +1173,12 @@ export default function ForgeAcademyScreen({
             {selectedContent && (
                 <ContentDetailModal
                     content={selectedContent}
-                    progress={effectiveContentProgressById.get(selectedContent.id)}
+                    progress={completionAwareContentProgressById.get(selectedContent.id)}
+                    assessments={assessmentsByLessonId.get(selectedContent.id) ?? []}
+                    attempts={workspace.assessmentAttempts.filter((attempt) => attempt.lessonId === selectedContent.id)}
                     onClose={() => setSelectedContent(null)}
                     onLaunchForge={canLaunchForgeFromContent(selectedContent) ? (mode) => void handleLaunchForge(selectedContent, mode) : undefined}
+                    onAnswerAssessment={(assessment, selectedIndex) => void handleAssessmentAnswer(selectedContent, assessment, selectedIndex)}
                     busy={busyKey === `content-${selectedContent.id}` || isForgeBusyFor(selectedContent.id)}
                 />
             )}
@@ -1068,12 +1186,58 @@ export default function ForgeAcademyScreen({
             {selectedSeries && (
                 <SeriesDetailModal
                     series={selectedSeries}
-                    progressMap={effectiveContentProgressById}
+                    progressMap={completionAwareContentProgressById}
                     onClose={() => setSelectedSeries(null)}
                     onOpenItem={(content) => void openContent(content, content.contentType === "video" ? "started_video" : "viewed")}
                 />
             )}
         </AcademyShell>
+    );
+}
+
+function AcademyStatsBar({
+    completedLessons,
+    assessmentsPassed,
+    currentStreak,
+    stageCompletionPercentage,
+    stageLabel,
+}: {
+    completedLessons: number;
+    assessmentsPassed: number;
+    currentStreak: number;
+    stageCompletionPercentage: number;
+    stageLabel: string;
+}) {
+    return (
+        <div style={{ maxWidth: 1180, margin: "0 auto 8px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 10 }}>
+            <StatTile label="Lessons completed" value={String(completedLessons)} />
+            <StatTile label="Assessments passed" value={String(assessmentsPassed)} />
+            <StatTile label="Current streak" value={`${currentStreak} day${currentStreak === 1 ? "" : "s"}`} />
+            <StatTile label={`${stageLabel} completion`} value={`${stageCompletionPercentage}%`} />
+        </div>
+    );
+}
+
+function StatTile({ label, value }: { label: string; value: string }) {
+    return (
+        <div style={{ background: "rgba(255,255,255,0.035)", border, borderRadius: 16, padding: "12px 14px", display: "grid", gap: 4 }}>
+            <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "#8D857C", letterSpacing: "0.10em", textTransform: "uppercase", fontWeight: 700 }}>{label}</div>
+            <div style={{ fontSize: 20, color: "#F0EDE8", fontWeight: 800 }}>{value}</div>
+        </div>
+    );
+}
+
+function CertificateCard({ certificate }: { certificate: StageCertificate }) {
+    return (
+        <div style={{ maxWidth: 1180, margin: "0 auto 8px", background: "linear-gradient(135deg, rgba(200,169,110,0.16), rgba(232,98,42,0.08), rgba(255,255,255,0.03))", border: "1px solid rgba(200,169,110,0.24)", borderRadius: 20, padding: "16px 18px", display: "flex", justifyContent: "space-between", gap: 14, flexWrap: "wrap", alignItems: "center" }}>
+            <div style={{ display: "grid", gap: 4 }}>
+                <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "#C8A96E", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700 }}>Certificate earned</div>
+                <div style={{ fontSize: 20, color: "#F0EDE8", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>{certificate.founderName} completed {certificate.stageName}</div>
+            </div>
+            <div style={{ fontSize: 12, color: "#BDAFA2" }}>
+                {new Date(certificate.completedAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+            </div>
+        </div>
     );
 }
 
@@ -2363,17 +2527,24 @@ function splitLessonTextIntoSlides(text: string | null | undefined) {
 function ContentDetailModal({
     content,
     progress,
+    assessments,
+    attempts,
     onClose,
     onLaunchForge,
+    onAnswerAssessment,
     busy,
 }: {
     content: AcademyContent;
     progress?: AcademyUserContentProgress;
+    assessments: LessonAssessment[];
+    attempts: AssessmentAttempt[];
     onClose: () => void;
     onLaunchForge?: (mode: AcademySessionMode) => void;
+    onAnswerAssessment: (assessment: LessonAssessment, selectedIndex: number) => void;
     busy: boolean;
 }) {
     const completed = progress?.status === "completed";
+    const assessmentScore = getLessonAssessmentScore(attempts, content.id);
     const embedUrl = buildYoutubeEmbedUrl(content.youtubeVideoId);
     const thumbnailUrl = content.thumbnailUrl || buildYoutubeThumbnailUrl(content.youtubeVideoId);
     const slides = useMemo(() => buildLessonSlides(content), [content]);
@@ -2557,8 +2728,131 @@ function ContentDetailModal({
                         Finish the full walkthrough to unlock the Forge conversation and application step for this lesson.
                     </div>
                 )}
+
+                {isLastSlide && (
+                    <LessonAssessmentPanel
+                        assessments={assessments}
+                        attempts={attempts}
+                        score={assessmentScore}
+                        onAnswer={onAnswerAssessment}
+                        busy={busy}
+                    />
+                )}
+
+                {completed && onLaunchForge && (
+                    <ApplyLessonCard content={content} onApply={() => onLaunchForge("apply")} busy={busy} />
+                )}
             </div>
         </ModalShell>
+    );
+}
+
+function LessonAssessmentPanel({
+    assessments,
+    attempts,
+    score,
+    onAnswer,
+    busy,
+}: {
+    assessments: LessonAssessment[];
+    attempts: AssessmentAttempt[];
+    score: ReturnType<typeof getLessonAssessmentScore>;
+    onAnswer: (assessment: LessonAssessment, selectedIndex: number) => void;
+    busy: boolean;
+}) {
+    const latestByAssessment = useMemo(() => {
+        const mapped = new Map<string, AssessmentAttempt>();
+        attempts
+            .slice()
+            .sort((a, b) => b.attemptedAt.localeCompare(a.attemptedAt))
+            .forEach((attempt) => {
+                if (!mapped.has(attempt.assessmentId)) mapped.set(attempt.assessmentId, attempt);
+            });
+        return mapped;
+    }, [attempts]);
+    const visibleAssessments = assessments.slice(0, 3);
+
+    return (
+        <div style={{ background: "linear-gradient(180deg, rgba(232,98,42,0.08), rgba(255,255,255,0.025))", border: "1px solid rgba(232,98,42,0.16)", borderRadius: 22, padding: 18, display: "grid", gap: 14 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+                <div style={{ display: "grid", gap: 4 }}>
+                    <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700 }}>Assessment</div>
+                    <div style={{ fontSize: 22, color: "#F0EDE8", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>Prove the lesson landed</div>
+                </div>
+                <CompletionBadge label={score.passed ? `Passed ${score.correctCount}/3` : `${score.correctCount}/3 correct`} />
+            </div>
+
+            {visibleAssessments.length === 0 ? (
+                <div style={{ fontSize: 13, color: textMuted, lineHeight: 1.8 }}>Assessment questions will appear after the lesson assessment migration is applied.</div>
+            ) : (
+                <div style={{ display: "grid", gap: 12 }}>
+                    {visibleAssessments.map((assessment, questionIndex) => {
+                        const latestAttempt = latestByAssessment.get(assessment.id) ?? null;
+                        return (
+                            <div key={assessment.id} style={{ background: "rgba(255,255,255,0.035)", border, borderRadius: 18, padding: 14, display: "grid", gap: 10 }}>
+                                <div style={{ fontSize: 14, color: "#F0EDE8", fontWeight: 700, lineHeight: 1.55 }}>
+                                    {questionIndex + 1}. {assessment.question}
+                                </div>
+                                <div style={{ display: "grid", gap: 8 }}>
+                                    {assessment.options.map((option, optionIndex) => {
+                                        const selected = latestAttempt?.selectedIndex === optionIndex;
+                                        const showCorrect = latestAttempt && optionIndex === assessment.correctAnswerIndex;
+                                        const background = selected
+                                            ? latestAttempt?.isCorrect
+                                                ? "rgba(72,187,120,0.14)"
+                                                : "rgba(232,98,42,0.14)"
+                                            : showCorrect
+                                                ? "rgba(72,187,120,0.10)"
+                                                : "rgba(255,255,255,0.03)";
+                                        const optionBorder = selected
+                                            ? latestAttempt?.isCorrect
+                                                ? "1px solid rgba(72,187,120,0.35)"
+                                                : "1px solid rgba(232,98,42,0.35)"
+                                            : border;
+                                        return (
+                                            <button
+                                                key={`${assessment.id}-${optionIndex}`}
+                                                type="button"
+                                                onClick={() => onAnswer(assessment, optionIndex)}
+                                                disabled={busy}
+                                                style={{ background, border: optionBorder, borderRadius: 14, padding: "10px 12px", color: "#D7D1CA", textAlign: "left", cursor: busy ? "default" : "pointer", fontSize: 13, lineHeight: 1.55 }}
+                                            >
+                                                {option}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                                {latestAttempt && (
+                                    <div style={{ fontSize: 12, color: latestAttempt.isCorrect ? "#8BD8A9" : "#E9A07D", lineHeight: 1.7 }}>
+                                        {latestAttempt.isCorrect ? "Correct. " : "Not quite. "}{assessment.explanation}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+            <div style={{ fontSize: 12, color: "#9D978E", lineHeight: 1.7 }}>
+                Completion requires reading the walkthrough and answering at least 2 of 3 questions correctly.
+            </div>
+        </div>
+    );
+}
+
+function ApplyLessonCard({ content, onApply, busy }: { content: AcademyContent; onApply: () => void; busy: boolean }) {
+    return (
+        <div style={{ background: "linear-gradient(180deg, rgba(99,179,237,0.10), rgba(255,255,255,0.025))", border: "1px solid rgba(99,179,237,0.18)", borderRadius: 22, padding: 18, display: "grid", gap: 10 }}>
+            <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#8FC8F6", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700 }}>Apply this now</div>
+            <div style={{ fontSize: 18, color: "#F0EDE8", fontWeight: 700 }}>Turn "{content.title}" into a real founder move</div>
+            <div style={{ fontSize: 13, color: "#C8C4BE", lineHeight: 1.8 }}>
+                {content.starterPrompt || content.forgeContext || "Open Forge with this lesson already attached and pressure-test it against your actual company."}
+            </div>
+            <div>
+                <InlineButton tone="blue" onClick={onApply} disabled={busy}>
+                    {busy ? "Opening..." : "Open Forge prompt"}
+                </InlineButton>
+            </div>
+        </div>
     );
 }
 
@@ -2883,6 +3177,25 @@ function getNextSeriesItem(
     progressMap: Map<string, AcademyUserContentProgress>,
 ) {
     return series.items.find((item) => !item.content || progressMap.get(item.content.id)?.status !== "completed") ?? series.items[0] ?? null;
+}
+
+function calculateAcademyStreak(history: AcademyUserHistory[], attempts: AssessmentAttempt[]) {
+    const activeDays = new Set<string>();
+    history.forEach((entry) => activeDays.add(toLocalDateKey(entry.createdAt)));
+    attempts.forEach((attempt) => activeDays.add(toLocalDateKey(attempt.attemptedAt)));
+    let streak = 0;
+    const cursor = new Date();
+    while (activeDays.has(toLocalDateKey(cursor.toISOString()))) {
+        streak += 1;
+        cursor.setDate(cursor.getDate() - 1);
+    }
+    return streak;
+}
+
+function toLocalDateKey(value: string) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value.slice(0, 10);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
 function canLaunchForgeFromContent(content: AcademyContent) {

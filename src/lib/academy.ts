@@ -141,6 +141,38 @@ export type AcademyUserHistory = {
     createdAt: string;
 };
 
+export type LessonAssessment = {
+    id: string;
+    lessonId: string;
+    question: string;
+    options: string[];
+    correctAnswerIndex: number;
+    explanation: string;
+    createdAt: string;
+};
+
+export type AssessmentAttempt = {
+    id: string;
+    userId: string;
+    lessonId: string;
+    assessmentId: string;
+    selectedIndex: number;
+    isCorrect: boolean;
+    attemptedAt: string;
+};
+
+export type StageCertificate = {
+    id: string;
+    userId: string;
+    stageId: number;
+    founderName: string;
+    stageName: string;
+    completedAt: string;
+    metadata: Record<string, unknown>;
+    createdAt: string;
+    updatedAt: string;
+};
+
 export type AcademyWorkspace = {
     categories: AcademyCategory[];
     tags: AcademyTag[];
@@ -149,6 +181,9 @@ export type AcademyWorkspace = {
     contentProgress: AcademyUserContentProgress[];
     seriesItemProgress: AcademyUserSeriesItemProgress[];
     history: AcademyUserHistory[];
+    assessments: LessonAssessment[];
+    assessmentAttempts: AssessmentAttempt[];
+    stageCertificates: StageCertificate[];
 };
 
 export type AcademyAdminWorkspace = AcademyWorkspace;

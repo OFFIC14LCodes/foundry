@@ -58,6 +58,37 @@ export interface CofounderTask {
     updated_at: string;
 }
 
+export interface CofounderTaskComment {
+    id: string;
+    task_id: string;
+    user_id: string;
+    content: string;
+    created_at: string;
+}
+
+export interface CofounderDecision {
+    id: string;
+    workspace_id: string;
+    created_by: string | null;
+    source_message_id: string | null;
+    title: string;
+    description: string | null;
+    options: string[] | null;
+    chosen_option: string | null;
+    rationale: string | null;
+    decided_at: string | null;
+    created_at: string;
+}
+
+export interface CofounderFileLink {
+    id: string;
+    workspace_id: string;
+    user_id: string;
+    label: string;
+    url: string;
+    created_at: string;
+}
+
 // ── TEAM ──────────────────────────────────────────────────────
 
 export async function getTeamForUser(userId: string): Promise<CofounderTeam | null> {
@@ -335,5 +366,131 @@ export async function deleteCofounderTask(id: string): Promise<boolean> {
         .eq('id', id);
 
     if (error) { console.error('deleteCofounderTask error:', error.message); return false; }
+    return true;
+}
+
+// ── TASK COMMENTS ─────────────────────────────────────────────
+
+export async function loadTaskComments(taskId: string): Promise<CofounderTaskComment[]> {
+    const { data, error } = await supabase
+        .from('cofounder_task_comments')
+        .select('*')
+        .eq('task_id', taskId)
+        .order('created_at', { ascending: true });
+
+    if (error) console.error('loadTaskComments error:', error.message);
+    return (data as CofounderTaskComment[]) ?? [];
+}
+
+export async function addTaskComment(
+    taskId: string,
+    userId: string,
+    content: string
+): Promise<CofounderTaskComment | null> {
+    const { data, error } = await supabase
+        .from('cofounder_task_comments')
+        .insert({ task_id: taskId, user_id: userId, content })
+        .select()
+        .single();
+
+    if (error) console.error('addTaskComment error:', error.message);
+    return (data as CofounderTaskComment) ?? null;
+}
+
+export async function deleteTaskComment(commentId: string): Promise<boolean> {
+    const { error } = await supabase
+        .from('cofounder_task_comments')
+        .delete()
+        .eq('id', commentId);
+
+    if (error) { console.error('deleteTaskComment error:', error.message); return false; }
+    return true;
+}
+
+// ── DECISIONS ─────────────────────────────────────────────────
+
+export async function loadDecisions(teamId: string): Promise<CofounderDecision[]> {
+    const { data, error } = await supabase
+        .from('cofounder_decisions')
+        .select('*')
+        .eq('workspace_id', teamId)
+        .order('created_at', { ascending: false });
+
+    if (error) console.error('loadDecisions error:', error.message);
+    return (data as CofounderDecision[]) ?? [];
+}
+
+export async function createDecision(
+    decision: Omit<CofounderDecision, 'id' | 'created_at'>
+): Promise<CofounderDecision | null> {
+    const { data, error } = await supabase
+        .from('cofounder_decisions')
+        .insert(decision)
+        .select()
+        .single();
+
+    if (error) console.error('createDecision error:', error.message);
+    return (data as CofounderDecision) ?? null;
+}
+
+export async function updateDecision(
+    id: string,
+    updates: Partial<Pick<CofounderDecision, 'title' | 'description' | 'options' | 'chosen_option' | 'rationale' | 'decided_at'>>
+): Promise<boolean> {
+    const { error } = await supabase
+        .from('cofounder_decisions')
+        .update(updates)
+        .eq('id', id);
+
+    if (error) { console.error('updateDecision error:', error.message); return false; }
+    return true;
+}
+
+export async function deleteDecision(id: string): Promise<boolean> {
+    const { error } = await supabase
+        .from('cofounder_decisions')
+        .delete()
+        .eq('id', id);
+
+    if (error) { console.error('deleteDecision error:', error.message); return false; }
+    return true;
+}
+
+// ── FILE LINKS ────────────────────────────────────────────────
+
+export async function loadFileLinks(teamId: string): Promise<CofounderFileLink[]> {
+    const { data, error } = await supabase
+        .from('cofounder_file_links')
+        .select('*')
+        .eq('workspace_id', teamId)
+        .order('created_at', { ascending: false });
+
+    if (error) console.error('loadFileLinks error:', error.message);
+    return (data as CofounderFileLink[]) ?? [];
+}
+
+export async function addFileLink(
+    teamId: string,
+    userId: string,
+    label: string,
+    url: string
+): Promise<CofounderFileLink | null> {
+    const { data, error } = await supabase
+        .from('cofounder_file_links')
+        .insert({ workspace_id: teamId, user_id: userId, label, url })
+        .select()
+        .single();
+
+    if (error) console.error('addFileLink error:', error.message);
+    return (data as CofounderFileLink) ?? null;
+}
+
+export async function deleteFileLink(id: string): Promise<boolean> {
+    const { error } = await supabase
+        .from('cofounder_file_links')
+        .delete()
+        .eq('id', id);
+
+    if (error) { console.error('deleteFileLink error:', error.message); return false; }
     return true;
 }

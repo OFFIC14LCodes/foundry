@@ -32,6 +32,7 @@ let producedDocumentsAvailable: boolean | null = null;
 let documentVaultAvailable: boolean | null = null;
 let documentTemplatesAvailable: boolean | null = null;
 let pitchSessionsAvailable: boolean | null = null;
+let conversationThreadsAvailable: boolean | null = null;
 
 const DOCUMENT_FILE_BUCKET = "document-files";
 
@@ -174,7 +175,180 @@ export async function saveStageProgress(userId: string, stageId: number, complet
 
 // ── MESSAGES ──────────────────────────────────────────────────
 
+export type ConversationThread = {
+    id: string;
+    userId: string;
+    stageId: number;
+    summaryId: string | null;
+    createdAt: string;
+    lastMessageAt: string | null;
+};
+
+export type ConversationMessage = {
+    id: string;
+    threadId: string;
+    userId: string;
+    role: "user" | "forge" | "assistant" | "system";
+    text: string;
+    createdAt: string;
+    tokenCount: number;
+    attachments?: MessageAttachment[];
+};
+
+export type MessageAttachment = {
+    id: string;
+    messageId: string;
+    fileName: string;
+    fileType: string;
+    storagePath: string;
+    createdAt: string;
+};
+
+function isMissingConversationThreadRelationError(error: any) {
+    return ["conversation_threads", "conversation_messages", "message_attachments"].some((relationName) => isMissingRelationError(error, relationName));
+}
+
+function estimateTokenCount(content: string) {
+    return Math.max(1, Math.ceil(String(content || "").length / 4));
+}
+
+function mapConversationThread(row: any): ConversationThread {
+    return {
+        id: row.id,
+        userId: row.user_id,
+        stageId: Number(row.stage_id),
+        summaryId: row.summary_id ?? null,
+        createdAt: row.created_at,
+        lastMessageAt: row.last_message_at ?? null,
+    };
+}
+
+function mapMessageAttachment(row: any): MessageAttachment {
+    return {
+        id: row.id,
+        messageId: row.message_id,
+        fileName: row.file_name,
+        fileType: row.file_type,
+        storagePath: row.storage_path,
+        createdAt: row.created_at,
+    };
+}
+
+function mapConversationMessage(row: any): ConversationMessage {
+    const attachments = Array.isArray(row.message_attachments) ? row.message_attachments.map(mapMessageAttachment) : undefined;
+    return {
+        id: row.id,
+        threadId: row.thread_id,
+        userId: row.user_id,
+        role: row.role,
+        text: row.content ?? "",
+        createdAt: row.created_at,
+        tokenCount: Number(row.token_count ?? 0),
+        attachments,
+    };
+}
+
+const _activeThreadCache = new Map<string, ConversationThread>();
+const _savedLocalMessageIds = new Set<string>();
+
+export async function createConversationThread(userId: string, stageId: number, summaryId?: string | null): Promise<ConversationThread | null> {
+    if (conversationThreadsAvailable === false) return null;
+    const { data, error } = await supabase
+        .from("conversation_threads")
+        .insert({ user_id: userId, stage_id: stageId, summary_id: summaryId ?? null })
+        .select("*")
+        .single();
+    if (error || !data) {
+        if (isMissingConversationThreadRelationError(error)) {
+            conversationThreadsAvailable = false;
+            return null;
+        }
+        console.error("createConversationThread error:", error?.message);
+        return null;
+    }
+    conversationThreadsAvailable = true;
+    const thread = mapConversationThread(data);
+    _activeThreadCache.set(`${userId}:${stageId}`, thread);
+    return thread;
+}
+
+export async function getOrCreateConversationThread(userId: string, stageId: number): Promise<ConversationThread | null> {
+    if (conversationThreadsAvailable === false) return null;
+    const key = `${userId}:${stageId}`;
+    const cached = _activeThreadCache.get(key);
+    if (cached) return cached;
+
+    const { data, error } = await supabase
+        .from("conversation_threads")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("stage_id", stageId)
+        .order("last_message_at", { ascending: false, nullsFirst: false })
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+    if (error) {
+        if (isMissingConversationThreadRelationError(error)) {
+            conversationThreadsAvailable = false;
+            return null;
+        }
+        console.error("getOrCreateConversationThread error:", error.message);
+        return null;
+    }
+    if (data) {
+        conversationThreadsAvailable = true;
+        const thread = mapConversationThread(data);
+        _activeThreadCache.set(key, thread);
+        return thread;
+    }
+    return createConversationThread(userId, stageId);
+}
+
+export async function loadConversationMessagesPage(
+    userId: string,
+    stageId: number,
+    options?: { before?: string | null; limit?: number },
+): Promise<{ thread: ConversationThread | null; messages: ConversationMessage[]; hasMore: boolean }> {
+    const thread = await getOrCreateConversationThread(userId, stageId);
+    if (!thread) return { thread: null, messages: [], hasMore: false };
+    const limit = Math.max(1, Math.min(100, options?.limit ?? 50));
+    let query = supabase
+        .from("conversation_messages")
+        .select("*, message_attachments(*)")
+        .eq("user_id", userId)
+        .eq("thread_id", thread.id)
+        .order("created_at", { ascending: false })
+        .limit(limit + 1);
+    if (options?.before) query = query.lt("created_at", options.before);
+    const { data, error } = await query;
+    if (error) {
+        if (isMissingConversationThreadRelationError(error)) {
+            conversationThreadsAvailable = false;
+            return { thread: null, messages: [], hasMore: false };
+        }
+        console.error("loadConversationMessagesPage error:", error.message);
+        return { thread, messages: [], hasMore: false };
+    }
+    conversationThreadsAvailable = true;
+    const rows = data ?? [];
+    const messages = rows.slice(0, limit).map(mapConversationMessage).reverse();
+    messages.forEach((message) => _savedLocalMessageIds.add(`${userId}:${stageId}:${message.id}`));
+    return { thread, messages, hasMore: rows.length > limit };
+}
+
 export async function loadAllMessages(userId: string) {
+    const threaded: Record<number, any[]> = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
+    if (conversationThreadsAvailable !== false) {
+        let loadedAnyThread = false;
+        for (let stageId = 1; stageId <= 6; stageId += 1) {
+            const page = await loadConversationMessagesPage(userId, stageId, { limit: 50 });
+            if (page.thread) loadedAnyThread = true;
+            threaded[stageId] = page.messages;
+        }
+        if (loadedAnyThread || conversationThreadsAvailable === true) return threaded;
+    }
+
     const { data, error } = await supabase
         .from("messages")
         .select("*")
@@ -200,26 +374,81 @@ export async function loadAllMessages(userId: string) {
     return result;
 }
 
-// Per-stage debounce state — coalesces rapid calls (e.g. during streaming) so
-// DELETE + INSERT never races with itself for the same stage.
+// Per-stage debounce state — coalesces rapid calls during streaming so each
+// user/Forge message is appended once after text settles.
 const _saveTimers: Record<string, ReturnType<typeof setTimeout>> = {};
 
 export function saveMessages(userId: string, stageId: number, messages: any[]) {
     const key = `${userId}:${stageId}`;
     clearTimeout(_saveTimers[key]);
-    // Capture the latest messages snapshot; the timer runs after rapid updates settle.
     const snapshot = messages.slice();
     _saveTimers[key] = setTimeout(async () => {
         delete _saveTimers[key];
+        if (snapshot.length === 0) return;
+
+        if (conversationThreadsAvailable !== false) {
+            const thread = await getOrCreateConversationThread(userId, stageId);
+            if (thread) {
+                const unsaved = snapshot.filter((m) => {
+                    if (!m?.id || _savedLocalMessageIds.has(`${userId}:${stageId}:${m.id}`)) return false;
+                    return String(m.text || "").trim().length > 0;
+                });
+
+                for (const message of unsaved) {
+                    const createdAt = message.createdAt ?? new Date().toISOString();
+                    const { data, error } = await supabase
+                        .from("conversation_messages")
+                        .insert({
+                            thread_id: thread.id,
+                            user_id: userId,
+                            role: message.role,
+                            content: message.text || "",
+                            created_at: createdAt,
+                            token_count: estimateTokenCount(message.text || ""),
+                        })
+                        .select("*")
+                        .single();
+
+                    if (error || !data) {
+                        if (isMissingConversationThreadRelationError(error)) {
+                            conversationThreadsAvailable = false;
+                            break;
+                        }
+                        console.error("saveMessages conversation_messages error:", error?.message);
+                        continue;
+                    }
+
+                    _savedLocalMessageIds.add(`${userId}:${stageId}:${message.id}`);
+
+                    const attachments = Array.isArray(message.attachments) ? message.attachments : [];
+                    if (attachments.length > 0) {
+                        const rows = attachments.map((file: any) => ({
+                            message_id: data.id,
+                            file_name: file.name || file.fileName || "Attachment",
+                            file_type: file.mimeType || file.fileType || "application/octet-stream",
+                            storage_path: file.storagePath || `inline:${file.id || file.name || data.id}`,
+                        }));
+                        const { error: attachmentError } = await supabase.from("message_attachments").insert(rows);
+                        if (attachmentError) console.error("saveMessages message_attachments error:", attachmentError.message);
+                    }
+
+                    await supabase
+                        .from("conversation_threads")
+                        .update({ last_message_at: createdAt })
+                        .eq("id", thread.id)
+                        .eq("user_id", userId);
+                }
+                if (conversationThreadsAvailable !== false) return;
+            }
+        }
+
         await supabase
             .from("messages")
             .delete()
             .eq("user_id", userId)
             .eq("stage_id", stageId);
 
-        if (snapshot.length === 0) return;
-
-        const rows = snapshot.map(m => ({
+        const rows = snapshot.filter((m) => String(m.text || "").trim()).map(m => ({
             user_id: userId,
             stage_id: stageId,
             role: m.role,
@@ -227,8 +456,9 @@ export function saveMessages(userId: string, stageId: number, messages: any[]) {
             created_at: m.createdAt ?? new Date().toISOString(),
         }));
 
+        if (rows.length === 0) return;
         const { error } = await supabase.from("messages").insert(rows);
-        if (error) console.error("saveMessages error:", error.message);
+        if (error) console.error("saveMessages fallback error:", error.message);
     }, 500);
 }
 
@@ -251,10 +481,11 @@ export async function loadJournalEntries(userId: string) {
         forgeSummary: row.forge_summary ?? null,
         themes: row.themes ?? [],
         summaryGeneratedAt: row.summary_generated_at ?? null,
+        mood: row.mood ?? null,
     }));
 }
 
-export async function saveJournalEntry(userId: string, content: string, stageId?: number, wordCount?: number) {
+export async function saveJournalEntry(userId: string, content: string, stageId?: number, wordCount?: number, mood?: string | null) {
     const { data, error } = await supabase
         .from("journal_entries")
         .insert({
@@ -262,6 +493,7 @@ export async function saveJournalEntry(userId: string, content: string, stageId?
             content,
             ...(stageId != null ? { stage_id: stageId } : {}),
             ...(wordCount != null ? { word_count: wordCount } : {}),
+            ...(mood != null ? { mood } : {}),
         })
         .select()
         .single();
@@ -277,6 +509,43 @@ export async function saveJournalEntry(userId: string, content: string, stageId?
         forgeSummary: data.forge_summary ?? null,
         themes: data.themes ?? [],
         summaryGeneratedAt: data.summary_generated_at ?? null,
+        mood: data.mood ?? null,
+    };
+}
+
+export async function updateJournalEntry(
+    userId: string,
+    entryId: string,
+    content: string,
+    wordCount: number,
+    mood?: string | null
+) {
+    const { data, error } = await supabase
+        .from("journal_entries")
+        .update({
+            content,
+            word_count: wordCount,
+            ...(mood !== undefined ? { mood } : {}),
+            forge_summary: null,
+            themes: [],
+            summary_generated_at: null,
+        })
+        .eq("id", entryId)
+        .eq("user_id", userId)
+        .select()
+        .single();
+
+    if (error) { console.error("updateJournalEntry error:", error.message); return null; }
+    return {
+        id: data.id,
+        content: data.content,
+        createdAt: data.created_at,
+        stageId: data.stage_id ?? null,
+        wordCount: data.word_count ?? null,
+        forgeSummary: null,
+        themes: [] as string[],
+        summaryGeneratedAt: null,
+        mood: data.mood ?? null,
     };
 }
 
@@ -317,7 +586,50 @@ export async function loadJournalEntriesWithSummaries(userId: string, limit = 50
         forgeSummary: row.forge_summary ?? null,
         themes: row.themes ?? [],
         summaryGeneratedAt: row.summary_generated_at ?? null,
+        mood: row.mood ?? null,
     }));
+}
+
+// ── JOURNAL WEEKLY SUMMARIES ──────────────────────────────────
+
+export async function loadWeeklySummary(userId: string, weekStart: string) {
+    const { data } = await supabase
+        .from("journal_weekly_summaries")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("week_start", weekStart)
+        .maybeSingle();
+
+    if (!data) return null;
+    return {
+        summaryText: data.summary_text as string,
+        themes: (data.themes as string[]) ?? [],
+        generatedAt: data.generated_at as string,
+        entryCount: data.entry_count as number,
+    };
+}
+
+export async function saveWeeklySummary(
+    userId: string,
+    weekStart: string,
+    weekEnd: string,
+    summaryText: string,
+    themes: string[],
+    entryCount: number
+): Promise<void> {
+    const { error } = await supabase
+        .from("journal_weekly_summaries")
+        .upsert({
+            user_id: userId,
+            week_start: weekStart,
+            week_end: weekEnd,
+            summary_text: summaryText,
+            themes,
+            entry_count: entryCount,
+            generated_at: new Date().toISOString(),
+        }, { onConflict: "user_id,week_start" });
+
+    if (error) console.error("saveWeeklySummary error:", error.message);
 }
 
 // ── DAILY CHAT SUMMARIES ─────────────────────────────────────

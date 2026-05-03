@@ -7,6 +7,7 @@ import {
     type AcademyContent,
     type AcademyContentType,
     type AcademyHistoryAction,
+    type AssessmentAttempt,
     type AcademySeries,
     type AcademySeriesItem,
     type AcademyStatus,
@@ -15,6 +16,8 @@ import {
     type AcademyUserHistory,
     type AcademyUserSeriesItemProgress,
     type AcademyWorkspace,
+    type LessonAssessment,
+    type StageCertificate,
 } from "./academy";
 
 type CategoryInput = {
@@ -106,7 +109,11 @@ export type AcademyWeeklyActivity = {
 
 function isMissingAcademyRelationError(error: any) {
     const message = String(error?.message ?? "").toLowerCase();
-    return error?.code === "PGRST205" || message.includes("academy_");
+    return error?.code === "PGRST205"
+        || message.includes("academy_")
+        || message.includes("lesson_assessments")
+        || message.includes("assessment_attempts")
+        || message.includes("stage_certificates");
 }
 
 function normalizeStageIds(stageIds: number[] | null | undefined) {
@@ -267,6 +274,45 @@ function mapHistory(row: any): AcademyUserHistory {
     };
 }
 
+function mapLessonAssessment(row: any): LessonAssessment {
+    const rawOptions = Array.isArray(row.options) ? row.options : [];
+    return {
+        id: row.id,
+        lessonId: row.lesson_id,
+        question: row.question,
+        options: rawOptions.map((option) => String(option)),
+        correctAnswerIndex: row.correct_answer_index ?? 0,
+        explanation: row.explanation ?? "",
+        createdAt: row.created_at,
+    };
+}
+
+function mapAssessmentAttempt(row: any): AssessmentAttempt {
+    return {
+        id: row.id,
+        userId: row.user_id,
+        lessonId: row.lesson_id,
+        assessmentId: row.assessment_id,
+        selectedIndex: row.selected_index,
+        isCorrect: row.is_correct ?? false,
+        attemptedAt: row.attempted_at,
+    };
+}
+
+function mapStageCertificate(row: any): StageCertificate {
+    return {
+        id: row.id,
+        userId: row.user_id,
+        stageId: row.stage_id,
+        founderName: row.founder_name ?? "",
+        stageName: row.stage_name ?? "",
+        completedAt: row.completed_at,
+        metadata: (row.metadata ?? {}) as Record<string, unknown>,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+    };
+}
+
 async function loadAcademyWorkspaceInternal(userId: string, includeDrafts: boolean): Promise<AcademyWorkspace> {
     const contentQuery = supabase
         .from("academy_content")
@@ -298,6 +344,9 @@ async function loadAcademyWorkspaceInternal(userId: string, includeDrafts: boole
         contentProgressRes,
         seriesItemProgressRes,
         historyRes,
+        assessmentsRes,
+        assessmentAttemptsRes,
+        stageCertificatesRes,
     ] = await Promise.all([
         includeDrafts ? categoriesQuery : categoriesQuery.eq("is_active", true),
         supabase.from("academy_tags").select("*").order("name", { ascending: true }),
@@ -310,6 +359,9 @@ async function loadAcademyWorkspaceInternal(userId: string, includeDrafts: boole
         supabase.from("academy_user_content_progress").select("*").eq("user_id", userId),
         supabase.from("academy_user_series_item_progress").select("*").eq("user_id", userId),
         supabase.from("academy_user_history").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(18),
+        supabase.from("lesson_assessments").select("*").order("created_at", { ascending: true }),
+        supabase.from("assessment_attempts").select("*").eq("user_id", userId).order("attempted_at", { ascending: false }),
+        supabase.from("stage_certificates").select("*").eq("user_id", userId).order("completed_at", { ascending: false }),
     ]);
 
     const errors = [
@@ -322,6 +374,9 @@ async function loadAcademyWorkspaceInternal(userId: string, includeDrafts: boole
         contentProgressRes.error,
         seriesItemProgressRes.error,
         historyRes.error,
+        assessmentsRes.error,
+        assessmentAttemptsRes.error,
+        stageCertificatesRes.error,
     ].filter(Boolean);
 
     if (errors.length > 0) {
@@ -335,6 +390,9 @@ async function loadAcademyWorkspaceInternal(userId: string, includeDrafts: boole
                 contentProgress: [],
                 seriesItemProgress: [],
                 history: [],
+                assessments: [],
+                assessmentAttempts: [],
+                stageCertificates: [],
             };
         }
         throw firstError;
@@ -374,6 +432,9 @@ async function loadAcademyWorkspaceInternal(userId: string, includeDrafts: boole
         contentProgress: (contentProgressRes.data ?? []).map(mapContentProgress),
         seriesItemProgress: (seriesItemProgressRes.data ?? []).map(mapSeriesItemProgress),
         history: (historyRes.data ?? []).map(mapHistory),
+        assessments: (assessmentsRes.data ?? []).map(mapLessonAssessment),
+        assessmentAttempts: (assessmentAttemptsRes.data ?? []).map(mapAssessmentAttempt),
+        stageCertificates: (stageCertificatesRes.data ?? []).map(mapStageCertificate),
     };
 }
 
@@ -656,6 +717,53 @@ export async function upsertAcademyContentProgress(
         .single();
     if (error) throw error;
     return mapContentProgress(data);
+}
+
+export async function recordAssessmentAttempt(
+    userId: string,
+    lessonId: string,
+    assessmentId: string,
+    selectedIndex: number,
+    isCorrect: boolean,
+) {
+    const { data, error } = await supabase
+        .from("assessment_attempts")
+        .insert({
+            user_id: userId,
+            lesson_id: lessonId,
+            assessment_id: assessmentId,
+            selected_index: selectedIndex,
+            is_correct: isCorrect,
+        })
+        .select()
+        .single();
+    if (error) throw error;
+    return mapAssessmentAttempt(data);
+}
+
+export async function upsertStageCertificate(input: {
+    userId: string;
+    stageId: number;
+    founderName: string;
+    stageName: string;
+    metadata?: Record<string, unknown>;
+}) {
+    const now = new Date().toISOString();
+    const { data, error } = await supabase
+        .from("stage_certificates")
+        .upsert({
+            user_id: input.userId,
+            stage_id: input.stageId,
+            founder_name: input.founderName.trim() || "Founder",
+            stage_name: input.stageName,
+            completed_at: now,
+            metadata: input.metadata ?? {},
+            updated_at: now,
+        }, { onConflict: "user_id,stage_id" })
+        .select()
+        .single();
+    if (error) throw error;
+    return mapStageCertificate(data);
 }
 
 export async function touchAcademyContentOpened(userId: string, contentId: string) {

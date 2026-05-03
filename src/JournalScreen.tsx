@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { saveJournalEntry, deleteJournalEntry } from "./db";
-import { getWeeklyJournalSummary, updateWeeklyJournalSummary } from "./lib/founderSessionState";
+import { saveJournalEntry, updateJournalEntry, deleteJournalEntry, loadWeeklySummary, saveWeeklySummary } from "./db";
 import { generateWeeklyJournalSummary, summarizeJournalEntry } from "./lib/journalIntelligence";
 import Logo from "./components/Logo";
 import MicButton from "./components/MicButton";
@@ -16,6 +15,42 @@ const WRITING_PROMPTS = [
     "What does success look like in 90 days?",
 ];
 
+const MOOD_OPTIONS = [
+    { emoji: "😤", label: "Stressed" },
+    { emoji: "😐", label: "Neutral" },
+    { emoji: "😊", label: "Good" },
+    { emoji: "🔥", label: "Energized" },
+    { emoji: "😴", label: "Tired" },
+];
+
+const ENTRY_TEMPLATES = [
+    {
+        name: "Daily Reflection",
+        icon: "🌅",
+        content: `How did today go?\n\nWhat went well?\n\nWhat was challenging?\n\nWhat's one thing I learned?\n\nWhat do I want to focus on tomorrow?`,
+    },
+    {
+        name: "Weekly Review",
+        icon: "📅",
+        content: `What were my biggest wins this week?\n\nWhat didn't go as planned?\n\nWhat am I most worried about going into next week?\n\nWhat needs to change?`,
+    },
+    {
+        name: "Milestone Capture",
+        icon: "🏁",
+        content: `The milestone:\n\nWhat made it possible?\n\nWho contributed?\n\nWhat does this mean for the business?\n\nWhat's the next milestone from here?`,
+    },
+    {
+        name: "Problem Solving",
+        icon: "🧩",
+        content: `The problem I'm facing:\n\nWhy is this a problem? What's the root cause?\n\nOptions I've considered:\n1.\n2.\n3.\n\nThe option I'm leaning toward and why:\n\nWhat's stopping me?`,
+    },
+    {
+        name: "Gratitude",
+        icon: "🙏",
+        content: `Today I'm grateful for:\n1.\n2.\n3.\n\nOne person who deserves acknowledgment:\n\nOne thing about this journey I wouldn't trade:`,
+    },
+];
+
 type JournalEntryView = {
     id: string;
     content: string;
@@ -26,6 +61,7 @@ type JournalEntryView = {
     themes?: string[];
     summaryGeneratedAt?: string | null;
     summaryFailed?: boolean;
+    mood?: string | null;
 };
 
 function calcWordCount(text: string): number {
@@ -35,6 +71,20 @@ function calcWordCount(text: string): number {
 function getReadTimeLabel(wordCount: number) {
     if (wordCount <= 100) return `${wordCount} words`;
     return `${wordCount} words · ${Math.ceil(wordCount / 200)} min read`;
+}
+
+function getWeekStartDate(date = new Date()): string {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    const day = d.getDay();
+    d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day));
+    return d.toISOString().slice(0, 10);
+}
+
+function getWeekEndDate(weekStart: string): string {
+    const d = new Date(weekStart + "T00:00:00");
+    d.setDate(d.getDate() + 6);
+    return d.toISOString().slice(0, 10);
 }
 
 function getWeekRangeLabel(date = new Date()) {
@@ -136,6 +186,17 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
     const [writingPrompts, setWritingPrompts] = useState<string[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
+
+    // Edit mode
+    const [editingEntry, setEditingEntry] = useState<JournalEntryView | null>(null);
+
+    // Calendar strip
+    const [calendarMonth] = useState(new Date());
+    const [selectedDay, setSelectedDay] = useState<string | null>(null); // "YYYY-MM-DD"
+
+    // Mood
+    const [selectedMood, setSelectedMood] = useState<string | null>(null);
+
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -170,27 +231,30 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
             return () => { cancelled = true; };
         }
 
-        const loadWeeklySummary = async () => {
-            const stored = await getWeeklyJournalSummary(userId);
-            const generatedAtMs = stored?.generatedAt ? new Date(stored.generatedAt).getTime() : NaN;
-            if (stored?.text && Number.isFinite(generatedAtMs) && Date.now() - generatedAtMs < SEVEN_DAYS_MS) {
-                if (!cancelled) setWeeklySummary(stored.text);
-                return;
+        const fetchOrGenerateSummary = async () => {
+            const weekStart = getWeekStartDate();
+            const stored = await loadWeeklySummary(userId, weekStart);
+            if (stored?.summaryText) {
+                const ageMs = Date.now() - new Date(stored.generatedAt).getTime();
+                if (ageMs < SEVEN_DAYS_MS) {
+                    if (!cancelled) setWeeklySummary(stored.summaryText);
+                    return;
+                }
             }
 
             if (!cancelled) setLoadingWeekly(true);
             try {
                 const result = await generateWeeklyJournalSummary(userId, currentRecentEntries);
-                if (!result) return;
-                const generatedAt = new Date().toISOString();
-                await updateWeeklyJournalSummary(userId, result, generatedAt);
+                if (!result || cancelled) return;
+                const weekEnd = getWeekEndDate(weekStart);
+                await saveWeeklySummary(userId, weekStart, weekEnd, result, [], currentRecentEntries.length);
                 if (!cancelled) setWeeklySummary(result);
             } finally {
                 if (!cancelled) setLoadingWeekly(false);
             }
         };
 
-        void loadWeeklySummary();
+        void fetchOrGenerateSummary();
         return () => { cancelled = true; };
     }, [journalEntryCount]);
 
@@ -212,17 +276,30 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
             const themes = entry.themes ?? [];
             const matchesTheme = selectedTheme ? themes.includes(selectedTheme) : true;
             if (!matchesTheme) return false;
+            if (selectedDay) {
+                const entryDay = entry.createdAt.slice(0, 10);
+                if (entryDay !== selectedDay) return false;
+            }
             if (!query) return true;
             return entry.content.toLowerCase().includes(query)
                 || String(entry.forgeSummary ?? "").toLowerCase().includes(query)
                 || themes.some(theme => theme.toLowerCase().includes(query));
         });
-    }, [typedEntries, searchTerm, selectedTheme]);
+    }, [typedEntries, searchTerm, selectedTheme, selectedDay]);
 
     const openWritingOverlay = () => {
+        setEditingEntry(null);
         setDraft("");
+        setSelectedMood(null);
         setWriting(true);
         setWritingPrompts([...WRITING_PROMPTS].sort(() => Math.random() - 0.5).slice(0, 3));
+    };
+
+    const openEditOverlay = (entry: JournalEntryView) => {
+        setEditingEntry(entry);
+        setDraft(entry.content);
+        setSelectedMood(entry.mood ?? null);
+        setWriting(true);
     };
 
     const retrySummary = async (entry: JournalEntryView) => {
@@ -243,32 +320,54 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
         if (!draft.trim() || saving) return;
         setSaving(true);
         const wc = calcWordCount(draft);
-        const stageId = profile?.currentStage ?? null;
         const savedContent = draft.trim();
-        const entry = await saveJournalEntry(userId, savedContent, stageId, wc);
-        if (entry) {
-            onEntriesChange([entry, ...typedEntries]);
-            setDraft("");
-            setWriting(false);
-            setJournalEntryCount(prev => prev + 1);
-            setNewEntryId(entry.id);
-            window.setTimeout(() => setNewEntryId(null), 1000);
 
-            summarizeJournalEntry(entry.id, savedContent, userId).then(result => {
-                if (!result) {
+        if (editingEntry) {
+            // Edit existing entry
+            const updated = await updateJournalEntry(userId, editingEntry.id, savedContent, wc, selectedMood);
+            if (updated) {
+                onEntriesChange(prev => prev.map(e => e.id === editingEntry.id ? { ...e, ...updated } : e));
+                setDraft("");
+                setWriting(false);
+                setEditingEntry(null);
+                setSelectedMood(null);
+                summarizeJournalEntry(editingEntry.id, savedContent, userId).then(result => {
+                    if (!result) {
+                        onEntriesChange(prev => prev.map(e => e.id === editingEntry.id ? { ...e, summaryFailed: true } : e));
+                        return;
+                    }
                     onEntriesChange(prev => prev.map(e =>
-                        e.id === entry.id
-                            ? { ...e, summaryFailed: true }
+                        e.id === editingEntry.id
+                            ? { ...e, forgeSummary: result.summary, themes: result.themes, summaryFailed: false }
                             : e
                     ));
-                    return;
-                }
-                onEntriesChange(prev => prev.map(e =>
-                    e.id === entry.id
-                        ? { ...e, forgeSummary: result.summary, themes: result.themes, summaryFailed: false }
-                        : e
-                ));
-            }).catch(() => {});
+                }).catch(() => {});
+            }
+        } else {
+            // New entry
+            const stageId = profile?.currentStage ?? null;
+            const entry = await saveJournalEntry(userId, savedContent, stageId, wc, selectedMood);
+            if (entry) {
+                onEntriesChange([entry, ...typedEntries]);
+                setDraft("");
+                setWriting(false);
+                setSelectedMood(null);
+                setJournalEntryCount(prev => prev + 1);
+                setNewEntryId(entry.id);
+                window.setTimeout(() => setNewEntryId(null), 1000);
+
+                summarizeJournalEntry(entry.id, savedContent, userId).then(result => {
+                    if (!result) {
+                        onEntriesChange(prev => prev.map(e => e.id === entry.id ? { ...e, summaryFailed: true } : e));
+                        return;
+                    }
+                    onEntriesChange(prev => prev.map(e =>
+                        e.id === entry.id
+                            ? { ...e, forgeSummary: result.summary, themes: result.themes, summaryFailed: false }
+                            : e
+                    ));
+                }).catch(() => {});
+            }
         }
         setSaving(false);
     };
@@ -287,13 +386,50 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
         try {
             const result = await generateWeeklyJournalSummary(userId, currentRecentEntries);
             if (!result) return;
-            const generatedAt = new Date().toISOString();
-            await updateWeeklyJournalSummary(userId, result, generatedAt);
+            const weekStart = getWeekStartDate();
+            const weekEnd = getWeekEndDate(weekStart);
+            await saveWeeklySummary(userId, weekStart, weekEnd, result, [], currentRecentEntries.length);
             setWeeklySummary(result);
             setWeeklyExpanded(true);
         } finally {
             setLoadingWeekly(false);
         }
+    };
+
+    const handleExport = () => {
+        const sorted = [...typedEntries].sort((a, b) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
+        const lines: string[] = [
+            "# Founder's Journal",
+            `Exported ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`,
+            `${sorted.length} ${sorted.length === 1 ? "entry" : "entries"}`,
+            "",
+            "---",
+            "",
+        ];
+        for (const entry of sorted) {
+            lines.push(`## ${formatDate(entry.createdAt)}`);
+            lines.push(`*${formatTime(entry.createdAt)}*`);
+            if (entry.mood) lines.push(`Mood: ${entry.mood}`);
+            if (entry.themes?.length) lines.push(`Themes: ${entry.themes.join(", ")}`);
+            lines.push("");
+            lines.push(entry.content);
+            if (entry.forgeSummary) {
+                lines.push("");
+                lines.push(`> **Forge's reflection:** ${entry.forgeSummary}`);
+            }
+            lines.push("");
+            lines.push("---");
+            lines.push("");
+        }
+        const blob = new Blob([lines.join("\n")], { type: "text/markdown;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `founders-journal-${new Date().toISOString().slice(0, 10)}.md`;
+        a.click();
+        URL.revokeObjectURL(url);
     };
 
     const copyEntry = async (entry: JournalEntryView) => {
@@ -350,14 +486,80 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                         {typedEntries.length} {typedEntries.length === 1 ? "entry" : "entries"}
                     </div>
                 </div>
-                <button onClick={openWritingOverlay} style={{
-                    background: "rgba(232,98,42,0.1)", border: "1px solid rgba(232,98,42,0.25)",
-                    borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "#E8622A",
-                    fontSize: "var(--foundry-app-header-button-font)", fontWeight: 500, cursor: "pointer",
-                }}>+ New</button>
+                <div style={{ display: "flex", gap: 8 }}>
+                    {typedEntries.length > 0 && (
+                        <button onClick={handleExport} title="Export journal as Markdown" style={{
+                            background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+                            borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "rgba(240,237,232,0.5)",
+                            fontSize: "var(--foundry-app-header-button-font)", cursor: "pointer",
+                        }}>Export</button>
+                    )}
+                    <button onClick={openWritingOverlay} style={{
+                        background: "rgba(232,98,42,0.1)", border: "1px solid rgba(232,98,42,0.25)",
+                        borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "#E8622A",
+                        fontSize: "var(--foundry-app-header-button-font)", fontWeight: 500, cursor: "pointer",
+                    }}>+ New</button>
+                </div>
             </div>
 
             <div className="foundry-app-page__content" style={{ flex: 1, overflowY: "auto", padding: "16px", maxWidth: 720, width: "100%", margin: "0 auto", boxSizing: "border-box" }}>
+
+                {/* Calendar strip */}
+                {typedEntries.length > 0 && (() => {
+                    const today = new Date();
+                    const year = calendarMonth.getFullYear();
+                    const month = calendarMonth.getMonth();
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+                    const entryDays = new Set(typedEntries.map(e => e.createdAt.slice(0, 10)));
+                    const todayStr = today.toISOString().slice(0, 10);
+                    return (
+                        <div style={{ marginBottom: 14 }}>
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                                <span style={{ fontSize: 11, color: "rgba(240,237,232,0.4)", fontFamily: "'DM Sans', sans-serif" }}>
+                                    {calendarMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+                                </span>
+                                {selectedDay && (
+                                    <button onClick={() => setSelectedDay(null)} style={{ fontSize: 11, color: "#E8622A", background: "none", border: "none", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+                                        Clear filter ×
+                                    </button>
+                                )}
+                            </div>
+                            <div style={{ display: "flex", gap: 4, overflowX: "auto", paddingBottom: 4 }}>
+                                {Array.from({ length: daysInMonth }, (_, i) => {
+                                    const day = i + 1;
+                                    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+                                    const hasEntry = entryDays.has(dateStr);
+                                    const isToday = dateStr === todayStr;
+                                    const isSelected = selectedDay === dateStr;
+                                    return (
+                                        <button
+                                            key={day}
+                                            onClick={() => setSelectedDay(isSelected ? null : dateStr)}
+                                            style={{
+                                                flexShrink: 0,
+                                                width: 32,
+                                                height: 44,
+                                                borderRadius: 8,
+                                                border: isToday ? "1px solid rgba(232,98,42,0.4)" : isSelected ? "1px solid rgba(232,98,42,0.6)" : "1px solid rgba(255,255,255,0.06)",
+                                                background: isSelected ? "rgba(232,98,42,0.15)" : isToday ? "rgba(232,98,42,0.06)" : "rgba(255,255,255,0.02)",
+                                                cursor: "pointer",
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                gap: 3,
+                                            }}
+                                        >
+                                            <span style={{ fontSize: 11, color: isSelected ? "#E8622A" : isToday ? "#E8622A" : hasEntry ? "rgba(240,237,232,0.7)" : "rgba(240,237,232,0.25)", fontFamily: "'DM Sans', sans-serif", fontWeight: isToday || isSelected ? 600 : 400 }}>{day}</span>
+                                            {hasEntry && <div style={{ width: 4, height: 4, borderRadius: "50%", background: isSelected ? "#E8622A" : "rgba(232,98,42,0.6)" }} />}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    );
+                })()}
+
                 <div style={{ position: "relative", marginBottom: 14 }}>
                     <span style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "rgba(240,237,232,0.3)", fontSize: 13 }}>⌕</span>
                     <input
@@ -422,7 +624,23 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                         {weeklySummary}
                                     </div>
                                 )}
-                                <div style={{ marginTop: 12, fontSize: 11, color: "rgba(240,237,232,0.4)", fontFamily: "'DM Sans', sans-serif" }}>
+                                {(() => {
+                                    const moodEntries = [...recentEntries]
+                                        .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+                                        .filter(e => e.mood);
+                                    if (moodEntries.length < 2) return null;
+                                    return (
+                                        <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                                            <span style={{ fontSize: 10, color: "rgba(240,237,232,0.35)", fontFamily: "'DM Sans', sans-serif" }}>Mood this week:</span>
+                                            <div style={{ display: "flex", gap: 2 }}>
+                                                {moodEntries.map((e, i) => (
+                                                    <span key={i} title={new Date(e.createdAt).toLocaleDateString("en-US", { weekday: "short" })} style={{ fontSize: 14 }}>{e.mood}</span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
+                                <div style={{ marginTop: 8, fontSize: 11, color: "rgba(240,237,232,0.4)", fontFamily: "'DM Sans', sans-serif" }}>
                                     Based on {recentEntries.length} entries this week
                                 </div>
                             </div>
@@ -526,7 +744,20 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                         </div>
                                     </div>
                                     <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "flex-end", gap: 8 }}>
+                                        {entry.mood && <span title={MOOD_OPTIONS.find(m => m.emoji === entry.mood)?.label} style={{ fontSize: 16 }}>{entry.mood}</span>}
                                         <ThemePills themes={entry.themes} />
+                                        <button
+                                            onClick={() => openEditOverlay(entry)}
+                                            title="Edit entry"
+                                            style={{
+                                                background: "transparent",
+                                                border: "none", color: "#5F5952", fontSize: 12, fontWeight: 500,
+                                                cursor: "pointer", padding: "2px 4px", borderRadius: 8,
+                                                transition: "color 0.15s", fontFamily: "'DM Sans', sans-serif",
+                                            }}
+                                            onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#E8622A"}
+                                            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "#5F5952"}
+                                        >Edit</button>
                                         <button
                                             onClick={() => handleDelete(entry.id)}
                                             disabled={deletingId === entry.id}
@@ -695,10 +926,10 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                         }}>
                             <div style={{ minWidth: 0 }}>
                                 <div style={{ fontSize: 11, color: "rgba(240,237,232,0.35)", fontFamily: "'DM Sans', sans-serif", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 3 }}>
-                                    New journal entry
+                                    {editingEntry ? "Edit entry" : "New journal entry"}
                                 </div>
                                 <div style={{ fontSize: 15, color: "rgba(240,237,232,0.72)", fontFamily: "'Lora', Georgia, serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                                    {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+                                    {editingEntry ? formatDate(editingEntry.createdAt) : new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
                                 </div>
                             </div>
                             <div style={{
@@ -715,7 +946,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                             </div>
                             <div style={{ display: "flex", gap: 8 }}>
                                 <button
-                                    onClick={() => { setWriting(false); setDraft(""); }}
+                                    onClick={() => { setWriting(false); setDraft(""); setEditingEntry(null); setSelectedMood(null); }}
                                     style={{
                                         background: "rgba(255,255,255,0.04)",
                                         border: "1px solid rgba(255,255,255,0.08)",
@@ -751,10 +982,66 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                         </div>
                     </div>
                     <div style={{ flex: 1, overflowY: "auto" }}>
-                        <div style={{ maxWidth: 820, margin: "0 auto", padding: "28px 18px 40px", boxSizing: "border-box" }}>
+                        <div style={{ maxWidth: 820, margin: "0 auto", padding: "16px 18px 40px", boxSizing: "border-box" }}>
+
+                            {/* Mood selector */}
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                                <span style={{ fontSize: 11, color: "rgba(240,237,232,0.35)", fontFamily: "'DM Sans', sans-serif" }}>How are you feeling?</span>
+                                <div style={{ display: "flex", gap: 6 }}>
+                                    {MOOD_OPTIONS.map(m => (
+                                        <button
+                                            key={m.emoji}
+                                            onClick={() => setSelectedMood(selectedMood === m.emoji ? null : m.emoji)}
+                                            title={m.label}
+                                            style={{
+                                                fontSize: 20,
+                                                background: selectedMood === m.emoji ? "rgba(232,98,42,0.15)" : "rgba(255,255,255,0.03)",
+                                                border: selectedMood === m.emoji ? "1px solid rgba(232,98,42,0.35)" : "1px solid rgba(255,255,255,0.07)",
+                                                borderRadius: 8,
+                                                width: 36,
+                                                height: 36,
+                                                cursor: "pointer",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                transition: "all 0.15s",
+                                            }}
+                                        >{m.emoji}</button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Entry templates */}
+                            {!draft.trim() && (
+                                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
+                                    {ENTRY_TEMPLATES.map(t => (
+                                        <button
+                                            key={t.name}
+                                            onClick={() => setDraft(t.content)}
+                                            style={{
+                                                display: "flex", alignItems: "center", gap: 5,
+                                                background: "rgba(255,255,255,0.03)",
+                                                border: "1px solid rgba(255,255,255,0.08)",
+                                                borderRadius: 20,
+                                                padding: "5px 12px",
+                                                fontSize: 11,
+                                                color: "rgba(240,237,232,0.55)",
+                                                cursor: "pointer",
+                                                fontFamily: "'DM Sans', sans-serif",
+                                                transition: "all 0.15s",
+                                            }}
+                                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(232,98,42,0.08)"; (e.currentTarget as HTMLElement).style.borderColor = "rgba(232,98,42,0.2)"; (e.currentTarget as HTMLElement).style.color = "#E8622A"; }}
+                                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.03)"; (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.08)"; (e.currentTarget as HTMLElement).style.color = "rgba(240,237,232,0.55)"; }}
+                                        >
+                                            <span>{t.icon}</span>{t.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+
                             <div style={{
                                 position: "relative",
-                                minHeight: "calc(100vh - 148px)",
+                                minHeight: "calc(100vh - 220px)",
                                 borderRadius: 18,
                                 background: "rgba(255,255,255,0.018)",
                                 border: "1px solid rgba(255,255,255,0.055)",

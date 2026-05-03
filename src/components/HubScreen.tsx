@@ -29,6 +29,7 @@ export default function HubScreen({
     onOpenMarketIntel,
     onOpenBusinessModelCanvas,
     onOpenCofounder,
+    cofounderUnreadCount = 0,
     onOpenSettings,
     onOpenAdminHub,
     onOpenAcademy,
@@ -386,6 +387,7 @@ export default function HubScreen({
             icon: Icons.sidebar.cofounder,
             label: "Co-Founder Mode",
             sub: "Shared team workspace",
+            badge: cofounderUnreadCount > 0 ? cofounderUnreadCount : undefined,
             action: () => {
                 setSidebarOpen(false);
                 onOpenCofounder();
@@ -612,7 +614,15 @@ export default function HubScreen({
                                     </div>
                                 </div>
 
-                                {item.available && <span style={{ fontSize: "var(--foundry-hub-sidebar-nav-sub-font)", color: "#555" }}>→</span>}
+                                {item.available && (
+                                    (item as any).badge ? (
+                                        <div style={{ minWidth: 18, height: 18, borderRadius: 9, background: '#E8622A', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px', fontSize: 10, color: '#fff', fontWeight: 700, fontFamily: 'DM Sans, sans-serif', flexShrink: 0 }}>
+                                            {(item as any).badge > 9 ? '9+' : (item as any).badge}
+                                        </div>
+                                    ) : (
+                                        <span style={{ fontSize: "var(--foundry-hub-sidebar-nav-sub-font)", color: "#555" }}>→</span>
+                                    )
+                                )}
                             </button>
                         );
                     })}

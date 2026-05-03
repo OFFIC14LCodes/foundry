@@ -1,7 +1,7 @@
 import { supabase } from "../supabase";
 import { callForgeAPI } from "./forgeApi";
 import { recordAcademyHistory, upsertAcademyContentProgress } from "./academyDb";
-import type { AcademyContent, AcademySessionMode, AcademyTopicLaunch } from "./academy";
+import type { AcademyContent, AcademySessionMode, AcademyTopicLaunch, AcademyUserContentProgress, AssessmentAttempt } from "./academy";
 
 export type KnowledgeCheckEvaluation = {
     passed: boolean;
@@ -32,6 +32,9 @@ export async function completeAcademyLesson({
     feedback,
     completedAt,
     source = "academy",
+    assessmentPassed = true,
+    correctCount = null,
+    attemptedCount = null,
 }: {
     userId: string;
     contentId: string;
@@ -40,30 +43,38 @@ export async function completeAcademyLesson({
     feedback?: string | null;
     completedAt?: string | null;
     source?: "lesson_modal" | "forge_chat" | "academy";
+    assessmentPassed?: boolean;
+    correctCount?: number | null;
+    attemptedCount?: number | null;
 }): Promise<CompletedAcademyLessonResult> {
     const completedTimestamp = completedAt ?? new Date().toISOString();
-    const contentProgress = await upsertAcademyContentProgress(userId, contentId, true, {
+    const fullyComplete = assessmentPassed;
+    const contentProgress = await upsertAcademyContentProgress(userId, contentId, fullyComplete, {
         knowledgeCheckedAt: completedTimestamp,
         lastCheckResponse: response ?? null,
         lastCheckFeedback: feedback ?? null,
     });
 
-    await recordAcademyHistory(userId, "completed", {
-        contentId,
-        metadata: {
-            title: contentTitle ?? null,
-            source,
-        },
-    });
+    if (fullyComplete) {
+        await recordAcademyHistory(userId, "completed", {
+            contentId,
+            metadata: {
+                title: contentTitle ?? null,
+                source,
+                correctCount,
+                attemptedCount,
+            },
+        });
+    }
 
     const { data, error } = await supabase
         .from("user_lesson_progress")
         .upsert({
             user_id: userId,
             content_id: contentId,
-            status: "completed",
+            status: fullyComplete ? "completed" : "in_progress",
             started_at: completedTimestamp,
-            completed_at: completedTimestamp,
+            completed_at: fullyComplete ? completedTimestamp : null,
             knowledge_checked_at: completedTimestamp,
             last_check_response: response ?? null,
             last_check_feedback: feedback ?? null,
@@ -89,6 +100,35 @@ export async function completeAcademyLesson({
             updated_at: data.updated_at ?? null,
         },
     };
+}
+
+export function getLessonAssessmentScore(attempts: AssessmentAttempt[], lessonId: string) {
+    const latestByAssessment = new Map<string, AssessmentAttempt>();
+    attempts
+        .filter((attempt) => attempt.lessonId === lessonId)
+        .sort((a, b) => b.attemptedAt.localeCompare(a.attemptedAt))
+        .forEach((attempt) => {
+            if (!latestByAssessment.has(attempt.assessmentId)) {
+                latestByAssessment.set(attempt.assessmentId, attempt);
+            }
+        });
+    const latestAttempts = Array.from(latestByAssessment.values());
+    const correctCount = latestAttempts.filter((attempt) => attempt.isCorrect).length;
+    return {
+        attemptedCount: latestAttempts.length,
+        correctCount,
+        passed: latestAttempts.length >= 3 && correctCount >= 2,
+        latestAttempts,
+    };
+}
+
+export function isAcademyLessonFullyComplete(
+    progress: AcademyUserContentProgress | null | undefined,
+    attempts: AssessmentAttempt[],
+    lessonId: string,
+) {
+    const readComplete = progress?.status === "completed" || Boolean(progress?.completedAt);
+    return readComplete && getLessonAssessmentScore(attempts, lessonId).passed;
 }
 
 export function getCompletionBadgeLabel(content: AcademyContent) {

@@ -4,7 +4,7 @@ import AuthScreen from "./AuthScreen";
 import {
   loadProfile, saveProfile,
   loadAllStageProgress, saveStageProgress,
-  loadAllMessages, saveMessages,
+  loadAllMessages, saveMessages, loadConversationMessagesPage, createConversationThread,
   loadConversationSummaries, saveConversationSummary, updateConversationSummary, deleteConversationSummary,
   loadJournalEntries, saveJournalEntry, deleteJournalEntry,
   loadBriefings, saveBriefing,
@@ -821,6 +821,9 @@ function ForgeScreen({
   onForgeSeedUsed = null as (() => void) | null,
   forgeSeedNonce = 0,
   onOpenBusinessModelCanvas = null as (() => void) | null,
+  onLoadEarlierMessages = null as ((stageId: number) => void) | null,
+  hasEarlierMessagesByStage = {} as Record<number, boolean>,
+  loadingEarlierStage = null as number | null,
 }) {
   const [activeStage, setActiveStage] = useState(pendingUpgradeStage || initialStage || profile.currentStage);
   const [activeTab, setActiveTab] = useState("chat");
@@ -1652,7 +1655,7 @@ Where do you want to start?`;
     const displayText = [attachmentLabel, censoredText].filter(Boolean).join("\n");
 
     const timestamp = new Date().toISOString();
-    const userMsg = { role: "user", text: displayText, id: `user-${Date.now()}`, createdAt: timestamp };
+    const userMsg = { role: "user", text: displayText, id: `user-${Date.now()}`, createdAt: timestamp, attachments: currentFiles.map((file) => ({ id: file.id, name: file.name, mimeType: file.mimeType, storagePath: `inline:${file.id}` })) };
     const forgeMsg = { role: "forge", text: "", id: `forge-${Date.now()}`, createdAt: new Date().toISOString() };
     const current = messagesByStage[activeStage] || [];
 
@@ -2277,6 +2280,27 @@ ${forgeReply}`;
               </div>
             )}
 
+            {hasEarlierMessagesByStage[activeStage] && (
+              <div style={{ display: "flex", justifyContent: "center", padding: "2px 0 8px" }}>
+                <button
+                  onClick={() => onLoadEarlierMessages?.(activeStage)}
+                  disabled={loadingEarlierStage === activeStage}
+                  style={{
+                    background: "rgba(255,255,255,0.035)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    borderRadius: 999,
+                    padding: "7px 12px",
+                    color: loadingEarlierStage === activeStage ? "#555" : "#C8C4BE",
+                    cursor: loadingEarlierStage === activeStage ? "default" : "pointer",
+                    fontSize: 11,
+                    fontFamily: "'DM Sans', system-ui, sans-serif",
+                  }}
+                >
+                  {loadingEarlierStage === activeStage ? "Loading..." : "Load earlier messages"}
+                </button>
+              </div>
+            )}
+
             {combinedMessages.map((item, i) => {
               if (item._stageMarker) {
                 const ms = STAGES_DATA[item.stageId - 1];
@@ -2717,6 +2741,9 @@ export default function FoundryApp() {
   const [profile, setProfile] = useState(null);
   const [completedByStage, setCompletedByStage] = useState(createEmptyStageProgress());
   const [messagesByStage, setMessagesByStage] = useState(createEmptyMessagesByStage());
+  const [hasEarlierMessagesByStage, setHasEarlierMessagesByStage] = useState<Record<number, boolean>>({ 1: false, 2: false, 3: false, 4: false, 5: false, 6: false });
+  const [loadingEarlierStage, setLoadingEarlierStage] = useState<number | null>(null);
+  const threadSummaryInFlightRef = useRef<Record<number, boolean>>({});
 
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
@@ -2736,6 +2763,8 @@ export default function FoundryApp() {
   const [documentContext, setDocumentContext] = useState<DocumentScreenContext | null>(null);
   const [showMarketIntel, setShowMarketIntel] = useState(false);
   const [showCofounder, setShowCofounder] = useState(false);
+  const [cofounderUnreadCount, setCofounderUnreadCount] = useState(0);
+  const showCofounderRef = useRef(false);
   const [showAcademy, setShowAcademy] = useState(false);
   const [academyContext, setAcademyContext] = useState<AcademyScreenContext | null>(null);
   const [showBusinessModelCanvas, setShowBusinessModelCanvas] = useState(false);
@@ -2814,6 +2843,8 @@ export default function FoundryApp() {
     setProfile(null);
     setCompletedByStage(createEmptyStageProgress());
     setMessagesByStage(createEmptyMessagesByStage());
+    setHasEarlierMessagesByStage({ 1: false, 2: false, 3: false, 4: false, 5: false, 6: false });
+    setLoadingEarlierStage(null);
     setScreen("loading");
     setIsFirstVisit(false);
     setInitialStage(null);
@@ -2936,6 +2967,7 @@ export default function FoundryApp() {
         setProfile(resolvedProfileWithFinancials);
         setCompletedByStage(dbProgress);
         setMessagesByStage(dbMessages);
+        setHasEarlierMessagesByStage(Object.fromEntries(Object.entries(dbMessages).map(([stageId, messages]) => [Number(stageId), (messages as any[]).length >= 50])) as Record<number, boolean>);
         setJournalEntries(dbJournal);
         setBriefings(dbBriefings);
         setNotificationPreferences(dbNotificationPreferences);
@@ -2947,6 +2979,8 @@ export default function FoundryApp() {
         setFounderSessionState(dbFounderSessionState);
         setFinancialData(dbFinancialData);
         setBusinessModelCanvas(dbBusinessModelCanvas);
+        setMessagesByStage(dbMessages);
+        setHasEarlierMessagesByStage(Object.fromEntries(Object.entries(dbMessages).map(([stageId, messages]) => [Number(stageId), (messages as any[]).length >= 50])) as Record<number, boolean>);
         // Load or generate a proactive nudge
         const resolvedStage = dbProfile?.currentStage ?? 1;
         const nudge = dbActiveNudge ?? await generateNudgeIfNeeded(
@@ -3052,6 +3086,65 @@ export default function FoundryApp() {
       saveMessages(user.id, parseInt(stageId), messages as any[]);
     });
   }, [messagesByStage]);
+
+  const handleLoadEarlierMessages = async (stageId: number) => {
+    if (!user?.id || loadingEarlierStage) return;
+    const current = messagesByStage[stageId] || [];
+    const before = current[0]?.createdAt ?? null;
+    if (!before) return;
+    setLoadingEarlierStage(stageId);
+    try {
+      const page = await loadConversationMessagesPage(user.id, stageId, { before, limit: 50 });
+      if (page.messages.length > 0) {
+        setMessagesByStage((prev) => ({
+          ...prev,
+          [stageId]: [...page.messages, ...(prev[stageId] || [])],
+        }));
+      }
+      setHasEarlierMessagesByStage((prev) => ({ ...prev, [stageId]: page.hasMore }));
+    } finally {
+      setLoadingEarlierStage(null);
+    }
+  };
+
+  useEffect(() => {
+    if (!user?.id || !dataLoaded || !profile) return;
+    Object.entries(messagesByStage).forEach(([stageIdRaw, messages]) => {
+      const stageId = Number(stageIdRaw);
+      const stageMessages = messages as any[];
+      if (stageMessages.length <= 100 || threadSummaryInFlightRef.current[stageId]) return;
+      threadSummaryInFlightRef.current[stageId] = true;
+      void (async () => {
+        try {
+          const transcript = stageMessages
+            .slice(-100)
+            .map((message) => `${message.role === "forge" ? "Forge" : profile.name || "Founder"}: ${message.text}`)
+            .join("\n");
+          const summary = await callForgeAPI(
+            [{ role: "user", content: `Summarize this Stage ${stageId} Foundry coaching thread in 4-6 concise bullets. Preserve concrete decisions, blockers, numbers, and next moves.\n\n${transcript}` }],
+            "You summarize founder coaching threads for durable memory. Return only the summary.",
+            700,
+          );
+          const saved = await saveConversationSummary(
+            user.id,
+            stageId,
+            new Date().toISOString().slice(0, 10),
+            `Stage ${stageId} thread summary`,
+            summary,
+            stageMessages.length,
+          );
+          await createConversationThread(user.id, stageId, saved?.id ?? null);
+          setRecentSummaries((prev) => saved ? [saved, ...prev.filter((entry) => entry.id !== saved.id)] : prev);
+          setMessagesByStage((prev) => ({ ...prev, [stageId]: [] }));
+          setHasEarlierMessagesByStage((prev) => ({ ...prev, [stageId]: false }));
+        } catch (error) {
+          console.error("thread summary rollover error:", error);
+        } finally {
+          threadSummaryInFlightRef.current[stageId] = false;
+        }
+      })();
+    });
+  }, [messagesByStage, user?.id, dataLoaded, profile?.name]);
 
   const setScreenPersisted = (s) => {
     if (screen === s) return;
@@ -3585,6 +3678,12 @@ export default function FoundryApp() {
   const openCofounder = () => {
     markMeaningfulActivity();
     setShowCofounder(true);
+    showCofounderRef.current = true;
+    setCofounderUnreadCount(0);
+    const uid = (user as any)?.id;
+    if (uid && userTeamId) {
+      localStorage.setItem(`cf_lrt_${uid}_${userTeamId}`, new Date().toISOString());
+    }
   };
 
   useEffect(() => {
@@ -3610,6 +3709,42 @@ export default function FoundryApp() {
 
     return () => { cancelled = true; };
   }, [screen, showCofounder, user]);
+
+  // ── Cofounder badge: initial unread count on team load ────────
+  useEffect(() => {
+    const uid = (user as any)?.id;
+    if (!uid || !userTeamId) return;
+    const key = `cf_lrt_${uid}_${userTeamId}`;
+    const lastRead = localStorage.getItem(key);
+    if (!lastRead) return;
+    supabase
+      .from('cofounder_messages')
+      .select('id', { count: 'exact', head: true })
+      .eq('team_id', userTeamId)
+      .neq('user_id', uid)
+      .gt('created_at', lastRead)
+      .then(({ count }) => { if (count) setCofounderUnreadCount(count); });
+  }, [userTeamId, user]);
+
+  // ── Cofounder badge: realtime new messages ─────────────────────
+  useEffect(() => {
+    const uid = (user as any)?.id;
+    if (!uid || !userTeamId) return;
+    const channel = supabase
+      .channel(`cfbadge:${userTeamId}`)
+      .on(
+        'postgres_changes' as any,
+        { event: 'INSERT', schema: 'public', table: 'cofounder_messages', filter: `team_id=eq.${userTeamId}` },
+        (payload: any) => {
+          if (payload.new.user_id === uid) return;
+          if (!showCofounderRef.current) {
+            setCofounderUnreadCount(prev => prev + 1);
+          }
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [userTeamId, user]);
 
   const openSettings = () => {
     markMeaningfulActivity();
@@ -3827,6 +3962,7 @@ export default function FoundryApp() {
             onOpenMarketIntel={openMarketIntel}
             onOpenBusinessModelCanvas={openBusinessModelCanvas}
             onOpenCofounder={openCofounder}
+            cofounderUnreadCount={cofounderUnreadCount}
             onOpenAcademy={openAcademy}
             onOpenSettings={openSettings}
             onOpenAdminHub={() => setShowAdminHub(true)}
@@ -3911,6 +4047,9 @@ export default function FoundryApp() {
             onForgeSeedUsed={handleForgeSeedUsed}
             forgeSeedNonce={forgeSeedNonce}
             onOpenBusinessModelCanvas={openBusinessModelCanvas}
+            onLoadEarlierMessages={handleLoadEarlierMessages}
+            hasEarlierMessagesByStage={hasEarlierMessagesByStage}
+            loadingEarlierStage={loadingEarlierStage}
           />
         )}
       </div>
@@ -4069,7 +4208,7 @@ export default function FoundryApp() {
           <CofounderModeScreen
             userId={(user as any).id}
             profile={profile}
-            onBack={() => setShowCofounder(false)}
+            onBack={() => { setShowCofounder(false); showCofounderRef.current = false; }}
             onTeamChanged={(id) => setUserTeamId(id)}
           />
         </Suspense>
