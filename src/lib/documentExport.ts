@@ -415,6 +415,7 @@ function normalizeSignatureAndNotaryFormatting(markdown: string, meta: DocumentE
 export function sanitizeDocumentMarkdown(markdown: string, meta: DocumentExportMeta) {
     const legalDate = getLegalDatePhrase(meta);
     const cleaned = (markdown || "")
+        .replace(/<!--\s*\/?FOUNDRY_CLAUSE[^>]*-->/gi, "")
         .replace(/FOUNDRY\.\s*I AM THE INVENTOR BEH\.?/gi, "")
         .replace(/^\s*(FOR|TO):\s+.+$/gim, "")
         .replace(/On this\s+day\s+of\s*,?\s*(?:20\d{2})?/gi, legalDate)

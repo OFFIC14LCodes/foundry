@@ -86,10 +86,10 @@ export default function StructuredCompetitorsPanel({
                         }}
                     >
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, marginBottom: 8 }}>
-                            <div style={{ fontSize: 16, fontWeight: 700, color: "#E8622A", fontFamily: "'Lora', Georgia, serif", lineHeight: 1.35 }}>
+                            <div style={{ fontSize: 16, fontWeight: 700, color: "#E8622A", fontFamily: "'Lora', Georgia, serif", lineHeight: 1.35, minWidth: 0, flex: 1 }}>
                                 {competitor.name}
                             </div>
-                            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end", flexShrink: 0 }}>
+                            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
                                 {(competitor.timesSpotted ?? 0) > 0 && (
                                     <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 10, color: "#F5A843", background: "rgba(245,168,67,0.1)", border: "1px solid rgba(245,168,67,0.25)", borderRadius: 999, padding: "4px 7px", lineHeight: 1.2, fontWeight: 700 }}>
                                         {competitor.timesSpotted}x spotted

@@ -114,23 +114,30 @@ export async function createTeam(
     userId: string,
     businessName: string,
     displayName: string
-): Promise<CofounderTeam | null> {
+): Promise<CofounderTeam> {
     const { data: team, error } = await supabase
         .from('cofounder_teams')
         .insert({ business_name: businessName, owner_id: userId })
         .select()
         .single();
 
-    if (error || !team) { console.error('createTeam error:', error?.message); return null; }
+    if (error || !team) {
+        throw new Error(error?.message || 'Failed to create team');
+    }
 
-    await supabase.from('cofounder_members').insert({
+    const { error: memberError } = await supabase.from('cofounder_members').insert({
         team_id: team.id,
         user_id: userId,
         role: 'Founder',
-        display_name: displayName,
+        display_name: displayName || 'Founder',
         invited_by: null,
         last_seen_at: new Date().toISOString(),
     });
+
+    if (memberError) {
+        await supabase.from('cofounder_teams').delete().eq('id', team.id);
+        throw new Error(memberError.message || 'Failed to add you to the team');
+    }
 
     return team as CofounderTeam;
 }

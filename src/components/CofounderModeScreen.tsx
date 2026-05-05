@@ -4,6 +4,7 @@ import { FORGE_SYSTEM_PROMPT } from '../constants/prompts';
 import { streamForgeAPI } from '../lib/forgeApi';
 import { applyFoundryBookCitations, buildFoundryBookContext } from '../lib/foundryBook';
 import { Icons } from '../icons';
+import { Paperclip, Link as LinkIcon, Palette } from 'lucide-react';
 import ForgeAvatar from './ForgeAvatar';
 import { MessageActions } from './AnimatedChatText';
 import MicButton from './MicButton';
@@ -361,12 +362,13 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
         if (!teamNameInput.trim() || creating) return;
         setCreating(true);
         setCreateTeamError(null);
-        const newTeam = await createTeam(userId, teamNameInput.trim(), profile.name);
-        if (newTeam) {
+        try {
+            const newTeam = await createTeam(userId, teamNameInput.trim(), profile.name);
             await loadWorkspace(newTeam);
             onTeamChanged?.(newTeam.id);
-        } else {
-            setCreateTeamError('Something went wrong creating your workspace. Please try again.');
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : null;
+            setCreateTeamError(msg || 'Something went wrong creating your workspace. Please try again.');
         }
         setCreating(false);
     };
@@ -878,14 +880,14 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
                         />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        {[
-                            { icon: '💬', text: 'Shared team chat for your founding team' },
-                            { icon: '⚡', text: "Tag @forge in the chat to get Forge's take on any discussion" },
-                            { icon: '✅', text: 'Shared task list so nothing falls through the cracks' },
-                            { icon: '🧠', text: 'Forge carries your team context into individual conversations' },
-                        ].map(({ icon, text }) => (
+                        {([
+                            { icon: <Icons.forge.chat size={15} color="rgba(240,237,232,0.55)" />, text: 'Shared team chat for your founding team' },
+                            { icon: <Icons.onboarding.someExperience size={15} color="rgba(240,237,232,0.55)" />, text: "Tag @forge in the chat to get Forge's take on any discussion" },
+                            { icon: <Icons.forge.complete size={15} color="rgba(240,237,232,0.55)" />, text: 'Shared task list so nothing falls through the cracks' },
+                            { icon: <Icons.stages.idea size={15} color="rgba(240,237,232,0.55)" />, text: 'Forge carries your team context into individual conversations' },
+                        ] as { icon: React.ReactNode; text: string }[]).map(({ icon, text }) => (
                             <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: 10 }}>
-                                <span style={{ fontSize: 15 }}>{icon}</span>
+                                <span style={{ display: 'flex', alignItems: 'center' }}>{icon}</span>
                                 <span style={{ fontSize: 12, color: '#888', lineHeight: 1.5 }}>{text}</span>
                             </div>
                         ))}
@@ -1108,7 +1110,9 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
                         {/* Empty state */}
                         {filteredTasks.length === 0 && (
                             <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-                                <div style={{ fontSize: 28, marginBottom: 12 }}>✅</div>
+                                <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(232,98,42,0.08)', border: '1px solid rgba(232,98,42,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                                    <Icons.forge.complete size={22} color="rgba(240,237,232,0.4)" />
+                                </div>
                                 <div style={{ fontSize: 13, color: 'rgba(240,237,232,0.4)', lineHeight: 1.7, fontFamily: 'DM Sans, sans-serif' }}>
                                     {taskFilter === 'all' ? 'No tasks yet. Add your first one.' : 'No tasks match this filter.'}
                                 </div>
@@ -1267,7 +1271,9 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
                         </div>
                         {decisions.length === 0 && (
                             <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-                                <div style={{ fontSize: 28, marginBottom: 12 }}>🧭</div>
+                                <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(232,98,42,0.08)', border: '1px solid rgba(232,98,42,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                                    <Icons.hub.decisions size={22} color="rgba(240,237,232,0.4)" />
+                                </div>
                                 <div style={{ fontSize: 13, color: 'rgba(240,237,232,0.4)', lineHeight: 1.7, fontFamily: 'DM Sans, sans-serif' }}>No decisions logged yet. Record key choices so your team stays aligned.</div>
                             </div>
                         )}
@@ -1329,24 +1335,28 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
                         <div style={{ fontSize: 12, color: '#444', fontFamily: 'DM Sans, sans-serif', marginBottom: 16, lineHeight: 1.5 }}>Share links to Google Docs, Figma files, Notion pages, or any resource your team needs.</div>
                         {fileLinks.length === 0 && (
                             <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-                                <div style={{ fontSize: 28, marginBottom: 12 }}>📎</div>
+                                <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(232,98,42,0.08)', border: '1px solid rgba(232,98,42,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                                    <Paperclip size={22} color="rgba(240,237,232,0.4)" />
+                                </div>
                                 <div style={{ fontSize: 13, color: 'rgba(240,237,232,0.4)', lineHeight: 1.7, fontFamily: 'DM Sans, sans-serif' }}>No files shared yet. Add links to keep your team's resources in one place.</div>
                             </div>
                         )}
                         {fileLinks.map(f => {
                             const sharer = members.find(m => m.user_id === f.user_id);
                             const canDelete = f.user_id === userId || isOwner;
-                            let favicon = '';
+                            let FaviconIcon: React.ComponentType<{ size?: number; color?: string }> = LinkIcon;
                             try {
                                 const u = new URL(f.url);
-                                if (u.hostname.includes('figma')) favicon = '🎨';
-                                else if (u.hostname.includes('notion')) favicon = '📝';
-                                else if (u.hostname.includes('google')) favicon = '📄';
-                                else favicon = '🔗';
-                            } catch { favicon = '🔗'; }
+                                if (u.hostname.includes('figma')) FaviconIcon = Palette;
+                                else if (u.hostname.includes('notion')) FaviconIcon = Icons.sidebar.documents;
+                                else if (u.hostname.includes('google')) FaviconIcon = Icons.sidebar.documents;
+                                else FaviconIcon = LinkIcon;
+                            } catch { FaviconIcon = LinkIcon; }
                             return (
                                 <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, marginBottom: 8, animation: 'fadeSlideUp 0.2s ease' }}>
-                                    <span style={{ fontSize: 20, flexShrink: 0 }}>{favicon}</span>
+                                    <div style={{ flexShrink: 0, width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <FaviconIcon size={16} color="rgba(240,237,232,0.4)" />
+                                    </div>
                                     <div style={{ flex: 1, minWidth: 0 }}>
                                         <a href={f.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#F0EDE8', fontFamily: 'DM Sans, sans-serif', fontWeight: 500, textDecoration: 'none', display: 'block', marginBottom: 2 }} onMouseEnter={e => (e.currentTarget.style.textDecoration = 'underline')} onMouseLeave={e => (e.currentTarget.style.textDecoration = 'none')}>{f.label}</a>
                                         <div style={{ fontSize: 10, color: '#444', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sharer?.display_name ?? 'Unknown'} · {new Date(f.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>

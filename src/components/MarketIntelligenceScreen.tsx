@@ -151,6 +151,7 @@ export default function MarketIntelligenceScreen({
     onBack,
     onCreateAction,
     onAskForgeAboutAction,
+    onAskForgeAboutTrend,
     generationLimit = null,
     autoRun = false,
 }: {
@@ -161,6 +162,7 @@ export default function MarketIntelligenceScreen({
     onBack: () => void;
     onCreateAction?: (suggestion: FoundryActionSuggestion) => Promise<unknown> | void;
     onAskForgeAboutAction?: (suggestion: FoundryActionSuggestion) => void;
+    onAskForgeAboutTrend?: (trend: MarketTrend) => void;
     generationLimit?: number | null;
     autoRun?: boolean;
 }) {
@@ -434,6 +436,10 @@ export default function MarketIntelligenceScreen({
                 setCurrentReport(saved);
                 setReportHistory((prev) => upsertReport(prev, saved));
                 onReportChange(saved);
+                // Clear any pending trend chats — new report supersedes them
+                for (const key of Object.keys(localStorage)) {
+                    if (key.startsWith("trend-chat-")) localStorage.removeItem(key);
+                }
                 await loadStructuredData(saved, { silent: true });
             } else {
                 setSaveError("This report is staying visible now, but the database save did not complete. Refresh later and verify it appears in Saved Reports.");
@@ -571,7 +577,7 @@ export default function MarketIntelligenceScreen({
                                 {activeTab === "competitors" ? (
                                     <StructuredCompetitorsPanel competitors={competitors} onCreateAction={createSuggestedAction} onAskForgeAboutAction={onAskForgeAboutAction} />
                                 ) : activeTab === "trends" ? (
-                                    <StructuredTrendsPanel trends={trends} onCreateAction={createSuggestedAction} onAskForgeAboutAction={onAskForgeAboutAction} />
+                                    <StructuredTrendsPanel trends={trends} onCreateAction={createSuggestedAction} onAskForgeAboutAction={onAskForgeAboutAction} onAskForgeAboutTrend={onAskForgeAboutTrend} />
                                 ) : activeTab === "benchmarks" ? (
                                     <StructuredBenchmarksPanel benchmarks={benchmarks} onCreateAction={createSuggestedAction} onAskForgeAboutAction={onAskForgeAboutAction} />
                                 ) : (

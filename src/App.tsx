@@ -33,6 +33,7 @@ import {
   type FounderDecision,
   type FounderNudge,
   type SavedBriefing,
+  type MarketTrend,
 } from "./db";
 import { generateNudgeIfNeeded } from "./lib/nudgeEngine";
 import { buildLongitudinalContext, extractLongitudinalSignals } from "./lib/longitudinalMemory";
@@ -2810,6 +2811,7 @@ export default function FoundryApp() {
   const [bubbleSummaries, setBubbleSummaries] = useState<any[]>([]);
   const [chatRoomArchive, setChatRoomArchive] = useState<any | null>(null);
   const [academyConversationEntry, setAcademyConversationEntry] = useState<AcademyTopicLaunch | null>(null);
+  const [marketIntelTrendEntry, setMarketIntelTrendEntry] = useState<MarketTrend | null>(null);
   const [archiveMutationTick, setArchiveMutationTick] = useState(0);
   const [recentSummaries, setRecentSummaries] = useState<StageSummary[]>([]);
   const [foundryDecisions, setFoundryDecisions] = useState<FounderDecision[]>([]);
@@ -3641,6 +3643,7 @@ export default function FoundryApp() {
     markMeaningfulActivity(true);
     closeOverlayScreens();
     setAcademyConversationEntry(null);
+    setMarketIntelTrendEntry(null);
     setChatRoomArchive(null);
     setForgeSeedStage(profile?.currentStage || 1);
     setForgeSeedPrompt(prompt);
@@ -3709,7 +3712,17 @@ export default function FoundryApp() {
     markMeaningfulActivity(true);
     setAcademyConversationEntry(entry);
     setChatRoomArchive(null);
+    setMarketIntelTrendEntry(null);
     setShowAcademy(false);
+    setShowChatRoom(true);
+  };
+
+  const openTrendChat = (trend: MarketTrend) => {
+    markMeaningfulActivity(true);
+    setMarketIntelTrendEntry(trend);
+    setAcademyConversationEntry(null);
+    setChatRoomArchive(null);
+    setShowMarketIntel(false);
     setShowChatRoom(true);
   };
 
@@ -4162,6 +4175,7 @@ export default function FoundryApp() {
               onBack={() => { setShowMarketIntel(false); setAutoRunMarketIntel(false); }}
               onCreateAction={createActionSuggestion}
               onAskForgeAboutAction={askForgeAboutAction}
+              onAskForgeAboutTrend={openTrendChat}
               generationLimit={isFreeTier ? FREE_TIER_MARKET_REPORT_LIMIT : null}
               autoRun={autoRunMarketIntel}
             />
@@ -4266,14 +4280,19 @@ export default function FoundryApp() {
               profile={profile}
               initialArchive={chatRoomArchive}
               academyEntry={academyConversationEntry}
+              marketIntelEntry={marketIntelTrendEntry}
               onMarkAcademyLessonCompleted={handleMarkAcademyLessonCompleted}
               onBack={() => {
                 const returnToAcademy = Boolean(academyConversationEntry);
+                const returnToMarketIntel = Boolean(marketIntelTrendEntry);
                 setShowChatRoom(false);
                 setChatRoomArchive(null);
                 setAcademyConversationEntry(null);
+                setMarketIntelTrendEntry(null);
                 if (returnToAcademy) {
                   setShowAcademy(true);
+                } else if (returnToMarketIntel) {
+                  setShowMarketIntel(true);
                 }
               }}
               onArchiveSaved={(saved) => {

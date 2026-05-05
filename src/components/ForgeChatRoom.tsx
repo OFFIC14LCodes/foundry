@@ -8,6 +8,7 @@ import { saveConversationSummary, updateConversationSummary } from "../db";
 import { applyFoundryBookCitations, buildFoundryBookContext } from "../lib/foundryBook";
 import { evaluateKnowledgeCheckLaunchAnswer, getAcademySessionSubtitle } from "../lib/academyCompletion";
 import type { AcademyTopicLaunch } from "../lib/academy";
+import type { MarketTrend } from "../db";
 import ForgeAvatar from "./ForgeAvatar";
 import TypingDots from "./TypingDots";
 import Logo from "./Logo";
@@ -32,6 +33,7 @@ interface ForgeChatRoomProps {
     initialArchive?: any | null;
     academyEntry?: AcademyTopicLaunch | null;
     onMarkAcademyLessonCompleted?: (contentId: string, options?: { knowledgeCheckedAt?: string; lastCheckResponse?: string | null; lastCheckFeedback?: string | null }) => Promise<void> | void;
+    marketIntelEntry?: MarketTrend | null;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -44,6 +46,7 @@ function buildChatRoomContext(
     archiveTitle?: string | null,
     academyEntry?: AcademyTopicLaunch | null,
     testingMode?: boolean,
+    marketIntelEntry?: MarketTrend | null,
 ) {
     const academyMode = academyEntry?.sessionMode ?? "learn";
     const modeInstruction = !academyEntry ? "" : testingMode
@@ -82,6 +85,7 @@ That said, don't turn every exchange into a lesson. Match their energy. If they 
 Be the knowledgeable business partner they can talk to freely — about their business, about business in general, about an idea they have, about something that's worrying them, about something that excited them. This is a safe space to think out loud without worrying about what step they're on.
 ${archiveSummary ? `\n\nARCHIVE CONTEXT:\nThe founder is continuing a prior archived conversation titled "${archiveTitle || "Saved conversation"}". Use this summary as prior context for the current discussion. Build on it naturally and answer follow-up questions as a continuation, not as a fresh topic.\n\n${archiveSummary}` : ""}
 ${academyEntry ? `\n\nACADEMY ENTRY CONTEXT:\nThe founder opened this conversation from Forge Academy.\nMode: ${academyMode}\nTopic: ${academyEntry.title}\nCategory: ${academyEntry.categoryTitle || "Forge Academy"}\nLearning goal: ${academyEntry.learningGoal || "Help the founder understand the topic deeply and practically."}\nWho this is for: ${academyEntry.whoThisIsFor || "A first-time founder who needs a more grounded understanding before the stakes get higher."}\nWhen this matters: ${academyEntry.whenThisMatters || "Before the founder drifts into weak assumptions or avoidable execution mistakes."}\nCommon mistake: ${academyEntry.commonMistake || "Founders often treat this as obvious until they are forced to make a real decision under pressure."}\nWhy this matters: ${academyEntry.whyThisMatters || "Teach the founder why this topic matters before they need it."}\nWhat to watch for: ${academyEntry.whatToWatchFor || "Surface the subtle mistakes and weak thinking patterns that matter here."}\nKnowledge check prompt: ${academyEntry.knowledgeCheckPrompt || "Not explicitly set"}\nExpected understanding points: ${academyEntry.knowledgeCheckExpectedPoints.join(" | ") || "Use broad founder judgment"}\nConcept tags: ${academyEntry.tags.join(", ") || "None"}\nRelevant stages: ${academyEntry.stageIds.length > 0 ? academyEntry.stageIds.join(", ") : "General"}\nSupporting context: ${academyEntry.forgeContext || "None provided"}\n\n${modeInstruction}` : ""}
+${marketIntelEntry ? `\n\nMARKET INTELLIGENCE CONTEXT:\nThe founder opened this conversation from Market Intelligence to explore a specific trend.\nTrend name: ${marketIntelEntry.name}\nImpact level: ${marketIntelEntry.impactLevel}\nTimeframe: ${marketIntelEntry.timeframe}\nDescription: ${marketIntelEntry.description}\n\nForge should help the founder understand this trend deeply and practically — what it means for their business, how to respond or position, and what concrete actions they could take. Ask probing questions to help them think it through. Keep it strategic and grounded.` : ""}
 ${bookContext.context ? `\n\n${bookContext.context}` : ""}
     `.trim(),
         bookMatches: bookContext.matches,
@@ -95,7 +99,7 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
 // ─────────────────────────────────────────────────────────────
 // Component
 // ─────────────────────────────────────────────────────────────
-export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved, initialArchive = null, academyEntry = null, onMarkAcademyLessonCompleted }: ForgeChatRoomProps) {
+export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved, initialArchive = null, academyEntry = null, onMarkAcademyLessonCompleted, marketIntelEntry = null }: ForgeChatRoomProps) {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
@@ -109,10 +113,12 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
     const [testingMode, setTestingMode] = useState(false);
     const [activeArchive, setActiveArchive] = useState<any | null>(initialArchive);
     const [activeAcademyEntry, setActiveAcademyEntry] = useState<AcademyTopicLaunch | null>(academyEntry);
+    const [activeTrendEntry, setActiveTrendEntry] = useState<MarketTrend | null>(marketIntelEntry);
     const scrollRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const academyBootstrappedRef = useRef(false);
+    const trendBootstrappedRef = useRef(false);
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -167,14 +173,53 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
         localStorage.setItem(`academy-chat-${activeAcademyEntry.id}`, JSON.stringify(messages));
     }, [messages, activeAcademyEntry?.id]);
 
+    // Trend entry effects — mirror academy pattern
+    useEffect(() => {
+        setActiveTrendEntry(marketIntelEntry ?? null);
+        trendBootstrappedRef.current = false;
+
+        if (marketIntelEntry) {
+            const saved = localStorage.getItem(`trend-chat-${marketIntelEntry.id}`);
+            if (saved) {
+                try {
+                    const restored = JSON.parse(saved) as ChatMessage[];
+                    if (restored.length > 0) {
+                        setMessages(restored);
+                        trendBootstrappedRef.current = true;
+                    } else {
+                        setMessages([]);
+                    }
+                } catch {
+                    setMessages([]);
+                }
+            } else {
+                setMessages([]);
+            }
+        }
+    }, [marketIntelEntry]);
+
+    useEffect(() => {
+        if (!activeTrendEntry || activeArchive || trendBootstrappedRef.current) return;
+        trendBootstrappedRef.current = true;
+        void sendTrendKickoff();
+    }, [activeTrendEntry?.id, activeArchive?.id]);
+
+    useEffect(() => {
+        if (!activeTrendEntry || messages.length === 0) return;
+        localStorage.setItem(`trend-chat-${activeTrendEntry.id}`, JSON.stringify(messages));
+    }, [messages, activeTrendEntry?.id]);
+
     const openSaveArchiveModal = () => {
-        const defaultTitle = activeArchive?.title || (activeAcademyEntry
-            ? `Academy — ${activeAcademyEntry.title}`
-            : `Chat with Forge — ${new Date().toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-        })}`);
+        const defaultTitle = activeArchive?.title
+            || (activeAcademyEntry
+                ? `Academy — ${activeAcademyEntry.title}`
+                : activeTrendEntry
+                    ? `Market Intel — ${activeTrendEntry.name}`
+                    : `Chat with Forge — ${new Date().toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                    })}`);
         setArchiveTitleInput(defaultTitle);
         setSaveArchiveModalOpen(true);
     };
@@ -182,7 +227,7 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
     const handleSaveArchive = async () => {
         if (savingArchive || messages.length === 0) return;
 
-        const title = archiveTitleInput.trim() || activeAcademyEntry?.title || "Chat with Forge";
+        const title = archiveTitleInput.trim() || activeAcademyEntry?.title || activeTrendEntry?.name || "Chat with Forge";
         const transcript = messages
             .map((msg) => `${msg.role === "forge" ? "Forge" : profile.name}: ${msg.text}`)
             .join("\n");
@@ -222,9 +267,13 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
             if (!saved) return;
             const wasAcademyEntry = activeAcademyEntry;
             const wasCompleted = academyLessonCompleted;
+            const wasTrendEntry = activeTrendEntry;
             onArchiveSaved?.(saved);
             if (activeAcademyEntry) {
                 localStorage.removeItem(`academy-chat-${activeAcademyEntry.id}`);
+            }
+            if (activeTrendEntry) {
+                localStorage.removeItem(`trend-chat-${activeTrendEntry.id}`);
             }
             setSaveArchiveModalOpen(false);
             setMessages([]);
@@ -234,8 +283,10 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
             setConfirmedProfanityInput(null);
             setActiveArchive(null);
             setActiveAcademyEntry(null);
+            setActiveTrendEntry(null);
             academyBootstrappedRef.current = false;
-            if (wasCompleted && wasAcademyEntry) {
+            trendBootstrappedRef.current = false;
+            if ((wasCompleted && wasAcademyEntry) || wasTrendEntry) {
                 onBack();
             }
         } catch (error) {
@@ -288,6 +339,7 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
                 activeArchive?.title || null,
                 activeAcademyEntry,
                 testingMode,
+                activeTrendEntry,
             );
             const apiMsgs = [
                 ...history.slice(0, -1).map(m => ({
@@ -367,6 +419,59 @@ Start with a confident first lesson message that frames the topic, explains the 
             setMessages((prev) => prev.map((message) => (
                 message.id === forgeMsg.id
                     ? { ...message, text: "Something went wrong opening this Academy conversation. Try again." }
+                    : message
+            )));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const sendTrendKickoff = async (entryOverride?: MarketTrend | null) => {
+        const entry = entryOverride ?? activeTrendEntry;
+        if (!entry || loading) return;
+
+        const impactLabel = entry.impactLevel?.trim().toLowerCase() === "high"
+            ? "high-impact"
+            : entry.impactLevel?.trim().toLowerCase() === "medium"
+                ? "medium-impact"
+                : "emerging";
+
+        const kickoffPrompt = `The founder wants to explore a ${impactLabel} market trend affecting their business.
+
+Trend: "${entry.name}"
+Impact level: ${entry.impactLevel}
+Timeframe: ${entry.timeframe}
+Description: ${entry.description}
+
+Open a focused strategic conversation about this trend. Help them understand:
+1. What this trend really means at ground level — not the buzzword version
+2. How it specifically threatens or opens doors for their type of business
+3. What the smart founder response looks like — position, adapt, or ignore?
+4. One concrete thing they could do in the next 30 days to get ahead of it
+
+Start by making the trend real and concrete for them. No vague advice — be direct and specific to their situation.`;
+
+        const forgeMsg: ChatMessage = { id: `f-${Date.now()}`, role: "forge", text: "", createdAt: new Date().toISOString() };
+        setMessages([forgeMsg]);
+        setLoading(true);
+
+        try {
+            const ctx = buildChatRoomContext(profile, [kickoffPrompt], null, null, null, false, entry);
+            await streamForgeAPI(
+                [{ role: "user", content: kickoffPrompt }],
+                FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", ctx.context),
+                (chunk) => {
+                    const { cleanText } = applyFoundryBookCitations(chunk, ctx.bookMatches);
+                    setMessages((prev) => prev.map((message) => (
+                        message.id === forgeMsg.id ? { ...message, text: cleanText } : message
+                    )));
+                }
+            );
+        } catch (error) {
+            console.error("trend kickoff error:", error);
+            setMessages((prev) => prev.map((message) => (
+                message.id === forgeMsg.id
+                    ? { ...message, text: "Something went wrong opening this conversation. Try again." }
                     : message
             )));
         } finally {
@@ -460,8 +565,16 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
     };
 
     const hasMessages = messages.length > 0;
-    const chatTitle = activeAcademyEntry ? `Forge Academy · ${activeAcademyEntry.title}` : "Chat with Forge";
-    const chatSubtitle = activeAcademyEntry ? getAcademySessionSubtitle(activeAcademyEntry.sessionMode) : "Ask anything · learn freely";
+    const chatTitle = activeAcademyEntry
+        ? `Forge Academy · ${activeAcademyEntry.title}`
+        : activeTrendEntry
+            ? `Market Intel · ${activeTrendEntry.name}`
+            : "Chat with Forge";
+    const chatSubtitle = activeAcademyEntry
+        ? getAcademySessionSubtitle(activeAcademyEntry.sessionMode)
+        : activeTrendEntry
+            ? "Trend deep-dive · strategic analysis"
+            : "Ask anything · learn freely";
 
     return (
         <div style={{
