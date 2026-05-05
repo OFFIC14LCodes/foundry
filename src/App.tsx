@@ -65,6 +65,7 @@ import OnboardingScreen from "./components/OnboardingScreen";
 import MilestonesPanel from "./components/MilestonesPanel";
 import StageBriefing from "./components/StageBriefing";
 import HubScreen from "./components/HubScreen";
+import NavSidebar from "./components/NavSidebar";
 import { Icons } from "./icons";
 import Logo from "./components/Logo";
 import ForgeBubble from "./components/ForgeBubble";
@@ -2796,6 +2797,7 @@ export default function FoundryApp() {
   const [showAdminHub, setShowAdminHub] = useState(false);
   const [showAppTour, setShowAppTour] = useState(false);
   const [showArchivePanel, setShowArchivePanel] = useState(false);
+  const [navSidebarOpen, setNavSidebarOpen] = useState(false);
   const [userTeamId, setUserTeamId] = useState<string | null>(null);
   const [accountAccess, setAccountAccess] = useState<AccountAccess | null>(null);
   const [billingSubscription, setBillingSubscription] = useState<BillingSubscription | null>(null);
@@ -3766,6 +3768,26 @@ export default function FoundryApp() {
     }
   };
 
+  const closeAllFeatureScreens = () => {
+    setShowAcademy(false);
+    setShowMarketIntel(false);
+    setAutoRunMarketIntel(false);
+    setShowJournal(false);
+    setShowBriefings(false);
+    setShowDocuments(false);
+    setShowPitchPractice(false);
+    setShowArchivePanel(false);
+    setShowBusinessModelCanvas(false);
+    setShowActionCenter(false);
+    setShowFinancialDashboard(false);
+    setShowCofounder(false);
+    showCofounderRef.current = false;
+    setShowChatRoom(false);
+    setChatRoomArchive(null);
+    setAcademyConversationEntry(null);
+    setMarketIntelTrendEntry(null);
+  };
+
   useEffect(() => {
     const uid = (user as any)?.id;
     if (!uid) {
@@ -4077,6 +4099,7 @@ export default function FoundryApp() {
               userId={(user as any).id}
               profile={profile}
               onBack={() => setShowFinancialDashboard(false)}
+              onOpenNav={() => setNavSidebarOpen(true)}
               onPlaidConnected={handlePlaidConnected}
             />
           </Suspense>
@@ -4086,6 +4109,7 @@ export default function FoundryApp() {
             <ActionCenterScreen
               userId={(user as any).id}
               onBack={() => setShowActionCenter(false)}
+              onOpenNav={() => setNavSidebarOpen(true)}
               onAskForge={askForgeAboutAction}
             />
           </Suspense>
@@ -4157,6 +4181,7 @@ export default function FoundryApp() {
           <ArchivePanel
             userId={(user as any).id}
             onBack={() => setShowArchivePanel(false)}
+            onOpenNav={() => setNavSidebarOpen(true)}
             onContinueChatEntry={(entry) => {
               setShowArchivePanel(false);
               continueArchiveInChatRoom(entry);
@@ -4173,6 +4198,7 @@ export default function FoundryApp() {
               report={marketReport}
               onReportChange={setMarketReport}
               onBack={() => { setShowMarketIntel(false); setAutoRunMarketIntel(false); }}
+              onOpenNav={() => setNavSidebarOpen(true)}
               onCreateAction={createActionSuggestion}
               onAskForgeAboutAction={askForgeAboutAction}
               onAskForgeAboutTrend={openTrendChat}
@@ -4189,6 +4215,7 @@ export default function FoundryApp() {
               userId={(user as any).id}
               profile={profile}
               onBack={() => setShowDocuments(false)}
+              onOpenNav={() => setNavSidebarOpen(true)}
               onContextChange={setDocumentContext}
               generationLocked={isFreeTier}
               generationLockMessage={isFreeTier ? "Document Production stays browseable during Stage 1, but document generation unlocks once you move beyond the free idea-stage tier." : null}
@@ -4203,6 +4230,7 @@ export default function FoundryApp() {
               userId={(user as any).id}
               profile={profile}
               onBack={() => setShowPitchPractice(false)}
+              onOpenNav={() => setNavSidebarOpen(true)}
               trialUsesRemaining={pitchPracticeUsesRemaining}
               onConsumeTrialUse={handleConsumePitchPracticeTrialUse}
             />
@@ -4216,6 +4244,7 @@ export default function FoundryApp() {
             entries={journalEntries}
             onEntriesChange={setJournalEntries}
             onBack={() => setShowJournal(false)}
+            onOpenNav={() => setNavSidebarOpen(true)}
             profile={profile}
             onAskForge={handleAskForgeAboutJournal}
           />
@@ -4229,6 +4258,7 @@ export default function FoundryApp() {
             briefings={briefings}
             onBriefingsChange={setBriefings}
             onBack={() => setShowBriefings(false)}
+            onOpenNav={() => setNavSidebarOpen(true)}
             completedByStage={completedByStage}
             generationLimit={isFreeTier ? FREE_TIER_BRIEFING_LIMIT : null}
             recentSummaries={recentSummaries}
@@ -4247,6 +4277,7 @@ export default function FoundryApp() {
             userId={(user as any).id}
             profile={profile}
             onBack={() => setShowAcademy(false)}
+            onOpenNav={() => setNavSidebarOpen(true)}
             onLaunchForgeConversation={launchAcademyConversation}
             onOpenAskForgeAnything={openAcademyAskForgeAnything}
             onContextChange={setAcademyContext}
@@ -4264,6 +4295,7 @@ export default function FoundryApp() {
             profile={profile}
             canvas={businessModelCanvas}
             onBack={() => setShowBusinessModelCanvas(false)}
+            onOpenNav={() => setNavSidebarOpen(true)}
             onEditEntry={handleEditBusinessModelCanvasEntry}
             onDeleteEntry={handleDeleteBusinessModelCanvasEntry}
             onAddViaForge={openBusinessModelCanvasViaForge}
@@ -4315,6 +4347,7 @@ export default function FoundryApp() {
             userId={(user as any).id}
             profile={profile}
             onBack={() => { setShowCofounder(false); showCofounderRef.current = false; }}
+            onOpenNav={() => setNavSidebarOpen(true)}
             onTeamChanged={(id) => setUserTeamId(id)}
           />
         </Suspense>
@@ -4406,6 +4439,30 @@ export default function FoundryApp() {
           }
         }}
       />
+      {profile && (
+        <NavSidebar
+          open={navSidebarOpen}
+          onClose={() => setNavSidebarOpen(false)}
+          profile={profile}
+          isAdmin={canOpenAdminHub}
+          cofounderUnreadCount={cofounderUnreadCount}
+          onOpenHub={() => { setNavSidebarOpen(false); closeAllFeatureScreens(); setScreenPersisted("hub"); }}
+          onOpenForge={() => { setNavSidebarOpen(false); closeAllFeatureScreens(); openForge(null); }}
+          onOpenAcademy={() => { setNavSidebarOpen(false); closeAllFeatureScreens(); openAcademy(); }}
+          onOpenJournal={() => { setNavSidebarOpen(false); closeAllFeatureScreens(); openJournal(); }}
+          onOpenBriefings={() => { setNavSidebarOpen(false); closeAllFeatureScreens(); openBriefings(); }}
+          onOpenPitchPractice={() => { setNavSidebarOpen(false); closeAllFeatureScreens(); openPitchPractice(); }}
+          onOpenMarketIntel={() => { setNavSidebarOpen(false); closeAllFeatureScreens(); openMarketIntel(); }}
+          onOpenDocuments={() => { setNavSidebarOpen(false); closeAllFeatureScreens(); openDocuments(); }}
+          onOpenBusinessModelCanvas={() => { setNavSidebarOpen(false); closeAllFeatureScreens(); openBusinessModelCanvas(); }}
+          onOpenActionCenter={() => { setNavSidebarOpen(false); closeAllFeatureScreens(); openActionCenter(); }}
+          onOpenFinancialDashboard={() => { setNavSidebarOpen(false); closeAllFeatureScreens(); openFinancialDashboard(); }}
+          onOpenArchive={() => { setNavSidebarOpen(false); closeAllFeatureScreens(); setShowArchivePanel(true); }}
+          onOpenCofounder={() => { setNavSidebarOpen(false); closeAllFeatureScreens(); openCofounder(); }}
+          onOpenSettings={() => { setNavSidebarOpen(false); setSettingsView("settings"); }}
+          onOpenAdminHub={canOpenAdminHub ? () => { setNavSidebarOpen(false); setShowAdminHub(true); } : undefined}
+        />
+      )}
       {profile && user && screen !== "onboarding" && screen !== "intro" && canAccessStage(profile.currentStage || 1, accountAccess) && (
         <ForgeBubble
           profile={profile}

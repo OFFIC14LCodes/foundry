@@ -176,6 +176,7 @@ function renderArchiveSummary(summary: string) {
 interface ArchivePanelProps {
     userId: string;
     onBack: () => void;
+    onOpenNav?: () => void;
     /** Open the Academy chat room with this entry as the initial archive */
     onContinueChatEntry?: (entry: any) => void;
 }
@@ -186,6 +187,7 @@ interface ArchivePanelProps {
 export default function ArchivePanel({
     userId,
     onBack,
+    onOpenNav,
     onContinueChatEntry,
 }: ArchivePanelProps) {
     const [entries, setEntries] = useState<any[]>([]);
@@ -470,10 +472,10 @@ export default function ArchivePanel({
             {/* Header */}
             <div style={{ padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: 12, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)", flexShrink: 0 }}>
                 <button
-                    onClick={onBack}
-                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "#888", fontSize: "var(--foundry-app-header-button-font)", cursor: "pointer", display: "flex", alignItems: "center" }}
+                    onClick={onOpenNav}
+                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "#888", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                 >
-                    <ArrowLeft size={"var(--foundry-app-header-icon-size)"} />
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg>
                 </button>
                 <div>
                     <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
@@ -491,7 +493,7 @@ export default function ArchivePanel({
                     <>
                         {/* Filter chips */}
                         {entries.length > 0 && filterOptions.length > 1 && (
-                            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
+                            <div style={{ display: "flex", gap: 6, overflowX: "auto", WebkitOverflowScrolling: "touch" as any, paddingBottom: 4, marginBottom: 16 }}>
                                 {filterOptions.map((opt) => {
                                     const active = filter === opt.key;
                                     return (
@@ -510,6 +512,8 @@ export default function ArchivePanel({
                                                 cursor: "pointer",
                                                 letterSpacing: "0.02em",
                                                 transition: "all 0.15s ease",
+                                                flexShrink: 0,
+                                                whiteSpace: "nowrap",
                                             }}
                                         >
                                             {opt.label}

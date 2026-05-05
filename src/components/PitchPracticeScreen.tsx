@@ -394,12 +394,14 @@ export default function PitchPracticeScreen({
     userId,
     profile,
     onBack,
+    onOpenNav,
     trialUsesRemaining = null,
     onConsumeTrialUse,
 }: {
     userId: string;
     profile: any;
     onBack: () => void;
+    onOpenNav?: () => void;
     trialUsesRemaining?: number | null;
     onConsumeTrialUse?: () => void;
 }) {
@@ -750,10 +752,10 @@ export default function PitchPracticeScreen({
                 {/* Header */}
                 <div style={{ padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)", zIndex: 10 }}>
                     <button
-                        onClick={onBack}
-                        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "#888", fontSize: "var(--foundry-app-header-button-font)", cursor: "pointer" }}
+                        onClick={onOpenNav}
+                        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "#888", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                     >
-                        ← Back
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg>
                     </button>
                     <div>
                         <div style={{ fontSize: "var(--foundry-app-header-title-font)", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>Pitch Practice</div>
@@ -1048,7 +1050,7 @@ export default function PitchPracticeScreen({
         return (
             <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8" }}>
                 <div style={{ padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)", zIndex: 10 }}>
-                    <button onClick={onBack} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "6px 12px", color: "#888", fontSize: 13, cursor: "pointer" }}>← Hub</button>
+                    <button onClick={onOpenNav} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "6px 10px", color: "#888", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg></button>
                     <div>
                         <div style={{ fontSize: 16, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>Session Complete</div>
                         <div style={{ fontSize: 10, color: "#555" }}>{formatTime(sessionTime)} · {scenarioLabel}</div>

@@ -17,6 +17,7 @@ type Props = {
     profile: any;
     canvas: BusinessModelCanvasRecord;
     onBack: () => void;
+    onOpenNav?: () => void;
     onEditEntry: (section: BusinessModelCanvasSectionKey, entryId: string, text: string) => Promise<void> | void;
     onDeleteEntry: (section: BusinessModelCanvasSectionKey, entryId: string) => Promise<void> | void;
     onAddViaForge: (section: BusinessModelCanvasSectionKey) => void;
@@ -28,6 +29,7 @@ export default function BusinessModelCanvasScreen({
     profile,
     canvas,
     onBack,
+    onOpenNav,
     onEditEntry,
     onDeleteEntry,
     onAddViaForge,
@@ -85,10 +87,10 @@ export default function BusinessModelCanvasScreen({
         <div style={{ position: "fixed", inset: 0, background: "#080809", color: "#F0EDE8", zIndex: 80, display: "flex", flexDirection: "column" }}>
             <div style={{ padding: "14px 18px", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: 12 }}>
                 <button
-                    onClick={onBack}
-                    style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "8px 14px", color: "#F0EDE8", cursor: "pointer", fontSize: 12 }}
+                    onClick={onOpenNav}
+                    style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "8px 11px", color: "#F0EDE8", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                 >
-                    ← Back
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg>
                 </button>
                 <Logo variant="flame" style={{ width: 42, height: 42, objectFit: "contain", flexShrink: 0 }} />
                 <div style={{ minWidth: 0 }}>

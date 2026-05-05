@@ -128,6 +128,7 @@ interface Props {
     userId: string;
     profile: any;
     onBack: () => void;
+    onOpenNav?: () => void;
     onTeamChanged?: (teamId: string | null) => void;
 }
 
@@ -135,7 +136,7 @@ interface Props {
 // MAIN COMPONENT
 // ─────────────────────────────────────────────────────────────
 
-export default function CofounderModeScreen({ userId, profile, onBack, onTeamChanged }: Props) {
+export default function CofounderModeScreen({ userId, profile, onBack, onOpenNav, onTeamChanged }: Props) {
     // ── Core data ────────────────────────────────────────────────
     const [team, setTeam] = useState<CofounderTeam | null>(null);
     const [members, setMembers] = useState<CofounderMember[]>([]);
@@ -923,7 +924,7 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
             {/* Header */}
             <div style={{ padding: 'max(14px, calc(10px + env(safe-area-inset-top))) 16px 12px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, background: 'rgba(8,8,9,0.95)', backdropFilter: 'blur(12px)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <button onClick={onBack} style={{ ...btnSecondary, padding: '7px 12px', fontSize: 12 }}>←</button>
+                    <button onClick={onOpenNav} style={{ ...btnSecondary, padding: '7px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg></button>
                     <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                             <Icons.sidebar.cofounder size={14} />
@@ -951,7 +952,7 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
             </div>
 
             {/* Tab bar */}
-            <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.06)', background: '#080809', flexShrink: 0, overflowX: 'auto' }}>
+            <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(12,12,14,0.98)', flexShrink: 0, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
                 {([
                     { id: 'chat', label: 'Chat' },
                     { id: 'tasks', label: 'Tasks' },
@@ -962,7 +963,7 @@ export default function CofounderModeScreen({ userId, profile, onBack, onTeamCha
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
-                        style={{ flex: '0 0 auto', minWidth: 60, padding: '11px 14px', background: 'transparent', border: 'none', borderBottom: activeTab === tab.id ? '2px solid #E8622A' : '2px solid transparent', color: activeTab === tab.id ? '#F0EDE8' : '#555', fontSize: 12, fontWeight: activeTab === tab.id ? 600 : 400, cursor: 'pointer', transition: 'all 0.15s', fontFamily: "'Lora', Georgia, serif", whiteSpace: 'nowrap' }}
+                        style={{ flex: '0 0 auto', minWidth: 60, padding: '11px 16px', background: 'transparent', border: 'none', borderBottom: activeTab === tab.id ? '2px solid #E8622A' : '2px solid transparent', color: activeTab === tab.id ? '#F0EDE8' : 'rgba(240,237,232,0.45)', fontSize: 12, fontWeight: activeTab === tab.id ? 600 : 400, cursor: 'pointer', transition: 'all 0.15s', fontFamily: "'Lora', Georgia, serif", whiteSpace: 'nowrap' }}
                     >
                         {tab.label}
                     </button>

@@ -149,6 +149,7 @@ export default function MarketIntelligenceScreen({
     report,
     onReportChange,
     onBack,
+    onOpenNav,
     onCreateAction,
     onAskForgeAboutAction,
     onAskForgeAboutTrend,
@@ -160,6 +161,7 @@ export default function MarketIntelligenceScreen({
     report: MarketReport | null;
     onReportChange: (r: MarketReport | null) => void;
     onBack: () => void;
+    onOpenNav?: () => void;
     onCreateAction?: (suggestion: FoundryActionSuggestion) => Promise<unknown> | void;
     onAskForgeAboutAction?: (suggestion: FoundryActionSuggestion) => void;
     onAskForgeAboutTrend?: (trend: MarketTrend) => void;
@@ -467,7 +469,7 @@ export default function MarketIntelligenceScreen({
             {/* Header */}
             <div style={{ padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, position: "sticky", top: 0, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)", zIndex: 10, flexShrink: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-                    <button onClick={onBack} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "#888", fontSize: "var(--foundry-app-header-button-font)", cursor: "pointer", flexShrink: 0 }}>← Hub</button>
+                    <button onClick={onOpenNav} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "#888", cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg></button>
                     <div style={{ minWidth: 0 }}>
                         <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
                             <div style={{ fontSize: "var(--foundry-app-header-title-font)", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Market Intelligence</div>

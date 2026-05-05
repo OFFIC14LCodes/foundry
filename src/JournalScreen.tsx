@@ -169,7 +169,7 @@ function ThemePills({ themes }: { themes?: string[] }) {
     );
 }
 
-export default function JournalScreen({ userId, entries, onEntriesChange, onBack, profile, onAskForge }) {
+export default function JournalScreen({ userId, entries, onEntriesChange, onBack, onOpenNav, profile, onAskForge }) {
     const typedEntries = entries as JournalEntryView[];
     const [writing, setWriting] = useState(false);
     const [draft, setDraft] = useState("");
@@ -471,11 +471,11 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                 flexShrink: 0,
             }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <button onClick={onBack} style={{
+                    <button onClick={onOpenNav} style={{
                         background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
-                        borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "#F0EDE8", fontSize: "var(--foundry-app-header-button-font)",
-                        fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
-                    }}><Logo variant="flame" style={{ width: "var(--foundry-app-header-icon-size)", height: "var(--foundry-app-header-icon-size)", objectFit: "contain" }} />Hub</button>
+                        borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "#F0EDE8",
+                        cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                    }}><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg></button>
                 </div>
                 <div style={{ textAlign: "left", flex: 1, marginLeft: 12 }}>
                     <div style={{

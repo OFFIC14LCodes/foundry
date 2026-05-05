@@ -3,8 +3,11 @@ import { callForgeAPI } from "./forgeApi";
 import { recordAcademyHistory, upsertAcademyContentProgress } from "./academyDb";
 import type { AcademyContent, AcademySessionMode, AcademyTopicLaunch, AcademyUserContentProgress, AssessmentAttempt } from "./academy";
 
+export type KnowledgeCheckTrackStatus = "passed" | "on_track" | "off_track";
+
 export type KnowledgeCheckEvaluation = {
     passed: boolean;
+    trackStatus: KnowledgeCheckTrackStatus;
     feedback: string;
 };
 
@@ -184,16 +187,21 @@ Founder answer:
 ${answer}
 
 Return valid JSON only with exactly these keys:
-"passed": true or false
-"feedback": short feedback in 2-4 sentences. If weak, explain what is missing and what to sharpen. If strong, explain why it landed and what judgment the founder now has.`
+"trackStatus": exactly one of "passed", "on_track", or "off_track". Use "passed" if the founder clearly demonstrates the core understanding. Use "on_track" if they show partial understanding or are heading in the right direction but need refinement. Use "off_track" only if they fundamentally miss the point or show no real grasp of the lesson.
+"passed": true only if trackStatus is "passed", false otherwise
+"feedback": short feedback in 2-4 sentences. If passed, explain what landed well. If on_track, explain what's right and what still needs sharpening. If off_track, explain what core concept they're missing.`
         }],
         "You evaluate founder understanding for Forge Academy. Be strict enough to protect quality, but encouraging and direct. Return only valid JSON."
     );
 
     try {
         const parsed = JSON.parse(raw);
+        const trackStatus: KnowledgeCheckTrackStatus =
+            parsed?.trackStatus === "passed" ? "passed" :
+            parsed?.trackStatus === "on_track" ? "on_track" : "off_track";
         return {
-            passed: Boolean(parsed?.passed),
+            passed: trackStatus === "passed",
+            trackStatus,
             feedback: typeof parsed?.feedback === "string" && parsed.feedback.trim()
                 ? parsed.feedback.trim()
                 : "Forge could not produce clear feedback. Try again with a more concrete explanation.",
@@ -201,6 +209,7 @@ Return valid JSON only with exactly these keys:
     } catch {
         return {
             passed: false,
+            trackStatus: "off_track" as KnowledgeCheckTrackStatus,
             feedback: "Forge could not evaluate that answer cleanly. Try again with a clearer explanation in your own words.",
         };
     }
@@ -235,16 +244,21 @@ Founder answer:
 ${answer}
 
 Return valid JSON only with exactly these keys:
-"passed": true or false
-"feedback": short feedback in 2-4 sentences. If weak, explain what is missing and what to sharpen. If strong, explain why it landed and what judgment the founder now has.`
+"trackStatus": exactly one of "passed", "on_track", or "off_track". Use "passed" if the founder clearly demonstrates the core understanding. Use "on_track" if they show partial understanding or are heading in the right direction but need refinement. Use "off_track" only if they fundamentally miss the point or show no real grasp of the lesson.
+"passed": true only if trackStatus is "passed", false otherwise
+"feedback": short feedback in 2-4 sentences. If passed, explain what landed well. If on_track, explain what's right and what still needs sharpening. If off_track, explain what core concept they're missing.`
         }],
         "You evaluate founder understanding for Forge Academy. Be strict enough to protect quality, but encouraging and direct. Return only valid JSON."
     );
 
     try {
         const parsed = JSON.parse(raw);
+        const trackStatus: KnowledgeCheckTrackStatus =
+            parsed?.trackStatus === "passed" ? "passed" :
+            parsed?.trackStatus === "on_track" ? "on_track" : "off_track";
         return {
-            passed: Boolean(parsed?.passed),
+            passed: trackStatus === "passed",
+            trackStatus,
             feedback: typeof parsed?.feedback === "string" && parsed.feedback.trim()
                 ? parsed.feedback.trim()
                 : "Forge could not produce clear feedback. Try again with a more concrete explanation.",
@@ -252,6 +266,7 @@ Return valid JSON only with exactly these keys:
     } catch {
         return {
             passed: false,
+            trackStatus: "off_track",
             feedback: "Forge could not evaluate that answer cleanly. Try again with a clearer explanation in your own words.",
         };
     }

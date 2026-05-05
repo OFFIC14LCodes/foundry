@@ -54,6 +54,7 @@ interface Props {
     userId: string;
     profile: any;
     onBack: () => void;
+    onOpenNav?: () => void;
     onPlaidConnected?: () => void;
 }
 
@@ -129,7 +130,7 @@ function buildInvoiceMarkdown(invoice: FounderInvoice, businessName: string): st
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function FinancialDashboardScreen({ userId, profile, onBack, onPlaidConnected }: Props) {
+export default function FinancialDashboardScreen({ userId, profile, onBack, onOpenNav, onPlaidConnected }: Props) {
     const [financialData, setFinancialData] = useState<FounderFinancialData | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -803,8 +804,8 @@ Be the partner who has been watching the whole time.`;
 
             {/* ── Header ──────────────────────────────────────────────────────── */}
             <div style={{ position: "sticky", top: 0, zIndex: 10, background: "rgb(8,8,9)", borderBottom: "1px solid rgba(255,255,255,0.06)", padding: "14px 20px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                <button onClick={onBack} style={{ background: "none", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "6px 12px", color: "#A8A4A0", fontSize: 12, cursor: "pointer", flexShrink: 0 }}>
-                    ← Back
+                <button onClick={onOpenNav} style={{ background: "none", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "6px 10px", color: "#A8A4A0", fontSize: 12, cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg>
                 </button>
                 <div style={{ fontSize: 17, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: "#F0EDE8", flex: 1 }}>
                     Financial Dashboard

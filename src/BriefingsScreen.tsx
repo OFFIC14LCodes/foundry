@@ -191,6 +191,7 @@ export default function BriefingsScreen({
     briefings,
     onBriefingsChange,
     onBack,
+    onOpenNav,
     completedByStage,
     generationLimit = null,
     recentSummaries,
@@ -206,6 +207,7 @@ export default function BriefingsScreen({
     briefings: SavedBriefing[];
     onBriefingsChange: (next: SavedBriefing[]) => void;
     onBack: () => void;
+    onOpenNav?: () => void;
     completedByStage: Record<number, any[]>;
     generationLimit?: number | null;
     recentSummaries: StageSummary[];
@@ -368,12 +370,11 @@ export default function BriefingsScreen({
                 display: "flex", alignItems: "center", justifyContent: "space-between",
                 flexShrink: 0, gap: 12,
             }}>
-                <button onClick={onBack} style={{
+                <button onClick={onOpenNav} style={{
                     background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
                     borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "#F0EDE8",
-                    fontSize: "var(--foundry-app-header-button-font)", fontWeight: 500, cursor: "pointer",
-                    display: "flex", alignItems: "center", gap: 6,
-                }}><Logo variant="flame" style={{ width: "var(--foundry-app-header-icon-size)", height: "var(--foundry-app-header-icon-size)", objectFit: "contain" }} />Hub</button>
+                    cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                }}><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg></button>
 
                 <div style={{ textAlign: "left", flex: 1, minWidth: 0 }}>
                     <div style={{

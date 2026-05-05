@@ -259,12 +259,14 @@ function ChipRow({ options, selected, onSelect }: { options: string[]; selected:
 // ─────────────────────────────────────────────────────────────
 function ScreenHeader({
     onBack,
+    onOpenNav,
     backLabel,
     title,
     subtitle,
     right,
 }: {
     onBack: () => void;
+    onOpenNav?: () => void;
     backLabel: string;
     title: string;
     subtitle?: string;
@@ -279,6 +281,18 @@ function ScreenHeader({
             background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)", zIndex: 10,
         }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                {onOpenNav ? (
+                    <button
+                        onClick={onOpenNav}
+                        style={{
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+                            borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "#888", cursor: "pointer",
+                        }}
+                    >
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg>
+                    </button>
+                ) : (
                 <button
                     onClick={onBack}
                     style={{
@@ -290,6 +304,7 @@ function ScreenHeader({
                 >
                     <ArrowLeft size={"var(--foundry-app-header-icon-size)"} /> {backLabel}
                 </button>
+                )}
                 <div>
                     <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
                         <div style={{ fontSize: "var(--foundry-app-header-title-font)", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, lineHeight: 1.2 }}>{title}</div>
@@ -347,6 +362,7 @@ export default function DocumentProductionScreen({
     userId,
     profile,
     onBack,
+    onOpenNav,
     onContextChange,
     generationLocked = false,
     generationLockMessage = null,
@@ -354,6 +370,7 @@ export default function DocumentProductionScreen({
     userId: string;
     profile: any;
     onBack: () => void;
+    onOpenNav?: () => void;
     onContextChange?: (ctx: DocumentScreenContext) => void;
     generationLocked?: boolean;
     generationLockMessage?: string | null;
@@ -1637,6 +1654,7 @@ export default function DocumentProductionScreen({
             <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8" }}>
                 <ScreenHeader
                     onBack={onBack}
+                    onOpenNav={onOpenNav}
                     backLabel="Hub"
                     title="Document Vault"
                     subtitle="Generated documents, version history, and future signing workflows"

@@ -47,6 +47,7 @@ type ForgeAcademyScreenProps = {
     userId: string;
     profile: any;
     onBack: () => void;
+    onOpenNav?: () => void;
     onLaunchForgeConversation: (entry: AcademyTopicLaunch) => void;
     onOpenAskForgeAnything: () => void;
     onContextChange?: (ctx: AcademyScreenContext) => void;
@@ -131,6 +132,7 @@ export default function ForgeAcademyScreen({
     userId,
     profile,
     onBack,
+    onOpenNav,
     onLaunchForgeConversation,
     onOpenAskForgeAnything,
     onContextChange,
@@ -650,7 +652,7 @@ export default function ForgeAcademyScreen({
 
     if (loading) {
         return (
-            <AcademyShell onBack={onBack} onOpenArchive={onOpenArchive}>
+            <AcademyShell onBack={onBack} onOpenNav={onOpenNav} onOpenArchive={onOpenArchive}>
                 <CenteredState
                     title="Loading Forge Academy"
                     body="Pulling together the current curriculum, learning history, and founder progress."
@@ -661,7 +663,7 @@ export default function ForgeAcademyScreen({
 
     if (error) {
         return (
-            <AcademyShell onBack={onBack} onOpenArchive={onOpenArchive}>
+            <AcademyShell onBack={onBack} onOpenNav={onOpenNav} onOpenArchive={onOpenArchive}>
                 <CenteredState
                     title="Forge Academy is unavailable"
                     body={error}
@@ -672,8 +674,8 @@ export default function ForgeAcademyScreen({
     }
 
     return (
-        <AcademyShell onBack={onBack} onOpenArchive={onOpenArchive}>
-            <div style={{ display: "flex", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+        <AcademyShell onBack={onBack} onOpenNav={onOpenNav} onOpenArchive={onOpenArchive}>
+            <div style={{ display: "flex", gap: 8, marginBottom: 4, overflowX: "auto", WebkitOverflowScrolling: "touch" as any, paddingBottom: 4 }}>
                 <FilterPill active={activeView === "path"} onClick={() => setActiveView("path")}>Path</FilterPill>
                 <FilterPill active={activeView === "library"} onClick={() => setActiveView("library")}>Library</FilterPill>
                 <FilterPill active={activeView === "glossary"} onClick={() => setActiveView("glossary")}>Glossary</FilterPill>
@@ -789,7 +791,7 @@ export default function ForgeAcademyScreen({
                         align="center"
                     />
                     <div style={{ background: surface, border, borderRadius: 22, padding: 16, display: "grid", gap: 14 }}>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                        <div style={{ display: "flex", gap: 8, overflowX: "auto", WebkitOverflowScrolling: "touch" as any, paddingBottom: 4 }}>
                             <FilterPill active={selectedCategoryId === "all"} onClick={() => setSelectedCategoryId("all")}>All disciplines</FilterPill>
                             {workspace.categories.filter((category) => category.isActive).map((category) => (
                                 <FilterPill
@@ -801,7 +803,7 @@ export default function ForgeAcademyScreen({
                                 </FilterPill>
                             ))}
                         </div>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                        <div style={{ display: "flex", gap: 8, overflowX: "auto", WebkitOverflowScrolling: "touch" as any, paddingBottom: 4 }}>
                             {stageOptions.map((stage) => (
                                 <FilterPill
                                     key={stage.id}
@@ -1851,12 +1853,12 @@ function GlossaryView({ terms, loading }: { terms: GlossaryTerm[]; loading: bool
     );
 }
 
-function AcademyShell({ children, onBack, onOpenArchive }: { children: ReactNode; onBack: () => void; onOpenArchive?: () => void }) {
+function AcademyShell({ children, onBack, onOpenNav, onOpenArchive }: { children: ReactNode; onBack: () => void; onOpenNav?: () => void; onOpenArchive?: () => void }) {
     return (
         <div style={{ position: "fixed", inset: 0, zIndex: 110, background: "#080809", color: "#F0EDE8", display: "flex", flexDirection: "column", fontFamily: "'Lora', Georgia, serif" }}>
             <div style={{ padding: "max(14px, calc(10px + env(safe-area-inset-top))) 18px 12px", borderBottom: border, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(16px)", display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
-                <button onClick={onBack} style={{ background: "rgba(255,255,255,0.05)", border, borderRadius: 9, padding: "var(--foundry-app-header-button-padding)", color: "#C8C4BE", fontSize: "var(--foundry-app-header-button-font)", cursor: "pointer" }}>
-                    ← Hub
+                <button onClick={onOpenNav} style={{ background: "rgba(255,255,255,0.05)", border, borderRadius: 9, padding: "var(--foundry-app-header-button-padding)", color: "#C8C4BE", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg>
                 </button>
                 <div style={{ width: 34, height: 34, borderRadius: 12, background: "rgba(232,98,42,0.12)", border: "1px solid rgba(232,98,42,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <Logo variant="forge" style={{ width: "var(--foundry-app-header-icon-size)", height: "var(--foundry-app-header-icon-size)", objectFit: "contain" }} />
