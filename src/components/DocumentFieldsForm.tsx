@@ -1,4 +1,5 @@
 import type { DocumentRequirement } from "../lib/documentRequirements";
+import HelpTooltip from "./HelpTooltip";
 
 interface DocumentFieldsFormProps {
     requirement: DocumentRequirement;
@@ -104,27 +105,27 @@ export default function DocumentFieldsForm({ requirement, values, errors, onChan
                         padding: "14px 14px 16px",
                     }}
                 >
-                    <div style={{ fontSize: 13, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 4 }}>
-                        {group.title}
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                        <div style={{ fontSize: 13, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>
+                            {group.title}
+                        </div>
+                        {group.description && <HelpTooltip content={group.description} />}
+                        {group.id === "structured-template" && (
+                            <HelpTooltip content="Template-backed fields are validated before generation so the draft can include the core clauses for this document type." />
+                        )}
                     </div>
-                    {group.description && (
-                        <div style={{ fontSize: 11, color: "#666", lineHeight: 1.55, marginBottom: 14 }}>
-                            {group.description}
-                        </div>
-                    )}
-                    {group.id === "structured-template" && (
-                        <div style={{ fontSize: 10, color: "#E8622A", lineHeight: 1.5, marginBottom: 12 }}>
-                            Template-backed fields are validated before generation so the draft can include the core clauses for this document type.
-                        </div>
-                    )}
                     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                         {group.fields.map((field) => (
                             <div key={field.id}>
                                 <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginBottom: 6 }}>
-                                    <label style={{ fontSize: 11, color: "#A8A4A0", letterSpacing: "0.04em" }}>
-                                        {field.label}
-                                        {field.required && <span style={{ color: "#E8622A" }}> *</span>}
-                                    </label>
+                                    <div style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
+                                        <label style={{ fontSize: 11, color: "#A8A4A0", letterSpacing: "0.04em" }}>
+                                            {field.label}
+                                            {field.required && <span style={{ color: "#E8622A" }}> *</span>}
+                                        </label>
+                                        {field.help && <HelpTooltip content={field.help} />}
+                                        {field.type === "list" && <HelpTooltip content="Enter one item per line." />}
+                                    </div>
                                     {errors[field.id] && (
                                         <span style={{ fontSize: 10, color: "#D65037", flexShrink: 0 }}>{errors[field.id]}</span>
                                     )}
@@ -135,16 +136,6 @@ export default function DocumentFieldsForm({ requirement, values, errors, onChan
                                     error={errors[field.id]}
                                     onChange={(next) => onChange(field.id, next)}
                                 />
-                                {field.help && (
-                                    <div style={{ fontSize: 10, color: "#555", lineHeight: 1.5, marginTop: 5 }}>
-                                        {field.help}
-                                    </div>
-                                )}
-                                {field.type === "list" && (
-                                    <div style={{ fontSize: 10, color: "#555", lineHeight: 1.5, marginTop: 5 }}>
-                                        Enter one item per line.
-                                    </div>
-                                )}
                             </div>
                         ))}
                     </div>

@@ -42,6 +42,7 @@ import {
     type MarketTab,
 } from "./market-intelligence/shared";
 import type { FoundryActionSuggestion } from "../lib/foundryActions";
+import HelpTooltip from "./HelpTooltip";
 type GenerationPhase = "idle" | "searching" | "generating";
 
 // ─────────────────────────────────────────────────────────────
@@ -151,6 +152,7 @@ export default function MarketIntelligenceScreen({
     onCreateAction,
     onAskForgeAboutAction,
     generationLimit = null,
+    autoRun = false,
 }: {
     profile: any;
     userId: string;
@@ -160,6 +162,7 @@ export default function MarketIntelligenceScreen({
     onCreateAction?: (suggestion: FoundryActionSuggestion) => Promise<unknown> | void;
     onAskForgeAboutAction?: (suggestion: FoundryActionSuggestion) => void;
     generationLimit?: number | null;
+    autoRun?: boolean;
 }) {
     const [generating, setGenerating] = useState(false);
     const [generationPhase, setGenerationPhase] = useState<GenerationPhase>("idle");
@@ -262,6 +265,12 @@ export default function MarketIntelligenceScreen({
     useEffect(() => {
         const timer = window.setTimeout(() => setMounted(true), 80);
         return () => window.clearTimeout(timer);
+    }, []);
+
+    useEffect(() => {
+        if (autoRun && !report) {
+            void generate();
+        }
     }, []);
 
     useEffect(() => {
@@ -454,8 +463,10 @@ export default function MarketIntelligenceScreen({
                 <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
                     <button onClick={onBack} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "#888", fontSize: "var(--foundry-app-header-button-font)", cursor: "pointer", flexShrink: 0 }}>← Hub</button>
                     <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: "var(--foundry-app-header-title-font)", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Market Intelligence</div>
-                        <div style={{ fontSize: "var(--foundry-app-header-meta-font)", color: "#555", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{industry}</div>
+                        <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                            <div style={{ fontSize: "var(--foundry-app-header-title-font)", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Market Intelligence</div>
+                            <HelpTooltip content={industry} side="bottom" />
+                        </div>
                     </div>
                 </div>
 

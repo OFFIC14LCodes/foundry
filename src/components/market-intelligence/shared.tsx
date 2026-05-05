@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import { cleanAIText } from "../../lib/cleanAIText";
 import type { NormalizedMarketIntelligence } from "../../db";
 import type { MarketIntelligenceExtractionScore } from "../../lib/marketIntelligenceExtractor";
+import HelpTooltip from "../HelpTooltip";
 
 export interface MarketReport {
     id?: string;
@@ -162,11 +163,11 @@ export function StructuredEmptyState({ title, body }: { title: string; body: str
             borderRadius: 14,
             padding: "22px 20px",
         }}>
-            <div style={{ fontSize: 16, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 6 }}>
-                {title}
-            </div>
-            <div style={{ fontSize: 12, color: "#888", lineHeight: 1.7 }}>
-                {body}
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                <div style={{ fontSize: 16, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>
+                    {title}
+                </div>
+                <HelpTooltip content={body} />
             </div>
         </div>
     );

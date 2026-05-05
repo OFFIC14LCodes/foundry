@@ -11,6 +11,7 @@ import { summarizeBusinessIdea } from "../lib/businessSummary";
 import Logo from "./Logo";
 import MicButton from "./MicButton";
 import PlaidConnectButton from "./PlaidConnectButton";
+import HelpTooltip from "./HelpTooltip";
 
 export default function HubScreen({
     profile,
@@ -56,6 +57,7 @@ export default function HubScreen({
     onAcceptPlaidTransactionAsRevenue,
     onIgnorePlaidTransaction,
     onOpenFinancialDashboard,
+    onGetHealthScore,
 }) {
     const [showDecisionModal, setShowDecisionModal] = useState(false);
     const [showExpenseModal, setShowExpenseModal] = useState(false);
@@ -292,6 +294,13 @@ export default function HubScreen({
     const nextReachedStage = revisitingStage ? currentStage + 1 : null;
     const businessSummary = summarizeBusinessIdea(profile.businessName, profile.idea, 10);
     const businessHealth = getBusinessHealth(profile, completedByStage, marketReport, financialSummary);
+    const isStageGoalsComplete = (stage: (typeof STAGES_DATA)[number]) =>
+        stage.milestones.length > 0 &&
+        (completedByStage[stage.id] || []).length >= stage.milestones.length;
+    const isStageDoneInJourney = (stage: (typeof STAGES_DATA)[number]) =>
+        stage.id < currentStage || isStageGoalsComplete(stage);
+    const completedJourneyStages = STAGES_DATA.filter(isStageDoneInJourney).length;
+    const journeyPct = Math.round((completedJourneyStages / STAGES_DATA.length) * 100);
 
     const NAV_ITEMS = [
         ...(isAdmin ? [{
@@ -615,13 +624,9 @@ export default function HubScreen({
                                             color: item.available ? "#F0EDE8" : "#666",
                                             fontWeight: 500,
                                             lineHeight: 1.2,
-                                            marginBottom: 2,
                                         }}
                                     >
                                         {item.label}
-                                    </div>
-                                    <div style={{ fontSize: "var(--foundry-hub-sidebar-nav-sub-font)", color: "#444" }}>
-                                        {item.available ? item.sub : "Coming soon"}
                                     </div>
                                 </div>
 
@@ -631,7 +636,7 @@ export default function HubScreen({
                                             {(item as any).badge > 9 ? '9+' : (item as any).badge}
                                         </div>
                                     ) : (
-                                        <span style={{ fontSize: "var(--foundry-hub-sidebar-nav-sub-font)", color: "#555" }}>→</span>
+                                        <HelpTooltip content={item.sub} side="right" />
                                     )
                                 )}
                             </button>
@@ -879,7 +884,7 @@ export default function HubScreen({
 
                     <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
                         {STAGES_DATA.map((stage) => {
-                            const isComplete = stage.id < currentStage;
+                            const isComplete = isStageDoneInJourney(stage);
                             const isCurrent = stage.id === currentStage;
                             const StageIcon = stage.icon;
 
@@ -906,7 +911,7 @@ export default function HubScreen({
                                                 : isCurrent
                                                     ? "rgba(232,98,42,0.15)"
                                                     : "rgba(255,255,255,0.03)",
-                                            border: isCurrent ? "1px solid rgba(232,98,42,0.5)" : "none",
+                                            border: isCurrent && !isComplete ? "1px solid rgba(232,98,42,0.5)" : "none",
                                             display: "flex",
                                             alignItems: "center",
                                             justifyContent: "center",
@@ -919,8 +924,8 @@ export default function HubScreen({
                                     <div
                                         style={{
                                             fontSize: 9,
-                                            color: isCurrent ? "#E8622A" : isComplete ? "#666" : "#333",
-                                            fontWeight: isCurrent ? 600 : 400,
+                                            color: isCurrent && !isComplete ? "#E8622A" : isComplete ? "#666" : "#333",
+                                            fontWeight: isCurrent && !isComplete ? 600 : 400,
                                             textTransform: "uppercase",
                                             letterSpacing: "0.05em",
                                         }}
@@ -936,7 +941,7 @@ export default function HubScreen({
                         <div
                             style={{
                                 height: "100%",
-                                width: `${((currentStage - 1) / 5) * 100}%`,
+                                width: `${journeyPct}%`,
                                 background: "linear-gradient(90deg, #E8622A, #F5A843)",
                                 borderRadius: 2,
                                 transition: "width 1s ease",
@@ -946,7 +951,7 @@ export default function HubScreen({
 
                     <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
                         <div style={{ fontSize: 11, color: "#555" }}>
-                            {Math.round(((currentStage - 1) / 5) * 100)}% complete
+                            {journeyPct}% complete
                         </div>
                         <div
                             onClick={() => onEnterStage(currentStage)}
@@ -1001,32 +1006,72 @@ export default function HubScreen({
                         </div>
                     </div>
 
-                    <div className="hub-health-grid">
-                        <BusinessHealthDonut health={businessHealth} />
-                        <div style={{ display: "grid", gap: 8 }}>
-                            {businessHealth.segments.map((segment) => (
-                                <div key={segment.key} style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: "8px 9px" }}>
-                                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 9, marginBottom: 5 }}>
-                                        <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
-                                            <span style={{ width: 7, height: 7, borderRadius: 999, background: segment.color, flexShrink: 0 }} />
-                                            <span style={{ fontSize: 11, color: "#F0EDE8", fontWeight: 600 }}>{segment.label}</span>
+                    {businessHealth.hasMarketReport ? (
+                        <div className="hub-health-grid">
+                            <BusinessHealthDonut health={businessHealth} />
+                            <div style={{ display: "grid", gap: 8 }}>
+                                {businessHealth.segments.map((segment) => (
+                                    <div key={segment.key} style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: "8px 9px" }}>
+                                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 9, marginBottom: 5 }}>
+                                            <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+                                                <span style={{ width: 7, height: 7, borderRadius: 999, background: segment.color, flexShrink: 0 }} />
+                                                <span style={{ fontSize: 11, color: "#F0EDE8", fontWeight: 600 }}>{segment.label}</span>
+                                            </div>
+                                            <span style={{ fontSize: 11, color: segment.color, fontWeight: 700 }}>{segment.value}</span>
                                         </div>
-                                        <span style={{ fontSize: 11, color: segment.color, fontWeight: 700 }}>{segment.value}</span>
+                                        <div style={{ height: 4, background: "rgba(255,255,255,0.05)", borderRadius: 999, overflow: "hidden", marginBottom: 6 }}>
+                                            <div style={{ width: `${segment.value}%`, height: "100%", background: segment.color, borderRadius: 999, transition: "width 0.6s ease" }} />
+                                        </div>
+                                        <div style={{ fontSize: 10, color: "#787169", lineHeight: 1.55 }}>
+                                            {segment.note}
+                                        </div>
                                     </div>
-                                    <div style={{ height: 4, background: "rgba(255,255,255,0.05)", borderRadius: 999, overflow: "hidden", marginBottom: 6 }}>
-                                        <div style={{ width: `${segment.value}%`, height: "100%", background: segment.color, borderRadius: 999, transition: "width 0.6s ease" }} />
-                                    </div>
-                                    <div style={{ fontSize: 10, color: "#787169", lineHeight: 1.55 }}>
-                                        {segment.note}
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <div style={{ position: "relative", borderRadius: 16, overflow: "hidden" }}>
+                            <div style={{ filter: "grayscale(1)", opacity: 0.28, pointerEvents: "none", userSelect: "none" }} aria-hidden="true">
+                                <div className="hub-health-grid">
+                                    <BusinessHealthDonut health={businessHealth} />
+                                    <div style={{ display: "grid", gap: 8 }}>
+                                        {businessHealth.segments.map((segment) => (
+                                            <div key={segment.key} style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: "8px 9px" }}>
+                                                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 9, marginBottom: 5 }}>
+                                                    <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+                                                        <span style={{ width: 7, height: 7, borderRadius: 999, background: segment.color, flexShrink: 0 }} />
+                                                        <span style={{ fontSize: 11, color: "#F0EDE8", fontWeight: 600 }}>{segment.label}</span>
+                                                    </div>
+                                                    <span style={{ fontSize: 11, color: segment.color, fontWeight: 700 }}>{segment.value}</span>
+                                                </div>
+                                                <div style={{ height: 4, background: "rgba(255,255,255,0.05)", borderRadius: 999, overflow: "hidden", marginBottom: 6 }}>
+                                                    <div style={{ width: `${segment.value}%`, height: "100%", background: segment.color, borderRadius: 999 }} />
+                                                </div>
+                                                <div style={{ height: 10, background: "rgba(255,255,255,0.04)", borderRadius: 4 }} />
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
-                            ))}
+                            </div>
+                            <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, background: "rgba(8,8,9,0.45)", backdropFilter: "blur(2px)", padding: 16 }}>
+                                <button
+                                    onClick={() => onGetHealthScore?.()}
+                                    style={{ background: "linear-gradient(135deg, #E8622A, #c9521e)", border: "none", borderRadius: 12, padding: "11px 18px", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "'Lora', Georgia, serif", textAlign: "center", lineHeight: 1.4, boxShadow: "0 4px 18px rgba(232,98,42,0.35)" }}
+                                >
+                                    Get Your Business Health Score
+                                </button>
+                                <div style={{ fontSize: 10, color: "rgba(240,237,232,0.5)", textAlign: "center", lineHeight: 1.6, maxWidth: 180 }}>
+                                    Run a market analysis to unlock your full score
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     <div style={{ marginTop: 14, fontSize: 11, color: "#666", lineHeight: 1.7 }}>
-                        This is a directional founder health view built from your stage progress, financial position, decision history, and latest market intelligence.
-                        {!businessHealth.hasMarketReport && " Generate a market report to sharpen the Market and Growth scores."}
+                        {businessHealth.hasMarketReport
+                            ? "This is a directional founder health view built from your stage progress, financial position, decision history, and latest market intelligence."
+                            : "Your business health score unlocks after your first market intelligence run. Click the button above to generate it."
+                        }
                     </div>
                 </div>
 

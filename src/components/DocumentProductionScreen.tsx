@@ -86,6 +86,7 @@ import DocumentSignaturesPanel from "./document-vault/DocumentSignaturesPanel";
 import VaultDetailPanel from "./document-vault/VaultDetailPanel";
 import VaultDocumentList from "./document-vault/VaultDocumentList";
 import VaultFolderSidebar from "./document-vault/VaultFolderSidebar";
+import HelpTooltip from "./HelpTooltip";
 import {
     DOCUMENT_STATUS_LABELS,
     STAGE_LABELS,
@@ -290,8 +291,10 @@ function ScreenHeader({
                     <ArrowLeft size={"var(--foundry-app-header-icon-size)"} /> {backLabel}
                 </button>
                 <div>
-                    <div style={{ fontSize: "var(--foundry-app-header-title-font)", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, lineHeight: 1.2 }}>{title}</div>
-                    {subtitle && <div style={{ fontSize: "var(--foundry-app-header-meta-font)", color: "#555" }}>{subtitle}</div>}
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ fontSize: "var(--foundry-app-header-title-font)", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, lineHeight: 1.2 }}>{title}</div>
+                        {subtitle && <HelpTooltip content={subtitle} side="bottom" />}
+                    </div>
                 </div>
             </div>
             {right}
@@ -2029,7 +2032,9 @@ export default function DocumentProductionScreen({
                                         <span style={{ fontSize: "var(--foundry-doc-card-title-font)", color: "#C8C4BE", fontWeight: 600 }}>{cat.name}</span>
                                         {cat.isStateAware && <StateAwareBadge />}
                                     </div>
-                                    <div style={{ fontSize: "var(--foundry-doc-card-body-font)", color: "#555", lineHeight: 1.5 }}>{cat.description}</div>
+                                    <div style={{ marginTop: 6 }}>
+                                        <HelpTooltip content={cat.description} />
+                                    </div>
                                 </div>
 
                                 {/* Count badge */}
@@ -2072,16 +2077,14 @@ export default function DocumentProductionScreen({
                     <div style={{ marginBottom: 20, animation: "fadeSlideUp 0.3s ease both" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px", borderRadius: 12, background: "rgba(232,98,42,0.05)", border: "1px solid rgba(232,98,42,0.1)" }}>
                             <CategoryIcon name={selectedCategory.icon} size={22} color="#E8622A" />
-                            <div style={{ fontSize: "var(--foundry-doc-card-large-font)", color: "#888", lineHeight: 1.55 }}>{selectedCategory.description}</div>
+                            <HelpTooltip content={selectedCategory.description} />
                         </div>
                     </div>
 
                     {/* State-aware notice */}
                     {selectedCategory.isStateAware && (
                         <div style={{ marginBottom: 16, padding: "10px 14px", borderRadius: 10, background: "rgba(234,179,8,0.05)", border: "1px solid rgba(234,179,8,0.15)", animation: "fadeSlideUp 0.3s ease 0.05s both" }}>
-                            <div style={{ fontSize: "var(--foundry-doc-card-body-font)", color: "#d4a017", lineHeight: 1.55 }}>
-                                Documents in this category vary by state. You will be asked to confirm your state before configuration.
-                            </div>
+                            <HelpTooltip content="Documents in this category vary by state. You will be asked to confirm your state before configuration." />
                         </div>
                     )}
 
@@ -2110,9 +2113,7 @@ export default function DocumentProductionScreen({
                                     </div>
                                 </div>
                                 {/* When to use */}
-                                <div style={{ fontSize: "var(--foundry-doc-card-body-font)", color: "#666", lineHeight: 1.6 }}>
-                                    {doc.whenToUse}
-                                </div>
+                                <HelpTooltip content={doc.whenToUse} />
                             </button>
                         ))}
                     </div>

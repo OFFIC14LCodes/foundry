@@ -5,6 +5,11 @@ import Logo from "./Logo";
 // HUB PANEL (slide-in)
 // ─────────────────────────────────────────────────────────────
 export default function HubPanel({ profile, currentStage, completedByStage, open, onClose }) {
+    const isStageGoalsComplete = (stage) =>
+        stage.milestones.length > 0 &&
+        (completedByStage[stage.id] || []).length >= stage.milestones.length;
+    const isStageDoneInJourney = (stage) => stage.id < currentStage || isStageGoalsComplete(stage);
+
     return (
         <>
             {open && <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 30, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)", animation: "fadeIn 0.2s ease" }} />}
@@ -31,7 +36,10 @@ export default function HubPanel({ profile, currentStage, completedByStage, open
                 <div style={{ padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                     <div style={{ fontSize: 10, color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 10 }}>Journey</div>
                     <div style={{ display: "flex", gap: 4 }}>
-                        {STAGES_DATA.map(s => <div key={s.id} style={{ flex: 1, height: 4, borderRadius: 2, background: s.id < currentStage ? "linear-gradient(90deg, #E8622A, #F5A843)" : s.id === currentStage ? "rgba(232,98,42,0.4)" : "rgba(255,255,255,0.06)" }} />)}
+                        {STAGES_DATA.map(s => {
+                            const isDone = isStageDoneInJourney(s);
+                            return <div key={s.id} style={{ flex: 1, height: 4, borderRadius: 2, background: isDone ? "linear-gradient(90deg, #E8622A, #F5A843)" : s.id === currentStage ? "rgba(232,98,42,0.4)" : "rgba(255,255,255,0.06)" }} />;
+                        })}
                     </div>
                     <div style={{ fontSize: 11, color: "#888", fontFamily: "'Lora', Georgia, serif", marginTop: 8 }}>Stage {currentStage} — {STAGES_DATA[currentStage - 1]?.label}</div>
                 </div>

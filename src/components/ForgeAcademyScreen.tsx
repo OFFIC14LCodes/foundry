@@ -3,11 +3,8 @@ import { Archive } from "lucide-react";
 import { STAGES_DATA } from "../constants/stages";
 import { supabase } from "../supabase";
 import {
-    getAcademySessionSubtitle,
-    completeAcademyLesson,
     getCompletionBadgeLabel,
     getLessonAssessmentScore,
-    isAcademyLessonFullyComplete,
 } from "../lib/academyCompletion";
 import {
     buildYoutubeEmbedUrl,
@@ -26,14 +23,12 @@ import {
     type AcademyUserHistory,
     type AcademyWorkspace,
     type AssessmentAttempt,
-    type LessonAssessment,
     type StageCertificate,
 } from "../lib/academy";
 import { STAGE_COLORS } from "../constants/glossary";
 import { loadGlossaryTerms, type GlossaryTerm } from "../lib/glossaryDb";
 import {
     loadAcademyWorkspace,
-    recordAssessmentAttempt,
     recordAcademyHistory,
     touchAcademyContentForgeOpened,
     touchAcademyContentOpened,
@@ -43,6 +38,7 @@ import type { FoundryActionSuggestion } from "../lib/foundryActions";
 import { suggestActionFromAcademyLesson } from "../lib/foundryActions";
 import Logo from "./Logo";
 import ActionSuggestionCard from "./actions/ActionSuggestionCard";
+import HelpTooltip from "./HelpTooltip";
 import type { AcademyBubbleContext } from "./ForgeBubble";
 
 export type AcademyScreenContext = AcademyBubbleContext;
@@ -302,30 +298,7 @@ export default function ForgeAcademyScreen({
         });
         return merged;
     }, [contentProgressById, pathProgressRows]);
-    const completionAwareContentProgressById = useMemo(() => {
-        const mapped = new Map<string, AcademyUserContentProgress>();
-        effectiveContentProgressById.forEach((entry, contentId) => {
-            if (entry.status === "completed" && !isAcademyLessonFullyComplete(entry, workspace.assessmentAttempts, contentId)) {
-                mapped.set(contentId, {
-                    ...entry,
-                    status: "in_progress",
-                    completedAt: null,
-                });
-                return;
-            }
-            mapped.set(contentId, entry);
-        });
-        return mapped;
-    }, [effectiveContentProgressById, workspace.assessmentAttempts]);
-    const assessmentsByLessonId = useMemo(() => {
-        const mapped = new Map<string, LessonAssessment[]>();
-        workspace.assessments.forEach((assessment) => {
-            const existing = mapped.get(assessment.lessonId) ?? [];
-            existing.push(assessment);
-            mapped.set(assessment.lessonId, existing);
-        });
-        return mapped;
-    }, [workspace.assessments]);
+    const completionAwareContentProgressById = effectiveContentProgressById;
 
     const filteredContent = useMemo(() => {
         return visibleContent.filter((entry) => {
@@ -667,82 +640,6 @@ export default function ForgeAcademyScreen({
         }
     };
 
-    const handleCompleteContent = async (
-        content: AcademyContent,
-        options?: {
-            knowledgeCheckedAt?: string | null;
-            lastCheckResponse?: string | null;
-            lastCheckFeedback?: string | null;
-        }
-    ) => {
-        setBusyKey(`content-${content.id}`);
-        try {
-            const result = await completeAcademyLesson({
-                userId,
-                contentId: content.id,
-                contentTitle: content.title,
-                response: options?.lastCheckResponse ?? null,
-                feedback: options?.lastCheckFeedback ?? null,
-                completedAt: options?.knowledgeCheckedAt ?? new Date().toISOString(),
-                source: "lesson_modal",
-                assessmentPassed: options?.assessmentPassed ?? false,
-                correctCount: options?.correctCount ?? null,
-                attemptedCount: options?.attemptedCount ?? null,
-            });
-            setWorkspace((prev) => ({
-                ...prev,
-                contentProgress: mergeContentProgress(prev.contentProgress, result.contentProgress),
-                history: result.contentProgress.status === "completed"
-                    ? [{
-                        id: `local-${Date.now()}`,
-                        userId,
-                        contentId: content.id,
-                        seriesId: null,
-                        seriesItemId: null,
-                        action: "completed",
-                        metadata: { title: content.title, source: "lesson_modal" },
-                        createdAt: new Date().toISOString(),
-                    }, ...prev.history].slice(0, 18)
-                    : prev.history,
-            }));
-            setPathProgressRows((prev) => [result.lessonProgress as UserLessonProgressRow, ...prev.filter((entry) => entry.content_id !== content.id)]);
-        } catch (progressError) {
-            console.error("academy complete content error:", progressError);
-        } finally {
-            setBusyKey(null);
-        }
-    };
-
-    const handleAssessmentAnswer = async (content: AcademyContent, assessment: LessonAssessment, selectedIndex: number) => {
-        const isCorrect = selectedIndex === assessment.correctAnswerIndex;
-        setBusyKey(`assessment-${assessment.id}`);
-        try {
-            const attempt = await recordAssessmentAttempt(userId, content.id, assessment.id, selectedIndex, isCorrect);
-            const nextAttempts = [
-                attempt,
-                ...workspace.assessmentAttempts.filter((entry) => !(entry.assessmentId === assessment.id && entry.id === attempt.id)),
-            ];
-            const score = getLessonAssessmentScore(nextAttempts, content.id);
-            setWorkspace((prev) => ({
-                ...prev,
-                assessmentAttempts: nextAttempts,
-            }));
-            if (score.attemptedCount >= 3) {
-                await handleCompleteContent(content, {
-                    knowledgeCheckedAt: new Date().toISOString(),
-                    lastCheckResponse: `Assessment score: ${score.correctCount}/${score.attemptedCount}`,
-                    lastCheckFeedback: score.passed ? "Passed Academy lesson assessment." : "Assessment needs another pass before completion.",
-                    assessmentPassed: score.passed,
-                    correctCount: score.correctCount,
-                    attemptedCount: score.attemptedCount,
-                });
-            }
-        } catch (attemptError) {
-            console.error("academy assessment attempt error:", attemptError);
-        } finally {
-            setBusyKey(null);
-        }
-    };
 
     const createAcademyAction = async (suggestion: FoundryActionSuggestion) => {
         if (!onCreateAction) return;
@@ -936,7 +833,6 @@ export default function ForgeAcademyScreen({
                                         progress={completionAwareContentProgressById.get(entry.id)}
                                         onOpen={() => void openContent(entry, entry.contentType === "video" ? "started_video" : "viewed")}
                                         onLaunchForge={() => void handleLaunchForge(entry, "learn")}
-                                        onApplyNow={() => void handleLaunchForge(entry, "apply")}
                                         busy={isForgeBusyFor(entry.id)}
                                         emphasis={entry.contentType === "mindset" ? "mindset" : "default"}
                                         continueLearning
@@ -969,7 +865,6 @@ export default function ForgeAcademyScreen({
                                         progress={completionAwareContentProgressById.get(entry.id)}
                                         onOpen={() => void openContent(entry)}
                                         onLaunchForge={() => void handleLaunchForge(entry, "learn")}
-                                        onApplyNow={() => void handleLaunchForge(entry, "apply")}
                                         busy={isForgeBusyFor(entry.id)}
                                     />
                                 )}
@@ -1011,7 +906,7 @@ export default function ForgeAcademyScreen({
                                     progress={completionAwareContentProgressById.get(entry.id)}
                                     onOpen={() => void openContent(entry, entry.contentType === "video" ? "started_video" : "viewed")}
                                     onLaunchForge={() => void handleLaunchForge(entry, "learn")}
-                                    onApplyNow={() => void handleLaunchForge(entry, "apply")}
+
                                     busy={isForgeBusyFor(entry.id)}
                                     emphasis={entry.contentType === "mindset" ? "mindset" : "default"}
                                 />
@@ -1034,7 +929,7 @@ export default function ForgeAcademyScreen({
                                     progress={completionAwareContentProgressById.get(entry.id)}
                                     onOpen={() => void openContent(entry, "started_video")}
                                     onLaunchForge={() => void handleLaunchForge(entry, "learn")}
-                                    onApplyNow={() => void handleLaunchForge(entry, "apply")}
+
                                     busy={isForgeBusyFor(entry.id)}
                                 />
                             )}
@@ -1056,7 +951,7 @@ export default function ForgeAcademyScreen({
                                     progress={completionAwareContentProgressById.get(entry.id)}
                                     onOpen={() => void openContent(entry)}
                                     onLaunchForge={() => void handleLaunchForge(entry, "learn")}
-                                    onApplyNow={() => void handleLaunchForge(entry, "apply")}
+
                                     busy={isForgeBusyFor(entry.id)}
                                 />
                             )}
@@ -1078,7 +973,7 @@ export default function ForgeAcademyScreen({
                                     progress={completionAwareContentProgressById.get(entry.id)}
                                     onOpen={() => void openContent(entry)}
                                     onLaunchForge={() => void handleLaunchForge(entry, "learn")}
-                                    onApplyNow={() => void handleLaunchForge(entry, "apply")}
+
                                     busy={isForgeBusyFor(entry.id)}
                                     emphasis="mindset"
                                 />
@@ -1194,14 +1089,11 @@ export default function ForgeAcademyScreen({
                 <ContentDetailModal
                     content={selectedContent}
                     progress={completionAwareContentProgressById.get(selectedContent.id)}
-                    assessments={assessmentsByLessonId.get(selectedContent.id) ?? []}
-                    attempts={workspace.assessmentAttempts.filter((attempt) => attempt.lessonId === selectedContent.id)}
                     onClose={() => setSelectedContent(null)}
-                    onLaunchForge={canLaunchForgeFromContent(selectedContent) ? (mode) => void handleLaunchForge(selectedContent, mode) : undefined}
-                    onAnswerAssessment={(assessment, selectedIndex) => void handleAssessmentAnswer(selectedContent, assessment, selectedIndex)}
+                    onLaunchForge={canLaunchForgeFromContent(selectedContent) ? () => void handleLaunchForge(selectedContent, "learn") : undefined}
                     onCreateAction={onCreateAction ? (suggestion) => void createAcademyAction(suggestion) : undefined}
                     onAskForgeAboutAction={onAskForgeAboutAction}
-                    busy={busyKey === `content-${selectedContent.id}` || isForgeBusyFor(selectedContent.id)}
+                    busy={isForgeBusyFor(selectedContent.id)}
                 />
             )}
 
@@ -1298,8 +1190,8 @@ function AcademyGuideCard({ activeView }: { activeView: "path" | "library" | "gu
                     body="Optional enrichment lessons. Use these after the core path when you want more reps, nuance, or context."
                 />
                 <GuideBlock
-                    title="Learn with Forge"
-                    body="Opens a guided Forge conversation from that lesson so you can turn the topic into your actual situation."
+                    title="Dive Deeper"
+                    body="Opens a Forge conversation from the lesson so you can explore the topic freely, apply it to your business, and complete it when you're ready."
                 />
             </div>
 
@@ -1344,7 +1236,7 @@ function AcademyGuideCard({ activeView }: { activeView: "path" | "library" | "gu
             <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
                 <GuideBlock
                     title="Start Learning"
-                    body="Opens the lesson walkthrough first, so you get the structured teaching before going into conversation with Forge."
+                    body="Opens the lesson walkthrough first so you get the structured teaching. After the last card, use Dive Deeper to open a Forge conversation."
                 />
                 <GuideBlock
                     title="Recommendation Card"
@@ -1389,11 +1281,11 @@ function GuideBlock({ title, body }: { title: string; body: string }) {
             display: "grid",
             gap: 6,
         }}>
-            <div style={{ fontSize: 13, color: "#F0EDE8", fontWeight: 700 }}>
-                {title}
-            </div>
-            <div style={{ fontSize: 12, color: "#A8A4A0", lineHeight: 1.7 }}>
-                {body}
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                <div style={{ fontSize: 13, color: "#F0EDE8", fontWeight: 700 }}>
+                    {title}
+                </div>
+                <HelpTooltip content={body} />
             </div>
         </div>
     );
@@ -1787,7 +1679,7 @@ function PathLessonNode({
                             {startLabel}
                         </InlineButton>
                         <InlineButton onClick={onLaunch} tone={muted ? "muted" : "primary"} disabled={busy}>
-                            {busy ? "Opening..." : "Learn with Forge"}
+                            {busy ? "Opening..." : "Dive Deeper"}
                         </InlineButton>
                     </div>
                 </div>
@@ -2004,11 +1896,11 @@ function SectionHeader({
     return (
         <div style={{ textAlign: align }}>
             {eyebrow && <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 10 }}>{eyebrow}</div>}
-            <div style={{ fontSize: 28, lineHeight: 1.05, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 8 }}>
-                {title}
-            </div>
-            <div style={{ fontSize: 13, color: textMuted, lineHeight: 1.8, maxWidth: 760, margin: align === "center" ? "0 auto" : undefined }}>
-                {description}
+            <div style={{ display: "inline-flex", alignItems: "center", justifyContent: align === "center" ? "center" : "flex-start", gap: 8 }}>
+                <div style={{ fontSize: 28, lineHeight: 1.05, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
+                    {title}
+                </div>
+                <HelpTooltip content={description} />
             </div>
         </div>
     );
@@ -2066,8 +1958,10 @@ function AcademySection({
             <SectionHeader eyebrow={eyebrow} title={title} description={description} />
             {items.length === 0 ? (
                 <div style={{ background: style.panel, border: `1px solid ${style.borderColor}`, borderRadius: 22, padding: 20 }}>
-                    <div style={{ fontSize: 16, color: "#F0EDE8", fontWeight: 600, marginBottom: 8 }}>{emptyTitle}</div>
-                    <div style={{ fontSize: 13, color: textMuted, lineHeight: 1.8 }}>{emptyBody}</div>
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ fontSize: 16, color: "#F0EDE8", fontWeight: 600 }}>{emptyTitle}</div>
+                        <HelpTooltip content={emptyBody} />
+                    </div>
                 </div>
             ) : (
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 14 }}>
@@ -2083,7 +1977,6 @@ function ContentCard({
     progress,
     onOpen,
     onLaunchForge,
-    onApplyNow,
     busy,
     emphasis = "default",
     continueLearning: isContinueLearning = false,
@@ -2092,7 +1985,6 @@ function ContentCard({
     progress?: AcademyUserContentProgress;
     onOpen: () => void;
     onLaunchForge: () => void;
-    onApplyNow?: () => void;
     busy: boolean;
     emphasis?: "default" | "mindset";
     continueLearning?: boolean;
@@ -2198,26 +2090,7 @@ function ContentCard({
                                 cursor: busy ? "default" : "pointer",
                             }}
                         >
-                            {busy ? "Opening..." : "Learn with Forge"}
-                        </button>
-                    )}
-                    {canLaunchForgeFromContent(content) && onApplyNow && (
-                        <button
-                            type="button"
-                            onClick={onApplyNow}
-                            disabled={busy}
-                            style={{
-                                background: "rgba(99,179,237,0.12)",
-                                border: "1px solid rgba(99,179,237,0.22)",
-                                borderRadius: 999,
-                                padding: "8px 12px",
-                                color: "#8FC8F6",
-                                fontSize: "var(--foundry-academy-sm-font)",
-                                fontWeight: 700,
-                                cursor: busy ? "default" : "pointer",
-                            }}
-                        >
-                            Apply this now
+                            {busy ? "Opening..." : "Dive Deeper"}
                         </button>
                     )}
                 </div>
@@ -2319,8 +2192,10 @@ function AsideCard({
     return (
         <div style={{ background: style.background, border: `1px solid ${style.borderColor}`, borderRadius: 22, padding: 18, display: "grid", gap: 12 }}>
             <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase" }}>{eyebrow}</div>
-            <div style={{ fontSize: 24, lineHeight: 1.06, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>{title}</div>
-            <div style={{ fontSize: 13, color: textMuted, lineHeight: 1.8 }}>{description}</div>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                <div style={{ fontSize: 24, lineHeight: 1.06, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>{title}</div>
+                <HelpTooltip content={description} />
+            </div>
             {children}
         </div>
     );
@@ -2403,7 +2278,7 @@ function buildLessonSlides(content: AcademyContent) {
             content.estimatedMinutes ? `Length: ${content.estimatedMinutes} minute lesson` : "Length: Guided deep dive",
             stageLabels.length ? `Stages: ${stageLabels.join(" · ")}` : null,
         ].filter(Boolean) as string[],
-        note: "Move through the cards first, then take the lesson into Forge for application.",
+        note: "Move through the cards first, then use Dive Deeper to take it into Forge — test to complete when you're ready.",
         tone: "orange",
     });
 
@@ -2501,7 +2376,7 @@ function buildLessonSlides(content: AcademyContent) {
                 content.starterPrompt ? `Suggested prompt: ${content.starterPrompt}` : null,
                 content.tags.length ? `Topics: ${content.tags.map((tag) => tag.name).join(" · ")}` : null,
             ].filter(Boolean) as string[],
-            note: "Once you finish this final card, the Forge conversation unlocks below.",
+            note: "Once you finish this final card, use Dive Deeper to open a Forge conversation and test to complete the lesson.",
             tone: "warm",
         });
     }
@@ -2549,28 +2424,21 @@ function splitLessonTextIntoSlides(text: string | null | undefined) {
 function ContentDetailModal({
     content,
     progress,
-    assessments,
-    attempts,
     onClose,
     onLaunchForge,
-    onAnswerAssessment,
     onCreateAction,
     onAskForgeAboutAction,
     busy,
 }: {
     content: AcademyContent;
     progress?: AcademyUserContentProgress;
-    assessments: LessonAssessment[];
-    attempts: AssessmentAttempt[];
     onClose: () => void;
-    onLaunchForge?: (mode: AcademySessionMode) => void;
-    onAnswerAssessment: (assessment: LessonAssessment, selectedIndex: number) => void;
+    onLaunchForge?: () => void;
     onCreateAction?: (suggestion: FoundryActionSuggestion) => void;
     onAskForgeAboutAction?: (suggestion: FoundryActionSuggestion) => void;
     busy: boolean;
 }) {
     const completed = progress?.status === "completed";
-    const assessmentScore = getLessonAssessmentScore(attempts, content.id);
     const embedUrl = buildYoutubeEmbedUrl(content.youtubeVideoId);
     const thumbnailUrl = content.thumbnailUrl || buildYoutubeThumbnailUrl(content.youtubeVideoId);
     const slides = useMemo(() => buildLessonSlides(content), [content]);
@@ -2589,7 +2457,6 @@ function ContentDetailModal({
     const activeSlide = slides[activeSlideIndex] ?? slides[0];
     const isLastSlide = activeSlideIndex >= slides.length - 1;
     const canOpenForge = Boolean(onLaunchForge && isLastSlide);
-    const canCheckUnderstanding = Boolean(onLaunchForge && !completed);
 
     return (
         <ModalShell onClose={onClose}>
@@ -2605,7 +2472,7 @@ function ContentDetailModal({
                             {content.title}
                         </div>
                         <div style={{ fontSize: 14, color: "#C8C4BE", lineHeight: 1.9 }}>
-                            Work through the lesson cards first. Forge unlocks after you finish the walkthrough.
+                            Work through the lesson cards first. Use Dive Deeper after the last card to open a Forge conversation and test to complete.
                         </div>
                         {completed && <CompletionBadge label={getCompletionBadgeLabel(content)} />}
                     </div>
@@ -2721,22 +2588,11 @@ function ContentDetailModal({
 
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
                     {canOpenForge && onLaunchForge && (
-                        <InlineButton onClick={() => onLaunchForge("learn")} disabled={busy}>
-                            {busy ? "Opening..." : "Learn with Forge"}
+                        <InlineButton onClick={onLaunchForge} disabled={busy}>
+                            {busy ? "Opening..." : "Dive Deeper with Forge"}
                         </InlineButton>
                     )}
-                    {canOpenForge && onLaunchForge && (
-                        <InlineButton tone="blue" onClick={() => onLaunchForge("apply")} disabled={busy}>
-                            {busy ? "Opening..." : "Apply this now"}
-                        </InlineButton>
-                    )}
-                    {completed ? (
-                        <CompletionBadge label={getCompletionBadgeLabel(content)} />
-                    ) : canCheckUnderstanding && onLaunchForge ? (
-                        <InlineButton tone="success" onClick={() => onLaunchForge("knowledge_check")} disabled={busy}>
-                            {busy ? "Opening..." : "Check my understanding"}
-                        </InlineButton>
-                    ) : null}
+                    {completed && <CompletionBadge label={getCompletionBadgeLabel(content)} />}
                     {content.resourceUrl && (
                         <a
                             href={content.resourceUrl}
@@ -2751,24 +2607,14 @@ function ContentDetailModal({
 
                 {!isLastSlide && onLaunchForge && (
                     <div style={{ fontSize: "var(--foundry-academy-md-font)", color: "#8D857C", lineHeight: 1.7 }}>
-                        Finish the full walkthrough to unlock the Forge conversation and application step for this lesson.
+                        Finish the full walkthrough to unlock the Forge conversation for this lesson.
                     </div>
-                )}
-
-                {isLastSlide && (
-                    <LessonAssessmentPanel
-                        assessments={assessments}
-                        attempts={attempts}
-                        score={assessmentScore}
-                        onAnswer={onAnswerAssessment}
-                        busy={busy}
-                    />
                 )}
 
                 {completed && onLaunchForge && (
                     <ApplyLessonCard
                         content={content}
-                        onApply={() => onLaunchForge("apply")}
+                        onApply={onLaunchForge}
                         onCreateAction={onCreateAction}
                         onAskForgeAboutAction={onAskForgeAboutAction}
                         busy={busy}
@@ -2776,98 +2622,6 @@ function ContentDetailModal({
                 )}
             </div>
         </ModalShell>
-    );
-}
-
-function LessonAssessmentPanel({
-    assessments,
-    attempts,
-    score,
-    onAnswer,
-    busy,
-}: {
-    assessments: LessonAssessment[];
-    attempts: AssessmentAttempt[];
-    score: ReturnType<typeof getLessonAssessmentScore>;
-    onAnswer: (assessment: LessonAssessment, selectedIndex: number) => void;
-    busy: boolean;
-}) {
-    const latestByAssessment = useMemo(() => {
-        const mapped = new Map<string, AssessmentAttempt>();
-        attempts
-            .slice()
-            .sort((a, b) => b.attemptedAt.localeCompare(a.attemptedAt))
-            .forEach((attempt) => {
-                if (!mapped.has(attempt.assessmentId)) mapped.set(attempt.assessmentId, attempt);
-            });
-        return mapped;
-    }, [attempts]);
-    const visibleAssessments = assessments.slice(0, 3);
-
-    return (
-        <div style={{ background: "linear-gradient(180deg, rgba(232,98,42,0.08), rgba(255,255,255,0.025))", border: "1px solid rgba(232,98,42,0.16)", borderRadius: 22, padding: 18, display: "grid", gap: 14 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-                <div style={{ display: "grid", gap: 4 }}>
-                    <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700 }}>Assessment</div>
-                    <div style={{ fontSize: 22, color: "#F0EDE8", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>Prove the lesson landed</div>
-                </div>
-                <CompletionBadge label={score.passed ? `Passed ${score.correctCount}/3` : `${score.correctCount}/3 correct`} />
-            </div>
-
-            {visibleAssessments.length === 0 ? (
-                <div style={{ fontSize: 13, color: textMuted, lineHeight: 1.8 }}>Assessment questions will appear after the lesson assessment migration is applied.</div>
-            ) : (
-                <div style={{ display: "grid", gap: 12 }}>
-                    {visibleAssessments.map((assessment, questionIndex) => {
-                        const latestAttempt = latestByAssessment.get(assessment.id) ?? null;
-                        return (
-                            <div key={assessment.id} style={{ background: "rgba(255,255,255,0.035)", border, borderRadius: 18, padding: 14, display: "grid", gap: 10 }}>
-                                <div style={{ fontSize: 14, color: "#F0EDE8", fontWeight: 700, lineHeight: 1.55 }}>
-                                    {questionIndex + 1}. {assessment.question}
-                                </div>
-                                <div style={{ display: "grid", gap: 8 }}>
-                                    {assessment.options.map((option, optionIndex) => {
-                                        const selected = latestAttempt?.selectedIndex === optionIndex;
-                                        const showCorrect = latestAttempt && optionIndex === assessment.correctAnswerIndex;
-                                        const background = selected
-                                            ? latestAttempt?.isCorrect
-                                                ? "rgba(72,187,120,0.14)"
-                                                : "rgba(232,98,42,0.14)"
-                                            : showCorrect
-                                                ? "rgba(72,187,120,0.10)"
-                                                : "rgba(255,255,255,0.03)";
-                                        const optionBorder = selected
-                                            ? latestAttempt?.isCorrect
-                                                ? "1px solid rgba(72,187,120,0.35)"
-                                                : "1px solid rgba(232,98,42,0.35)"
-                                            : border;
-                                        return (
-                                            <button
-                                                key={`${assessment.id}-${optionIndex}`}
-                                                type="button"
-                                                onClick={() => onAnswer(assessment, optionIndex)}
-                                                disabled={busy}
-                                                style={{ background, border: optionBorder, borderRadius: 14, padding: "10px 12px", color: "#D7D1CA", textAlign: "left", cursor: busy ? "default" : "pointer", fontSize: 13, lineHeight: 1.55 }}
-                                            >
-                                                {option}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                                {latestAttempt && (
-                                    <div style={{ fontSize: 12, color: latestAttempt.isCorrect ? "#8BD8A9" : "#E9A07D", lineHeight: 1.7 }}>
-                                        {latestAttempt.isCorrect ? "Correct. " : "Not quite. "}{assessment.explanation}
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
-            <div style={{ fontSize: 12, color: "#9D978E", lineHeight: 1.7 }}>
-                Completion requires reading the walkthrough and answering at least 2 of 3 questions correctly.
-            </div>
-        </div>
     );
 }
 
@@ -2887,8 +2641,8 @@ function ApplyLessonCard({
     const suggestion = suggestActionFromAcademyLesson(content);
     return (
         <div style={{ background: "linear-gradient(180deg, rgba(99,179,237,0.10), rgba(255,255,255,0.025))", border: "1px solid rgba(99,179,237,0.18)", borderRadius: 22, padding: 18, display: "grid", gap: 10 }}>
-            <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#8FC8F6", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700 }}>Apply this now</div>
-            <div style={{ fontSize: 18, color: "#F0EDE8", fontWeight: 700 }}>Turn "{content.title}" into a real founder move</div>
+            <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#8FC8F6", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700 }}>Dive Deeper</div>
+            <div style={{ fontSize: 18, color: "#F0EDE8", fontWeight: 700 }}>Take "{content.title}" into a real Forge conversation</div>
             <div style={{ fontSize: 13, color: "#C8C4BE", lineHeight: 1.8 }}>
                 {content.starterPrompt || content.forgeContext || "Open Forge with this lesson already attached and pressure-test it against your actual company."}
             </div>
@@ -3018,8 +2772,10 @@ function ModalShell({ children, onClose }: { children: ReactNode; onClose: () =>
 function DetailPanel({ title, body }: { title: string; body: string }) {
     return (
         <div style={{ background: surface, border, borderRadius: 18, padding: 16 }}>
-            <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 10 }}>{title}</div>
-            <div style={{ fontSize: 13, color: "#C8C4BE", lineHeight: 1.8 }}>{body}</div>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase" }}>{title}</div>
+                <HelpTooltip content={body} />
+            </div>
         </div>
     );
 }
@@ -3035,9 +2791,11 @@ function HeroPill({ label }: { label: string }) {
 function SummaryTile({ label, value, hint }: { label: string; value: string; hint: string }) {
     return (
         <div style={{ background: "rgba(255,255,255,0.045)", border, borderRadius: 18, padding: 16 }}>
-            <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "#9B9389", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 8 }}>{label}</div>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "#9B9389", letterSpacing: "0.14em", textTransform: "uppercase" }}>{label}</div>
+                <HelpTooltip content={hint} />
+            </div>
             <div style={{ fontSize: 28, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 8 }}>{value}</div>
-            <div style={{ fontSize: "var(--foundry-academy-md-font)", color: textMuted, lineHeight: 1.7 }}>{hint}</div>
         </div>
     );
 }
@@ -3048,11 +2806,11 @@ function AliveEmptyState({ title, body }: { title: string; body: string }) {
             <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase" }}>
                 Forge Academy
             </div>
-            <div style={{ fontSize: 20, lineHeight: 1.08, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
-                {title}
-            </div>
-            <div style={{ fontSize: 13, color: "#C8C4BE", lineHeight: 1.8 }}>
-                {body}
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                <div style={{ fontSize: 20, lineHeight: 1.08, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
+                    {title}
+                </div>
+                <HelpTooltip content={body} />
             </div>
         </div>
     );
@@ -3199,11 +2957,11 @@ function CenteredState({
     return (
         <div style={{ minHeight: "70vh", display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", padding: 24 }}>
             <div style={{ maxWidth: 520, display: "grid", gap: 12 }}>
-                <div style={{ fontSize: 34, lineHeight: 0.98, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
-                    {title}
-                </div>
-                <div style={{ fontSize: 14, color: textMuted, lineHeight: 1.8 }}>
-                    {body}
+                <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                    <div style={{ fontSize: 34, lineHeight: 0.98, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
+                        {title}
+                    </div>
+                    <HelpTooltip content={body} side="bottom" />
                 </div>
                 {action}
             </div>

@@ -19,6 +19,7 @@ import {
     saveAcademySeries,
     saveAcademyTag,
 } from "../lib/academyDb";
+import HelpTooltip from "./HelpTooltip";
 
 type Props = {
     userId: string;
@@ -573,11 +574,11 @@ function Panel({
 }) {
     return (
         <div style={{ background: surface, border, borderRadius: 22, padding: 18 }}>
-            <div style={{ fontSize: 22, lineHeight: 1.05, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 8 }}>
-                {title}
-            </div>
-            <div style={{ fontSize: 13, color: "#9D978E", lineHeight: 1.75, marginBottom: 16 }}>
-                {subtitle}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+                <div style={{ fontSize: 22, lineHeight: 1.05, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>
+                    {title}
+                </div>
+                <HelpTooltip content={subtitle} />
             </div>
             {children}
         </div>
@@ -656,8 +657,10 @@ function FormField({ label, hint, children }: { label: string; hint?: string; ch
     return (
         <label style={{ display: "grid", gap: 8 }}>
             <div>
-                <div style={{ fontSize: 11, color: "#C8C4BE", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: hint ? 4 : 0 }}>{label}</div>
-                {hint && <div style={{ fontSize: 11, color: "#777", lineHeight: 1.6 }}>{hint}</div>}
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
+                    <div style={{ fontSize: 11, color: "#C8C4BE", letterSpacing: "0.1em", textTransform: "uppercase" }}>{label}</div>
+                    {hint && <HelpTooltip content={hint} />}
+                </div>
             </div>
             {children}
         </label>
@@ -727,8 +730,10 @@ function CenteredAdminState({ title, body }: { title: string; body: string }) {
     return (
         <div style={{ minHeight: "70vh", display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
             <div style={{ maxWidth: 560, display: "grid", gap: 10 }}>
-                <div style={{ fontSize: 36, lineHeight: 1, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>{title}</div>
-                <div style={{ fontSize: 14, color: "#9D978E", lineHeight: 1.8 }}>{body}</div>
+                <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                    <div style={{ fontSize: 36, lineHeight: 1, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>{title}</div>
+                    <HelpTooltip content={body} side="bottom" />
+                </div>
             </div>
         </div>
     );

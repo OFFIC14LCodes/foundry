@@ -43,22 +43,18 @@ function buildChatRoomContext(
     archiveSummary?: string | null,
     archiveTitle?: string | null,
     academyEntry?: AcademyTopicLaunch | null,
+    testingMode?: boolean,
 ) {
     const academyMode = academyEntry?.sessionMode ?? "learn";
-    const modeInstruction = !academyEntry ? "" : academyMode === "apply"
-        ? `This conversation is in APPLY mode. Forge should:
+    const modeInstruction = !academyEntry ? "" : testingMode
+        ? `TESTING MODE: The founder has clicked "Test to Complete". Test their understanding of this lesson through natural conversation. Ask probing questions that reveal whether they truly understand the lesson and can apply it to their own business. Do not lecture — probe for real comprehension. If an answer is shallow or incomplete, explain what is missing and invite a stronger response. Keep it direct but encouraging.`
+        : academyMode === "apply"
+            ? `This conversation is in APPLY mode. Forge should:
 1. state what this lesson was really teaching
 2. explain why founders miss it
 3. show how it appears in real business situations
 4. only then connect it to the founder's current business if useful
 5. end with one practical application question`
-        : academyMode === "knowledge_check"
-            ? `This conversation is in KNOWLEDGE CHECK mode. Forge should:
-1. ask the understanding question clearly
-2. evaluate the founder's answer for real comprehension, not memorization
-3. say what landed and what is still weak
-4. push for sharper thinking if the answer is thin
-5. keep the tone encouraging, direct, and intelligent`
             : `This conversation is in LEARN mode. Forge should:
 1. teach the lesson cleanly
 2. explain why it matters
@@ -110,7 +106,7 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
     const [archiveTitleInput, setArchiveTitleInput] = useState("");
     const [savingArchive, setSavingArchive] = useState(false);
     const [academyLessonCompleted, setAcademyLessonCompleted] = useState(false);
-    const [knowledgeCheckOpen, setKnowledgeCheckOpen] = useState(false);
+    const [testingMode, setTestingMode] = useState(false);
     const [activeArchive, setActiveArchive] = useState<any | null>(initialArchive);
     const [activeAcademyEntry, setActiveAcademyEntry] = useState<AcademyTopicLaunch | null>(academyEntry);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -136,7 +132,7 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
         setActiveAcademyEntry(academyEntry);
         academyBootstrappedRef.current = false;
         setAcademyLessonCompleted(false);
-        setKnowledgeCheckOpen(false);
+        setTestingMode(false);
 
         if (academyEntry) {
             const saved = localStorage.getItem(`academy-chat-${academyEntry.id}`);
@@ -224,6 +220,8 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
                 );
 
             if (!saved) return;
+            const wasAcademyEntry = activeAcademyEntry;
+            const wasCompleted = academyLessonCompleted;
             onArchiveSaved?.(saved);
             if (activeAcademyEntry) {
                 localStorage.removeItem(`academy-chat-${activeAcademyEntry.id}`);
@@ -237,6 +235,9 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
             setActiveArchive(null);
             setActiveAcademyEntry(null);
             academyBootstrappedRef.current = false;
+            if (wasCompleted && wasAcademyEntry) {
+                onBack();
+            }
         } catch (error) {
             console.error("chat room archive save error:", error);
         } finally {
@@ -261,6 +262,10 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
         const currentFiles = [...attachedFiles];
         setInput("");
         setAttachedFiles([]);
+        if (inputRef.current) {
+            inputRef.current.style.height = "40px";
+            inputRef.current.style.overflowY = "hidden";
+        }
 
         const attachmentLabel = currentFiles.length > 0
             ? `[Attached: ${currentFiles.map(f => f.name).join(", ")}]`
@@ -281,7 +286,8 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
                 [...messages.slice(-6).map((message) => message.text), text],
                 activeArchive?.summary || null,
                 activeArchive?.title || null,
-                activeAcademyEntry
+                activeAcademyEntry,
+                testingMode,
             );
             const apiMsgs = [
                 ...history.slice(0, -1).map(m => ({
@@ -310,7 +316,7 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
 
         setLoading(false);
 
-        if (activeAcademyEntry?.sessionMode === "knowledge_check" && text.trim()) {
+        if (testingMode && text.trim()) {
             void autoEvaluateKnowledgeCheck(text.trim());
         }
     };
@@ -319,28 +325,8 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
         const entry = entryOverride ?? activeAcademyEntry;
         if (!entry || loading) return;
 
-        const starterPrompt = entry.sessionMode === "apply"
-            ? `Open the APPLY step for the Forge Academy lesson "${entry.title}".
-
-Use this structure:
-1. what this lesson was really teaching
-2. why founders miss it
-3. how it shows up in real business situations
-4. how it may or may not apply to the founder right now
-5. one practical application question
-
-Learning goal: ${entry.learningGoal || "Help the founder get practical clarity."}
-Why this matters: ${entry.whyThisMatters || "The founder needs stronger intuition here before they are under pressure."}
-Common mistake: ${entry.commonMistake || "Founders often miss the real issue underneath the surface topic."}`
-            : entry.sessionMode === "knowledge_check"
-                ? `Open the KNOWLEDGE CHECK step for the Forge Academy lesson "${entry.title}".
-
-Ask this question clearly and then wait for the founder's answer:
-${entry.knowledgeCheckPrompt || `What is the core founder judgment this lesson was trying to build around "${entry.title}"?`}
-
-Judge for understanding, not memorization. If the answer is weak, tell them what is missing and invite a sharper second try.`
-                : entry.starterPrompt?.trim()
-                    || `Open a guided Forge Academy lesson on "${entry.title}".
+        const starterPrompt = entry.starterPrompt?.trim()
+            || `Open a guided Forge Academy lesson on "${entry.title}".
 
 Teach it like a serious founder educator, not a generic assistant.
 Learning goal: ${entry.learningGoal || "Help the founder get practical clarity."}
@@ -395,13 +381,60 @@ Start with a confident first lesson message that frames the topic, explains the 
         }
     };
 
-    const switchAcademyMode = async (mode: "learn" | "apply" | "knowledge_check") => {
-        if (!activeAcademyEntry || loading) return;
-        const nextEntry = { ...activeAcademyEntry, sessionMode: mode };
-        setActiveAcademyEntry(nextEntry);
-        academyBootstrappedRef.current = false;
-        setKnowledgeCheckOpen(false);
-        await sendAcademyKickoff(nextEntry);
+    const sendLessonCompletionMessage = async (entry: AcademyTopicLaunch) => {
+        const completionPrompt = `The founder just successfully demonstrated real understanding of "${entry.title}" through our conversation. Their lesson is now marked complete in Forge Academy. Send them a brief, warm congratulation. Let them know the lesson is complete. Tell them: to save this conversation and return to Academy, just press "Archive Chat" above — or they can keep chatting to go even deeper on this topic. Keep it short and encouraging.`;
+        const forgeMsg: ChatMessage = { id: `f-${Date.now()}`, role: "forge", text: "", createdAt: new Date().toISOString() };
+        setMessages((prev) => [...prev, forgeMsg]);
+        setLoading(true);
+        try {
+            const ctx = buildChatRoomContext(profile, [completionPrompt], null, null, entry);
+            await streamForgeAPI(
+                [{ role: "user", content: completionPrompt }],
+                FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", ctx.context),
+                (chunk) => {
+                    const { cleanText } = applyFoundryBookCitations(chunk, ctx.bookMatches);
+                    setMessages((prev) => prev.map((m) => m.id === forgeMsg.id ? { ...m, text: cleanText } : m));
+                }
+            );
+        } catch {
+            setMessages((prev) => prev.map((m) =>
+                m.id === forgeMsg.id ? { ...m, text: `Well done — "${entry.title}" is now marked complete. Press Archive Chat above to save this conversation and head back to Academy, or keep going if you want to dig deeper.` } : m
+            ));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const startTesting = async () => {
+        if (!activeAcademyEntry || loading || testingMode || academyLessonCompleted) return;
+        setTestingMode(true);
+        const entry = activeAcademyEntry;
+        const kickoffPrompt = `The founder has clicked "Test to Complete" for the Forge Academy lesson "${entry.title}". Begin conversationally testing their understanding. Ask natural questions that probe whether they genuinely understand this lesson and can apply it to their own business. Don't announce you are testing — just start asking. Keep it conversational.
+
+Learning goal: ${entry.learningGoal || "Core understanding of " + entry.title}
+Knowledge check: ${entry.knowledgeCheckPrompt || "What is the core founder judgment this lesson was trying to build?"}
+Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
+
+        const forgeMsg: ChatMessage = { id: `f-${Date.now()}`, role: "forge", text: "", createdAt: new Date().toISOString() };
+        setMessages((prev) => [...prev, forgeMsg]);
+        setLoading(true);
+        try {
+            const ctx = buildChatRoomContext(profile, [kickoffPrompt], null, null, entry, true);
+            await streamForgeAPI(
+                [{ role: "user", content: kickoffPrompt }],
+                FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", ctx.context),
+                (chunk) => {
+                    const { cleanText } = applyFoundryBookCitations(chunk, ctx.bookMatches);
+                    setMessages((prev) => prev.map((m) => m.id === forgeMsg.id ? { ...m, text: cleanText } : m));
+                }
+            );
+        } catch {
+            setMessages((prev) => prev.map((m) =>
+                m.id === forgeMsg.id ? { ...m, text: `Let's see where you're at with "${entry.title}". Tell me in your own words — what's the core judgment this lesson was trying to build, and how does it apply to your business right now?` } : m
+            ));
+        } finally {
+            setLoading(false);
+        }
     };
 
     const autoEvaluateKnowledgeCheck = async (userAnswer: string) => {
@@ -409,16 +442,20 @@ Start with a confident first lesson message that frames the topic, explains the 
         try {
             const evaluation = await evaluateKnowledgeCheckLaunchAnswer(activeAcademyEntry, userAnswer);
             if (evaluation.passed) {
+                setTestingMode(false);
                 await Promise.resolve(onMarkAcademyLessonCompleted(activeAcademyEntry.id, {
                     knowledgeCheckedAt: new Date().toISOString(),
                     lastCheckResponse: userAnswer,
                     lastCheckFeedback: evaluation.feedback,
                 }));
                 setAcademyLessonCompleted(true);
-                setKnowledgeCheckOpen(false);
+                void sendLessonCompletionMessage(activeAcademyEntry);
+            } else {
+                setTestingMode(false);
             }
         } catch (error) {
             console.error("auto knowledge check error:", error);
+            setTestingMode(false);
         }
     };
 
@@ -482,45 +519,35 @@ Start with a confident first lesson message that frames the topic, explains the 
                         {chatSubtitle}
                     </div>
                 </div>
-                {activeAcademyEntry?.sessionMode !== "apply" && activeAcademyEntry && (
-                    <button
-                        className="forge-chat-room__action"
-                        onClick={() => void switchAcademyMode("apply")}
-                        style={{
-                            background: "rgba(99,179,237,0.10)",
-                            border: "1px solid rgba(99,179,237,0.22)",
-                            borderRadius: 8,
-                            padding: "5px 12px",
-                            color: "#8FC8F6",
-                            fontSize: 11,
-                            cursor: "pointer",
-                            transition: "all 0.15s",
-                        }}
-                    >
-                        Apply this now
-                    </button>
-                )}
                 {activeAcademyEntry && onMarkAcademyLessonCompleted && (
                     <button
                         className="forge-chat-room__action"
-                        onClick={() => {
-                            if (!academyLessonCompleted && activeAcademyEntry.sessionMode !== "knowledge_check") {
-                                void switchAcademyMode("knowledge_check");
-                            }
-                        }}
-                        disabled={academyLessonCompleted || activeAcademyEntry.sessionMode === "knowledge_check"}
+                        onClick={() => { if (!academyLessonCompleted && !testingMode) void startTesting(); }}
+                        disabled={academyLessonCompleted || testingMode || loading}
                         style={{
-                            background: academyLessonCompleted ? "rgba(76,175,138,0.08)" : "rgba(232,98,42,0.10)",
-                            border: academyLessonCompleted ? "1px solid rgba(76,175,138,0.22)" : "1px solid rgba(232,98,42,0.22)",
+                            background: academyLessonCompleted
+                                ? "rgba(76,175,138,0.08)"
+                                : testingMode
+                                    ? "rgba(232,98,42,0.06)"
+                                    : "rgba(232,98,42,0.10)",
+                            border: academyLessonCompleted
+                                ? "1px solid rgba(76,175,138,0.22)"
+                                : testingMode
+                                    ? "1px solid rgba(232,98,42,0.15)"
+                                    : "1px solid rgba(232,98,42,0.22)",
                             borderRadius: 8,
                             padding: "5px 12px",
-                            color: academyLessonCompleted ? "#4CAF8A" : "#E8622A",
+                            color: academyLessonCompleted
+                                ? "#4CAF8A"
+                                : testingMode
+                                    ? "rgba(232,98,42,0.65)"
+                                    : "#E8622A",
                             fontSize: 11,
-                            cursor: academyLessonCompleted || activeAcademyEntry.sessionMode === "knowledge_check" ? "default" : "pointer",
+                            cursor: academyLessonCompleted || testingMode ? "default" : "pointer",
                             transition: "all 0.15s",
                         }}
                     >
-                        {academyLessonCompleted ? "Completed" : activeAcademyEntry.sessionMode === "knowledge_check" ? "Checking understanding" : "Check understanding"}
+                        {academyLessonCompleted ? "Completed" : testingMode ? "Testing..." : "Test to Complete"}
                     </button>
                 )}
                 {hasMessages && (
@@ -828,10 +855,13 @@ Start with a confident first lesson message that frames the topic, explains the 
                                     setLanguageWarning(null);
                                     setConfirmedProfanityInput(null);
                                 }
+                                const el = e.target;
+                                el.style.height = "auto";
+                                el.style.height = Math.min(el.scrollHeight, 120) + "px";
+                                el.style.overflowY = el.scrollHeight > 120 ? "auto" : "hidden";
                             }}
                             onKeyDown={handleKeyDown}
                             placeholder="Ask anything — business, concepts, ideas, whatever's on your mind..."
-                            rows={1}
                             style={{
                                 flex: 1,
                                 background: "rgba(255,255,255,0.05)",
@@ -844,8 +874,8 @@ Start with a confident first lesson message that frames the topic, explains the 
                                 resize: "none",
                                 outline: "none",
                                 lineHeight: 1.5,
-                                maxHeight: 120,
-                                overflowY: "auto",
+                                height: 40,
+                                overflowY: "hidden",
                             }}
                         />
 

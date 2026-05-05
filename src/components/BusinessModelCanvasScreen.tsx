@@ -11,6 +11,7 @@ import {
 import type { FoundryActionSuggestion } from "../lib/foundryActions";
 import { suggestActionFromCanvasWeakness } from "../lib/foundryActions";
 import ActionSuggestionCard from "./actions/ActionSuggestionCard";
+import HelpTooltip from "./HelpTooltip";
 
 type Props = {
     profile: any;
@@ -83,9 +84,9 @@ export default function BusinessModelCanvasScreen({
                 </button>
                 <Logo variant="flame" style={{ width: 42, height: 42, objectFit: "contain", flexShrink: 0 }} />
                 <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 30, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, lineHeight: 1 }}>Business Model Canvas</div>
-                    <div style={{ fontSize: 13, color: "#9D978E", marginTop: 5 }}>
-                        Living Stage 2 model for {profile?.businessName || profile?.idea || "your business"} · Version {canvas.version}
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ fontSize: 30, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, lineHeight: 1 }}>Business Model Canvas</div>
+                        <HelpTooltip content={`Living Stage 2 model for ${profile?.businessName || profile?.idea || "your business"} · Version ${canvas.version}`} side="bottom" />
                     </div>
                 </div>
                 <div style={{ marginLeft: "auto", display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -102,18 +103,17 @@ export default function BusinessModelCanvasScreen({
                 <div style={{ maxWidth: 1320, margin: "0 auto" }}>
                     <div style={{ marginBottom: 16, display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
                         <div style={{ maxWidth: 780 }}>
-                            <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, marginBottom: 6 }}>Forge builds this with you over time</div>
-                            <div style={{ fontSize: 13, color: "#9D978E", lineHeight: 1.7 }}>
-                                This canvas is a live strategic system, not a blank template. Use <span style={{ color: "#E8622A" }}>Add via Forge</span> whenever a section feels thin, vague, or under pressure.
+                            <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                                <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>Forge builds this with you over time</div>
+                                <HelpTooltip content="This canvas is a live strategic system, not a blank template. Use Add via Forge whenever a section feels thin, vague, or under pressure." />
                             </div>
                         </div>
                         <div style={{ minWidth: 260, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: 14 }}>
-                            <div style={{ fontSize: 11, color: "#77716A", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 6 }}>Weak spots</div>
-                            <div style={{ fontSize: 12, color: "#C8C4BE", lineHeight: 1.7 }}>
-                                {Array.from(weaknessLookup.values()).slice(0, 4).map((item) => (
-                                    <div key={item.section}>• {BUSINESS_MODEL_CANVAS_LABELS[item.section]} — {item.message}</div>
-                                ))}
-                                {weaknessLookup.size === 0 && <div>• No obvious structural gaps right now.</div>}
+                            <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                                <div style={{ fontSize: 11, color: "#77716A", textTransform: "uppercase", letterSpacing: "0.12em" }}>Weak spots</div>
+                                <HelpTooltip content={weaknessLookup.size === 0
+                                    ? "No obvious structural gaps right now."
+                                    : Array.from(weaknessLookup.values()).slice(0, 4).map((item) => `${BUSINESS_MODEL_CANVAS_LABELS[item.section]}: ${item.message}`).join("\n")} />
                             </div>
                         </div>
                     </div>

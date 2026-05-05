@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import HelpTooltip from "../HelpTooltip";
 
 type SettingsScreenShellProps = {
     title: string;
@@ -20,8 +21,10 @@ export function SettingsScreenShell({
             <div style={{ position: "sticky", top: 0, zIndex: 20, background: "rgba(8,8,9,0.94)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                 <div className="foundry-page settings-shell__header" style={{ paddingTop: "max(18px, calc(10px + env(safe-area-inset-top)))", paddingBottom: 18 }}>
                     <div className="settings-shell__title">
-                        <div style={{ fontSize: 24, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>{title}</div>
-                        {subtitle && <div style={{ margin: "4px auto 0", fontSize: 13, color: "#7C7770", maxWidth: 680 }}>{subtitle}</div>}
+                        <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                            <div style={{ fontSize: 24, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>{title}</div>
+                            {subtitle && <HelpTooltip content={subtitle} side="bottom" />}
+                        </div>
                     </div>
                     <button
                         className="settings-shell__back"
@@ -51,8 +54,10 @@ export function SettingsSection({ title, description, children }: SettingsSectio
     return (
         <section style={{ marginBottom: 18 }}>
             <div className="settings-section-heading">
-                <div style={{ fontSize: 16, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>{title}</div>
-                {description && <div style={{ marginTop: 3, fontSize: 12, color: "#6B665F", lineHeight: 1.6 }}>{description}</div>}
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ fontSize: 16, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>{title}</div>
+                    {description && <HelpTooltip content={description} />}
+                </div>
             </div>
             {children}
         </section>
@@ -82,8 +87,10 @@ export function SettingsRow({ label, value, hint, action }: SettingsRowProps) {
     return (
         <div className="settings-row">
             <div className="settings-row__copy">
-                <div style={{ fontSize: 13, color: "#F0EDE8", fontWeight: 500 }}>{label}</div>
-                {hint && <div style={{ marginTop: 4, fontSize: 12, color: "#6B665F", lineHeight: 1.6 }}>{hint}</div>}
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ fontSize: 13, color: "#F0EDE8", fontWeight: 500 }}>{label}</div>
+                    {hint && <HelpTooltip content={hint} />}
+                </div>
             </div>
             <div className="settings-row__value">
                 {action ?? <div style={{ fontSize: 13, color: "#C8C4BE" }}>{value ?? "Not set"}</div>}

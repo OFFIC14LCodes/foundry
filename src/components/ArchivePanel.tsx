@@ -11,6 +11,7 @@ import {
     getArchiveDisplaySummary,
     getArchivePreviewText,
 } from "../lib/archiveSummary";
+import HelpTooltip from "./HelpTooltip";
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -475,8 +476,10 @@ export default function ArchivePanel({
                     <ArrowLeft size={"var(--foundry-app-header-icon-size)"} />
                 </button>
                 <div>
-                    <div style={{ fontSize: "var(--foundry-app-header-title-font)", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>Archive</div>
-                    <div style={{ fontSize: "var(--foundry-app-header-meta-font)", color: "#555" }}>All saved conversations</div>
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ fontSize: "var(--foundry-app-header-title-font)", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>Archive</div>
+                        <HelpTooltip content="All saved conversations" side="bottom" />
+                    </div>
                 </div>
             </div>
 
@@ -525,7 +528,7 @@ export default function ArchivePanel({
                             <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "36px 24px", color: "#888", fontSize: 13, lineHeight: 1.7, textAlign: "center" }}>
                                 <div style={{ fontSize: 30, marginBottom: 14 }}>📁</div>
                                 <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 16, color: "#F0EDE8", marginBottom: 8 }}>No saved archives yet.</div>
-                                <div>Use Archive Chat in the Forge to store named snapshots of your conversations.</div>
+                                <HelpTooltip content="Use Archive Chat in the Forge to store named snapshots of your conversations." />
                             </div>
                         ) : (
                             <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "18px 16px", color: "#888", fontSize: 13 }}>

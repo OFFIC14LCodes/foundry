@@ -5,6 +5,7 @@ import { loadAdminTtsUsage, type TtsUsageSnapshot } from "../lib/ttsUsage";
 import AdminDashboard from "./AdminDashboard";
 import AdminAcademyManager from "./AdminAcademyManager";
 import AdminFounderAccounts from "./AdminFounderAccounts";
+import HelpTooltip from "./HelpTooltip";
 
 interface Props {
     userId: string;
@@ -136,11 +137,11 @@ function AdminCard({
                 >
                     •
                 </div>
-                <div style={{ fontSize: 18, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 8 }}>
-                    {title}
-                </div>
-                <div style={{ fontSize: 12, color: "#888", lineHeight: 1.7 }}>
-                    {description}
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ fontSize: 18, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
+                        {title}
+                    </div>
+                    <HelpTooltip content={description} />
                 </div>
             </div>
 
@@ -379,8 +380,8 @@ export default function AdminHubScreen({
                         <div style={{ fontSize: 24, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 10 }}>
                             Global notification behavior
                         </div>
-                        <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.75, maxWidth: 720, marginBottom: 18 }}>
-                            These controls govern when Foundry can trigger re-engagement reminders across the product. User-level preferences are still respected before anything is sent.
+                        <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 18 }}>
+                            <HelpTooltip content="These controls govern when Foundry can trigger re-engagement reminders across the product. User-level preferences are still respected before anything is sent." />
                         </div>
 
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
@@ -481,8 +482,10 @@ function ControlCard({
 }) {
     return (
         <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: 16 }}>
-            <div style={{ fontSize: 13, color: "#F0EDE8", fontWeight: 600, marginBottom: 6 }}>{label}</div>
-            <div style={{ fontSize: 12, color: "#888", lineHeight: 1.7, marginBottom: 12 }}>{hint}</div>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                <div style={{ fontSize: 13, color: "#F0EDE8", fontWeight: 600 }}>{label}</div>
+                <HelpTooltip content={hint} />
+            </div>
             {control}
         </div>
     );

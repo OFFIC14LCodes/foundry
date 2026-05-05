@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Logo from "./Logo";
 import ActionSuggestionCard from "./actions/ActionSuggestionCard";
+import HelpTooltip from "./HelpTooltip";
 import {
     buildForgePromptForAction,
     completeFoundryAction,
@@ -172,8 +173,10 @@ export default function ActionCenterScreen({ userId, onBack, onAskForge }: Props
                 </button>
                 <Logo variant="flame" style={{ width: 34, height: 34, objectFit: "contain" }} />
                 <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 28, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 800, lineHeight: 1 }}>Action Center</div>
-                    <div style={{ fontSize: 12, color: "#8D857C", marginTop: 4 }}>The bridge from insight to what happens next.</div>
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ fontSize: 28, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 800, lineHeight: 1 }}>Action Center</div>
+                        <HelpTooltip content="The bridge from insight to what happens next." side="bottom" />
+                    </div>
                 </div>
             </div>
 
@@ -205,11 +208,9 @@ export default function ActionCenterScreen({ userId, onBack, onAskForge }: Props
                     ) : filteredActions.length === 0 ? (
                         <div style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 18, padding: 22 }}>
                             <div style={{ fontSize: 22, fontWeight: 800, color: "#F0EDE8", marginBottom: 8 }}>{actions.length === 0 ? "No actions yet" : "No actions match these filters"}</div>
-                            <div style={{ fontSize: 13, color: "#9D978E", lineHeight: 1.7 }}>
-                                {actions.length === 0
-                                    ? "Actions start inside Market Intelligence, Weekly Intelligence, Forge Academy, and the Business Model Canvas. Look for the next-action card when an insight needs a decision or follow-up."
-                                    : "Adjust the status, priority, or source filters to find the work you want to review."}
-                            </div>
+                            <HelpTooltip content={actions.length === 0
+                                ? "Actions start inside Market Intelligence, Weekly Intelligence, Forge Academy, and the Business Model Canvas. Look for the next-action card when an insight needs a decision or follow-up."
+                                : "Adjust the status, priority, or source filters to find the work you want to review."} />
                         </div>
                     ) : (
                         <div style={{ display: "grid", gap: 12 }}>
@@ -217,8 +218,10 @@ export default function ActionCenterScreen({ userId, onBack, onAskForge }: Props
                                 <div key={section.key} style={{ display: "grid", gap: 10 }}>
                                     <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "end", padding: "4px 2px 0" }}>
                                         <div>
-                                            <div style={{ fontSize: 17, color: "#F0EDE8", fontWeight: 900 }}>{section.title}</div>
-                                            <div style={{ fontSize: 12, color: "#8D857C", marginTop: 3 }}>{section.description}</div>
+                                            <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                                                <div style={{ fontSize: 17, color: "#F0EDE8", fontWeight: 900 }}>{section.title}</div>
+                                                <HelpTooltip content={section.description} />
+                                            </div>
                                         </div>
                                         <div style={{ fontSize: 11, color: "#E8622A", fontWeight: 900, fontFamily: "'DM Sans', system-ui, sans-serif" }}>{section.actions.length}</div>
                                     </div>
@@ -245,8 +248,10 @@ export default function ActionCenterScreen({ userId, onBack, onAskForge }: Props
                                                 {showOutcomePrompt && (
                                                     <div style={{ marginLeft: 10, borderLeft: "2px solid rgba(232,98,42,0.35)", padding: "10px 0 10px 12px", display: "grid", gap: 9 }}>
                                                         <div>
-                                                            <div style={{ fontSize: 14, fontWeight: 900, color: "#F0EDE8" }}>Did this work?</div>
-                                                            <div style={{ fontSize: 12, color: "#8D857C", marginTop: 3 }}>Optional. Capture the result while it is still fresh.</div>
+                                                            <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                                                                <div style={{ fontSize: 14, fontWeight: 900, color: "#F0EDE8" }}>Did this work?</div>
+                                                                <HelpTooltip content="Optional. Capture the result while it is still fresh." />
+                                                            </div>
                                                         </div>
                                                         <textarea
                                                             value={outcomeNotes}

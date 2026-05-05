@@ -539,7 +539,7 @@ function getArchiveDisplayDate(dateLike?: string) {
 }
 
 
-function renderWithBold(text, onStageRef, onGlossaryTap, onConceptTap?, glossaryTerms: GlossaryTerm[] = []) {
+function renderWithBold(text, onStageRef, onGlossaryTap, onConceptTap?, glossaryTerms: GlossaryTerm[] = [], learnedTerms: any[] = []) {
   if (!text) return null;
   text = cleanAIText(text);
 
@@ -582,7 +582,7 @@ function renderWithBold(text, onStageRef, onGlossaryTap, onConceptTap?, glossary
         const inner = part.slice(2, -2);
         return (
           <strong key={key} style={{ color: "#F0EDE8", fontWeight: 700 }}>
-            {applyGlossaryHighlights(inner, onGlossaryTap, glossaryTerms)}
+            {applyGlossaryHighlights(inner, onGlossaryTap, glossaryTerms, learnedTerms)}
           </strong>
         );
       }
@@ -592,7 +592,7 @@ function renderWithBold(text, onStageRef, onGlossaryTap, onConceptTap?, glossary
       return lines.map((line: string, j: number) => (
         <span key={`${key}-l${j}`}>
           {j > 0 && <br />}
-          {applyGlossaryHighlights(line, onGlossaryTap, glossaryTerms)}
+          {applyGlossaryHighlights(line, onGlossaryTap, glossaryTerms, learnedTerms)}
         </span>
       ));
     });
@@ -1750,7 +1750,7 @@ Where do you want to start?`;
 
       void syncBusinessModelCanvasFromExchange(text, redirectedAdvanceText);
 
-      if (ar && canAdvanceNow) setAdvanceReady(true);
+      if (canAdvanceNow) setAdvanceReady(true);
     } catch (err) {
       console.error("Forge error:", err);
       onUpdateMessages(activeStage, (msgs) =>
@@ -2201,12 +2201,16 @@ ${forgeReply}`;
                 onClose={() => setGlossaryModal(null)}
                 onMarkLearned={(term, stageNum) => {
                   const learned = profile.glossaryLearned || [];
-                  if (!learned.find((l) => l.term === term)) {
+                  const canonicalTerm = glossaryModal.entry.term || term;
+                  const alreadyLearned = learned.some((l) =>
+                    [term, canonicalTerm].some((value) => l.term?.toLowerCase() === value.toLowerCase())
+                  );
+                  if (!alreadyLearned) {
                     onUpdateProfile({
                       glossaryLearned: [
                         ...learned,
                         {
-                          term,
+                          term: canonicalTerm,
                           stage: stageNum,
                           date: new Date().toLocaleDateString(),
                         },
@@ -2215,7 +2219,9 @@ ${forgeReply}`;
                   }
                 }}
                 alreadyLearned={(profile.glossaryLearned || []).some(
-                  (l) => l.term === glossaryModal.term
+                  (l) => [glossaryModal.term, glossaryModal.entry.term].some((term) =>
+                    l.term?.toLowerCase() === term.toLowerCase()
+                  )
                 )}
                 callForgeAPI={callForgeAPI}
               />
@@ -2347,7 +2353,7 @@ ${forgeReply}`;
                   onStageRef={(id: number) => setStageRefModal(id)}
                   onGlossaryTap={(term: string, entry: any) => setGlossaryModal({ term, entry })}
                   onConceptTap={(name: string) => setConceptModal({ name })}
-                  renderWithBold={(t, sr, gt, ct) => renderWithBold(t, sr, gt, ct, glossaryTerms)}
+                  renderWithBold={(t, sr, gt, ct) => renderWithBold(t, sr, gt, ct, glossaryTerms, profile.glossaryLearned || [])}
                   userName={profile?.name || "You"}
                   onAction={(action: any) => {
                     if (action.type === "upgrade") {
@@ -2774,6 +2780,7 @@ export default function FoundryApp() {
   const [showDocuments, setShowDocuments] = useState(false);
   const [documentContext, setDocumentContext] = useState<DocumentScreenContext | null>(null);
   const [showMarketIntel, setShowMarketIntel] = useState(false);
+  const [autoRunMarketIntel, setAutoRunMarketIntel] = useState(false);
   const [showCofounder, setShowCofounder] = useState(false);
   const [cofounderUnreadCount, setCofounderUnreadCount] = useState(0);
   const showCofounderRef = useRef(false);
@@ -3586,6 +3593,13 @@ export default function FoundryApp() {
 
   const openMarketIntel = () => {
     markMeaningfulActivity();
+    setAutoRunMarketIntel(false);
+    setShowMarketIntel(true);
+  };
+
+  const openMarketIntelForHealthScore = () => {
+    markMeaningfulActivity();
+    setAutoRunMarketIntel(true);
     setShowMarketIntel(true);
   };
 
@@ -4013,6 +4027,7 @@ export default function FoundryApp() {
             onOpenPitchPractice={openPitchPractice}
             onOpenDocuments={openDocuments}
             onOpenMarketIntel={openMarketIntel}
+            onGetHealthScore={openMarketIntelForHealthScore}
             onOpenBusinessModelCanvas={openBusinessModelCanvas}
             onOpenActionCenter={openActionCenter}
             onOpenCofounder={openCofounder}
@@ -4144,10 +4159,11 @@ export default function FoundryApp() {
               userId={(user as any).id}
               report={marketReport}
               onReportChange={setMarketReport}
-              onBack={() => setShowMarketIntel(false)}
+              onBack={() => { setShowMarketIntel(false); setAutoRunMarketIntel(false); }}
               onCreateAction={createActionSuggestion}
               onAskForgeAboutAction={askForgeAboutAction}
               generationLimit={isFreeTier ? FREE_TIER_MARKET_REPORT_LIMIT : null}
+              autoRun={autoRunMarketIntel}
             />
           </Suspense>
         </div>

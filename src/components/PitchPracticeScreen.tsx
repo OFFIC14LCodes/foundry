@@ -11,6 +11,7 @@ import ForgeAvatar from "./ForgeAvatar";
 import Logo from "./Logo";
 import { MessageActions } from "./AnimatedChatText";
 import MicButton from "./MicButton";
+import HelpTooltip from "./HelpTooltip";
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -804,16 +805,16 @@ export default function PitchPracticeScreen({
                     <>
                     {/* Intro */}
                     <div style={{ marginBottom: 28, animation: "fadeSlideUp 0.4s ease both", textAlign: "left" }}>
-                        <div style={{ fontSize: 23, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 8, lineHeight: 1.2 }}>
-                            Your rehearsal room.
-                        </div>
-                        <div style={{ fontSize: 13, color: "#888", lineHeight: 1.75, fontFamily: "'Lora', Georgia, serif", fontStyle: "italic" }}>
-                            Forge plays the audience. You pitch. Get honest feedback on your clarity, confidence, and persuasiveness — before the stakes are real.
+                        <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                            <div style={{ fontSize: 23, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, lineHeight: 1.2 }}>
+                                Your rehearsal room.
+                            </div>
+                            <HelpTooltip content="Forge plays the audience. You pitch. Get honest feedback on your clarity, confidence, and persuasiveness before the stakes are real." />
                         </div>
                     </div>
                     {!voiceSupported && (
-                        <div style={{ marginTop: -14, marginBottom: 20, fontSize: 12, color: "rgba(240,237,232,0.4)", fontFamily: "'DM Sans', sans-serif", lineHeight: 1.6 }}>
-                            Voice mode requires Chrome or Edge. Text mode works in all browsers.
+                        <div style={{ marginTop: -14, marginBottom: 20 }}>
+                            <HelpTooltip content="Voice mode requires Chrome or Edge. Text mode works in all browsers." />
                         </div>
                     )}
 
@@ -857,9 +858,7 @@ export default function PitchPracticeScreen({
                                         <div style={{ fontSize: 13, fontWeight: 600, color: mode === m ? "#E8622A" : "#C8C4BE", marginBottom: 3 }}>
                                             {m === "text" ? "Text" : "Voice"}
                                         </div>
-                                        <div style={{ fontSize: 10, color: "#555" }}>
-                                            {m === "text" ? "Type your pitch" : speechSupported ? "Speak naturally" : "Not supported"}
-                                        </div>
+                                        <HelpTooltip content={m === "text" ? "Type your pitch" : speechSupported ? "Speak naturally" : "Not supported"} />
                                     </button>
                                 );
                             })}
@@ -908,7 +907,7 @@ export default function PitchPracticeScreen({
                                     </span>
                                     <div style={{ flex: 1 }}>
                                         <div style={{ fontSize: 13, color: scenario === s.id ? "#E8622A" : "#C8C4BE", fontWeight: 600, marginBottom: 2 }}>{s.label}</div>
-                                        <div style={{ fontSize: 11, color: "#555" }}>{s.sub}</div>
+                                        <HelpTooltip content={s.sub} />
                                     </div>
                                     {scenario === s.id && <span style={{ color: "#E8622A", fontSize: 12, flexShrink: 0 }}>✓</span>}
                                 </button>
@@ -921,7 +920,10 @@ export default function PitchPracticeScreen({
                     {/* Forge voice toggle — only in voice mode */}
                     {mode === "voice" && (
                         <div style={{ marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, animation: "fadeSlideUp 0.3s ease both" }}>
-                            <span style={{ fontSize: 12, color: "#888" }}>Forge speaks responses aloud</span>
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                                <span style={{ fontSize: 12, color: "#F0EDE8" }}>Forge voice</span>
+                                <HelpTooltip content="Forge speaks responses aloud." />
+                            </span>
                             <button
                                 onClick={() => setForgeVoiceOn(v => !v)}
                                 style={{ background: forgeVoiceOn ? "rgba(232,98,42,0.18)" : "rgba(255,255,255,0.06)", border: "none", borderRadius: 20, padding: "4px 14px", color: forgeVoiceOn ? "#E8622A" : "#555", fontSize: 11, cursor: "pointer", fontWeight: 600 }}
