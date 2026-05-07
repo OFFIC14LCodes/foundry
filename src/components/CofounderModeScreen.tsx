@@ -8,6 +8,7 @@ import { Paperclip, Link as LinkIcon, Palette } from 'lucide-react';
 import ForgeAvatar from './ForgeAvatar';
 import { MessageActions } from './AnimatedChatText';
 import MicButton from './MicButton';
+import { clearCofounderInviteTokenFromUrl, getPendingCofounderInviteToken } from '../lib/cofounderInviteRoute';
 import type { CofounderTeam, CofounderMember, CofounderMessage, CofounderTask, CofounderTaskComment, CofounderDecision, CofounderFileLink } from '../lib/cofounderDb';
 import {
     getTeamForUser,
@@ -166,7 +167,7 @@ export default function CofounderModeScreen({ userId, profile, onBack, onOpenNav
     const [teamNameInput, setTeamNameInput] = useState(profile.businessName || profile.idea?.slice(0, 40) || '');
 
     // ── Invite acceptance ────────────────────────────────────────
-    const [pendingToken] = useState<string | null>(() => new URLSearchParams(window.location.search).get('invite'));
+    const [pendingToken, setPendingToken] = useState<string | null>(() => getPendingCofounderInviteToken());
     const [inviteInfo, setInviteInfo] = useState<{ teamName: string; teamId: string } | null>(null);
     const [joiningRole, setJoiningRole] = useState('Cofounder');
     const [activeInvite, setActiveInvite] = useState<{ id: string; token: string } | null>(null);
@@ -243,6 +244,8 @@ export default function CofounderModeScreen({ userId, profile, onBack, onOpenNav
                     setDataLoading(false);
                     return;
                 }
+            } else {
+                setInviteError('This invite link is no longer valid. Ask the team owner for a new link.');
             }
         }
 
@@ -379,12 +382,22 @@ export default function CofounderModeScreen({ userId, profile, onBack, onOpenNav
         setJoining(true);
         const result = await acceptInvite(pendingToken, userId, profile.name, joiningRole);
         if (result.success) {
-            window.history.replaceState({}, '', window.location.pathname);
+            clearCofounderInviteTokenFromUrl();
             const t = await getTeamForUser(userId);
             if (t) { await loadWorkspace(t); onTeamChanged?.(t.id); }
             setInviteInfo(null);
+            setPendingToken(null);
+        } else {
+            setInviteError('Could not join this workspace. Ask the team owner to send a fresh invite link.');
         }
         setJoining(false);
+    };
+
+    const handleDeclineInvite = () => {
+        clearCofounderInviteTokenFromUrl();
+        setInviteInfo(null);
+        setPendingToken(null);
+        setInviteError(null);
     };
 
     const handleGetInviteLink = async () => {
@@ -530,7 +543,7 @@ export default function CofounderModeScreen({ userId, profile, onBack, onOpenNav
         const bookContext = buildFoundryBookContext(
             Number(profile.currentStage) || 1,
             contextMessages.slice(-8).map(m => m.content),
-            2
+            4
         );
 
         const teamCtx = [
@@ -847,6 +860,12 @@ export default function CofounderModeScreen({ userId, profile, onBack, onOpenNav
                     <button onClick={handleAcceptInvite} disabled={joining} style={{ ...btnPrimary, width: '100%', padding: '13px', fontSize: 14, opacity: joining ? 0.7 : 1 }}>
                         {joining ? 'Joining...' : `Join as ${joiningRole}`}
                     </button>
+                    <button onClick={handleDeclineInvite} disabled={joining} style={{ ...btnSecondary, width: '100%', padding: '12px', fontSize: 13, marginTop: 10 }}>
+                        Decline invite
+                    </button>
+                    {inviteError && (
+                        <div style={{ fontSize: 12, color: 'rgba(232,98,42,0.8)', textAlign: 'center', marginTop: 12, lineHeight: 1.5 }}>{inviteError}</div>
+                    )}
                 </div>
             </div>
         );

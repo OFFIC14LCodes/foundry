@@ -110,7 +110,7 @@ export default function DocumentSignaturesPanel(props: {
                                     return p.availableNow && p.id !== "docusign";
                                 }).map((p) => (
                                     <option key={p.id} value={p.id}>
-                                        {p.id === "mock" ? "Mock provider (dev)" : p.displayName}
+                                        {p.id === "mock" ? "Manual tracking" : p.displayName}
                                     </option>
                                 ))}
                             </select>

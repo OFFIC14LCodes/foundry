@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode, type ChangeEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode, type ChangeEvent } from "react";
 import { Archive } from "lucide-react";
 import { STAGES_DATA } from "../constants/stages";
 import { supabase } from "../supabase";
@@ -200,9 +200,9 @@ export default function ForgeAcademyScreen({
             currentFilter: categoryLabel,
             stage: Number(profile?.currentStage) || 1,
         });
-    }, [selectedContent, selectedCategoryId, workspace.categories, profile?.currentStage]);
+    }, [onContextChange, selectedContent, selectedCategoryId, workspace.categories, profile?.currentStage]);
 
-    const refreshWorkspace = async () => {
+    const refreshWorkspace = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
@@ -213,11 +213,11 @@ export default function ForgeAcademyScreen({
         } finally {
             setLoading(false);
         }
-    };
+    }, [userId]);
 
     useEffect(() => {
         void refreshWorkspace();
-    }, [userId]);
+    }, [refreshWorkspace]);
 
     useEffect(() => {
         let cancelled = false;
@@ -1089,6 +1089,7 @@ export default function ForgeAcademyScreen({
 
             {selectedContent && (
                 <ContentDetailModal
+                    key={selectedContent.id}
                     content={selectedContent}
                     progress={completionAwareContentProgressById.get(selectedContent.id)}
                     onClose={() => setSelectedContent(null)}
@@ -1857,7 +1858,7 @@ function AcademyShell({ children, onBack, onOpenNav, onOpenArchive }: { children
     return (
         <div style={{ position: "fixed", inset: 0, zIndex: 110, background: "#080809", color: "#F0EDE8", display: "flex", flexDirection: "column", fontFamily: "'Lora', Georgia, serif" }}>
             <div style={{ padding: "max(14px, calc(10px + env(safe-area-inset-top))) 18px 12px", borderBottom: border, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(16px)", display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
-                <button onClick={onOpenNav} style={{ background: "rgba(255,255,255,0.05)", border, borderRadius: 9, padding: "var(--foundry-app-header-button-padding)", color: "#C8C4BE", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <button onClick={onOpenNav ?? onBack} style={{ background: "rgba(255,255,255,0.05)", border, borderRadius: 9, padding: "var(--foundry-app-header-button-padding)", color: "#C8C4BE", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg>
                 </button>
                 <div style={{ width: 34, height: 34, borderRadius: 12, background: "rgba(232,98,42,0.12)", border: "1px solid rgba(232,98,42,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -2444,12 +2445,10 @@ function ContentDetailModal({
     const embedUrl = buildYoutubeEmbedUrl(content.youtubeVideoId);
     const thumbnailUrl = content.thumbnailUrl || buildYoutubeThumbnailUrl(content.youtubeVideoId);
     const slides = useMemo(() => buildLessonSlides(content), [content]);
-    const [activeSlideIndex, setActiveSlideIndex] = useState(0);
-
-    useEffect(() => {
+    const [activeSlideIndex, setActiveSlideIndex] = useState(() => {
         const saved = parseInt(localStorage.getItem(`academy-slide-${content.id}`) ?? "0", 10);
-        setActiveSlideIndex(isNaN(saved) ? 0 : Math.min(saved, slides.length - 1));
-    }, [content.id]);
+        return isNaN(saved) ? 0 : Math.min(saved, slides.length - 1);
+    });
 
     const goToSlide = (index: number) => {
         setActiveSlideIndex(index);

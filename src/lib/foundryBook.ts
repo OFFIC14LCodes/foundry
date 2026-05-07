@@ -103,7 +103,7 @@ function scoreOccurrences(haystack: string, token: string): number {
   return count;
 }
 
-function scoreSection(section: FoundryBookSection, query: string, tokens: string[]): number {
+function scoreSection(section: FoundryBookSection, query: string, tokens: string[], activeStageId?: number): number {
   const title = normalize(section.section_name);
   const chapter = normalize(section.chapter_name);
   const content = normalize(section.content);
@@ -117,6 +117,10 @@ function scoreSection(section: FoundryBookSection, query: string, tokens: string
     score += scoreOccurrences(title, token) * 8;
     score += scoreOccurrences(chapter, token) * 6;
     score += Math.min(scoreOccurrences(content, token), 6) * 2;
+  }
+
+  if (score > 0 && activeStageId != null && section.stage_id === activeStageId) {
+    score += 10;
   }
 
   return score;
@@ -283,15 +287,15 @@ export function getRelevantFoundryBookSections(
 ): RetrievedBookSection[] {
   const query = normalize(inputs.filter(Boolean).join(" "));
   const tokens = tokenize(query);
-  const stageSections = FOUNDRY_BOOK_SECTIONS.filter((section) => section.stage_id === stageId);
+  const activeStageSections = FOUNDRY_BOOK_SECTIONS.filter((section) => section.stage_id === stageId);
 
-  const scored = stageSections
+  const scored = FOUNDRY_BOOK_SECTIONS
     .map((section) => {
       const excerptParagraphs = selectExcerptParagraphs(section, tokens);
       return {
         section,
         excerpt: buildExcerpt(excerptParagraphs),
-        score: scoreSection(section, query, tokens),
+        score: scoreSection(section, query, tokens, stageId),
         citation: toCitation(section, excerptParagraphs),
       };
     })
@@ -300,7 +304,16 @@ export function getRelevantFoundryBookSections(
   const matches = scored.filter((item) => item.score > 0).slice(0, limit);
   if (matches.length > 0) return matches;
 
-  return scored.slice(0, 1);
+  const fallbackSection = activeStageSections[0] ?? FOUNDRY_BOOK_SECTIONS[0];
+  if (!fallbackSection) return [];
+
+  const excerptParagraphs = selectExcerptParagraphs(fallbackSection, tokens);
+  return [{
+    section: fallbackSection,
+    excerpt: buildExcerpt(excerptParagraphs),
+    score: 0,
+    citation: toCitation(fallbackSection, excerptParagraphs),
+  }];
 }
 
 export function buildFoundryBookContext(
@@ -321,6 +334,7 @@ export function buildFoundryBookContext(
   return {
     context: `[BOOK_CONTEXT]
 Use this as background teaching context for the current reply. These are the most relevant book excerpts for this message.
+Before answering, look for the useful Foundry Method principle, distinction, warning, or question inside this context. Use it in substantive replies whenever it genuinely sharpens the answer.
 This source uses a locked text snapshot with stable section and paragraph numbering. Page citations are only allowed when a page number is explicitly shown below.
 Only cite locations that appear here. If you materially use this book context, append [BOOK_USED: citation_id, citation_id] at the very end of your response using only Citation IDs shown here. Never invent a citation ID, page number, or paragraph number.
 

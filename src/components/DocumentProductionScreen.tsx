@@ -401,7 +401,6 @@ export default function DocumentProductionScreen({
     const [copied, setCopied] = useState(false);
     const [activeTab, setActiveTab] = useState<"preview" | "refine">("preview");
     const [documents, setDocuments] = useState<ProducedDocument[]>([]);
-    const [currentDocumentId, setCurrentDocumentId] = useState<string | null>(null);
     const [documentsLoading, setDocumentsLoading] = useState(true);
     const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "unavailable">("idle");
     const [vaultDocuments, setVaultDocuments] = useState<VaultDocument[]>([]);
@@ -714,7 +713,6 @@ export default function DocumentProductionScreen({
 
     const setActiveDocumentId = (id: string | null) => {
         currentDocumentIdRef.current = id;
-        setCurrentDocumentId(id);
     };
 
     const persistDocument = async (content: string, nextHistory: GenRecord[], existingId = currentDocumentIdRef.current) => {
@@ -1409,13 +1407,17 @@ export default function DocumentProductionScreen({
             } : null,
         );
 
+        const genController = new AbortController();
+        const genTimeout = setTimeout(() => genController.abort(), 45000);
         try {
             const final = await streamForgeAPI(
                 [{ role: "user", content: userContent }],
                 systemPrompt,
                 (chunk) => setCurrentDoc(chunk),
-                DOC_MAX_TOKENS
+                DOC_MAX_TOKENS,
+                genController.signal
             );
+            clearTimeout(genTimeout);
             const safeFinal = sanitizeDocumentMarkdown(final, {
                 ...exportMeta,
                 title: getDocTitle(final),
@@ -1425,8 +1427,14 @@ export default function DocumentProductionScreen({
             setCurrentDoc(safeFinal);
             setHistory(nextHistory);
             await persistDocument(safeFinal, nextHistory, null);
-        } catch {
-            setCurrentDoc("# Document Generation Failed\n\nSomething went wrong. Try again or adjust your request.");
+        } catch (err) {
+            clearTimeout(genTimeout);
+            const isTimeout = err instanceof Error && err.name === "AbortError";
+            setCurrentDoc(
+                isTimeout
+                    ? "# Generation Timed Out\n\nThis document is taking too long to generate. Please try again — complex documents sometimes need a second attempt."
+                    : "# Document Generation Failed\n\nSomething went wrong. Try again or adjust your request."
+            );
         }
         setGenerating(false);
     };
@@ -1443,13 +1451,17 @@ export default function DocumentProductionScreen({
         const systemPrompt = buildDocSystemPrompt(profile);
         const userContent = buildRefinementRequest(currentDoc, instruction);
 
+        const refineController = new AbortController();
+        const refineTimeout = setTimeout(() => refineController.abort(), 45000);
         try {
             const final = await streamForgeAPI(
                 [{ role: "user", content: userContent }],
                 systemPrompt,
                 (chunk) => setCurrentDoc(chunk),
-                DOC_MAX_TOKENS
+                DOC_MAX_TOKENS,
+                refineController.signal
             );
+            clearTimeout(refineTimeout);
             const safeFinal = sanitizeDocumentMarkdown(final, {
                 ...exportMeta,
                 title: getDocTitle(final),
@@ -1461,6 +1473,7 @@ export default function DocumentProductionScreen({
             const savedId = currentDocumentIdRef.current;
             await persistDocument(safeFinal, nextHistory, savedId);
         } catch {
+            clearTimeout(refineTimeout);
             const last = history[history.length - 1];
             if (last) setCurrentDoc(last.doc);
         }

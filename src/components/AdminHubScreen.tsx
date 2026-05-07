@@ -2,6 +2,13 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Icons } from "../icons";
 import type { AdminNotificationSettings } from "../lib/notifications";
 import { loadAdminTtsUsage, type TtsUsageSnapshot } from "../lib/ttsUsage";
+import {
+    formatEstimatedCost,
+    formatTokenCount,
+    loadAdminTokenUsageSummary,
+    tokenUsageEstimateNote,
+    type AdminTokenUsageSummary,
+} from "../lib/adminTokenUsage";
 import AdminDashboard from "./AdminDashboard";
 import AdminAcademyManager from "./AdminAcademyManager";
 import AdminFounderAccounts from "./AdminFounderAccounts";
@@ -174,6 +181,10 @@ export default function AdminHubScreen({
     const [ttsUsage, setTtsUsage] = useState<TtsUsageSnapshot | null>(null);
     const [ttsUsageLoading, setTtsUsageLoading] = useState(true);
     const [ttsUsageError, setTtsUsageError] = useState<string | null>(null);
+    const [tokenUsage30d, setTokenUsage30d] = useState<AdminTokenUsageSummary | null>(null);
+    const [tokenUsageAllTime, setTokenUsageAllTime] = useState<AdminTokenUsageSummary | null>(null);
+    const [tokenUsageLoading, setTokenUsageLoading] = useState(true);
+    const [tokenUsageError, setTokenUsageError] = useState<string | null>(null);
 
     const refreshTtsUsage = async () => {
         setTtsUsageLoading(true);
@@ -190,6 +201,27 @@ export default function AdminHubScreen({
 
     useEffect(() => {
         void refreshTtsUsage();
+    }, []);
+
+    const refreshTokenUsage = async () => {
+        setTokenUsageLoading(true);
+        setTokenUsageError(null);
+        try {
+            const [last30, allTime] = await Promise.all([
+                loadAdminTokenUsageSummary({ windowDays: 30 }),
+                loadAdminTokenUsageSummary(),
+            ]);
+            setTokenUsage30d(last30);
+            setTokenUsageAllTime(allTime);
+        } catch (error) {
+            setTokenUsageError(error instanceof Error ? error.message : "Unable to load token usage.");
+        } finally {
+            setTokenUsageLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        void refreshTokenUsage();
     }, []);
 
     const usagePercent = ttsUsage?.totalCredits
@@ -274,6 +306,70 @@ export default function AdminHubScreen({
                         <div style={{ fontSize: 14, color: "#A8A4A0", lineHeight: 1.75, maxWidth: 760 }}>
                             This is the internal workspace for account operations, retention oversight, subscription handling, founding-member controls, and notification policy.
                         </div>
+                    </div>
+
+                    <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: 20, marginBottom: 18 }}>
+                        <div style={{ fontSize: 10, color: "#4CAF8A", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 10 }}>
+                            Forge Token Usage
+                        </div>
+                        <div style={{ fontSize: 24, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 10 }}>
+                            Estimated model cost
+                        </div>
+                        <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.75, maxWidth: 760, marginBottom: 18 }}>
+                            Saved message-token volume converted into a rough Claude Sonnet cost estimate for admin visibility.
+                        </div>
+
+                        {tokenUsageLoading ? (
+                            <div style={{ fontSize: 13, color: "#888" }}>Loading token usage...</div>
+                        ) : tokenUsageError ? (
+                            <div style={{ display: "grid", gap: 12 }}>
+                                <div style={{ fontSize: 13, color: "#D28B76", lineHeight: 1.7 }}>{tokenUsageError}</div>
+                                <div>
+                                    <button
+                                        onClick={() => void refreshTokenUsage()}
+                                        style={{
+                                            padding: "9px 14px",
+                                            borderRadius: 10,
+                                            border: "1px solid rgba(255,255,255,0.08)",
+                                            background: "rgba(255,255,255,0.03)",
+                                            color: "#C8C4BE",
+                                            fontSize: 12,
+                                            cursor: "pointer",
+                                        }}
+                                    >
+                                        Retry
+                                    </button>
+                                </div>
+                            </div>
+                        ) : tokenUsage30d && tokenUsageAllTime ? (
+                            <div style={{ display: "grid", gap: 14 }}>
+                                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
+                                    <ControlCard label="Cost · Last 30 days" hint={tokenUsageEstimateNote()} control={<ValuePill value={formatEstimatedCost(tokenUsage30d.estimatedCostUsd)} accent="#4CAF8A" />} />
+                                    <ControlCard label="Tokens · Last 30 days" hint="Saved message-token estimate across all founders in the last 30 days." control={<ValuePill value={formatTokenCount(tokenUsage30d.totalTokens)} accent="#63B3ED" />} />
+                                    <ControlCard label="Cost · All time" hint={tokenUsageEstimateNote()} control={<ValuePill value={formatEstimatedCost(tokenUsageAllTime.estimatedCostUsd)} accent="#E8622A" />} />
+                                    <ControlCard label="Messages counted" hint="Saved user and Forge messages included in the estimate." control={<ValuePill value={formatNumber(tokenUsage30d.messageCount)} accent="#F5A843" />} />
+                                </div>
+                                <div style={{ fontSize: 11, color: "#777", lineHeight: 1.7 }}>
+                                    {tokenUsageEstimateNote()}
+                                </div>
+                                <div>
+                                    <button
+                                        onClick={() => void refreshTokenUsage()}
+                                        style={{
+                                            padding: "9px 14px",
+                                            borderRadius: 10,
+                                            border: "1px solid rgba(255,255,255,0.08)",
+                                            background: "rgba(255,255,255,0.03)",
+                                            color: "#C8C4BE",
+                                            fontSize: 12,
+                                            cursor: "pointer",
+                                        }}
+                                    >
+                                        Refresh Token Usage
+                                    </button>
+                                </div>
+                            </div>
+                        ) : null}
                     </div>
 
                     <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: 20, marginBottom: 18 }}>

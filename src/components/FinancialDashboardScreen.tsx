@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
     getFinancialSummary,
     type FinancialSummary,
     type FounderFinancialData,
-    type FounderProfitBucket,
     type PlaidReviewTransaction,
     type ProfitBucketType,
 } from "../lib/financialModeling";
@@ -160,8 +159,6 @@ export default function FinancialDashboardScreen({ userId, profile, onBack, onOp
     const [savingStartingCash, setSavingStartingCash] = useState(false);
 
     // Vital sign tooltip hover
-    const [hoveredVital, setHoveredVital] = useState<string | null>(null);
-
     // Quick-add revenue / expense from chart empty state
     const [showAddRevenueModal, setShowAddRevenueModal] = useState(false);
     const [showAddExpenseModal, setShowAddExpenseModal] = useState(false);
@@ -191,7 +188,7 @@ export default function FinancialDashboardScreen({ userId, profile, onBack, onOp
 
     // ── Load data ──────────────────────────────────────────────────────────────
 
-    const reload = async () => {
+    const reload = useCallback(async () => {
         setLoading(true);
         try {
             const data = await loadFounderFinancialData(userId, profile);
@@ -201,7 +198,7 @@ export default function FinancialDashboardScreen({ userId, profile, onBack, onOp
         } finally {
             setLoading(false);
         }
-    };
+    }, [profile, userId]);
 
     useEffect(() => {
         void reload();
@@ -236,7 +233,7 @@ export default function FinancialDashboardScreen({ userId, profile, onBack, onOp
             setInvoices(loaded);
         };
         void migrateAndLoad();
-    }, [userId]);
+    }, [reload, userId]);
 
     const summary: FinancialSummary | null = useMemo(
         () => (financialData ? getFinancialSummary(profile, financialData) : null),
@@ -804,7 +801,7 @@ Be the partner who has been watching the whole time.`;
 
             {/* ── Header ──────────────────────────────────────────────────────── */}
             <div style={{ position: "sticky", top: 0, zIndex: 10, background: "rgb(8,8,9)", borderBottom: "1px solid rgba(255,255,255,0.06)", padding: "14px 20px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                <button onClick={onOpenNav} style={{ background: "none", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "6px 10px", color: "#A8A4A0", fontSize: 12, cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <button onClick={onOpenNav ?? onBack} style={{ background: "none", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "6px 10px", color: "#A8A4A0", fontSize: 12, cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg>
                 </button>
                 <div style={{ fontSize: 17, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: "#F0EDE8", flex: 1 }}>
@@ -880,8 +877,6 @@ Be the partner who has been watching the whole time.`;
                                 {vitalCards.map((card) => (
                                     <div
                                         key={card.label}
-                                        onMouseEnter={() => card.tooltip && setHoveredVital(card.label)}
-                                        onMouseLeave={() => setHoveredVital(null)}
                                         style={{ position: "relative", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 10, padding: "12px 10px", textAlign: "center" }}
                                     >
                                         <div style={{ ...valueStyle, color: card.color }}>{card.value}</div>

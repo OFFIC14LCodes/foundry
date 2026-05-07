@@ -32,6 +32,12 @@ export interface CofounderInvite {
     used_at: string | null;
 }
 
+interface CofounderInvitePreviewRow {
+    team_id: string;
+    business_name: string;
+    created_at: string;
+}
+
 export interface CofounderMessage {
     id: string;
     team_id: string;
@@ -215,6 +221,33 @@ export async function getActiveInviteForTeam(teamId: string): Promise<CofounderI
 export async function getInviteByToken(
     token: string
 ): Promise<(CofounderInvite & { team: CofounderTeam }) | null> {
+    const { data: preview, error: previewError } = await supabase.rpc(
+        'get_cofounder_invite_by_token',
+        { p_token: token }
+    );
+
+    const previewRow = Array.isArray(preview) ? preview[0] as CofounderInvitePreviewRow | undefined : null;
+    if (previewRow?.team_id) {
+        return {
+            id: '',
+            team_id: previewRow.team_id,
+            token,
+            created_by: '',
+            created_at: previewRow.created_at,
+            used_at: null,
+            team: {
+                id: previewRow.team_id,
+                business_name: previewRow.business_name,
+                owner_id: '',
+                created_at: previewRow.created_at,
+            },
+        };
+    }
+
+    if (previewError) {
+        console.warn('getInviteByToken rpc fallback:', previewError.message);
+    }
+
     const { data: invite } = await supabase
         .from('cofounder_invites')
         .select('*')
@@ -240,6 +273,23 @@ export async function acceptInvite(
     displayName: string,
     role: string = 'Cofounder'
 ): Promise<{ success: boolean; teamId?: string }> {
+    const { data: acceptedTeamId, error: acceptError } = await supabase.rpc(
+        'accept_cofounder_invite',
+        {
+            p_token: token,
+            p_display_name: displayName || 'Founder',
+            p_role: role || 'Cofounder',
+        }
+    );
+
+    if (!acceptError && acceptedTeamId) {
+        return { success: true, teamId: acceptedTeamId as string };
+    }
+
+    if (acceptError) {
+        console.warn('acceptInvite rpc fallback:', acceptError.message);
+    }
+
     const invite = await getInviteByToken(token);
     if (!invite) return { success: false };
 

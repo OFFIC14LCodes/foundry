@@ -18,5 +18,13 @@
       "path": "/api/send-monday-briefings",
       "schedule": "0 9 * * 1"
     }
-  ]
+  ],
+  "functions": {
+    "api/send-monday-briefings.js": {
+      "maxDuration": 300
+    },
+    "api/admin-daily-summary.js": {
+      "maxDuration": 120
+    }
+  }
 }

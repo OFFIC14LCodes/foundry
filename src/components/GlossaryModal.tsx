@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Check, X } from "lucide-react";
 import { STAGE_COLORS } from "../constants/glossary";
 import { STAGES_DATA } from "../constants/stages";
 import type { GlossaryTerm } from "../lib/glossaryDb";
@@ -64,7 +65,25 @@ export default function GlossaryModal({
                             )}
                         </div>
                     </div>
-                    <button onClick={onClose} style={{ background: "rgba(255,255,255,0.06)", border: "none", borderRadius: 8, padding: "6px 12px", color: "#666", fontSize: 11, cursor: "pointer", flexShrink: 0 }}>✕</button>
+                    <button
+                        onClick={onClose}
+                        aria-label="Close term details"
+                        style={{
+                            width: 36,
+                            height: 36,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            background: "rgba(255,255,255,0.06)",
+                            border: "1px solid rgba(255,255,255,0.08)",
+                            borderRadius: 999,
+                            color: "#A29A90",
+                            cursor: "pointer",
+                            flexShrink: 0,
+                        }}
+                    >
+                        <X size={16} strokeWidth={2.2} />
+                    </button>
                 </div>
 
                 <div style={{ marginBottom: 16 }}>
@@ -90,17 +109,53 @@ export default function GlossaryModal({
                     <div style={{ fontSize: 13, fontFamily: "'Lora', Georgia, serif", color: "#888", lineHeight: 1.7 }}>{entry.usage_example}</div>
                 </div>
 
-                {!alreadyLearned && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {!alreadyLearned ? (
+                        <button
+                            onClick={() => { onMarkLearned(term, entry.stage_unlock); onClose(); }}
+                            style={{ width: "100%", padding: "13px", background: "linear-gradient(135deg, #E8622A, #c9521e)", border: "none", borderRadius: 12, color: "#fff", fontSize: 13, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, cursor: "pointer", boxShadow: "0 4px 20px rgba(232,98,42,0.3)" }}
+                        >
+                            Mark as Learned
+                        </button>
+                    ) : (
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: 8,
+                                textAlign: "center",
+                                fontSize: 12,
+                                color: "#4CAF8A",
+                                padding: "12px 14px",
+                                borderRadius: 12,
+                                background: "rgba(76,175,138,0.08)",
+                                border: "1px solid rgba(76,175,138,0.18)",
+                            }}
+                        >
+                            <Check size={14} strokeWidth={2.4} />
+                            Already learned
+                        </div>
+                    )}
+
                     <button
-                        onClick={() => { onMarkLearned(term, entry.stage_unlock); onClose(); }}
-                        style={{ width: "100%", padding: "13px", background: "linear-gradient(135deg, #E8622A, #c9521e)", border: "none", borderRadius: 12, color: "#fff", fontSize: 13, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, cursor: "pointer", boxShadow: "0 4px 20px rgba(232,98,42,0.3)" }}
+                        onClick={onClose}
+                        style={{
+                            width: "100%",
+                            padding: "12px",
+                            background: "rgba(255,255,255,0.04)",
+                            border: "1px solid rgba(255,255,255,0.08)",
+                            borderRadius: 12,
+                            color: "#C8C4BE",
+                            fontSize: 13,
+                            fontFamily: "'Lora', Georgia, serif",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                        }}
                     >
-                        ✓ Mark as Learned
+                        Done
                     </button>
-                )}
-                {alreadyLearned && (
-                    <div style={{ textAlign: "center", fontSize: 12, color: "#4CAF8A", padding: "10px 0" }}>You've already learned this term ✓</div>
-                )}
+                </div>
             </div>
         </div>
     );

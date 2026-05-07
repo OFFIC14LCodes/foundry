@@ -350,6 +350,18 @@ export async function loadOpenFoundryActionsByUser(userId: string): Promise<Foun
 
 export async function updateFoundryActionStatus(userId: string, actionId: string, status: FoundryActionStatus): Promise<FoundryAction | null> {
     const now = new Date().toISOString();
+    const current = await loadFoundryAction(userId, actionId);
+    if (!current) return null;
+
+    if ((current.status === "completed" || current.status === "dismissed") && current.status !== status) {
+        console.warn("updateFoundryActionStatus blocked terminal transition:", {
+            actionId,
+            from: current.status,
+            to: status,
+        });
+        return current;
+    }
+
     const { data, error } = await supabase
         .from("foundry_actions")
         .update({
@@ -468,9 +480,13 @@ ${lines.join("\n")}`;
 }
 
 function sanitizeOutcomeContextText(value: string, maxLength: number) {
-    return value
+    return Array.from(value)
+        .filter((char) => {
+            const code = char.charCodeAt(0);
+            return code >= 32 && code !== 127;
+        })
+        .join("")
         .replace(/\s+/g, " ")
-        .replace(/[\u0000-\u001F\u007F]/g, "")
         .trim()
         .slice(0, maxLength);
 }

@@ -164,7 +164,7 @@ export default function ForgeBubble({ profile, userId, currentScreen, screenCont
         const bookContext = buildFoundryBookContext(
             Number(profile.currentStage) || 1,
             [...messages.slice(-4).map((message) => message.text), currentPrompt],
-            2
+            4
         );
 
         let screenLabel = SCREEN_LABELS[currentScreen] || currentScreen;

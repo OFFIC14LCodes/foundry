@@ -8,10 +8,8 @@ import { Archive } from "lucide-react";
 import { formatCurrency, getBudgetRangeLabel, parseBudgetInput } from "../lib/budget";
 import { getBusinessHealth } from "../lib/businessHealth";
 import { summarizeBusinessIdea } from "../lib/businessSummary";
-import Logo from "./Logo";
 import MicButton from "./MicButton";
 import PlaidConnectButton from "./PlaidConnectButton";
-import HelpTooltip from "./HelpTooltip";
 
 export default function HubScreen({
     profile,
@@ -19,6 +17,7 @@ export default function HubScreen({
     onUpdateProfile,
     onEnterStage,
     onOpenForge,
+    onOpenNav,
     onRevertToStage,
     onLogout,
     onOpenUpgrade,
@@ -65,7 +64,6 @@ export default function HubScreen({
     const [showBudgetModal, setShowBudgetModal] = useState(false);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [showResetModal, setShowResetModal] = useState(false);
-    const [sidebarOpen, setSidebarOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
     const [decisionText, setDecisionText] = useState("");
     const [decisionTag, setDecisionTag] = useState("Strategy");
@@ -266,7 +264,6 @@ export default function HubScreen({
 
         setResetError(null);
         setShowResetModal(false);
-        setSidebarOpen(false);
         await onReset();
     };
 
@@ -302,383 +299,8 @@ export default function HubScreen({
     const completedJourneyStages = STAGES_DATA.filter(isStageDoneInJourney).length;
     const journeyPct = Math.round((completedJourneyStages / STAGES_DATA.length) * 100);
 
-    const NAV_ITEMS = [
-        ...(isAdmin ? [{
-            icon: Icons.sidebar.admin,
-            label: "Admin Hub",
-            sub: "Internal control panel",
-            action: () => {
-                setSidebarOpen(false);
-                onOpenAdminHub?.();
-            },
-            available: true,
-        }] : []),
-        {
-            icon: Icons.sidebar.academy,
-            label: "Forge Academy",
-            sub: "Deep founder learning hub",
-            action: () => {
-                setSidebarOpen(false);
-                onOpenAcademy?.();
-            },
-            available: true,
-        },
-        {
-            icon: Archive,
-            label: "Archive",
-            sub: "Saved conversation snapshots",
-            action: () => {
-                setSidebarOpen(false);
-                onOpenArchive?.();
-            },
-            available: true,
-        },
-        {
-            icon: Icons.sidebar.journal,
-            label: "Founder's Journal",
-            sub: "Private writing space",
-            action: () => {
-                setSidebarOpen(false);
-                onOpenJournal();
-            },
-            available: true,
-        },
-        {
-            icon: Icons.sidebar.briefings,
-            label: "Monday Briefings",
-            sub: "Weekly Forge updates",
-            action: () => {
-                setSidebarOpen(false);
-                onOpenBriefings();
-            },
-            available: true,
-        },
-        {
-            icon: Icons.sidebar.pitchPractice,
-            label: "Pitch Practice",
-            sub: "Simulate investor meetings",
-            action: () => {
-                setSidebarOpen(false);
-                onOpenPitchPractice();
-            },
-            available: true,
-        },
-        {
-            icon: Icons.sidebar.documents,
-            label: "Document Vault",
-            sub: "Vault, versions, and generation",
-            action: () => {
-                setSidebarOpen(false);
-                onOpenDocuments();
-            },
-            available: true,
-        },
-        {
-            icon: Icons.stages.plan,
-            label: "Business Model Canvas",
-            sub: "Living Stage 2 strategy map",
-            action: () => {
-                setSidebarOpen(false);
-                onOpenBusinessModelCanvas?.();
-            },
-            available: true,
-        },
-        {
-            icon: Icons.sidebar.briefings,
-            label: "Action Center",
-            sub: "Turn insight into next moves",
-            action: () => {
-                setSidebarOpen(false);
-                onOpenActionCenter?.();
-            },
-            available: true,
-        },
-        {
-            icon: Icons.sidebar.marketIntel,
-            label: "Market Intelligence",
-            sub: "Daily industry briefing",
-            action: () => {
-                setSidebarOpen(false);
-                onOpenMarketIntel();
-            },
-            available: true,
-        },
-        {
-            icon: Icons.sidebar.cofounder,
-            label: "Co-Founder Mode",
-            sub: "Shared team workspace",
-            badge: cofounderUnreadCount > 0 ? cofounderUnreadCount : undefined,
-            action: () => {
-                setSidebarOpen(false);
-                onOpenCofounder();
-            },
-            available: true,
-        },
-        {
-            icon: Icons.sidebar.settings,
-            label: "Settings",
-            sub: "Account, billing, and policies",
-            action: () => {
-                setSidebarOpen(false);
-                onOpenSettings?.();
-            },
-            available: true,
-        },
-    ];
-
-
     return (
         <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8" }}>
-            {sidebarOpen && (
-                <div
-                    onClick={() => setSidebarOpen(false)}
-                    style={{
-                        position: "fixed",
-                        inset: 0,
-                        zIndex: 40,
-                        background: "rgba(0,0,0,0.6)",
-                        backdropFilter: "blur(4px)",
-                        animation: "fadeIn 0.2s ease",
-                    }}
-                />
-            )}
-
-            <div
-                style={{
-                    position: "fixed",
-                    top: 0,
-                    left: 0,
-                    bottom: 0,
-                    width: "var(--foundry-hub-sidebar-width)",
-                    zIndex: 50,
-                    background: "#0C0C0E",
-                    borderRight: "1px solid rgba(255,255,255,0.08)",
-                    transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)",
-                    transition: "transform 0.35s cubic-bezier(0.16,1,0.3,1)",
-                    display: "flex",
-                    flexDirection: "column",
-                    overflowY: "auto",
-                }}
-            >
-                <div
-                    style={{
-                        padding: "var(--foundry-hub-sidebar-header-padding)",
-                        borderBottom: "1px solid rgba(255,255,255,0.06)",
-                    }}
-                >
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            marginBottom: 14,
-                        }}
-                    >
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <Logo variant="flame" style={{ width: 18, height: 18, objectFit: "contain" }} />
-                            <span
-                                style={{
-                                    fontSize: "var(--foundry-hub-sidebar-title-font)",
-                                    fontFamily: "'Playfair Display', Georgia, serif",
-                                    fontWeight: 700,
-                                    color: "#F0EDE8",
-                                }}
-                            >
-                                Foundry
-                            </span>
-                        </div>
-                        <button
-                            onClick={() => setSidebarOpen(false)}
-                            style={{
-                                background: "rgba(255,255,255,0.05)",
-                                border: "none",
-                                borderRadius: 6,
-                                padding: "var(--foundry-hub-sidebar-close-padding)",
-                                color: "#555",
-                                fontSize: "var(--foundry-hub-sidebar-close-font)",
-                                cursor: "pointer",
-                            }}
-                        >
-                            ✕
-                        </button>
-                    </div>
-
-                    <div
-                        style={{
-                            fontSize: "var(--foundry-hub-sidebar-name-font)",
-                            fontFamily: "'Lora', Georgia, serif",
-                            color: "#C8C4BE",
-                            fontWeight: 500,
-                        }}
-                    >
-                        {profile.name}
-                    </div>
-                    <div
-                        style={{
-                            fontSize: "var(--foundry-hub-sidebar-summary-font)",
-                            color: "#555",
-                            marginTop: 2,
-                            fontStyle: "italic",
-                        }}
-                    >
-                        {businessSummary}
-                    </div>
-                </div>
-
-                <div style={{ padding: "12px 10px", flex: 1 }}>
-                    {accessSummary && (
-                        <div style={{ padding: "0 8px 14px" }}>
-                            <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "12px 12px 10px" }}>
-                                <div style={{ fontSize: "var(--foundry-hub-sidebar-section-label-font)", color: "#444", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>
-                                    Access
-                                </div>
-                                <div style={{ fontSize: "var(--foundry-hub-sidebar-card-title-font)", color: "#F0EDE8", fontWeight: 600, marginBottom: 4 }}>
-                                    {accessSummary.planName} · {accessSummary.statusLabel}
-                                </div>
-                                <div style={{ fontSize: "var(--foundry-hub-sidebar-card-copy-font)", color: "#666", lineHeight: 1.6 }}>
-                                    {accessSummary.note}
-                                </div>
-                                {!accessSummary.canAccessPaidStages && (
-                                    <button
-                                        onClick={() => {
-                                            setSidebarOpen(false);
-                                            onOpenUpgrade?.();
-                                        }}
-                                        style={{ marginTop: 10, width: "100%", padding: "var(--foundry-hub-sidebar-card-button-padding)", borderRadius: 8, border: "1px solid rgba(232,98,42,0.22)", background: "rgba(232,98,42,0.1)", color: "#E8622A", fontSize: "var(--foundry-hub-sidebar-card-button-font)", cursor: "pointer", fontWeight: 600 }}
-                                    >
-                                        Unlock Stage 2
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
-                    <div
-                        style={{
-                            fontSize: "var(--foundry-hub-sidebar-section-label-font)",
-                            color: "#444",
-                            letterSpacing: "0.12em",
-                            textTransform: "uppercase",
-                            padding: "4px 8px 10px",
-                        }}
-                    >
-                        Features
-                    </div>
-
-                    {NAV_ITEMS.map((item, i) => {
-                        const Icon = item.icon;
-
-                        return (
-                            <button
-                                key={i}
-                                onClick={item.available && item.action ? item.action : undefined}
-                                style={{
-                                    width: "100%",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "var(--foundry-hub-sidebar-nav-gap)",
-                                    padding: "var(--foundry-hub-sidebar-nav-padding)",
-                                    borderRadius: 10,
-                                    border: "none",
-                                    background: "transparent",
-                                    cursor: item.available ? "pointer" : "default",
-                                    opacity: item.available ? 1 : 0.35,
-                                    transition: "background 0.15s",
-                                    marginBottom: 2,
-                                    textAlign: "left",
-                                }}
-                                onMouseEnter={(e) => {
-                                    if (item.available) {
-                                        e.currentTarget.style.background = "rgba(255,255,255,0.05)";
-                                    }
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.background = "transparent";
-                                }}
-                            >
-                                <div
-                                    style={{
-                                        width: "var(--foundry-hub-sidebar-nav-icon-box)",
-                                        height: "var(--foundry-hub-sidebar-nav-icon-box)",
-                                        borderRadius: 9,
-                                        background: item.available
-                                            ? "rgba(232,98,42,0.12)"
-                                            : "rgba(255,255,255,0.04)",
-                                        border: item.available
-                                            ? "1px solid rgba(232,98,42,0.2)"
-                                            : "1px solid rgba(255,255,255,0.06)",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        flexShrink: 0,
-                                        color: item.available ? "#F0EDE8" : "#888",
-                                    }}
-                                >
-                                    <Icon size={"var(--foundry-hub-sidebar-nav-icon-size)"} />
-                                </div>
-
-                                <div style={{ flex: 1 }}>
-                                    <div
-                                        style={{
-                                            fontSize: "var(--foundry-hub-sidebar-nav-title-font)",
-                                            color: item.available ? "#F0EDE8" : "#666",
-                                            fontWeight: 500,
-                                            lineHeight: 1.2,
-                                        }}
-                                    >
-                                        {item.label}
-                                    </div>
-                                </div>
-
-                                {item.available && (
-                                    (item as any).badge ? (
-                                        <div style={{ minWidth: 18, height: 18, borderRadius: 9, background: '#E8622A', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px', fontSize: 10, color: '#fff', fontWeight: 700, fontFamily: 'DM Sans, sans-serif', flexShrink: 0 }}>
-                                            {(item as any).badge > 9 ? '9+' : (item as any).badge}
-                                        </div>
-                                    ) : (
-                                        <HelpTooltip content={item.sub} side="right" />
-                                    )
-                                )}
-                            </button>
-                        );
-                    })}
-
-                    <div style={{ padding: "12px 10px 24px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                        <button
-                            onClick={() => setShowLogoutModal(true)}
-                            style={{
-                                width: "100%",
-                                padding: "var(--foundry-hub-sidebar-footer-button-padding)",
-                                background: "rgba(255,255,255,0.03)",
-                                border: "1px solid rgba(255,255,255,0.08)",
-                                borderRadius: 8,
-                                color: "#888",
-                                fontSize: "var(--foundry-hub-sidebar-footer-button-font)",
-                                cursor: "pointer",
-                                marginBottom: 8,
-                            }}
-                        >
-                            Log Out
-                        </button>
-                        <button
-                            onClick={() => setShowResetModal(true)}
-                            style={{
-                                width: "100%",
-                                padding: "var(--foundry-hub-sidebar-footer-button-padding)",
-                                background: "transparent",
-                                border: "1px solid rgba(255,255,255,0.06)",
-                                borderRadius: 8,
-                                color: "#444",
-                                fontSize: "var(--foundry-hub-sidebar-footer-button-font)",
-                                cursor: "pointer",
-                            }}
-                        >
-                            Reset Account
-                        </button>
-                    </div>
-                </div>
-            </div>
-
             <div
                 className="hub-topbar"
                 style={{
@@ -693,7 +315,7 @@ export default function HubScreen({
             >
                 <div className="hub-topbar__identity">
                     <button
-                        onClick={() => setSidebarOpen(true)}
+                        onClick={onOpenNav}
                         style={{
                             background: "rgba(255,255,255,0.04)",
                             border: "1px solid rgba(255,255,255,0.08)",
@@ -707,7 +329,7 @@ export default function HubScreen({
                             justifyContent: "center",
                         }}
                     >
-                        ☰
+                        <Icons.sidebar.menu size={"var(--foundry-app-header-icon-size)"} />
                     </button>
 
                     <div>
@@ -1621,7 +1243,6 @@ export default function HubScreen({
                             <button
                                 onClick={() => {
                                     setShowLogoutModal(false);
-                                    setSidebarOpen(false);
                                     onLogout?.();
                                 }}
                                 style={{ flex: 2, padding: "10px", background: "linear-gradient(135deg, #F0EDE8, #D9D2C7)", border: "none", borderRadius: 10, color: "#111", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}

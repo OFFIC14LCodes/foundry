@@ -69,7 +69,7 @@ function buildChatRoomContext(
 
     const now = new Date();
     const dateStr = now.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
-    const bookContext = buildFoundryBookContext(Number(profile.currentStage) || 1, inputs, 3);
+    const bookContext = buildFoundryBookContext(Number(profile.currentStage) || 1, inputs, 5);
 
     const relevantPast = (pastSummaries ?? [])
         .filter(s => s.id !== activeArchiveId && s.summary?.trim())

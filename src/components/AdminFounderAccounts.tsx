@@ -3,6 +3,14 @@ import { supabase } from "../supabase";
 import { loadAdminUsers, type AdminUser } from "../lib/adminDb";
 import { callForgeAPI } from "../lib/forgeApi";
 import { STAGE_COLORS } from "../constants/glossary";
+import {
+    formatEstimatedCost,
+    formatTokenCount,
+    loadAdminTokenUsageByUser,
+    loadAdminTokenUsageSummary,
+    tokenUsageEstimateNote,
+    type AdminTokenUsageSummary,
+} from "../lib/adminTokenUsage";
 
 // ── Constants ──────────────────────────────────────────────────
 
@@ -36,6 +44,8 @@ interface UserDetail {
     stageProgress: StageProgressRow[];
     recentSummaries: ArchiveSummary[];
     messageCount: number;
+    tokenUsage30d: AdminTokenUsageSummary;
+    tokenUsageAllTime: AdminTokenUsageSummary;
 }
 
 interface GeneratedSummary {
@@ -143,7 +153,7 @@ function UserDetailPanel({
         let mounted = true;
         setLoadingDetail(true);
         void (async () => {
-            const [progressRes, summariesRes, msgRes] = await Promise.all([
+            const [progressRes, summariesRes, msgRes, tokenUsage30d, tokenUsageAllTime] = await Promise.all([
                 supabase
                     .from("stage_progress")
                     .select("stage_id, completed_milestones, updated_at")
@@ -158,12 +168,16 @@ function UserDetailPanel({
                     .from("messages")
                     .select("id", { count: "exact", head: true })
                     .eq("user_id", user.id),
+                loadAdminTokenUsageSummary({ userId: user.id, windowDays: 30 }),
+                loadAdminTokenUsageSummary({ userId: user.id }),
             ]);
             if (!mounted) return;
             setDetail({
                 stageProgress: (progressRes.data ?? []) as StageProgressRow[],
                 recentSummaries: (summariesRes.data ?? []) as ArchiveSummary[],
-                messageCount: msgRes.count ?? 0,
+                messageCount: tokenUsageAllTime.messageCount || msgRes.count || 0,
+                tokenUsage30d,
+                tokenUsageAllTime,
             });
             setLoadingDetail(false);
         })();
@@ -197,6 +211,8 @@ FOUNDER PROFILE:
 - Stripe Status: ${user.billing?.stripe_status ?? "None"}
 - Cancel at period end: ${user.billing?.cancel_at_period_end ? "Yes" : "No"}
 - Total messages: ${detail.messageCount}
+- Estimated Forge tokens last 30 days: ${formatTokenCount(detail.tokenUsage30d.totalTokens)}
+- Estimated Forge model cost last 30 days: ${formatEstimatedCost(detail.tokenUsage30d.estimatedCostUsd)}
 
 CURRENT STAGE: Stage ${stage} — ${STAGE_LABELS[stage] ?? ""}
 
@@ -292,6 +308,8 @@ ${summariesText}`;
                         { label: "Last Active", value: formatRelative(user.last_active_at) },
                         { label: "Messages", value: loadingDetail ? "…" : String(detail?.messageCount ?? 0) },
                         { label: "Stripe", value: user.billing?.stripe_status ?? "None" },
+                        { label: "Tokens 30d", value: loadingDetail ? "…" : formatTokenCount(detail?.tokenUsage30d.totalTokens ?? 0) },
+                        { label: "Cost 30d", value: loadingDetail ? "…" : formatEstimatedCost(detail?.tokenUsage30d.estimatedCostUsd ?? 0) },
                     ].map(item => (
                         <div key={item.label} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "12px 14px" }}>
                             <div style={{ fontSize: 10, color: "#666", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>{item.label}</div>
@@ -304,6 +322,24 @@ ${summariesText}`;
                     <div style={{ fontSize: 13, color: "#666", padding: "8px 0" }}>Loading account data…</div>
                 ) : detail && (
                     <>
+                        <div style={{ background: "rgba(76,175,138,0.05)", border: "1px solid rgba(76,175,138,0.14)", borderRadius: 16, padding: 16 }}>
+                            <div style={{ fontSize: 10, color: "#4CAF8A", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 12 }}>Forge Token Usage Estimate</div>
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10, marginBottom: 10 }}>
+                                {[
+                                    { label: "Cost · 30d", value: formatEstimatedCost(detail.tokenUsage30d.estimatedCostUsd) },
+                                    { label: "Tokens · 30d", value: formatTokenCount(detail.tokenUsage30d.totalTokens) },
+                                    { label: "Cost · All time", value: formatEstimatedCost(detail.tokenUsageAllTime.estimatedCostUsd) },
+                                    { label: "Messages · 30d", value: String(detail.tokenUsage30d.messageCount) },
+                                ].map(item => (
+                                    <div key={item.label} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "11px 12px" }}>
+                                        <div style={{ fontSize: 10, color: "#666", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>{item.label}</div>
+                                        <div style={{ fontSize: 14, color: "#F0EDE8", fontWeight: 700 }}>{item.value}</div>
+                                    </div>
+                                ))}
+                            </div>
+                            <div style={{ fontSize: 11, color: "#777", lineHeight: 1.6 }}>{tokenUsageEstimateNote()}</div>
+                        </div>
+
                         {/* Stage Progress */}
                         <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: 16 }}>
                             <div style={{ fontSize: 10, color: "#888", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 12 }}>Stage Progress</div>
@@ -401,6 +437,7 @@ interface Props {
 export default function AdminFounderAccounts({ onBack }: Props) {
     const [users, setUsers] = useState<AdminUser[]>([]);
     const [allStageProgress, setAllStageProgress] = useState<Map<string, number>>(new Map());
+    const [tokenUsageByUser, setTokenUsageByUser] = useState<Map<string, AdminTokenUsageSummary>>(new Map());
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [search, setSearch] = useState("");
@@ -410,9 +447,10 @@ export default function AdminFounderAccounts({ onBack }: Props) {
         setLoading(true);
         setError(null);
         try {
-            const [loaded, progressRes] = await Promise.all([
+            const [loaded, progressRes, usageMap] = await Promise.all([
                 loadAdminUsers(),
                 supabase.from("stage_progress").select("user_id, stage_id, completed_milestones"),
+                loadAdminTokenUsageByUser(30),
             ]);
 
             // Build a map of userId -> highest stage with milestones
@@ -426,6 +464,7 @@ export default function AdminFounderAccounts({ onBack }: Props) {
 
             setUsers(loaded);
             setAllStageProgress(stageMap);
+            setTokenUsageByUser(usageMap);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to load accounts.");
         } finally {
@@ -545,7 +584,7 @@ export default function AdminFounderAccounts({ onBack }: Props) {
                             <div
                                 style={{
                                     display: "grid",
-                                    gridTemplateColumns: "1fr 1fr auto auto auto auto",
+                                    gridTemplateColumns: "1fr 1fr auto auto auto auto auto",
                                     gap: "0 12px",
                                     padding: "0 14px 6px",
                                     fontSize: 10,
@@ -558,6 +597,7 @@ export default function AdminFounderAccounts({ onBack }: Props) {
                                 <span>Email</span>
                                 <span>Stage</span>
                                 <span>Plan</span>
+                                <span>Cost 30d</span>
                                 <span>Joined</span>
                                 <span>Last Active</span>
                             </div>
@@ -565,6 +605,7 @@ export default function AdminFounderAccounts({ onBack }: Props) {
                             {filtered.map(user => {
                                 const stage = allStageProgress.get(user.id) ?? 1;
                                 const paid = isPaid(user);
+                                const usage = tokenUsageByUser.get(user.id);
                                 return (
                                     <button
                                         key={user.id}
@@ -572,7 +613,7 @@ export default function AdminFounderAccounts({ onBack }: Props) {
                                         onClick={() => setSelectedUser(user)}
                                         style={{
                                             display: "grid",
-                                            gridTemplateColumns: "1fr 1fr auto auto auto auto",
+                                            gridTemplateColumns: "1fr 1fr auto auto auto auto auto",
                                             gap: "0 12px",
                                             alignItems: "center",
                                             padding: "12px 14px",
@@ -601,6 +642,9 @@ export default function AdminFounderAccounts({ onBack }: Props) {
                                         </div>
                                         <StageBadge stage={stage} />
                                         <PaidPill paid={paid} />
+                                        <div style={{ fontSize: 11, color: usage && usage.estimatedCostUsd > 0 ? "#4CAF8A" : "#666", whiteSpace: "nowrap", fontWeight: 700 }}>
+                                            {formatEstimatedCost(usage?.estimatedCostUsd ?? 0)}
+                                        </div>
                                         <div style={{ fontSize: 11, color: "#666", whiteSpace: "nowrap" }}>{formatDate(user.created_at)}</div>
                                         <div style={{ fontSize: 11, color: "#666", whiteSpace: "nowrap" }}>{formatRelative(user.last_active_at)}</div>
                                     </button>

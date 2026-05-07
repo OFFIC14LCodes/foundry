@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Logo from "./Logo";
 import ActionSuggestionCard from "./actions/ActionSuggestionCard";
 import HelpTooltip from "./HelpTooltip";
@@ -94,7 +94,7 @@ export default function ActionCenterScreen({ userId, onBack, onOpenNav, onAskFor
     const [priorityFilter, setPriorityFilter] = useState<FoundryActionPriority | "all">("all");
     const [moduleFilter, setModuleFilter] = useState<FoundryActionSourceModule | "all">("all");
 
-    const reload = async () => {
+    const reload = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
@@ -105,11 +105,11 @@ export default function ActionCenterScreen({ userId, onBack, onOpenNav, onAskFor
         } finally {
             setLoading(false);
         }
-    };
+    }, [userId]);
 
     useEffect(() => {
         void reload();
-    }, [userId]);
+    }, [reload]);
 
     const filteredActions = useMemo(() => {
         return actions.filter((action) => {
@@ -169,7 +169,7 @@ export default function ActionCenterScreen({ userId, onBack, onOpenNav, onAskFor
     return (
         <div style={{ position: "fixed", inset: 0, zIndex: 130, background: "#080809", color: "#F0EDE8", fontFamily: "'Lora', Georgia, serif", display: "flex", flexDirection: "column" }}>
             <div style={{ padding: "max(12px, calc(7px + env(safe-area-inset-top))) 16px 12px", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: 12, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)" }}>
-                <button onClick={onOpenNav} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "8px 11px", color: "#F0EDE8", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <button onClick={onOpenNav ?? onBack} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "8px 11px", color: "#F0EDE8", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg>
                 </button>
                 <Logo variant="flame" style={{ width: 34, height: 34, objectFit: "contain" }} />

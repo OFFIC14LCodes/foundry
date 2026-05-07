@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ReportSection, formatReportDate, type MarketReport } from "./shared";
 
 type GenerationPhase = "idle" | "searching" | "generating";
@@ -60,8 +60,11 @@ export default function DailyBriefPanel({
     searchQueries: string[];
     onGenerate: () => void;
 }) {
-    const [sourcesOpen, setSourcesOpen] = useState(false);
-    const [researchOpen, setResearchOpen] = useState(false);
+    const reportKey = currentReport?.id ?? currentReport?.date ?? "draft";
+    const [sourcesState, setSourcesState] = useState({ reportKey, open: false });
+    const [researchState, setResearchState] = useState({ reportKey, open: false });
+    const sourcesOpen = sourcesState.reportKey === reportKey && sourcesState.open;
+    const researchOpen = researchState.reportKey === reportKey && researchState.open;
     const displayContent = generating
         ? streamedContent || currentReport?.content || ""
         : currentReport?.content || "";
@@ -69,11 +72,6 @@ export default function DailyBriefPanel({
     const loadingText = generationPhase === "searching"
         ? "Searching live sources across the web..."
         : "Analyzing and generating your report...";
-
-    useEffect(() => {
-        setSourcesOpen(false);
-        setResearchOpen(false);
-    }, [currentReport?.id, currentReport?.date]);
 
     return (
         <>
@@ -177,7 +175,10 @@ export default function DailyBriefPanel({
                         {!generating && (
                             <div style={{ marginTop: 18, paddingTop: 14, background: "rgba(255,255,255,0.03)", borderTop: "1px solid rgba(255,255,255,0.08)", display: "grid", gap: 12 }}>
                                 <button
-                                    onClick={() => setSourcesOpen((open) => !open)}
+                                    onClick={() => setSourcesState((state) => ({
+                                        reportKey,
+                                        open: state.reportKey === reportKey ? !state.open : true,
+                                    }))}
                                     style={{
                                         width: "100%",
                                         display: "flex",
@@ -222,7 +223,10 @@ export default function DailyBriefPanel({
                                 )}
                                 <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 12 }}>
                                     <button
-                                        onClick={() => setResearchOpen((open) => !open)}
+                                        onClick={() => setResearchState((state) => ({
+                                            reportKey,
+                                            open: state.reportKey === reportKey ? !state.open : true,
+                                        }))}
                                         style={{
                                             width: "100%",
                                             display: "flex",

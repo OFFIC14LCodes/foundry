@@ -180,6 +180,29 @@ export async function saveStageProgress(userId: string, stageId: number, complet
     if (error) console.error("saveStageProgress error:", error.message);
 }
 
+export async function saveStageEnteredAt(userId: string, stageId: number, enteredAt = new Date().toISOString()) {
+    const { data: existing, error: loadError } = await supabase
+        .from("stage_progress")
+        .select("completed_milestones")
+        .eq("user_id", userId)
+        .eq("stage_id", stageId)
+        .maybeSingle();
+
+    if (loadError) {
+        console.error("saveStageEnteredAt load error:", loadError.message);
+        return;
+    }
+
+    const { error } = await supabase.from("stage_progress").upsert({
+        user_id: userId,
+        stage_id: stageId,
+        completed_milestones: existing?.completed_milestones ?? [],
+        stage_entered_at: enteredAt,
+        updated_at: new Date().toISOString(),
+    }, { onConflict: "user_id,stage_id" });
+    if (error) console.error("saveStageEnteredAt error:", error.message);
+}
+
 // ── MESSAGES ──────────────────────────────────────────────────
 
 export type ConversationThread = {
@@ -4261,13 +4284,13 @@ export async function persistStageSummaryToday(
 export async function loadStageProgressDates(userId: string): Promise<Record<number, string>> {
     const { data, error } = await supabase
         .from("stage_progress")
-        .select("stage_id, updated_at")
+        .select("stage_id, stage_entered_at")
         .eq("user_id", userId);
 
     const result: Record<number, string> = {};
     if (error || !data) return result;
     data.forEach(row => {
-        if (row.updated_at) result[row.stage_id] = row.updated_at;
+        if (row.stage_entered_at) result[row.stage_id] = row.stage_entered_at;
     });
     return result;
 }

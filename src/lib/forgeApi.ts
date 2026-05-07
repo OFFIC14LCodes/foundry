@@ -35,7 +35,8 @@ export async function streamForgeAPI(
     messages: Array<{ role: string; content: MessageContent }>,
     systemPrompt: string,
     onChunk: (text: string) => void,
-    maxTokens = 2000
+    maxTokens = 2000,
+    signal?: AbortSignal
 ): Promise<string> {
     const moderatedMessages = messages.map((message) => (
         message.role === "user"
@@ -53,6 +54,7 @@ export async function streamForgeAPI(
             system: effectiveSystemPrompt,
             messages: moderatedMessages,
         }),
+        signal,
     });
     if (!res.ok) {
         const errText = await res.text();

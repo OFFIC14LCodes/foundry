@@ -3,11 +3,11 @@ import { supabase } from "./supabase";
 import AuthScreen from "./AuthScreen";
 import {
   loadProfile, saveProfile,
-  loadAllStageProgress, saveStageProgress,
+  loadAllStageProgress, saveStageProgress, saveStageEnteredAt,
   loadAllMessages, saveMessages, loadConversationMessagesPage, createConversationThread,
   loadConversationSummaries, saveConversationSummary, updateConversationSummary, deleteConversationSummary,
-  loadJournalEntries, saveJournalEntry, deleteJournalEntry,
-  loadBriefings, saveBriefing,
+  loadJournalEntries,
+  loadBriefings,
   loadLatestMarketReport,
   ensureUserProfile,
   ensureOwnerProfileRole,
@@ -124,6 +124,7 @@ import {
   saveRevenue,
 } from "./lib/financialDb";
 import { disconnectPlaidItem, syncPlaidTransactions } from "./lib/plaid";
+import { getPendingCofounderInviteToken } from "./lib/cofounderInviteRoute";
 import {
   applyBusinessModelCanvasPatch,
   deleteBusinessModelCanvasEntry,
@@ -296,7 +297,7 @@ Financial note: ${financialSummary.usesEstimatedInputs ? "Some values are estima
   const bookContextPackage = buildFoundryBookContext(
     activeStage,
     [currentPrompt || "", ...recentStageText],
-    3
+    5
   );
 
   const methodSection = bookContextPackage.context ? `
@@ -374,6 +375,9 @@ CURRENT STAGE: ${activeStage} — ${stageData.label}
 Mission: ${stageData.mission}
 ${done ? `Completed milestones:\n${done}` : "No milestones completed yet"}
 ${pending ? `Pending milestones:\n${pending}` : "All milestones complete"}
+
+MILESTONE STATE RULE:
+The completed and pending milestone lists above are the source of truth for this stage. Do not tell the founder they still need to complete a milestone listed under Completed milestones. If the founder keeps discussing a completed milestone, treat it as completed and help them refine, document, or build on it. Only milestones listed under Pending milestones still need completion.
 
 ALL STAGE PROGRESS:
 ${allStageStatus}
@@ -465,34 +469,22 @@ ${getArchiveDisplaySummary(archiveSession.entry.summary)}`.trim(),
   };
 }
 
-function buildContext(profile, stage = null, completedMilestones = []) {
-  const stageData = stage ? STAGES_DATA[stage - 1] : null;
-  const pending = stageData
-    ? stageData.milestones.filter(m => !completedMilestones.includes(m.id)).map(m => `- ${m.id}: "${m.label}"`).join("\n")
-    : "";
-  const done = stageData
-    ? stageData.milestones.filter(m => completedMilestones.includes(m.id)).map(m => `  ✓ ${m.label}`).join("\n")
-    : "";
-  const now = new Date();
-  const dateStr = now.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
-  const timeStr = now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZoneName: "short" });
-  return `
-Current date & time: ${dateStr}, ${timeStr}
-Founder: ${profile.name} | Idea: ${profile.idea || "Idea stage"} | Strategy: ${profile.strategyLabel || profile.strategy}
-Budget: $${(profile.budget?.remaining || 0).toLocaleString()} remaining | Stage: ${stage ? `${stage} — ${stageData?.label}` : "Onboarding"} | Experience: ${profile.experience || "Not specified"}
-${done ? `Completed:\n${done}` : ""}
-${pending ? `Pending:\n${pending}` : ""}
-  `.trim();
-}
 
 function parseForgeResponse(text) {
   const completedIds: string[] = [];
-  const regex = /\[COMPLETE:\s*(\w+)\]/g;
+  const uncompletedIds: string[] = [];
+  const completeRegex = /\[COMPLETE:\s*(\w+)\]/g;
+  const uncompleteRegex = /\[UNCOMPLETE:\s*(\w+)\]/g;
   let match;
-  while ((match = regex.exec(text)) !== null) completedIds.push(match[1]);
+  while ((match = completeRegex.exec(text)) !== null) completedIds.push(match[1]);
+  while ((match = uncompleteRegex.exec(text)) !== null) uncompletedIds.push(match[1]);
   const advanceReady = text.includes("[ADVANCE_READY]");
-  const cleanText = text.replace(/\[COMPLETE:\s*\w+\]/g, "").replace(/\[ADVANCE_READY\]/g, "").trim();
-  return { cleanText, completedIds, advanceReady };
+  const cleanText = text
+    .replace(/\[COMPLETE:\s*\w+\]/g, "")
+    .replace(/\[UNCOMPLETE:\s*\w+\]/g, "")
+    .replace(/\[ADVANCE_READY\]/g, "")
+    .trim();
+  return { cleanText, completedIds, uncompletedIds, advanceReady };
 }
 
 function parseForgeResponseWithBookCitations(
@@ -802,6 +794,7 @@ function ForgeScreen({
   onUpdateProfile,
   completedByStage,
   onMilestoneComplete,
+  onMilestoneUncomplete,
   onAdvance,
   messagesByStage,
   onUpdateMessages,
@@ -839,7 +832,7 @@ function ForgeScreen({
   hasEarlierMessagesByStage = {} as Record<number, boolean>,
   loadingEarlierStage = null as number | null,
 }) {
-  const [activeStage, setActiveStage] = useState(pendingUpgradeStage || initialStage || profile.currentStage);
+  const [activeStage, setActiveStage] = useState(pendingUpgradeStage || initialStage || profile.currentStage || 1);
   const [activeTab, setActiveTab] = useState("chat");
   const [input, setInput] = useState("");
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
@@ -917,7 +910,7 @@ function ForgeScreen({
 
   const stage = STAGES_DATA[activeStage - 1];
   const StageIcon = stage.icon;
-  const messages = messagesByStage[activeStage] || [];
+  const messages = useMemo(() => messagesByStage[activeStage] || [], [messagesByStage, activeStage]);
   const stageSummaries = summariesByStage[activeStage] || [];
   const completedMilestones = completedByStage[activeStage] || [];
   const allMilestonesComplete = completedMilestones.length >= stage.milestones.length && stage.milestones.length > 0;
@@ -1257,26 +1250,6 @@ Where do you want to start?`;
   const isPitchPracticeArchive = (entry: any) => String(entry?.title || "").startsWith("Pitch Practice —");
   const isChatStyleArchive = (entry: any) => isChatRoomArchive(entry) || isQuickChatArchive(entry) || isPitchPracticeArchive(entry);
 
-  const handleContinueArchive = () => {
-    if (!summaryModal) return;
-
-    if (isChatStyleArchive(summaryModal)) {
-      setSummaryModal(null);
-      onContinueArchiveInChatRoom?.(summaryModal);
-      return;
-    }
-
-    const targetStage = Number(summaryModal.stageId) || activeStage;
-    setActiveStage(targetStage);
-    setActiveTab("chat");
-    setArchiveSession({
-      entry: summaryModal,
-      stageId: targetStage,
-      initialMessageCount: (messagesByStage[targetStage] || []).length,
-    });
-    setSummaryModal(null);
-  };
-
   const handleContinueArchiveEntry = (entry: any) => {
     if (summaryModal?.id !== entry.id) {
       setSummaryModal(entry);
@@ -1329,25 +1302,6 @@ Where do you want to start?`;
     setEditingSummaryTitle(true);
     setSummaryModalMenuOpen(false);
     setArchiveMenuOpenId(null);
-  };
-
-  const handleDeleteSummary = async () => {
-    if (!summaryModal?.id || deletingSummaryId) return;
-    setSummaryModalMenuOpen(false);
-    setArchiveMenuOpenId(null);
-    setDeletingSummaryId(summaryModal.id);
-    try {
-      const ok = await deleteConversationSummary(userId, summaryModal.id);
-      if (!ok) return;
-      removeArchiveEntryFromState(summaryModal);
-      if (isChatStyleArchive(summaryModal)) {
-        onBubbleSummaryDeleted?.(summaryModal);
-      }
-    } catch (error) {
-      console.error("archive delete error:", error);
-    } finally {
-      setDeletingSummaryId(null);
-    }
   };
 
   const handleDeleteSummaryEntry = async (entry: any) => {
@@ -1724,13 +1678,16 @@ Where do you want to start?`;
         }
       );
 
-      const { cleanText, completedIds, advanceReady: ar } = parseForgeResponseWithBookCitations(
+      const { cleanText, completedIds, uncompletedIds, advanceReady: ar } = parseForgeResponseWithBookCitations(
         raw,
         ctxPackage.bookMatches
       );
 
       const nextCompletedMilestones = Array.from(
-        new Set([...(completedByStage[activeStage] || []), ...completedIds])
+        new Set([
+          ...(completedByStage[activeStage] || []).filter((id) => !uncompletedIds.includes(id)),
+          ...completedIds,
+        ])
       );
       const remainingMilestones = stage.milestones.filter(
         (milestone) => !nextCompletedMilestones.includes(milestone.id)
@@ -1748,7 +1705,9 @@ Where do you want to start?`;
         msgs.map((m) => (m.id === forgeMsg.id ? { ...m, text: redirectedAdvanceText } : m))
       );
 
+      uncompletedIds.forEach((id) => onMilestoneUncomplete(id));
       completedIds.forEach((id) => onMilestoneComplete(id));
+      if (uncompletedIds.length > 0) setAdvanceReady(false);
 
       void syncBusinessModelCanvasFromExchange(text, redirectedAdvanceText);
 
@@ -1842,7 +1801,7 @@ ${forgeReply}`;
     >
       <HubPanel
         profile={profile}
-        currentStage={profile.currentStage}
+        currentStage={profile.currentStage ?? 1}
         completedByStage={completedByStage}
         open={hubOpen}
         onClose={() => setHubOpen(false)}
@@ -1970,7 +1929,7 @@ ${forgeReply}`;
                 }}
               >
                 {STAGES_DATA.map((s) => {
-                  const locked = s.id > profile.currentStage;
+                  const locked = s.id > (profile.currentStage ?? 1);
                   const pct = Math.round(
                     ((completedByStage[s.id] || []).length / s.milestones.length) * 100
                   );
@@ -2359,13 +2318,13 @@ ${forgeReply}`;
                   userName={profile?.name || "You"}
                   onAction={(action: any) => {
                     if (action.type === "upgrade") {
-                      onRequestUpgrade && onRequestUpgrade(action.stage || activeStage);
+                      if (onRequestUpgrade) onRequestUpgrade(action.stage || activeStage);
                       return;
                     }
 
                     if (action.type === "downgrade_to_stage_1") {
                       setActiveStage(1);
-                      onDowngradeToFree && onDowngradeToFree();
+                      if (onDowngradeToFree) onDowngradeToFree();
                     }
                   }}
                 />
@@ -3112,6 +3071,19 @@ export default function FoundryApp() {
     });
   }, [messagesByStage]);
 
+  useEffect(() => {
+    if (!user?.id || !dataLoaded || !profile?.currentStage) return;
+    const stageId = Number(profile.currentStage) || 1;
+    if (stageProgressDates[stageId]) return;
+
+    const enteredAt = new Date().toISOString();
+    setStageProgressDates((prev) => ({
+      ...prev,
+      [stageId]: prev[stageId] ?? enteredAt,
+    }));
+    void saveStageEnteredAt(user.id, stageId, enteredAt);
+  }, [user?.id, dataLoaded, profile?.currentStage, stageProgressDates]);
+
   const handleLoadEarlierMessages = async (stageId: number) => {
     if (!user?.id || loadingEarlierStage) return;
     const current = messagesByStage[stageId] || [];
@@ -3371,6 +3343,21 @@ export default function FoundryApp() {
     }));
   };
 
+  const handleMilestoneUncomplete = (milestoneId) => {
+    markMeaningfulActivity(true);
+    const stageNum =
+      milestoneId.startsWith("idea") ? 1
+        : milestoneId.startsWith("plan") ? 2
+          : milestoneId.startsWith("legal") ? 3
+            : milestoneId.startsWith("finance") ? 4
+              : milestoneId.startsWith("launch") ? 5
+                : 6;
+    setCompletedByStage(prev => ({
+      ...prev,
+      [stageNum]: (prev[stageNum] || []).filter((id) => id !== milestoneId)
+    }));
+  };
+
   const handleUpdateMessages = (stageId, updater) => {
     setMessagesByStage(prev => ({
       ...prev,
@@ -3409,8 +3396,19 @@ export default function FoundryApp() {
     openForge(null);
   };
 
+  const recordStageEntry = (stageId: number) => {
+    if (!user?.id) return;
+    const enteredAt = new Date().toISOString();
+    setStageProgressDates((prev) => ({
+      ...prev,
+      [stageId]: enteredAt,
+    }));
+    void saveStageEnteredAt(user.id, stageId, enteredAt);
+  };
+
   const handleAdvance = (newStage) => {
     markMeaningfulActivity(true);
+    recordStageEntry(newStage);
     updateProfile({ currentStage: newStage });
     setInitialStage(newStage);
     return true;
@@ -3421,6 +3419,7 @@ export default function FoundryApp() {
     markMeaningfulActivity(true);
     setPendingUpgradeStage(null);
     setPaywallStage(null);
+    recordStageEntry(nextStage);
     updateProfile({ currentStage: nextStage });
     setInitialStage(nextStage);
     setIsFirstVisit(false);
@@ -3679,13 +3678,6 @@ export default function FoundryApp() {
     setShowChatRoom(true);
   };
 
-  const openChatRoom = () => {
-    markMeaningfulActivity();
-    setAcademyConversationEntry(null);
-    setChatRoomArchive(null);
-    setShowChatRoom(true);
-  };
-
   const handleForgeSeedUsed = () => {
     setForgeSeedPrompt(null);
     setForgeSeedStage(null);
@@ -3787,6 +3779,17 @@ export default function FoundryApp() {
     setAcademyConversationEntry(null);
     setMarketIntelTrendEntry(null);
   };
+
+  useEffect(() => {
+    if (!user || !profile) return;
+    const inviteToken = getPendingCofounderInviteToken();
+    if (!inviteToken) return;
+
+    closeAllFeatureScreens();
+    setShowCofounder(true);
+    showCofounderRef.current = true;
+    setCofounderUnreadCount(0);
+  }, [user, profile]);
 
   useEffect(() => {
     const uid = (user as any)?.id;
@@ -4052,6 +4055,7 @@ export default function FoundryApp() {
             onUpdateProfile={updateProfile}
             onEnterStage={id => openForge(id)}
             onOpenForge={() => openForge(null)}
+            onOpenNav={() => setNavSidebarOpen(true)}
             onRevertToStage={(stageId: number) => revertToStage(stageId)}
             onLogout={handleLogout}
             completedByStage={completedByStage}
@@ -4123,6 +4127,7 @@ export default function FoundryApp() {
             onUpdateProfile={updateProfile}
             completedByStage={completedByStage}
             onMilestoneComplete={handleMilestoneComplete}
+            onMilestoneUncomplete={handleMilestoneUncomplete}
             onAdvance={attemptAdvance}
             messagesByStage={messagesByStage}
             onUpdateMessages={handleUpdateMessages}
