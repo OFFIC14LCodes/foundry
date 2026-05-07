@@ -74,7 +74,8 @@ import PaywallScreen from "./components/paywall/PaywallScreen";
 import BillingReturnScreen from "./components/BillingReturnScreen";
 import { buildMarketIntelContext } from "./constants/marketPrompt";
 import { callForgeAPI, streamForgeAPI } from "./lib/forgeApi";
-import { getTeamForUser, getRecentCofounderContext } from "./lib/cofounderDb";
+import { getTeamForUser, getRecentCofounderContext, getPendingEmailInvitesForUser, respondToEmailInvite, acceptInvite } from "./lib/cofounderDb";
+import type { CofounderEmailInvite } from "./lib/cofounderDb";
 import { completeAcademyLesson } from "./lib/academyCompletion";
 import {
   getFounderSessionState,
@@ -2744,6 +2745,7 @@ export default function FoundryApp() {
   const [autoRunMarketIntel, setAutoRunMarketIntel] = useState(false);
   const [showCofounder, setShowCofounder] = useState(false);
   const [cofounderUnreadCount, setCofounderUnreadCount] = useState(0);
+  const [pendingCofounderInvites, setPendingCofounderInvites] = useState<CofounderEmailInvite[]>([]);
   const showCofounderRef = useRef(false);
   const [showAcademy, setShowAcademy] = useState(false);
   const [academyContext, setAcademyContext] = useState<AcademyScreenContext | null>(null);
@@ -3851,6 +3853,34 @@ export default function FoundryApp() {
     return () => { supabase.removeChannel(channel); };
   }, [userTeamId, user]);
 
+  // ── Cofounder email invites: load pending on login ────────────
+  useEffect(() => {
+    if (!user) { setPendingCofounderInvites([]); return; }
+    let cancelled = false;
+    getPendingEmailInvitesForUser().then(invites => {
+      if (!cancelled) setPendingCofounderInvites(invites);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [user]);
+
+  const handleAcceptCofounderInvite = async (invite: CofounderEmailInvite) => {
+    const uid = (user as any)?.id;
+    if (!uid || !profile) return;
+    const displayName = profile.name || profile.email?.split('@')[0] || 'Founder';
+    const result = await acceptInvite(invite.token, uid, displayName, 'Cofounder');
+    if (result.success) {
+      await respondToEmailInvite(invite.id, 'accepted');
+      setPendingCofounderInvites(prev => prev.filter(i => i.id !== invite.id));
+      setUserTeamId(result.teamId ?? null);
+      openCofounder();
+    }
+  };
+
+  const handleDeclineCofounderInvite = async (invite: CofounderEmailInvite) => {
+    await respondToEmailInvite(invite.id, 'declined');
+    setPendingCofounderInvites(prev => prev.filter(i => i.id !== invite.id));
+  };
+
   const openSettings = () => {
     markMeaningfulActivity();
     setSettingsView("settings");
@@ -4071,6 +4101,9 @@ export default function FoundryApp() {
             onOpenActionCenter={openActionCenter}
             onOpenCofounder={openCofounder}
             cofounderUnreadCount={cofounderUnreadCount}
+            pendingCofounderInvites={pendingCofounderInvites}
+            onAcceptCofounderInvite={handleAcceptCofounderInvite}
+            onDeclineCofounderInvite={handleDeclineCofounderInvite}
             onOpenAcademy={openAcademy}
             onOpenSettings={openSettings}
             onOpenAdminHub={() => setShowAdminHub(true)}

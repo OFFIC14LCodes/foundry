@@ -31,6 +31,9 @@ export default function HubScreen({
     onOpenActionCenter,
     onOpenCofounder,
     cofounderUnreadCount = 0,
+    pendingCofounderInvites = [],
+    onAcceptCofounderInvite,
+    onDeclineCofounderInvite,
     onOpenSettings,
     onOpenAdminHub,
     onOpenAcademy,
@@ -477,6 +480,84 @@ export default function HubScreen({
                         </div>
                     </div>
                 )}
+
+                {pendingCofounderInvites.map((invite: any) => (
+                    <div
+                        key={invite.id}
+                        style={{
+                            background: "rgba(99, 179, 237, 0.07)",
+                            border: "1px solid rgba(99, 179, 237, 0.25)",
+                            borderRadius: 14,
+                            padding: "14px 16px",
+                            marginBottom: 14,
+                            animation: "fadeSlideUp 0.4s ease 0.05s both",
+                        }}
+                    >
+                        <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 10 }}>
+                            <div
+                                style={{
+                                    width: 28,
+                                    height: 28,
+                                    borderRadius: "50%",
+                                    background: "rgba(99, 179, 237, 0.15)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    flexShrink: 0,
+                                    marginTop: 1,
+                                    fontSize: 14,
+                                }}
+                            >
+                                🤝
+                            </div>
+                            <div>
+                                <div
+                                    style={{
+                                        fontSize: 13,
+                                        color: "#D4CFC9",
+                                        fontFamily: "'Lora', Georgia, serif",
+                                        lineHeight: 1.5,
+                                    }}
+                                >
+                                    <strong style={{ color: "#63B3ED" }}>{invite.inviter_name}</strong> has invited you to join <strong style={{ color: "#F0EDE8" }}>{invite.team_name}</strong> on Foundry.
+                                </div>
+                            </div>
+                        </div>
+                        <div style={{ display: "flex", gap: 8, paddingLeft: 38 }}>
+                            <button
+                                onClick={() => onAcceptCofounderInvite?.(invite)}
+                                style={{
+                                    background: "linear-gradient(135deg, #63B3ED, #4299e1)",
+                                    border: "none",
+                                    borderRadius: 8,
+                                    padding: "6px 16px",
+                                    color: "#fff",
+                                    fontSize: 12,
+                                    fontWeight: 600,
+                                    cursor: "pointer",
+                                    fontFamily: "'Lora', Georgia, serif",
+                                }}
+                            >
+                                Accept
+                            </button>
+                            <button
+                                onClick={() => onDeclineCofounderInvite?.(invite)}
+                                style={{
+                                    background: "transparent",
+                                    border: "1px solid rgba(255,255,255,0.1)",
+                                    borderRadius: 8,
+                                    padding: "6px 12px",
+                                    color: "#666",
+                                    fontSize: 12,
+                                    cursor: "pointer",
+                                    fontFamily: "'Lora', Georgia, serif",
+                                }}
+                            >
+                                Decline
+                            </button>
+                        </div>
+                    </div>
+                ))}
 
                 <div
                     style={{

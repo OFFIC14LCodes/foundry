@@ -9,7 +9,7 @@ import ForgeAvatar from './ForgeAvatar';
 import { MessageActions } from './AnimatedChatText';
 import MicButton from './MicButton';
 import { clearCofounderInviteTokenFromUrl, getPendingCofounderInviteToken } from '../lib/cofounderInviteRoute';
-import type { CofounderTeam, CofounderMember, CofounderMessage, CofounderTask, CofounderTaskComment, CofounderDecision, CofounderFileLink } from '../lib/cofounderDb';
+import type { CofounderTeam, CofounderMember, CofounderMessage, CofounderTask, CofounderTaskComment, CofounderDecision, CofounderFileLink, CofounderEmailInvite } from '../lib/cofounderDb';
 import {
     getTeamForUser,
     createTeam,
@@ -37,6 +37,7 @@ import {
     loadFileLinks,
     addFileLink,
     deleteFileLink,
+    getSentEmailInvites,
 } from '../lib/cofounderDb';
 
 // ─────────────────────────────────────────────────────────────
@@ -219,6 +220,13 @@ export default function CofounderModeScreen({ userId, profile, onBack, onOpenNav
     const [newFileUrl, setNewFileUrl] = useState('');
     const [savingFile, setSavingFile] = useState(false);
 
+    // ── Email invites ─────────────────────────────────────────────
+    const [emailInviteInput, setEmailInviteInput] = useState('');
+    const [sendingEmailInvite, setSendingEmailInvite] = useState(false);
+    const [emailInviteError, setEmailInviteError] = useState<string | null>(null);
+    const [emailInviteSent, setEmailInviteSent] = useState(false);
+    const [sentEmailInvites, setSentEmailInvites] = useState<CofounderEmailInvite[]>([]);
+
     // ── Message hover (timestamps) ───────────────────────────────
     const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
 
@@ -255,13 +263,14 @@ export default function CofounderModeScreen({ userId, profile, onBack, onOpenNav
     };
 
     const loadWorkspace = async (t: CofounderTeam) => {
-        const [fetchedMembers, fetchedMessages, fetchedInvite, fetchedTasks, fetchedDecisions, fetchedFiles] = await Promise.all([
+        const [fetchedMembers, fetchedMessages, fetchedInvite, fetchedTasks, fetchedDecisions, fetchedFiles, fetchedEmailInvites] = await Promise.all([
             getTeamMembers(t.id),
             loadCofounderMessages(t.id, 60, 0),
             getActiveInviteForTeam(t.id),
             loadCofounderTasks(t.id),
             loadDecisions(t.id),
             loadFileLinks(t.id),
+            getSentEmailInvites(t.id),
         ]);
         setTeam(t);
         setMembers(fetchedMembers);
@@ -269,10 +278,52 @@ export default function CofounderModeScreen({ userId, profile, onBack, onOpenNav
         setTasks(fetchedTasks);
         setDecisions(fetchedDecisions);
         setFileLinks(fetchedFiles);
+        setSentEmailInvites(fetchedEmailInvites);
         setHasMoreMessages(fetchedMessages.length === 60);
         setMessageOffset(60);
         setCurrentMember(fetchedMembers.find(m => m.user_id === userId) ?? null);
         if (fetchedInvite) setActiveInvite({ id: fetchedInvite.id, token: fetchedInvite.token });
+    };
+
+    const handleSendEmailInvite = async () => {
+        if (!team || !emailInviteInput.trim() || sendingEmailInvite) return;
+        setSendingEmailInvite(true);
+        setEmailInviteError(null);
+        setEmailInviteSent(false);
+
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+            setEmailInviteError('Session expired. Please refresh.');
+            setSendingEmailInvite(false);
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/cofounder-invite', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${session.access_token}`,
+                },
+                body: JSON.stringify({ email: emailInviteInput.trim(), teamId: team.id }),
+            });
+
+            const body = await res.json();
+            if (!res.ok) {
+                setEmailInviteError(body.error || 'Failed to send invite. Please try again.');
+            } else {
+                setEmailInviteSent(true);
+                setEmailInviteInput('');
+                setTimeout(() => setEmailInviteSent(false), 3000);
+                // Refresh sent invites list
+                const updated = await getSentEmailInvites(team.id);
+                setSentEmailInvites(updated);
+            }
+        } catch {
+            setEmailInviteError('Network error. Please try again.');
+        }
+
+        setSendingEmailInvite(false);
     };
 
     // ── Presence heartbeat (update last_seen_at every 60s) ──────
@@ -1058,23 +1109,72 @@ export default function CofounderModeScreen({ userId, profile, onBack, onOpenNav
                         {/* Invite section */}
                         <div style={{ ...card, marginTop: 20, animation: 'fadeSlideUp 0.4s ease 0.1s both' }}>
                             <div style={{ fontSize: 13, fontWeight: 600, color: '#F0EDE8', marginBottom: 6 }}>Add to Your Team</div>
-                            <div style={{ fontSize: 12, color: '#555', lineHeight: 1.6, marginBottom: 14 }}>Share this link with cofounders or team members. Anyone with the link can join this workspace.</div>
+
+                            {/* Email invite (primary) */}
+                            {isOwner && (
+                                <div style={{ marginBottom: 16 }}>
+                                    <div style={{ fontSize: 12, color: '#777', lineHeight: 1.5, marginBottom: 10 }}>Enter their email — they'll get an invitation link and an in-app notification if they already have a Foundry account.</div>
+                                    <div style={{ display: 'flex', gap: 8 }}>
+                                        <input
+                                            type="email"
+                                            placeholder="cofounder@example.com"
+                                            value={emailInviteInput}
+                                            onChange={e => setEmailInviteInput(e.target.value)}
+                                            onKeyDown={e => { if (e.key === 'Enter') handleSendEmailInvite(); }}
+                                            style={{ flex: 1, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '10px 12px', fontSize: 13, color: '#F0EDE8', fontFamily: 'DM Sans, sans-serif', outline: 'none' }}
+                                        />
+                                        <button
+                                            onClick={handleSendEmailInvite}
+                                            disabled={sendingEmailInvite || !emailInviteInput.trim()}
+                                            style={{ ...btnPrimary, padding: '10px 16px', background: emailInviteSent ? 'linear-gradient(135deg, #48BB78, #38a869)' : 'linear-gradient(135deg, #E8622A, #c9521e)', opacity: (sendingEmailInvite || !emailInviteInput.trim()) ? 0.6 : 1, flexShrink: 0, transition: 'background 0.3s' }}
+                                        >
+                                            {sendingEmailInvite ? 'Sending...' : emailInviteSent ? '✓ Sent' : 'Send Invite'}
+                                        </button>
+                                    </div>
+                                    {emailInviteError && (
+                                        <div style={{ fontSize: 12, color: 'rgba(232,98,42,0.8)', fontFamily: 'DM Sans, sans-serif', marginTop: 6 }}>{emailInviteError}</div>
+                                    )}
+
+                                    {/* Sent invites list */}
+                                    {sentEmailInvites.length > 0 && (
+                                        <div style={{ marginTop: 12 }}>
+                                            <div style={{ fontSize: 10, color: '#444', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Sent Invitations</div>
+                                            {sentEmailInvites.slice(0, 5).map(inv => (
+                                                <div key={inv.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                                                    <div style={{ fontSize: 12, color: '#888', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{inv.invited_email}</div>
+                                                    <div style={{ fontSize: 11, color: inv.status === 'accepted' ? '#48BB78' : inv.status === 'declined' ? '#E8622A' : '#555', flexShrink: 0, marginLeft: 8, textTransform: 'capitalize' }}>{inv.status}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Divider */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                                <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.06)' }} />
+                                <div style={{ fontSize: 10, color: '#444', fontFamily: 'DM Sans, sans-serif' }}>or share a link</div>
+                                <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.06)' }} />
+                            </div>
+
+                            {/* Copy link */}
+                            <div style={{ fontSize: 12, color: '#555', lineHeight: 1.5, marginBottom: 10 }}>Anyone with this link can join the workspace.</div>
 
                             {inviteUrl && (
-                                <div style={{ marginBottom: 12 }}>
-                                    <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '9px 12px', fontSize: 11, color: '#666', wordBreak: 'break-all', lineHeight: 1.5, fontFamily: 'monospace', marginBottom: 6 }}>
+                                <div style={{ marginBottom: 10 }}>
+                                    <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '9px 12px', fontSize: 11, color: '#666', wordBreak: 'break-all', lineHeight: 1.5, fontFamily: 'monospace', marginBottom: 4 }}>
                                         {inviteUrl}
                                     </div>
-                                    <div style={{ fontSize: 11, color: 'rgba(240,237,232,0.3)', fontFamily: 'DM Sans, sans-serif', marginBottom: 10 }}>No expiration · Reusable link</div>
+                                    <div style={{ fontSize: 11, color: 'rgba(240,237,232,0.25)', fontFamily: 'DM Sans, sans-serif' }}>No expiration · Reusable link</div>
                                 </div>
                             )}
 
                             <div style={{ display: 'flex', gap: 8 }}>
-                                <button onClick={handleGetInviteLink} disabled={generatingInvite} style={{ ...btnPrimary, flex: 1, padding: '11px', background: copied ? 'linear-gradient(135deg, #48BB78, #38a869)' : 'linear-gradient(135deg, #E8622A, #c9521e)', opacity: generatingInvite ? 0.7 : 1, transition: 'background 0.3s' }}>
-                                    {generatingInvite ? 'Generating...' : copied ? '✓ Link Copied' : inviteUrl ? 'Copy Invite Link' : 'Generate & Copy Invite Link'}
+                                <button onClick={handleGetInviteLink} disabled={generatingInvite} style={{ ...btnPrimary, flex: 1, padding: '10px', fontSize: 12, background: copied ? 'linear-gradient(135deg, #48BB78, #38a869)' : 'rgba(255,255,255,0.06)', color: copied ? '#fff' : '#aaa', border: '1px solid rgba(255,255,255,0.08)', opacity: generatingInvite ? 0.7 : 1, transition: 'background 0.3s' }}>
+                                    {generatingInvite ? 'Generating...' : copied ? '✓ Copied' : inviteUrl ? 'Copy Link' : 'Generate & Copy Link'}
                                 </button>
                                 {inviteUrl && isOwner && (
-                                    <button onClick={() => setConfirmRevokeInvite(true)} style={{ ...btnSecondary, padding: '11px 14px', fontSize: 12, color: 'rgba(240,237,232,0.4)', flexShrink: 0 }}>Revoke</button>
+                                    <button onClick={() => setConfirmRevokeInvite(true)} style={{ ...btnSecondary, padding: '10px 14px', fontSize: 12, color: 'rgba(240,237,232,0.3)', flexShrink: 0 }}>Revoke</button>
                                 )}
                             </div>
 
@@ -1082,7 +1182,7 @@ export default function CofounderModeScreen({ userId, profile, onBack, onOpenNav
                                 <div style={{ fontSize: 12, color: 'rgba(232,98,42,0.7)', fontFamily: 'DM Sans, sans-serif', marginTop: 8, textAlign: 'center' }}>{inviteError}</div>
                             )}
 
-                            <div style={{ fontSize: 10, color: '#333', textAlign: 'center', marginTop: 10 }}>Forge will carry shared team context into each person's individual conversations.</div>
+                            <div style={{ fontSize: 10, color: '#333', textAlign: 'center', marginTop: 12 }}>Forge will carry shared team context into each person's individual conversations.</div>
                         </div>
 
                         {/* Role legend */}

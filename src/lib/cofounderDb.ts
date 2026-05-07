@@ -95,6 +95,19 @@ export interface CofounderFileLink {
     created_at: string;
 }
 
+export interface CofounderEmailInvite {
+    id: string;
+    team_id: string;
+    invited_by: string;
+    invited_email: string;
+    token: string;
+    inviter_name: string;
+    team_name: string;
+    status: 'pending' | 'accepted' | 'declined';
+    created_at: string;
+    responded_at: string | null;
+}
+
 // ── TEAM ──────────────────────────────────────────────────────
 
 export async function getTeamForUser(userId: string): Promise<CofounderTeam | null> {
@@ -550,4 +563,41 @@ export async function deleteFileLink(id: string): Promise<boolean> {
 
     if (error) { console.error('deleteFileLink error:', error.message); return false; }
     return true;
+}
+
+// ── EMAIL INVITES ─────────────────────────────────────────────
+
+export async function getPendingEmailInvitesForUser(): Promise<CofounderEmailInvite[]> {
+    const { data, error } = await supabase
+        .from('cofounder_email_invites')
+        .select('*')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+
+    if (error) console.error('getPendingEmailInvitesForUser error:', error.message);
+    return (data as CofounderEmailInvite[]) ?? [];
+}
+
+export async function respondToEmailInvite(
+    inviteId: string,
+    status: 'accepted' | 'declined'
+): Promise<boolean> {
+    const { error } = await supabase
+        .from('cofounder_email_invites')
+        .update({ status, responded_at: new Date().toISOString() })
+        .eq('id', inviteId);
+
+    if (error) { console.error('respondToEmailInvite error:', error.message); return false; }
+    return true;
+}
+
+export async function getSentEmailInvites(teamId: string): Promise<CofounderEmailInvite[]> {
+    const { data, error } = await supabase
+        .from('cofounder_email_invites')
+        .select('*')
+        .eq('team_id', teamId)
+        .order('created_at', { ascending: false });
+
+    if (error) console.error('getSentEmailInvites error:', error.message);
+    return (data as CofounderEmailInvite[]) ?? [];
 }
