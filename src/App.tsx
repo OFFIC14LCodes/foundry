@@ -4380,15 +4380,17 @@ export default function FoundryApp() {
         </div>
       )}
       {showCofounder && user && profile && (
-        <Suspense fallback={<ScreenLoadingFallback message="Loading cofounder mode..." />}>
-          <CofounderModeScreen
-            userId={(user as any).id}
-            profile={profile}
-            onBack={() => { setShowCofounder(false); showCofounderRef.current = false; }}
-            onOpenNav={() => setNavSidebarOpen(true)}
-            onTeamChanged={(id) => setUserTeamId(id)}
-          />
-        </Suspense>
+        <div style={{ position: "fixed", inset: 0, zIndex: 100 }}>
+          <Suspense fallback={<ScreenLoadingFallback message="Loading cofounder mode..." />}>
+            <CofounderModeScreen
+              userId={(user as any).id}
+              profile={profile}
+              onBack={() => { setShowCofounder(false); showCofounderRef.current = false; }}
+              onOpenNav={() => setNavSidebarOpen(true)}
+              onTeamChanged={(id) => setUserTeamId(id)}
+            />
+          </Suspense>
+        </div>
       )}
       {settingsView === "settings" && profile && (
         <div style={{ position: "fixed", inset: 0, zIndex: 120, background: "#080809", overflowY: "auto" }}>

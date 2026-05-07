@@ -6,6 +6,8 @@ import { applyFoundryBookCitations, buildFoundryBookContext } from '../lib/found
 import { Icons } from '../icons';
 import { Paperclip, Link as LinkIcon, Palette } from 'lucide-react';
 import ForgeAvatar from './ForgeAvatar';
+import Logo from './Logo';
+import LoadingForgeAnimation from './LoadingForgeAnimation';
 import { MessageActions } from './AnimatedChatText';
 import MicButton from './MicButton';
 import { clearCofounderInviteTokenFromUrl, getPendingCofounderInviteToken } from '../lib/cofounderInviteRoute';
@@ -146,9 +148,18 @@ export default function CofounderModeScreen({ userId, profile, onBack, onOpenNav
     const [currentMember, setCurrentMember] = useState<CofounderMember | null>(null);
     const [tasks, setTasks] = useState<CofounderTask[]>([]);
 
+    // ── Forge engagement state ───────────────────────────────────
+    const [forgeEngaged, setForgeEngaged] = useState(false);
+    const forgeEngagedRef = useRef(false);
+    const setForgeEngagedSync = (v: boolean) => {
+        forgeEngagedRef.current = v;
+        setForgeEngaged(v);
+    };
+
     // ── Loading states ───────────────────────────────────────────
     const [dataLoading, setDataLoading] = useState(true);
     const [chatLoading, setChatLoading] = useState(false);
+    const chatLoadingRef = useRef(false);
     const [creating, setCreating] = useState(false);
     const [joining, setJoining] = useState(false);
     const [copied, setCopied] = useState(false);
@@ -230,15 +241,24 @@ export default function CofounderModeScreen({ userId, profile, onBack, onOpenNav
     // ── Message hover (timestamps) ───────────────────────────────
     const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
 
+    // ── Typing indicators ────────────────────────────────────────
+    const [typingUsers, setTypingUsers] = useState<Record<string, string>>({}); // userId -> displayName
+    const typingTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+    const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+    const typingBroadcastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
     // ── Refs ─────────────────────────────────────────────────────
     const chatEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const messagesRef = useRef<LocalMessage[]>([]);
+    const handleForgeReplyRef = useRef<typeof handleForgeReply | null>(null);
     const isPrependingRef = useRef(false);
 
     // ── Init ────────────────────────────────────────────────────
 
     useEffect(() => { initWorkspace(); }, []);
+    useEffect(() => { messagesRef.current = messages; }, [messages]);
 
     const initWorkspace = async () => {
         setDataLoading(true);
@@ -347,15 +367,28 @@ export default function CofounderModeScreen({ userId, profile, onBack, onOpenNav
                 'postgres_changes' as any,
                 { event: 'INSERT', schema: 'public', table: 'cofounder_messages', filter: `team_id=eq.${team.id}` },
                 (payload: any) => {
+                    const incoming = payload.new as LocalMessage;
+                    let updated: LocalMessage[] | null = null;
                     setMessages(prev => {
-                        if (prev.some(m => m.id === payload.new.id)) return prev;
-                        return [...prev, payload.new as LocalMessage];
+                        if (prev.some(m => m.id === incoming.id)) return prev;
+                        updated = [...prev, incoming];
+                        return updated;
                     });
+                    // Trigger Forge for messages from OTHER team members when engaged
+                    if (
+                        incoming.role === 'member' &&
+                        incoming.user_id !== userId &&
+                        forgeEngagedRef.current &&
+                        !chatLoadingRef.current
+                    ) {
+                        const ctx = updated ?? [...messagesRef.current, incoming];
+                        Promise.resolve().then(() => handleForgeReplyRef.current?.(ctx, undefined, 'engaged'));
+                    }
                 }
             )
             .subscribe();
         return () => { supabase.removeChannel(channel); };
-    }, [team?.id]);
+    }, [team?.id, userId]);
 
     // ── Realtime: task updates ───────────────────────────────────
 
@@ -379,6 +412,47 @@ export default function CofounderModeScreen({ userId, profile, onBack, onOpenNav
             .subscribe();
         return () => { supabase.removeChannel(channel); };
     }, [team?.id]);
+
+    // ── Realtime: typing indicators ─────────────────────────────
+
+    useEffect(() => {
+        if (!team || !currentMember) return;
+        const myUserId = currentMember.user_id;
+
+        const clearTyping = (userId: string) => {
+            clearTimeout(typingTimersRef.current[userId]);
+            setTypingUsers(prev => {
+                if (!(userId in prev)) return prev;
+                const next = { ...prev };
+                delete next[userId];
+                return next;
+            });
+        };
+
+        const channel = supabase
+            .channel(`cftyping:${team.id}`, { config: { broadcast: { self: false, ack: false } } })
+            .on('broadcast', { event: 'typing' }, ({ payload }: any) => {
+                const { userId, displayName } = payload ?? {};
+                if (!userId || userId === myUserId) return;
+                clearTimeout(typingTimersRef.current[userId]);
+                setTypingUsers(prev => prev[userId] === displayName ? prev : { ...prev, [userId]: displayName });
+                typingTimersRef.current[userId] = setTimeout(() => clearTyping(userId), 3000);
+            })
+            .on('broadcast', { event: 'stopped' }, ({ payload }: any) => {
+                const { userId } = payload ?? {};
+                if (userId) clearTyping(userId);
+            })
+            .subscribe((status) => {
+                if (status === 'SUBSCRIBED') typingChannelRef.current = channel;
+            });
+        return () => {
+            supabase.removeChannel(channel);
+            typingChannelRef.current = null;
+            Object.values(typingTimersRef.current).forEach(clearTimeout);
+            typingTimersRef.current = {};
+            setTypingUsers({});
+        };
+    }, [team?.id, currentMember?.user_id]);
 
     // ── Scroll to bottom ─────────────────────────────────────────
 
@@ -509,8 +583,33 @@ export default function CofounderModeScreen({ userId, profile, onBack, onOpenNav
         setLoadingMore(false);
     };
 
+    const broadcastStoppedTyping = () => {
+        if (!currentMember || !typingChannelRef.current) return;
+        clearTimeout(typingBroadcastTimerRef.current!);
+        typingChannelRef.current.send({
+            type: 'broadcast', event: 'stopped',
+            payload: { userId: currentMember.user_id },
+        });
+    };
+
+    const handleInputChange = (value: string) => {
+        setInput(value);
+        if (!currentMember || !typingChannelRef.current) return;
+        clearTimeout(typingBroadcastTimerRef.current!);
+        if (value.trim()) {
+            typingChannelRef.current.send({
+                type: 'broadcast', event: 'typing',
+                payload: { userId: currentMember.user_id, displayName: currentMember.display_name },
+            });
+            typingBroadcastTimerRef.current = setTimeout(broadcastStoppedTyping, 2000);
+        } else {
+            broadcastStoppedTyping();
+        }
+    };
+
     const handleSend = async () => {
         if (!input.trim() || chatLoading || !team || !currentMember) return;
+        broadcastStoppedTyping();
         const text = input.trim();
         setInput('');
         setActiveTab('chat');
@@ -536,10 +635,17 @@ export default function CofounderModeScreen({ userId, profile, onBack, onOpenNav
             currentMember.display_name, currentMember.role, text
         );
 
+        const DISMISS_FORGE_RE = /\b(dismiss\s+forge|forge\s+dismiss|thanks?\s+forge|bye\s+forge|forge\s+thanks?|stop\s+forge|that'?s?\s+all\s+forge|ok(ay)?\s+forge|got\s+it\s+forge)\b/i;
+
         if (saved) {
             setMessages(prev => prev.map(m => m.id === optimisticId ? saved : m));
-            if (/@forge/i.test(text)) {
-                await handleForgeReply(messages.concat(saved));
+            if (DISMISS_FORGE_RE.test(text)) {
+                setForgeEngagedSync(false);
+            } else if (/@forge/i.test(text)) {
+                setForgeEngagedSync(false);
+                await handleForgeReply(messagesRef.current.concat(saved), undefined, 'mention');
+            } else if (forgeEngagedRef.current) {
+                await handleForgeReply(messagesRef.current.concat(saved), undefined, 'engaged');
             }
         } else {
             setMessages(prev => prev.map(m => m.id === optimisticId ? { ...m, failed: true } : m));
@@ -566,9 +672,11 @@ export default function CofounderModeScreen({ userId, profile, onBack, onOpenNav
 
     const handleForgeReply = useCallback(async (
         contextMessages: LocalMessage[],
-        existingPlaceholderId?: string
+        existingPlaceholderId?: string,
+        triggerReason: 'mention' | 'engaged' = 'mention'
     ) => {
-        if (!team) return;
+        if (!team || chatLoadingRef.current) return;
+        chatLoadingRef.current = true;
         setChatLoading(true);
 
         const placeholderId = existingPlaceholderId ?? `forge-${Date.now()}`;
@@ -597,13 +705,19 @@ export default function CofounderModeScreen({ userId, profile, onBack, onOpenNav
             4
         );
 
+        const engagementNote = triggerReason === 'engaged'
+            ? `You are currently engaged in an active conversation with this team. Respond only if this message meaningfully continues the conversation or is clearly directed at you. If the message is just team coordination, a quick acknowledgement, or something that doesn't need your input, respond with exactly: [SKIP]
+If you want to step back gracefully after fully answering, end your reply with [STEPPING_BACK].
+Otherwise, continue naturally — no preamble, get right to what matters. Team members can say "dismiss forge" at any time.`
+            : `You were mentioned with @forge. Respond as Forge — direct, useful, invested. No preamble. Get right to what matters for this team. End with a question to continue the conversation, or [STEPPING_BACK] if you've fully addressed it.`;
+
         const teamCtx = [
             `You are responding in the shared team workspace chat for ${team.business_name}.`,
             ``,
             `Team:`,
             ...members.map(m => `- ${m.display_name} (${m.role})`),
             ``,
-            `This is a group conversation between the founding team. You were mentioned with @forge. Respond as Forge — direct, useful, invested. No preamble. Get right to what matters for this team.`,
+            engagementNote,
             ...(bookContext.context ? ['', bookContext.context] : []),
         ].join('\n');
 
@@ -621,16 +735,25 @@ export default function CofounderModeScreen({ userId, profile, onBack, onOpenNav
                 FORGE_SYSTEM_PROMPT.replace('{CONTEXT}', teamCtx),
                 (chunk) => {
                     fullReply = applyFoundryBookCitations(chunk, bookContext.matches).cleanText;
-                    setMessages(prev => prev.map(m =>
-                        m.id === placeholderId ? { ...m, content: fullReply } : m
-                    ));
+                    // Don't stream [SKIP] to the UI
+                    if (!/^\s*\[SKIP\]\s*$/.test(fullReply)) {
+                        setMessages(prev => prev.map(m =>
+                            m.id === placeholderId ? { ...m, content: fullReply } : m
+                        ));
+                    }
                 }
             );
 
-            if (fullReply) {
+            if (/^\s*\[SKIP\]\s*$/.test(fullReply)) {
+                // Forge decided this message doesn't need a response — silently remove placeholder
+                setMessages(prev => prev.filter(m => m.id !== placeholderId));
+                setForgeEngagedSync(true); // stay engaged
+            } else if (fullReply) {
+                const steppingBack = /\[STEPPING_BACK\]/i.test(fullReply);
                 const clean = fullReply
                     .replace(/\[COMPLETE:\s*\w+\]/g, '')
                     .replace(/\[ADVANCE_READY\]/g, '')
+                    .replace(/\[STEPPING_BACK\]/gi, '')
                     .trim();
                 const savedForge = await sendCofounderMessage(
                     team.id, null, 'forge', 'Forge', 'AI Partner', clean
@@ -638,9 +761,11 @@ export default function CofounderModeScreen({ userId, profile, onBack, onOpenNav
                 if (savedForge) {
                     setMessages(prev => prev.map(m => m.id === placeholderId ? savedForge : m));
                 }
+                setForgeEngagedSync(!steppingBack);
             }
         } catch (err) {
             console.error('Forge group chat error:', err);
+            setForgeEngagedSync(false);
             setMessages(prev => prev.map(m =>
                 m.id === placeholderId
                     ? { ...m, content: 'Forge ran into a problem. Tap to try again.', failed: true }
@@ -648,8 +773,12 @@ export default function CofounderModeScreen({ userId, profile, onBack, onOpenNav
             ));
         }
 
+        chatLoadingRef.current = false;
         setChatLoading(false);
     }, [team, members, profile]);
+
+    // Keep ref current so realtime handler always calls the latest version
+    useEffect(() => { handleForgeReplyRef.current = handleForgeReply; }, [handleForgeReply]);
 
     const handleRoleChange = async (memberId: string, newRole: string) => {
         const ok = await updateMemberRole(memberId, userId, newRole);
@@ -674,7 +803,7 @@ export default function CofounderModeScreen({ userId, profile, onBack, onOpenNav
         const ok = await removeMember(currentMember.id);
         if (ok) {
             setTeam(null); setMembers([]); setMessages([]);
-            setCurrentMember(null); setTasks([]);
+            setCurrentMember(null); setTasks([]); setForgeEngagedSync(false);
             onTeamChanged?.(null);
         }
         setConfirmLeave(false);
@@ -869,9 +998,10 @@ export default function CofounderModeScreen({ userId, profile, onBack, onOpenNav
 
     if (dataLoading) {
         return (
-            <div style={{ position: 'fixed', inset: 0, background: '#080809', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
-                <Icons.sidebar.cofounder size={28} />
-                <div style={{ fontSize: 12, color: '#444', fontFamily: "'Lora', Georgia, serif", letterSpacing: '0.08em' }}>Loading workspace...</div>
+            <div style={{ position: 'fixed', inset: 0, background: '#080809', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
+                <Logo variant="flame" style={{ width: 48, height: 48, objectFit: 'contain', opacity: 0.88 }} />
+                <LoadingForgeAnimation size={62} />
+                <div style={{ fontSize: 12, color: '#5B5650', fontFamily: "'Lora', Georgia, serif", letterSpacing: '0.08em' }}>Loading workspace...</div>
             </div>
         );
     }
@@ -1566,6 +1696,26 @@ export default function CofounderModeScreen({ userId, profile, onBack, onOpenNav
                                 </div>
                             )}
 
+                            {Object.keys(typingUsers).length > 0 && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0 2px' }}>
+                                    <div style={{ width: 28, height: 28, borderRadius: '50%', flexShrink: 0, background: 'rgba(232,98,42,0.1)', border: '1.5px solid rgba(232,98,42,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#E8622A', fontWeight: 700 }}>
+                                        {Object.values(typingUsers)[0].charAt(0).toUpperCase()}
+                                    </div>
+                                    <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px 16px 16px 4px', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(240,237,232,0.4)', display: 'inline-block', animation: 'typingDot 1.2s ease-in-out infinite', animationDelay: '0ms' }} />
+                                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(240,237,232,0.4)', display: 'inline-block', animation: 'typingDot 1.2s ease-in-out infinite', animationDelay: '200ms' }} />
+                                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(240,237,232,0.4)', display: 'inline-block', animation: 'typingDot 1.2s ease-in-out infinite', animationDelay: '400ms' }} />
+                                    </div>
+                                    <span style={{ fontSize: 11, color: 'rgba(240,237,232,0.3)', fontFamily: 'DM Sans, sans-serif', fontStyle: 'italic' }}>
+                                        {Object.keys(typingUsers).length === 1
+                                            ? `${Object.values(typingUsers)[0]} is typing`
+                                            : Object.keys(typingUsers).length === 2
+                                            ? `${Object.values(typingUsers).join(' and ')} are typing`
+                                            : 'Several people are typing'}
+                                    </span>
+                                </div>
+                            )}
+
                             <div ref={chatEndRef} />
                         </div>
                     </div>
@@ -1573,6 +1723,14 @@ export default function CofounderModeScreen({ userId, profile, onBack, onOpenNav
                     {/* Input area */}
                     <div style={{ padding: '10px 16px max(16px, calc(12px + env(safe-area-inset-bottom)))', borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(8,8,9,0.97)', flexShrink: 0 }}>
                         <div style={{ maxWidth: 640, margin: '0 auto' }}>
+                            {forgeEngaged && !/@forge/i.test(input) && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#E8622A', flexShrink: 0, boxShadow: '0 0 6px #E8622A88' }} />
+                                    <span style={{ fontSize: 11, color: 'rgba(232,98,42,0.7)', fontFamily: 'DM Sans, sans-serif', fontStyle: 'italic' }}>
+                                        Forge is listening — say "dismiss forge" to end the conversation
+                                    </span>
+                                </div>
+                            )}
                             {/@forge/i.test(input) && (
                                 <div style={{ fontSize: 11, color: 'rgba(240,237,232,0.3)', fontFamily: 'DM Sans, sans-serif', fontStyle: 'italic', marginBottom: 6 }}>
                                     Forge will see the last 20 team messages
@@ -1585,9 +1743,9 @@ export default function CofounderModeScreen({ userId, profile, onBack, onOpenNav
                                 <textarea
                                     ref={inputRef}
                                     value={input}
-                                    onChange={e => setInput(e.target.value)}
+                                    onChange={e => handleInputChange(e.target.value)}
                                     onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                                    placeholder="Message your team — type @forge to bring Forge in"
+                                    placeholder={forgeEngaged ? "Forge is listening — reply freely or say \"dismiss forge\" to step back" : "Message your team — type @forge to bring Forge in"}
                                     rows={1}
                                     style={{ flex: 1, resize: 'none', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '9px 12px', color: '#F0EDE8', fontSize: 13, fontFamily: "'Lora', Georgia, serif", lineHeight: 1.5, outline: 'none', maxHeight: 120, overflowY: 'auto' }}
                                 />

@@ -15,6 +15,7 @@ export const GLOBAL_STYLES = `
   @keyframes forgePulse { 0%, 80%, 100% { transform: scale(0.7); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
   @keyframes loadingFlameOrbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   @keyframes micPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+  @keyframes typingDot { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-4px); opacity: 1; } }
 `;
 
 export const TAG_COLORS = {

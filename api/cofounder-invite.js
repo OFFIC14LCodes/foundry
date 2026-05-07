@@ -7,10 +7,9 @@ export default async function handler(req, res) {
 
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const anonKey = process.env.VITE_SUPABASE_ANON_KEY;
   const appUrl = process.env.APP_URL || process.env.VITE_APP_URL || "https://foundryandforge.app";
 
-  if (!supabaseUrl || !serviceRoleKey || !anonKey) {
+  if (!supabaseUrl || !serviceRoleKey) {
     return res.status(500).json({ error: "Missing required environment variables" });
   }
 
@@ -21,11 +20,10 @@ export default async function handler(req, res) {
   }
   const jwt = authHeader.slice(7);
 
-  // Validate token and get caller identity via anon client
-  const supabaseAnon = createClient(supabaseUrl, anonKey, {
-    global: { headers: { Authorization: `Bearer ${jwt}` } },
-  });
-  const { data: { user }, error: authError } = await supabaseAnon.auth.getUser();
+  const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+
+  // Verify JWT using the admin client — no anon key needed
+  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(jwt);
   if (authError || !user) {
     return res.status(401).json({ error: "Invalid token" });
   }
@@ -43,8 +41,6 @@ export default async function handler(req, res) {
   if (!emailRegex.test(normalizedEmail)) {
     return res.status(400).json({ error: "Invalid email address" });
   }
-
-  const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
   // Verify caller is owner of this team
   const { data: team, error: teamError } = await supabaseAdmin
