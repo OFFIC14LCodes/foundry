@@ -85,6 +85,7 @@ function PlanCard({
 
     return (
         <div
+            className="foundry-module-card foundry-panel-in"
             style={{
                 flex: 1,
                 minWidth: 260,
@@ -151,6 +152,7 @@ function PlanCard({
             <button
                 onClick={() => onSelect(planId)}
                 disabled={isCurrent}
+                className={`foundry-btn ${planId === "pro" ? "foundry-btn--primary" : "foundry-btn--secondary"}`}
                 style={{
                     width: "100%",
                     marginTop: 18,
@@ -219,15 +221,16 @@ export default function PaywallScreen({ open, targetStage, access, onManageSubsc
                     </div>
                     <button
                         onClick={onClose}
+                        className="foundry-btn foundry-btn--ghost"
                         style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "10px 14px", color: "#C8C4BE", fontSize: 12, cursor: "pointer", height: "fit-content" }}
                     >
                         Close
                     </button>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.3fr) minmax(300px, 0.7fr)", gap: 18, alignItems: "start" }}>
+                <div className="foundry-paywall-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.3fr) minmax(300px, 0.7fr)", gap: 18, alignItems: "start" }}>
                     <div>
-                        <div style={{ background: "linear-gradient(180deg, rgba(232,98,42,0.08), rgba(255,255,255,0.03))", border: "1px solid rgba(232,98,42,0.16)", borderRadius: 22, padding: 22, marginBottom: 18, textAlign: "center" }}>
+                        <div className="foundry-command-panel" style={{ padding: 22, marginBottom: 18, textAlign: "center" }}>
                             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 14, justifyContent: "center" }}>
                                 <div style={{ fontSize: 11, color: "#F5A843", background: "rgba(245,168,67,0.1)", border: "1px solid rgba(245,168,67,0.24)", borderRadius: 999, padding: "5px 10px" }}>
                                     Stage 1 remains free
@@ -286,7 +289,7 @@ export default function PaywallScreen({ open, targetStage, access, onManageSubsc
                             />
                         </div>
 
-                        <div style={{ marginTop: 18, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, padding: 20, textAlign: "center" }}>
+                        <div className="foundry-module-card" style={{ marginTop: 18, padding: 20, textAlign: "center" }}>
                             <div style={{ fontSize: 11, color: "#666", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>
                                 Plan Comparison
                             </div>
@@ -314,7 +317,7 @@ export default function PaywallScreen({ open, targetStage, access, onManageSubsc
                     </div>
 
                     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                        <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, padding: 18, textAlign: "center" }}>
+                        <div className="foundry-module-card" style={{ padding: 18, textAlign: "center" }}>
                             <div style={{ fontSize: 11, color: "#666", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>
                                 Current Access
                             </div>
@@ -331,7 +334,7 @@ export default function PaywallScreen({ open, targetStage, access, onManageSubsc
                             )}
                         </div>
 
-                        <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, padding: 18, textAlign: "center" }}>
+                        <div className="foundry-module-card" style={{ padding: 18, textAlign: "center" }}>
                             <div style={{ fontSize: 11, color: "#666", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>
                                 Team Add-On
                             </div>
@@ -361,7 +364,7 @@ export default function PaywallScreen({ open, targetStage, access, onManageSubsc
                             </div>
                         </div>
 
-                        <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, padding: 18, textAlign: "center" }}>
+                        <div className="foundry-module-card" style={{ padding: 18, textAlign: "center" }}>
                             <div style={{ fontSize: 11, color: "#666", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>
                                 Access Rules
                             </div>
@@ -369,7 +372,7 @@ export default function PaywallScreen({ open, targetStage, access, onManageSubsc
                                 {getPaidStageBlockNote(access)}
                             </div>
                             <div style={{ fontSize: 12, color: "#A8A4A0", lineHeight: 1.7, marginTop: 10 }}>
-                                Admin-managed states are respected here too: comped access, family access, suspension, cancellation windows, and manually granted plans all flow through the same access layer.
+                                Your current access, cancellation window, and any granted plan updates are reflected automatically.
                             </div>
                             <div style={{ fontSize: 12, color: "#A8A4A0", lineHeight: 1.7, marginTop: 10 }}>
                                 Refund policy: {REFUND_POLICY.summary}
@@ -380,6 +383,7 @@ export default function PaywallScreen({ open, targetStage, access, onManageSubsc
                             {currentPaidPlan && (
                                 <button
                                     onClick={onManageSubscription}
+                                    className="foundry-btn foundry-btn--secondary"
                                     style={{
                                         marginTop: 14,
                                         padding: "10px 14px",
@@ -398,7 +402,7 @@ export default function PaywallScreen({ open, targetStage, access, onManageSubsc
                         </div>
 
                         {(message || billingMessage) && (
-                            <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, padding: 18, fontSize: 12, color: "#C8C4BE", lineHeight: 1.6, textAlign: "center" }}>
+                            <div className="foundry-module-card" style={{ padding: 18, fontSize: 12, color: "#C8C4BE", lineHeight: 1.6, textAlign: "center" }}>
                                 {loadingPlan ? "Preparing checkout..." : (message || billingMessage)}
                             </div>
                         )}

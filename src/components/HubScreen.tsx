@@ -292,6 +292,10 @@ export default function HubScreen({
     const currentStage = profile.currentStage || 1;
     const revisitingStage = furthestStageReached > currentStage;
     const nextReachedStage = revisitingStage ? currentStage + 1 : null;
+    const currentStageData = STAGES_DATA[currentStage - 1] || STAGES_DATA[0];
+    const currentStageCompleted = completedByStage[currentStage] || [];
+    const nextMilestone = currentStageData.milestones.find((milestone: { id: string; label: string }) => !currentStageCompleted.includes(milestone.id));
+    const currentStagePct = Math.round((currentStageCompleted.length / Math.max(currentStageData.milestones.length, 1)) * 100);
     const businessSummary = summarizeBusinessIdea(profile.businessName, profile.idea, 10);
     const businessHealth = getBusinessHealth(profile, completedByStage, marketReport, financialSummary);
     const isStageGoalsComplete = (stage: (typeof STAGES_DATA)[number]) =>
@@ -373,34 +377,90 @@ export default function HubScreen({
 
             <div className="hub-content">
                 <div
+                    className="foundry-command-panel foundry-panel-in"
                     style={{
                         marginBottom: 16,
+                        padding: "18px 18px 16px",
                         opacity: mounted ? 1 : 0,
                         transform: mounted ? "translateY(0)" : "translateY(8px)",
-                        transition: "all 0.5s ease",
+                        transition: "all 0.5s var(--foundry-ease)",
                     }}
                 >
-                    <div
-                        style={{
-                            fontSize: 22,
-                            fontFamily: "'Playfair Display', Georgia, serif",
-                            fontWeight: 700,
-                            color: "#F0EDE8",
-                            lineHeight: 1.2,
-                            marginBottom: 4,
-                        }}
-                    >
-                        Welcome back, {profile.name}
+                    <div className="foundry-label" style={{ marginBottom: 12, color: "var(--foundry-orange)" }}>
+                        Today in Foundry
                     </div>
-                    <div
-                        style={{
-                            fontSize: 13,
-                            color: "#666",
-                            fontFamily: "'Lora', Georgia, serif",
-                            fontStyle: "italic",
-                        }}
-                    >
-                        {businessSummary}
+                    <div className="foundry-hub-command-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 16, alignItems: "start" }}>
+                        <div style={{ minWidth: 0 }}>
+                            <div
+                                style={{
+                                    fontSize: 24,
+                                    fontFamily: "'Playfair Display', Georgia, serif",
+                                    fontWeight: 700,
+                                    color: "var(--foundry-text-primary)",
+                                    lineHeight: 1.12,
+                                    marginBottom: 8,
+                                }}
+                            >
+                                Welcome back, {profile.name}
+                            </div>
+                            <div
+                                style={{
+                                    fontSize: 13,
+                                    color: "var(--foundry-text-secondary)",
+                                    fontFamily: "'DM Sans', system-ui, sans-serif",
+                                    lineHeight: 1.7,
+                                    maxWidth: 680,
+                                }}
+                            >
+                                {businessSummary}
+                            </div>
+                            <div
+                                style={{
+                                    marginTop: 14,
+                                    padding: "12px 13px",
+                                    borderRadius: "var(--foundry-radius-card)",
+                                    background: "rgba(255,255,255,0.028)",
+                                    border: "1px solid rgba(255,255,255,0.07)",
+                                }}
+                            >
+                                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 8 }}>
+                                    <div className="foundry-label" style={{ color: "var(--foundry-text-muted)" }}>
+                                        Stage {currentStage} · {currentStageData.label}
+                                    </div>
+                                    <div className="foundry-font-ui" style={{ fontSize: 12, color: "var(--foundry-ember)", fontWeight: 700 }}>
+                                        {currentStagePct}%
+                                    </div>
+                                </div>
+                                <div style={{ height: 5, borderRadius: 999, background: "rgba(255,255,255,0.06)", overflow: "hidden", marginBottom: 10 }}>
+                                    <div
+                                        className="foundry-progress-fill"
+                                        style={{
+                                            height: "100%",
+                                            width: `${currentStagePct}%`,
+                                            borderRadius: 999,
+                                            background: "linear-gradient(90deg, var(--foundry-orange), var(--foundry-ember))",
+                                        }}
+                                    />
+                                </div>
+                                <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.65 }}>
+                                    {nextMilestone
+                                        ? `Next best action: ${nextMilestone.label}`
+                                        : currentStageData.mission}
+                                </div>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => onEnterStage(currentStage)}
+                            className="foundry-btn foundry-btn--primary"
+                            style={{
+                                padding: "11px 15px",
+                                fontSize: 12,
+                                whiteSpace: "nowrap",
+                                alignSelf: "start",
+                            }}
+                        >
+                            Continue Stage {currentStage}
+                        </button>
                     </div>
                 </div>
 

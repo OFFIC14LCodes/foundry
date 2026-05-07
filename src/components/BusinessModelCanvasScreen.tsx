@@ -84,11 +84,12 @@ export default function BusinessModelCanvasScreen({
     };
 
     return (
-        <div style={{ position: "fixed", inset: 0, background: "#080809", color: "#F0EDE8", zIndex: 80, display: "flex", flexDirection: "column" }}>
-            <div style={{ padding: "14px 18px", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ position: "fixed", inset: 0, background: "var(--foundry-bg-app)", color: "var(--foundry-text-primary)", zIndex: 80, display: "flex", flexDirection: "column" }}>
+            <div style={{ padding: "14px 18px", borderBottom: "1px solid var(--foundry-border-subtle)", display: "flex", alignItems: "center", gap: 12 }}>
                 <button
+                    className="foundry-btn foundry-btn--ghost"
                     onClick={onOpenNav}
-                    style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "8px 11px", color: "#F0EDE8", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                    style={{ padding: "8px 11px", display: "flex", alignItems: "center", justifyContent: "center" }}
                 >
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg>
                 </button>
@@ -101,8 +102,9 @@ export default function BusinessModelCanvasScreen({
                 </div>
                 <div style={{ marginLeft: "auto", display: "flex", gap: 8, flexWrap: "wrap" }}>
                     <button
+                        className="foundry-btn foundry-btn--secondary"
                         onClick={() => printBusinessModelCanvasPdf(canvas, profile)}
-                        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "8px 14px", color: "#F0EDE8", cursor: "pointer", fontSize: 12 }}
+                        style={{ padding: "8px 14px", fontSize: 12 }}
                     >
                         Export PDF
                     </button>
@@ -118,7 +120,7 @@ export default function BusinessModelCanvasScreen({
                                 <HelpTooltip content="This canvas is a live strategic system, not a blank template. Use Add via Forge whenever a section feels thin, vague, or under pressure." />
                             </div>
                         </div>
-                        <div style={{ minWidth: 260, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: 14 }}>
+                        <div className="foundry-module-card" style={{ minWidth: 260, padding: 14 }}>
                             <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
                                 <div style={{ fontSize: 11, color: "rgba(240,237,232,0.45)", textTransform: "uppercase", letterSpacing: "0.12em" }}>Weak spots</div>
                                 <HelpTooltip content={weaknessLookup.size === 0
@@ -139,16 +141,16 @@ export default function BusinessModelCanvasScreen({
                             const weakness = weaknessLookup.get(section);
                             return (
                                 <button
+                                    className="foundry-module-card foundry-interactive"
                                     key={section}
                                     onClick={() => setSelectedSection(section)}
                                     style={{
                                         textAlign: "left",
                                         minHeight: 188,
-                                        background: "rgba(255,255,255,0.025)",
+                                        background: undefined,
                                         border: weakness
-                                            ? "1px solid rgba(232,98,42,0.25)"
-                                            : "1px solid rgba(255,255,255,0.07)",
-                                        borderRadius: 16,
+                                            ? "1px solid rgba(217,177,93,0.28)"
+                                            : undefined,
                                         padding: 16,
                                         cursor: "pointer",
                                         display: "flex",
@@ -158,13 +160,13 @@ export default function BusinessModelCanvasScreen({
                                 >
                                     <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start" }}>
                                         <div>
-                                            <div style={{ fontSize: 11, color: weakness ? "#E8622A" : "rgba(240,237,232,0.45)", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 5 }}>
+                                            <div style={{ fontSize: 11, color: weakness ? "var(--foundry-semantic-warning)" : "var(--foundry-text-muted)", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 5 }}>
                                                 {entries.length} {entries.length === 1 ? "entry" : "entries"}
                                             </div>
                                             <div style={{ fontSize: 20, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, lineHeight: 1.15 }}>{BUSINESS_MODEL_CANVAS_LABELS[section]}</div>
                                         </div>
                                         {weakness && (
-                                            <div style={{ fontSize: 10, color: "#E8622A", background: "rgba(232,98,42,0.12)", border: "1px solid rgba(232,98,42,0.22)", borderRadius: 999, padding: "5px 8px", whiteSpace: "nowrap" }}>
+                                            <div style={{ fontSize: 10, color: "var(--foundry-semantic-warning)", background: "rgba(217,177,93,0.1)", border: "1px solid rgba(217,177,93,0.22)", borderRadius: 999, padding: "5px 8px", whiteSpace: "nowrap" }}>
                                                 Needs work
                                             </div>
                                         )}
@@ -199,7 +201,7 @@ export default function BusinessModelCanvasScreen({
             {selectedSection && (
                 <>
                     <div onClick={() => { setSelectedSection(null); setEditingEntryId(null); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.52)", zIndex: 81 }} />
-                    <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "min(760px, calc(100vw - 28px))", maxHeight: "82vh", overflowY: "auto", background: "#0F1012", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, padding: 18, zIndex: 82 }}>
+                    <div className="foundry-modal-surface foundry-panel-in" style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "min(760px, calc(100vw - 28px))", maxHeight: "82vh", overflowY: "auto", padding: 18, zIndex: 82 }}>
                         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", marginBottom: 14, flexWrap: "wrap" }}>
                             <div style={{ flex: 1, minWidth: 200 }}>
                                 <div style={{ fontSize: 11, color: "rgba(240,237,232,0.45)", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 5 }}>Canvas Section</div>
@@ -209,8 +211,9 @@ export default function BusinessModelCanvasScreen({
                                 </div>
                             </div>
                             <button
+                                className="foundry-btn foundry-btn--primary"
                                 onClick={() => onAddViaForge(selectedSection)}
-                                style={{ background: "rgba(232,98,42,0.12)", border: "1px solid rgba(232,98,42,0.22)", borderRadius: 10, padding: "10px 14px", color: "#E8622A", cursor: "pointer", fontWeight: 600, fontSize: 12, whiteSpace: "nowrap" }}
+                                style={{ padding: "10px 14px", fontSize: 12, whiteSpace: "nowrap" }}
                             >
                                 Add via Forge
                             </button>
@@ -227,12 +230,12 @@ export default function BusinessModelCanvasScreen({
                                 />
                             )}
                             {selectedEntries.length === 0 && (
-                                <div style={{ padding: 14, borderRadius: 12, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)", fontSize: 13, color: "#9D978E", lineHeight: 1.7 }}>
+                                <div className="foundry-control-surface" style={{ padding: 14, fontSize: 13, color: "#9D978E", lineHeight: 1.7 }}>
                                     There is nothing solid here yet. Use Forge to pressure-test this section instead of filling it like a worksheet.
                                 </div>
                             )}
                             {selectedEntries.map((entry) => (
-                                <div key={entry.id} style={{ padding: 14, borderRadius: 12, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                                <div className="foundry-control-surface" key={entry.id} style={{ padding: 14 }}>
                                     {editingEntryId === entry.id ? (
                                         <>
                                             <textarea
@@ -242,10 +245,10 @@ export default function BusinessModelCanvasScreen({
                                                 style={{ width: "100%", resize: "vertical", background: "rgba(0,0,0,0.22)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#F0EDE8", padding: 12, fontFamily: "inherit", fontSize: 13, lineHeight: 1.6 }}
                                             />
                                             <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                                                <button onClick={handleSave} disabled={saving || !editingText.trim()} style={{ background: "rgba(76,175,138,0.14)", border: "1px solid rgba(76,175,138,0.25)", borderRadius: 8, padding: "8px 12px", color: "#4CAF8A", cursor: saving ? "default" : "pointer", fontSize: 12 }}>
+                                                <button className="foundry-btn foundry-btn--success" onClick={handleSave} disabled={saving || !editingText.trim()} style={{ padding: "8px 12px", cursor: saving ? "default" : "pointer", fontSize: 12 }}>
                                                     {saving ? "Saving..." : "Save"}
                                                 </button>
-                                                <button onClick={() => { setEditingEntryId(null); setEditingText(""); }} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "8px 12px", color: "#A8A4A0", cursor: "pointer", fontSize: 12 }}>
+                                                <button className="foundry-btn foundry-btn--ghost" onClick={() => { setEditingEntryId(null); setEditingText(""); }} style={{ padding: "8px 12px", fontSize: 12 }}>
                                                     Cancel
                                                 </button>
                                             </div>
@@ -254,10 +257,10 @@ export default function BusinessModelCanvasScreen({
                                         <>
                                             <div style={{ fontSize: 14, color: "#F0EDE8", lineHeight: 1.7 }}>{entry.text}</div>
                                             <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
-                                                <button onClick={() => beginEdit(entry.id, entry.text)} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "8px 12px", color: "#F0EDE8", cursor: "pointer", fontSize: 12 }}>
+                                                <button className="foundry-btn foundry-btn--secondary" onClick={() => beginEdit(entry.id, entry.text)} style={{ padding: "8px 12px", fontSize: 12 }}>
                                                     Edit
                                                 </button>
-                                                <button onClick={() => onDeleteEntry(selectedSection, entry.id)} style={{ background: "rgba(232,98,42,0.1)", border: "1px solid rgba(232,98,42,0.2)", borderRadius: 8, padding: "8px 12px", color: "#E8622A", cursor: "pointer", fontSize: 12 }}>
+                                                <button className="foundry-btn foundry-btn--danger" onClick={() => onDeleteEntry(selectedSection, entry.id)} style={{ padding: "8px 12px", fontSize: 12 }}>
                                                     Delete
                                                 </button>
                                             </div>

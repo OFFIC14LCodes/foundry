@@ -397,7 +397,7 @@ export default function MarketIntelligenceScreen({
         setStreamedContent("");
         setSaveError(null);
         let searchResults: SearchResult[] = [];
-        let searchQueries: string[] = buildSearchQueries(profile);
+        const searchQueries: string[] = buildSearchQueries(profile);
 
         try {
             try {
@@ -504,8 +504,8 @@ export default function MarketIntelligenceScreen({
                 </div>
 
                 {alertItems.length > 0 && (
-                    <div style={{ marginBottom: 14, padding: "12px 14px", borderRadius: 12, background: "rgba(232,98,42,0.08)", border: "1px solid rgba(232,98,42,0.22)", color: "#D8C9BC", fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, lineHeight: 1.6 }}>
-                        <strong style={{ color: "#E8622A" }}>New since last report:</strong> {alertItems.join(", ")}
+                    <div className="foundry-module-card" style={{ marginBottom: 14, padding: "12px 14px", background: "rgba(99,179,237,0.07)", border: "1px solid rgba(99,179,237,0.2)", color: "#D8C9BC", fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, lineHeight: 1.6 }}>
+                        <strong style={{ color: "var(--foundry-semantic-intelligence)" }}>New since last report:</strong> {alertItems.join(", ")}
                         {newCompetitorsSinceLastReport.length + highImpactTrendAlerts.length > alertItems.length ? " and more" : ""}
                     </div>
                 )}
@@ -516,7 +516,7 @@ export default function MarketIntelligenceScreen({
                 )}
 
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, margin: "0 0 14px", flexWrap: "wrap" }}>
-                    <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 11px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.025)", cursor: scheduleSaving ? "wait" : "pointer" }}>
+                    <label className="foundry-control-surface foundry-interactive" style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 11px", cursor: scheduleSaving ? "wait" : "pointer" }}>
                         <input
                             type="checkbox"
                             checked={scheduleEnabled}
@@ -533,18 +533,13 @@ export default function MarketIntelligenceScreen({
                     </label>
                     {showDevRerunControl && (
                         <button
+                            className="foundry-btn foundry-btn--primary"
                             onClick={() => generate({ force: true, ignoreLimit: true })}
                             disabled={generating}
                             style={{
-                                background: generating ? "rgba(255,255,255,0.04)" : "rgba(232,98,42,0.1)",
-                                border: generating ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(232,98,42,0.22)",
-                                borderRadius: 9,
                                 padding: "7px 11px",
-                                color: generating ? "#555" : "#E8622A",
                                 fontSize: 11,
-                                fontWeight: 700,
                                 cursor: generating ? "default" : "pointer",
-                                fontFamily: "'DM Sans', system-ui, sans-serif",
                             }}
                         >
                             {generating ? "Rerunning..." : "Dev: Rerun Report"}
@@ -569,9 +564,9 @@ export default function MarketIntelligenceScreen({
                                 fontSize: 12,
                                 color: "#F5A843",
                                 lineHeight: 1.7,
-                                background: "rgba(245,168,67,0.05)",
-                                border: "1px solid rgba(245,168,67,0.15)",
-                                borderRadius: 12,
+                                background: "rgba(217,177,93,0.07)",
+                                border: "1px solid rgba(217,177,93,0.18)",
+                                borderRadius: "var(--foundry-radius-card)",
                                 padding: "14px 16px",
                             }}>
                                 {structuredError}

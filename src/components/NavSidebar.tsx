@@ -1,4 +1,4 @@
-import { House, Archive, Zap, Coins, Map, BarChart3 } from "lucide-react";
+import { House, Archive, Zap, Map, BarChart3 } from "lucide-react";
 import { Icons } from "../icons";
 import Logo from "./Logo";
 import type { ReactNode } from "react";
@@ -40,6 +40,7 @@ function NavItem({
     return (
         <button
             onClick={onClick}
+            className="foundry-interactive"
             style={{
                 width: "100%",
                 display: "flex",
@@ -49,11 +50,12 @@ function NavItem({
                 background: "transparent",
                 border: "none",
                 borderLeft: "2px solid transparent",
-                color: "rgba(240,237,232,0.65)",
+                color: "var(--foundry-text-secondary)",
                 fontSize: 13,
                 cursor: "pointer",
                 textAlign: "left",
-                fontFamily: "'Lora', Georgia, serif",
+                fontFamily: "'DM Sans', system-ui, sans-serif",
+                fontWeight: 650,
                 transition: "color 0.15s, background 0.15s",
                 position: "relative",
                 boxSizing: "border-box",
@@ -63,7 +65,7 @@ function NavItem({
                 e.currentTarget.style.background = "rgba(255,255,255,0.04)";
             }}
             onMouseLeave={e => {
-                e.currentTarget.style.color = "rgba(240,237,232,0.65)";
+                e.currentTarget.style.color = "var(--foundry-text-secondary)";
                 e.currentTarget.style.background = "transparent";
             }}
         >
@@ -151,7 +153,7 @@ export default function NavSidebar({
                 bottom: 0,
                 width: 272,
                 zIndex: 301,
-                background: "#0E0E10",
+                    background: "var(--foundry-surface-primary)",
                 borderRight: "1px solid rgba(255,255,255,0.08)",
                 transform: open ? "translateX(0)" : "translateX(-100%)",
                 transition: "transform 0.32s cubic-bezier(0.16,1,0.3,1)",
@@ -170,10 +172,11 @@ export default function NavSidebar({
                 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <Logo variant="flame" style={{ width: 16, height: 16, objectFit: "contain" }} />
-                        <span style={{ fontSize: 15, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>Foundry</span>
+                        <span style={{ fontSize: 15, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "var(--foundry-text-primary)" }}>Foundry</span>
                     </div>
                     <button
                         onClick={onClose}
+                        className="foundry-btn foundry-btn--ghost"
                         style={{
                             background: "rgba(255,255,255,0.06)",
                             border: "1px solid rgba(255,255,255,0.08)",
@@ -192,10 +195,10 @@ export default function NavSidebar({
                 {/* Business info */}
                 {profile && (
                     <div style={{ padding: "12px 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0 }}>
-                        <div style={{ fontSize: 14, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", lineHeight: 1.2, marginBottom: 2 }}>
+                        <div style={{ fontSize: 14, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "var(--foundry-text-primary)", lineHeight: 1.2, marginBottom: 2 }}>
                             {profile.businessName || (profile.idea ? profile.idea.slice(0, 32) + (profile.idea.length > 32 ? "…" : "") : "Your Business")}
                         </div>
-                        <div style={{ fontSize: 11, color: "#555", fontFamily: "'DM Sans', sans-serif" }}>
+                        <div style={{ fontSize: 11, color: "var(--foundry-text-muted)", fontFamily: "'DM Sans', sans-serif" }}>
                             {profile.strategyLabel || `Stage ${profile.currentStage}`}
                         </div>
                     </div>

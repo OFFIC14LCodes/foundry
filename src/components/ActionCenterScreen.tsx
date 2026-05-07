@@ -167,9 +167,9 @@ export default function ActionCenterScreen({ userId, onBack, onOpenNav, onAskFor
     };
 
     return (
-        <div style={{ position: "fixed", inset: 0, zIndex: 130, background: "#080809", color: "#F0EDE8", fontFamily: "'Lora', Georgia, serif", display: "flex", flexDirection: "column" }}>
-            <div style={{ padding: "max(12px, calc(7px + env(safe-area-inset-top))) 16px 12px", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: 12, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)" }}>
-                <button onClick={onOpenNav ?? onBack} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "8px 11px", color: "#F0EDE8", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 130, background: "var(--foundry-bg-app)", color: "var(--foundry-text-primary)", fontFamily: "'Lora', Georgia, serif", display: "flex", flexDirection: "column" }}>
+            <div style={{ padding: "max(12px, calc(7px + env(safe-area-inset-top))) 16px 12px", borderBottom: "1px solid var(--foundry-border-subtle)", display: "flex", alignItems: "center", gap: 12, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)" }}>
+                <button className="foundry-btn foundry-btn--ghost" onClick={onOpenNav ?? onBack} style={{ padding: "8px 11px", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg>
                 </button>
                 <Logo variant="flame" style={{ width: 34, height: 34, objectFit: "contain" }} />
@@ -190,7 +190,7 @@ export default function ActionCenterScreen({ userId, onBack, onOpenNav, onAskFor
                         <Metric label="Dismissed" value={counts.dismissed} />
                     </div>
 
-                    <div style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: 12, display: "grid", gap: 10 }}>
+                    <div className="foundry-module-card" style={{ padding: 12, display: "grid", gap: 10 }}>
                         <FilterRow label="Status" value={statusFilter} options={statusOptions} onChange={(value) => setStatusFilter(value as FoundryActionStatus | "all")} />
                         <FilterRow label="Priority" value={priorityFilter} options={priorityOptions} onChange={(value) => setPriorityFilter(value as FoundryActionPriority | "all")} />
                         <FilterRow label="Source" value={moduleFilter} options={moduleOptions} onChange={(value) => setModuleFilter(value as FoundryActionSourceModule | "all")} />
@@ -199,15 +199,15 @@ export default function ActionCenterScreen({ userId, onBack, onOpenNav, onAskFor
                     {loading ? (
                         <div style={{ color: "#77716A", fontSize: 13, padding: 24 }}>Loading actions...</div>
                     ) : error ? (
-                        <div style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 18, padding: 22 }}>
+                        <div className="foundry-module-card" style={{ padding: 22 }}>
                             <div style={{ fontSize: 22, fontWeight: 800, color: "#F0EDE8", marginBottom: 8 }}>Actions did not load</div>
                             <div style={{ fontSize: 13, color: "#9D978E", lineHeight: 1.7, marginBottom: 14 }}>{error}</div>
-                            <button type="button" onClick={reload} style={{ border: "1px solid rgba(232,98,42,0.32)", background: "rgba(232,98,42,0.12)", color: "#E8622A", borderRadius: 999, padding: "8px 12px", fontSize: 12, cursor: "pointer", fontWeight: 800 }}>
+                            <button className="foundry-btn foundry-btn--primary" type="button" onClick={reload} style={{ padding: "8px 12px", fontSize: 12 }}>
                                 Retry
                             </button>
                         </div>
                     ) : filteredActions.length === 0 ? (
-                        <div style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 18, padding: 22 }}>
+                        <div className="foundry-module-card" style={{ padding: 22 }}>
                             <div style={{ fontSize: 22, fontWeight: 800, color: "#F0EDE8", marginBottom: 8 }}>{actions.length === 0 ? "No actions yet" : "No actions match these filters"}</div>
                             <HelpTooltip content={actions.length === 0
                                 ? "Actions start inside Market Intelligence, Weekly Intelligence, Forge Academy, and the Business Model Canvas. Look for the next-action card when an insight needs a decision or follow-up."
@@ -265,7 +265,7 @@ export default function ActionCenterScreen({ userId, onBack, onOpenNav, onAskFor
                                                             <OutcomeButton label="Yes" tone="success" onClick={() => saveOutcome(action, "success")} />
                                                             <OutcomeButton label="Partially" tone="partial" onClick={() => saveOutcome(action, "partial")} />
                                                             <OutcomeButton label="No" tone="failed" onClick={() => saveOutcome(action, "failed")} />
-                                                            <button type="button" onClick={() => { setPendingOutcomeActionId(null); setOutcomeNotes(""); }} style={{ border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.035)", color: "#9D978E", borderRadius: 999, padding: "7px 10px", fontSize: 12, cursor: "pointer", fontWeight: 800 }}>
+                                                            <button className="foundry-btn foundry-btn--ghost" type="button" onClick={() => { setPendingOutcomeActionId(null); setOutcomeNotes(""); }} style={{ padding: "7px 10px", fontSize: 12 }}>
                                                                 Skip
                                                             </button>
                                                         </div>
@@ -291,7 +291,7 @@ function OutcomeButton({ label, tone, onClick }: { label: string; tone: "success
         failed: { border: "1px solid rgba(240,93,94,0.32)", background: "rgba(240,93,94,0.12)", color: "#F05D5E" },
     };
     return (
-        <button type="button" onClick={onClick} style={{ ...styles[tone], borderRadius: 999, padding: "7px 10px", fontSize: 12, cursor: "pointer", fontWeight: 800 }}>
+        <button className="foundry-interactive" type="button" onClick={onClick} style={{ ...styles[tone], borderRadius: 999, padding: "7px 10px", fontSize: 12, cursor: "pointer", fontWeight: 800 }}>
             {label}
         </button>
     );
@@ -314,7 +314,7 @@ function getStatusDescription(status: FoundryActionStatus) {
 
 function Metric({ label, value }: { label: string; value: number }) {
     return (
-        <div style={{ background: "rgba(255,255,255,0.035)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: "13px 14px" }}>
+        <div className="foundry-module-card foundry-panel-in" style={{ padding: "13px 14px" }}>
             <div style={{ fontSize: 11, color: "#8D857C", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 5, fontFamily: "'DM Sans', system-ui, sans-serif", fontWeight: 800 }}>{label}</div>
             <div style={{ fontSize: 24, color: "#F0EDE8", fontWeight: 900 }}>{value}</div>
         </div>
@@ -330,6 +330,7 @@ function FilterRow({ label, value, options, onChange }: { label: string; value: 
                     key={option}
                     type="button"
                     onClick={() => onChange(option)}
+                    className="foundry-interactive"
                     style={{
                         borderRadius: 999,
                         border: value === option ? "1px solid rgba(232,98,42,0.3)" : "1px solid rgba(255,255,255,0.08)",

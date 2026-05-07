@@ -1856,9 +1856,9 @@ function GlossaryView({ terms, loading }: { terms: GlossaryTerm[]; loading: bool
 
 function AcademyShell({ children, onBack, onOpenNav, onOpenArchive }: { children: ReactNode; onBack: () => void; onOpenNav?: () => void; onOpenArchive?: () => void }) {
     return (
-        <div style={{ position: "fixed", inset: 0, zIndex: 110, background: "#080809", color: "#F0EDE8", display: "flex", flexDirection: "column", fontFamily: "'Lora', Georgia, serif" }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 110, background: "var(--foundry-bg-app)", color: "var(--foundry-text-primary)", display: "flex", flexDirection: "column", fontFamily: "'Lora', Georgia, serif" }}>
             <div style={{ padding: "max(14px, calc(10px + env(safe-area-inset-top))) 18px 12px", borderBottom: border, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(16px)", display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
-                <button onClick={onOpenNav ?? onBack} style={{ background: "rgba(255,255,255,0.05)", border, borderRadius: 9, padding: "var(--foundry-app-header-button-padding)", color: "#C8C4BE", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <button className="foundry-btn foundry-btn--ghost" onClick={onOpenNav ?? onBack} style={{ padding: "var(--foundry-app-header-button-padding)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg>
                 </button>
                 <div style={{ width: 34, height: 34, borderRadius: 12, background: "rgba(232,98,42,0.12)", border: "1px solid rgba(232,98,42,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -1870,8 +1870,9 @@ function AcademyShell({ children, onBack, onOpenNav, onOpenArchive }: { children
                 </div>
                 {onOpenArchive && (
                     <button
+                        className="foundry-btn foundry-btn--primary"
                         onClick={onOpenArchive}
-                        style={{ background: "rgba(232,98,42,0.08)", border: "1px solid rgba(232,98,42,0.2)", borderRadius: 9, padding: "var(--foundry-app-header-button-padding)", color: "#E8622A", fontSize: "var(--foundry-app-header-button-font)", fontFamily: "'DM Sans', sans-serif", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}
+                        style={{ padding: "var(--foundry-app-header-button-padding)", fontSize: "var(--foundry-app-header-button-font)", display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}
                     >
                         <Archive size={"var(--foundry-app-header-icon-size)"} />
                         Archive

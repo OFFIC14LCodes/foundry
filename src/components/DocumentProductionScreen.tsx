@@ -131,6 +131,7 @@ function ModeTabs({
             ] as const).map((tab) => (
                 <button
                     key={tab.id}
+                    className="foundry-interactive"
                     onClick={() => onChange(tab.id)}
                     style={{
                         padding: "8px 14px",
@@ -141,7 +142,7 @@ function ModeTabs({
                         fontSize: 12,
                         fontWeight: mode === tab.id ? 700 : 500,
                         cursor: "pointer",
-                        fontFamily: "'Lora', Georgia, serif",
+                        fontFamily: "'DM Sans', system-ui, sans-serif",
                     }}
                 >
                     {tab.label}

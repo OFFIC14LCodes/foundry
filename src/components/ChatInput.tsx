@@ -128,12 +128,11 @@ export default function ChatInput({
 
             {/* Input row */}
             <div
+                className="foundry-control-surface"
                 style={{
                     display: "flex",
                     gap: 10,
                     alignItems: "flex-end",
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.08)",
                     borderRadius: 14,
                     padding: "10px 12px 10px 10px",
                 }}
@@ -143,6 +142,7 @@ export default function ChatInput({
                     <button
                         onClick={() => fileInputRef.current?.click()}
                         title="Attach file"
+                        className="foundry-interactive"
                         style={{
                             background: "none",
                             border: "none",
@@ -217,6 +217,7 @@ export default function ChatInput({
                 <button
                     onClick={onSend}
                     disabled={!canSend}
+                    className="foundry-btn"
                     style={{
                         width: 34,
                         height: 34,

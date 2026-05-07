@@ -797,11 +797,11 @@ Be the partner who has been watching the whole time.`;
     };
 
     return (
-        <div style={{ position: "fixed", inset: 0, background: "rgb(8,8,9)", color: "#F0EDE8", zIndex: 1000, display: "flex", flexDirection: "column", overflowY: "auto" }}>
+        <div style={{ position: "fixed", inset: 0, background: "var(--foundry-bg-app)", color: "var(--foundry-text-primary)", zIndex: 1000, display: "flex", flexDirection: "column", overflowY: "auto" }}>
 
             {/* ── Header ──────────────────────────────────────────────────────── */}
-            <div style={{ position: "sticky", top: 0, zIndex: 10, background: "rgb(8,8,9)", borderBottom: "1px solid rgba(255,255,255,0.06)", padding: "14px 20px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                <button onClick={onOpenNav ?? onBack} style={{ background: "none", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "6px 10px", color: "#A8A4A0", fontSize: 12, cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ position: "sticky", top: 0, zIndex: 10, background: "rgba(8,8,9,0.95)", borderBottom: "1px solid var(--foundry-border-subtle)", padding: "14px 20px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", backdropFilter: "blur(12px)" }}>
+                <button className="foundry-btn foundry-btn--ghost" onClick={onOpenNav ?? onBack} style={{ padding: "6px 10px", fontSize: 12, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg>
                 </button>
                 <div style={{ fontSize: 17, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: "#F0EDE8", flex: 1 }}>
@@ -809,14 +809,16 @@ Be the partner who has been watching the whole time.`;
                 </div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     <button
+                        className="foundry-btn foundry-btn--primary"
                         onClick={openMonthlyClose}
-                        style={{ background: "rgba(232,98,42,0.15)", border: "1px solid rgba(232,98,42,0.4)", borderRadius: 8, padding: "7px 13px", color: "#E8622A", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', system-ui, sans-serif" }}
+                        style={{ padding: "7px 13px", fontSize: 12 }}
                     >
                         Monthly Close
                     </button>
                     <button
+                        className="foundry-btn foundry-btn--secondary"
                         onClick={handleExportCsv}
-                        style={{ background: "none", border: "1px solid rgba(240,237,232,0.2)", borderRadius: 8, padding: "7px 13px", color: "#F0EDE8", fontSize: 12, cursor: "pointer", fontFamily: "'DM Sans', system-ui, sans-serif" }}
+                        style={{ padding: "7px 13px", fontSize: 12 }}
                     >
                         Export CSV
                     </button>
@@ -853,7 +855,7 @@ Be the partner who has been watching the whole time.`;
 
                         {/* ── Estimated Data Banner ──────────────────────────── */}
                         {isEstimated && (
-                            <div style={{ background: "rgba(232,98,42,0.08)", border: "1px solid rgba(232,98,42,0.25)", borderRadius: 10, padding: "14px 16px", marginBottom: 14, display: "flex", alignItems: "flex-start", gap: 10 }}>
+                            <div style={{ background: "rgba(217,177,93,0.08)", border: "1px solid rgba(217,177,93,0.24)", borderRadius: 10, padding: "14px 16px", marginBottom: 14, display: "flex", alignItems: "flex-start", gap: 10 }}>
                                 <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>⚠</span>
                                 <div style={{ flex: 1 }}>
                                     <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>

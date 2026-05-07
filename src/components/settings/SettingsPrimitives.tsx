@@ -17,8 +17,8 @@ export function SettingsScreenShell({
     footer,
 }: SettingsScreenShellProps) {
     return (
-        <div style={{ minHeight: "100vh", background: "#080809", color: "#F0EDE8", fontFamily: "'Lora', Georgia, serif" }}>
-            <div style={{ position: "sticky", top: 0, zIndex: 20, background: "rgba(8,8,9,0.94)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <div style={{ minHeight: "100vh", background: "var(--foundry-bg-app)", color: "var(--foundry-text-primary)", fontFamily: "'Lora', Georgia, serif" }}>
+            <div style={{ position: "sticky", top: 0, zIndex: 20, background: "rgba(8,8,9,0.94)", backdropFilter: "blur(12px)", borderBottom: "1px solid var(--foundry-border-subtle)" }}>
                 <div className="foundry-page settings-shell__header" style={{ paddingTop: "max(18px, calc(10px + env(safe-area-inset-top)))", paddingBottom: 18 }}>
                     <div className="settings-shell__title">
                         <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
@@ -27,9 +27,9 @@ export function SettingsScreenShell({
                         </div>
                     </div>
                     <button
-                        className="settings-shell__back"
+                        className="settings-shell__back foundry-btn foundry-btn--ghost"
                         onClick={onBack}
-                        style={{ padding: "9px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)", color: "#C8C4BE", fontSize: 12, cursor: "pointer" }}
+                        style={{ padding: "9px 14px", fontSize: 12 }}
                     >
                         Back
                     </button>
@@ -70,7 +70,7 @@ type SettingsCardProps = {
 
 export function SettingsCard({ children }: SettingsCardProps) {
     return (
-        <div className="settings-card" style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02))", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 18, padding: 18 }}>
+        <div className="settings-card foundry-module-card" style={{ padding: 18 }}>
             {children}
         </div>
     );
@@ -110,24 +110,22 @@ export function SettingsButton({
     tone?: "default" | "primary" | "danger";
     disabled?: boolean;
 }) {
-    const styles = tone === "primary"
-        ? { background: "linear-gradient(135deg, #E8622A, #c9521e)", color: "#fff", border: "none" }
+    const className = tone === "primary"
+        ? "foundry-btn foundry-btn--primary"
         : tone === "danger"
-            ? { background: "rgba(166,59,36,0.18)", color: "#F5C0B3", border: "1px solid rgba(166,59,36,0.35)" }
-            : { background: "rgba(255,255,255,0.03)", color: "#D8D2C8", border: "1px solid rgba(255,255,255,0.08)" };
+            ? "foundry-btn foundry-btn--danger"
+            : "foundry-btn foundry-btn--secondary";
 
     return (
         <button
+            className={className}
             onClick={onClick}
             disabled={disabled}
             style={{
                 padding: "10px 14px",
-                borderRadius: 10,
                 fontSize: 12,
-                fontWeight: 600,
                 cursor: disabled ? "not-allowed" : "pointer",
                 opacity: disabled ? 0.55 : 1,
-                ...styles,
             }}
         >
             {children}

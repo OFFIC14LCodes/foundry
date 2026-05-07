@@ -169,13 +169,12 @@ export default function AuthScreen({
             }} />
 
             {/* Logo */}
-            <div style={{ textAlign: "center", marginBottom: 40, animation: "fadeSlideUp 0.6s ease" }}>
+            <div className="foundry-auth-brand">
                 <Logo
                     variant="full"
+                    className="foundry-auth-brand-logo"
                     style={{
-                        width: "min(220px, 62vw)",
                         height: "auto",
-                        marginBottom: 14,
                     }}
                 />
                 <div style={{
@@ -193,10 +192,8 @@ export default function AuthScreen({
             </div>
 
             {/* Card */}
-            <div className="foundry-auth-card" style={{
-                background: "rgba(255,255,255,0.02)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                borderRadius: 20, padding: "28px 24px",
+            <div className="foundry-auth-card foundry-modal-surface" style={{
+                padding: "28px 24px",
                 animation: "fadeSlideUp 0.7s ease"
             }}>
 
@@ -249,6 +246,7 @@ export default function AuthScreen({
                                 <button
                                     onClick={handleSetNewPassword}
                                     disabled={loading}
+                                    className="foundry-btn foundry-btn--primary"
                                     style={{
                                         width: "100%", padding: "13px",
                                         background: loading ? "rgba(232,98,42,0.4)" : "linear-gradient(135deg, #E8622A, #c9521e)",
@@ -319,6 +317,7 @@ export default function AuthScreen({
                                 <button
                                     onClick={handleForgotPassword}
                                     disabled={loading}
+                                    className="foundry-btn foundry-btn--primary"
                                     style={{
                                         width: "100%", padding: "13px",
                                         background: loading ? "rgba(232,98,42,0.4)" : "linear-gradient(135deg, #E8622A, #c9521e)",
@@ -369,7 +368,7 @@ export default function AuthScreen({
                         ) : (
                             <>
                                 {/* Google */}
-                                <button onClick={handleGoogle} style={{
+                                <button onClick={handleGoogle} className="foundry-btn foundry-btn--secondary" style={{
                                     width: "100%", padding: "12px", marginBottom: 16,
                                     background: "rgba(255,255,255,0.05)",
                                     border: "1px solid rgba(255,255,255,0.1)",
@@ -452,7 +451,7 @@ export default function AuthScreen({
                                 )}
 
                                 {/* Submit */}
-                                <button onClick={handleEmailAuth} disabled={loading} style={{
+                                <button onClick={handleEmailAuth} disabled={loading} className="foundry-btn foundry-btn--primary" style={{
                                     width: "100%", padding: "13px",
                                     background: loading ? "rgba(232,98,42,0.4)" : "linear-gradient(135deg, #E8622A, #c9521e)",
                                     border: "none", borderRadius: 12, color: "#fff",
