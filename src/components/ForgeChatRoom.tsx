@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getArchivePreviewText, parseArchiveSummaryPayload } from "../lib/archiveSummary";
 import { callForgeAPI, streamForgeAPI } from "../lib/forgeApi";
 import { processFile, buildMessageContent, type AttachedFile } from "../lib/fileAttach";
@@ -14,6 +14,13 @@ import TypingDots from "./TypingDots";
 import Logo from "./Logo";
 import { AnimatedChatText, renderText, MessageActions } from "./AnimatedChatText";
 import MicButton from "./MicButton";
+import ForgeConversationWorkspace from "./ForgeConversationWorkspace";
+import {
+    createConversationWorkspaceSnapshot,
+    normalizeConversationWorkspaceSnapshot,
+    type ConversationWorkspaceSnapshot,
+    type WorkspaceSource,
+} from "../lib/conversationWorkspace";
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -129,6 +136,7 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
     const [activeAcademyEntry, setActiveAcademyEntry] = useState<AcademyTopicLaunch | null>(academyEntry);
     const [activeTrendEntry, setActiveTrendEntry] = useState<MarketTrend | null>(marketIntelEntry);
     const [pastSummaries, setPastSummaries] = useState<{ id: string; title: string; date: string; summary: string }[]>([]);
+    const [workspace, setWorkspace] = useState<ConversationWorkspaceSnapshot | null>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -230,6 +238,39 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
         localStorage.setItem(`trend-chat-${activeTrendEntry.id}`, JSON.stringify(messages));
     }, [messages, activeTrendEntry?.id]);
 
+    const workspaceSource = useMemo<WorkspaceSource>(() => {
+        if (activeAcademyEntry) return { type: "academy", title: activeAcademyEntry.title, stageId: null, contextId: activeAcademyEntry.id };
+        if (activeTrendEntry) return { type: "market", title: activeTrendEntry.name, stageId: null, contextId: activeTrendEntry.id };
+        return { type: "forge", title: null, stageId: Number(profile.currentStage) || 1, contextId: activeArchive?.id ?? null };
+    }, [activeAcademyEntry, activeTrendEntry, profile.currentStage, activeArchive?.id]);
+
+    const workspaceKey = useMemo(() => {
+        if (activeAcademyEntry) return `workspace-academy-${activeAcademyEntry.id}`;
+        if (activeTrendEntry) return `workspace-trend-${activeTrendEntry.id}`;
+        if (activeArchive?.id) return `workspace-archive-${activeArchive.id}`;
+        return `workspace-forge-${userId}`;
+    }, [activeAcademyEntry, activeTrendEntry, activeArchive?.id, userId]);
+
+    useEffect(() => {
+        const saved = localStorage.getItem(workspaceKey);
+        if (saved) {
+            try {
+                setWorkspace(normalizeConversationWorkspaceSnapshot(JSON.parse(saved), workspaceSource));
+                return;
+            } catch { /* fall through */ }
+        }
+        const archived = activeArchive?.workspaceSnapshot ?? null;
+        setWorkspace(archived
+            ? normalizeConversationWorkspaceSnapshot(archived, workspaceSource)
+            : createConversationWorkspaceSnapshot(workspaceSource));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [workspaceKey]);
+
+    useEffect(() => {
+        if (!workspace) return;
+        localStorage.setItem(workspaceKey, JSON.stringify(workspace));
+    }, [workspace, workspaceKey]);
+
     const openSaveArchiveModal = () => {
         const defaultTitle = activeArchive?.title
             || (activeAcademyEntry
@@ -274,6 +315,7 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
                         title,
                         summary: parsed.summary,
                         messageCount: (activeArchive.messageCount || 0) + messages.length,
+                        workspaceSnapshot: workspace,
                     }
                 )
                 : await saveConversationSummary(
@@ -282,7 +324,8 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
                     new Date().toISOString().slice(0, 10),
                     title,
                     parsed.summary,
-                    messages.length
+                    messages.length,
+                    workspace
                 );
 
             if (!saved) return;
@@ -296,6 +339,8 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
             if (activeTrendEntry) {
                 localStorage.removeItem(`trend-chat-${activeTrendEntry.id}`);
             }
+            localStorage.removeItem(workspaceKey);
+            setWorkspace(null);
             setSaveArchiveModalOpen(false);
             setMessages([]);
             setInput("");
@@ -758,22 +803,25 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
                 )}
             </div>
 
-            {/* Messages */}
-            <div
-                ref={scrollRef}
-                style={{
-                    flex: 1,
-                    overflowY: "auto",
-                    padding: "24px 20px 16px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 16,
-                    maxWidth: 760,
-                    width: "100%",
-                    margin: "0 auto",
-                    boxSizing: "border-box",
-                }}
-            >
+            <div className="forge-chat-room__workspace-layout">
+                <div className="forge-chat-room__thread">
+                    {/* Messages */}
+                    <div
+                        ref={scrollRef}
+                        style={{
+                            flex: 1,
+                            minHeight: 0,
+                            overflowY: "auto",
+                            padding: "2px 0 16px",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 16,
+                            maxWidth: 760,
+                            width: "100%",
+                            margin: "0 auto",
+                            boxSizing: "border-box",
+                        }}
+                    >
                 {activeArchive && (
                     <div style={{
                         background: "rgba(76,175,138,0.05)",
@@ -907,22 +955,22 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
                     </div>
                 ))}
 
-            </div>
+                    </div>
 
-            {/* Input Area */}
-            <div style={{
-                padding: "12px 20px max(16px, calc(12px + env(safe-area-inset-bottom)))",
-                borderTop: "1px solid rgba(255,255,255,0.06)",
-                background: "#0C0C0E",
-                flexShrink: 0,
-            }}>
-                <div style={{
-                    maxWidth: 760,
-                    margin: "0 auto",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 8,
-                }}>
+                    {/* Input Area */}
+                    <div style={{
+                        padding: "12px 0 max(16px, calc(12px + env(safe-area-inset-bottom)))",
+                        borderTop: "1px solid rgba(255,255,255,0.06)",
+                        background: "#0C0C0E",
+                        flexShrink: 0,
+                    }}>
+                        <div style={{
+                            maxWidth: 760,
+                            margin: "0 auto",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 8,
+                        }}>
                     {attachedFiles.length > 0 && (
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                             {attachedFiles.map(file => (
@@ -1083,6 +1131,20 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
                     <div style={{ fontSize: 10, color: "#2b2b2b", textAlign: "center" }}>
                         Forge is an AI. Always verify important information before acting on it.
                     </div>
+                        </div>
+                    </div>
+                </div>
+                <div className="forge-chat-room__workspace-column">
+                    <ForgeConversationWorkspace
+                        messages={messages}
+                        loading={loading}
+                        title={activeAcademyEntry ? "Lesson Workspace" : activeTrendEntry ? "Market Workspace" : "Forge Workspace"}
+                        subtitle="Live notes, lesson links, and next steps"
+                        academyEntry={activeAcademyEntry}
+                        source={workspaceSource}
+                        workspace={workspace}
+                        onWorkspaceChange={setWorkspace}
+                    />
                 </div>
             </div>
 

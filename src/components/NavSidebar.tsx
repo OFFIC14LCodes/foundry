@@ -271,40 +271,33 @@ export default function NavSidebar({
                             onClick={onOpenBusinessModelCanvas}
                         />
                         <NavItem
-                            icon={<JournalIcon size={16} />}
-                            label="Journal"
-                            onClick={onOpenJournal}
-                        />
-                        <NavItem
-                            icon={<Archive size={16} />}
-                            label="Archive"
-                            onClick={onOpenArchive}
-                        />
-                    </NavSection>
-
-                    <NavSection label="Support">
-                        <NavItem
                             icon={<MarketIcon size={16} />}
                             label="Market Research"
                             onClick={onOpenMarketIntel}
-                            emphasis="muted"
-                        />
-                        <NavItem
-                            icon={<BarChart3 size={16} />}
-                            label="Financials"
-                            onClick={onOpenFinancialDashboard}
-                            emphasis="muted"
-                        />
-                        <NavItem
-                            icon={<DocsIcon size={16} />}
-                            label="Documents"
-                            onClick={onOpenDocuments}
-                            emphasis="muted"
                         />
                         <NavItem
                             icon={<BriefingsIcon size={16} />}
                             label="Briefings"
                             onClick={onOpenBriefings}
+                        />
+                        <NavItem
+                            icon={<BarChart3 size={16} />}
+                            label="Financials"
+                            onClick={onOpenFinancialDashboard}
+                        />
+                        <NavItem
+                            icon={<CofounderIcon size={16} />}
+                            label="Cofounder Mode"
+                            onClick={onOpenCofounder}
+                            badge={cofounderUnreadCount > 0 ? cofounderUnreadCount : undefined}
+                        />
+                    </NavSection>
+
+                    <NavSection label="Support">
+                        <NavItem
+                            icon={<DocsIcon size={16} />}
+                            label="Documents"
+                            onClick={onOpenDocuments}
                             emphasis="muted"
                         />
                         <NavItem
@@ -314,10 +307,15 @@ export default function NavSidebar({
                             emphasis="muted"
                         />
                         <NavItem
-                            icon={<CofounderIcon size={16} />}
-                            label="Cofounder Mode"
-                            onClick={onOpenCofounder}
-                            badge={cofounderUnreadCount > 0 ? cofounderUnreadCount : undefined}
+                            icon={<JournalIcon size={16} />}
+                            label="Journal"
+                            onClick={onOpenJournal}
+                            emphasis="muted"
+                        />
+                        <NavItem
+                            icon={<Archive size={16} />}
+                            label="Archive"
+                            onClick={onOpenArchive}
                             emphasis="muted"
                         />
                     </NavSection>

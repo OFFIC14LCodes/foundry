@@ -21,6 +21,7 @@ import {
     type MarketIntelligenceChangeEntityType,
     type MarketIntelligenceChangeType,
 } from "./lib/marketIntelligenceChanges";
+import type { ConversationWorkspaceSnapshot, WorkspaceSourceType } from "./lib/conversationWorkspace";
 
 // ─────────────────────────────────────────────────────────────
 // FOUNDRY DATABASE LAYER
@@ -35,6 +36,7 @@ function getLocalDateKey(date = new Date()) {
 }
 
 let dailyChatSummariesAvailable: boolean | null = null;
+let dailyChatSummariesWorkspaceColumnsAvailable: boolean | null = null;
 let producedDocumentsAvailable: boolean | null = null;
 let documentVaultAvailable: boolean | null = null;
 let documentTemplatesAvailable: boolean | null = null;
@@ -46,6 +48,11 @@ const DOCUMENT_FILE_BUCKET = "document-files";
 function isMissingRelationError(error: any, relationName: string) {
     const message = String(error?.message ?? "").toLowerCase();
     return error?.code === "PGRST205" || message.includes(relationName.toLowerCase()) || message.includes("could not find the table");
+}
+
+function isMissingColumnError(error: any, columnName: string) {
+    const message = String(error?.message ?? "").toLowerCase();
+    return message.includes(columnName.toLowerCase()) || message.includes("could not find") && message.includes("column");
 }
 
 function isMissingDocumentVaultRelationError(error: any) {
@@ -694,6 +701,7 @@ export async function loadConversationSummaries(userId: string) {
         messageCount: row.message_count ?? 0,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
+        workspaceSnapshot: row.workspace_snapshot ?? null,
     }));
 }
 
@@ -703,7 +711,8 @@ export async function saveConversationSummary(
     summaryDate: string,
     title: string,
     summary: string,
-    messageCount: number
+    messageCount: number,
+    workspaceSnapshot?: any
 ) {
     if (dailyChatSummariesAvailable === false) return null;
 
@@ -716,6 +725,7 @@ export async function saveConversationSummary(
             title,
             summary,
             message_count: messageCount,
+            workspace_snapshot: workspaceSnapshot ?? null,
             updated_at: new Date().toISOString(),
         })
         .select()
@@ -741,6 +751,7 @@ export async function saveConversationSummary(
         messageCount: data.message_count ?? 0,
         createdAt: data.created_at,
         updatedAt: data.updated_at,
+        workspaceSnapshot: data.workspace_snapshot ?? null,
     };
 }
 
@@ -753,6 +764,7 @@ export async function updateConversationSummary(
         title?: string;
         summary?: string;
         messageCount?: number;
+        workspaceSnapshot?: any;
     }
 ) {
     if (dailyChatSummariesAvailable === false) return null;
@@ -766,6 +778,7 @@ export async function updateConversationSummary(
     if (typeof updates.title === "string") payload.title = updates.title;
     if (typeof updates.summary === "string") payload.summary = updates.summary;
     if (typeof updates.messageCount === "number") payload.message_count = updates.messageCount;
+    if ("workspaceSnapshot" in updates) payload.workspace_snapshot = updates.workspaceSnapshot ?? null;
 
     const { data, error } = await supabase
         .from("daily_chat_summaries")
@@ -795,6 +808,7 @@ export async function updateConversationSummary(
         messageCount: data.message_count ?? 0,
         createdAt: data.created_at,
         updatedAt: data.updated_at,
+        workspaceSnapshot: data.workspace_snapshot ?? null,
     };
 }
 

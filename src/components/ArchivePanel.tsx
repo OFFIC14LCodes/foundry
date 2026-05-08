@@ -446,6 +446,53 @@ export default function ArchivePanel({
                         {renderArchiveSummary(selectedEntry.summary)}
                     </div>
 
+                    {/* Workspace snapshot */}
+                    {selectedEntry.workspaceSnapshot && (() => {
+                        const ws = selectedEntry.workspaceSnapshot;
+                        const focus = ws.user?.summaryOverride?.trim() || ws.generated?.summary?.trim() || "";
+                        const userNotes: string[] = ws.user?.notes ?? [];
+                        const nextSteps: string[] = ws.generated?.nextSteps ?? [];
+                        const decisions: string[] = ws.generated?.decisions ?? [];
+                        const openQuestions: string[] = ws.generated?.openQuestions ?? [];
+                        const hasContent = focus || userNotes.length || nextSteps.length || decisions.length || openQuestions.length;
+                        if (!hasContent) return null;
+                        return (
+                            <div style={{ marginTop: 20, borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 16 }}>
+                                <div style={{ fontSize: 10, fontFamily: "'DM Sans', sans-serif", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(232,98,42,0.7)", marginBottom: 12 }}>Workspace Snapshot</div>
+                                {focus && (
+                                    <div style={{ marginBottom: 12 }}>
+                                        <div style={{ fontSize: 10, fontFamily: "'DM Sans', sans-serif", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: 4 }}>Focus</div>
+                                        <div style={{ fontSize: 13, color: "rgba(240,237,232,0.75)", lineHeight: 1.5 }}>{focus}</div>
+                                    </div>
+                                )}
+                                {userNotes.length > 0 && (
+                                    <div style={{ marginBottom: 12 }}>
+                                        <div style={{ fontSize: 10, fontFamily: "'DM Sans', sans-serif", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: 4 }}>Founder Notes</div>
+                                        <ul style={{ paddingLeft: 16, margin: 0 }}>
+                                            {userNotes.map((note, i) => <li key={i} style={{ fontSize: 13, color: "rgba(240,237,232,0.7)", lineHeight: 1.6 }}>{note}</li>)}
+                                        </ul>
+                                    </div>
+                                )}
+                                {nextSteps.length > 0 && (
+                                    <div style={{ marginBottom: 12 }}>
+                                        <div style={{ fontSize: 10, fontFamily: "'DM Sans', sans-serif", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: 4 }}>Next Actions</div>
+                                        <ul style={{ paddingLeft: 16, margin: 0 }}>
+                                            {nextSteps.map((step, i) => <li key={i} style={{ fontSize: 13, color: "rgba(240,237,232,0.7)", lineHeight: 1.6 }}>{step}</li>)}
+                                        </ul>
+                                    </div>
+                                )}
+                                {(decisions.length > 0 || openQuestions.length > 0) && (
+                                    <div>
+                                        <div style={{ fontSize: 10, fontFamily: "'DM Sans', sans-serif", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: 4 }}>Open Threads</div>
+                                        <ul style={{ paddingLeft: 16, margin: 0 }}>
+                                            {[...decisions, ...openQuestions].map((item, i) => <li key={i} style={{ fontSize: 13, color: "rgba(240,237,232,0.7)", lineHeight: 1.6 }}>{item}</li>)}
+                                        </ul>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })()}
+
                     {/* Actions */}
                     <div style={{ marginTop: 20, display: "flex", gap: 10, justifyContent: "space-between", flexWrap: "wrap", alignItems: "center" }}>
                         <button

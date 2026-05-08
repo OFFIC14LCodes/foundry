@@ -69,6 +69,7 @@ import NavSidebar from "./components/NavSidebar";
 import { Icons } from "./icons";
 import Logo from "./components/Logo";
 import ForgeBubble from "./components/ForgeBubble";
+import ForgeConversationWorkspace from "./components/ForgeConversationWorkspace";
 import LoadingForgeAnimation from "./components/LoadingForgeAnimation";
 import PaywallScreen from "./components/paywall/PaywallScreen";
 import BillingReturnScreen from "./components/BillingReturnScreen";
@@ -2242,23 +2243,24 @@ ${forgeReply}`;
         )}
 
         {activeTab === "chat" && !showBriefing && (
-          <div
-            className="forge-screen__content"
-            ref={scrollRef}
-            style={{
-              position: "absolute",
-              inset: 0,
-              overflowY: "auto",
-              WebkitOverflowScrolling: "touch",
-              padding: "16px",
-              display: "flex",
-              flexDirection: "column",
-              gap: 14,
-              maxWidth: "var(--foundry-forge-chat-width)",
-              width: "100%",
-              margin: "0 auto",
-            }}
-          >
+          <>
+            <div
+              className="forge-screen__content"
+              ref={scrollRef}
+              style={{
+                position: "absolute",
+                inset: 0,
+                overflowY: "auto",
+                WebkitOverflowScrolling: "touch",
+                padding: "16px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 14,
+                maxWidth: "var(--foundry-forge-chat-width)",
+                width: "100%",
+                margin: "0 auto",
+              }}
+            >
             {stageRefModal !== null && (
               <StageRefModal
                 stageId={stageRefModal}
@@ -2515,7 +2517,19 @@ ${forgeReply}`;
             )}
 
             <div ref={bottomAnchorRef} style={{ height: 80 }} />
-          </div>
+            </div>
+            <div className="forge-stage-workspace-panel">
+              <ForgeConversationWorkspace
+                messages={messages}
+                loading={loading}
+                mode="forge"
+                title="Stage Workspace"
+                subtitle="Summary, Academy links, and next actions"
+                stageLabel={stage.label}
+                currentStage={activeStage}
+              />
+            </div>
+          </>
         )}
 
         {activeTab === "milestones" && (
