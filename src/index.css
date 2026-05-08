@@ -593,10 +593,10 @@ button {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 760px) minmax(300px, 360px);
-  justify-content: center;
-  gap: 18px;
-  padding: 22px 20px 0;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  align-items: stretch;
+  gap: 16px;
+  padding: 16px 16px 0;
   box-sizing: border-box;
   overflow: hidden;
 }
@@ -606,16 +606,26 @@ button {
   min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
+/* Desktop: workspace column is a normal grid cell */
 .forge-chat-room__workspace-column {
   min-width: 0;
-  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   padding-bottom: 16px;
 }
 
+/* Mobile toggle button — hidden on desktop, shown via media query below */
+.forge-workspace-toggle-btn {
+  display: none;
+}
+
 .forge-conversation-workspace {
-  height: 100%;
+  flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -895,18 +905,47 @@ button {
   }
 }
 
-@media (max-width: 1120px) {
+@media (max-width: 860px) {
+  /* Narrow: single chat column, workspace becomes a slide-in drawer */
   .forge-chat-room__workspace-layout {
-    grid-template-columns: minmax(0, 760px);
-    overflow-y: auto;
+    grid-template-columns: minmax(0, 1fr);
+    overflow: hidden;
   }
 
-  .forge-chat-room__thread {
-    min-height: 58vh;
+  /* The toggle button is visible on narrow screens */
+  .forge-workspace-toggle-btn {
+    display: flex !important;
   }
 
+  /* Workspace column is hidden by default on narrow screens */
   .forge-chat-room__workspace-column {
-    min-height: 420px;
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    height: auto;
+    padding-bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    justify-content: flex-end;
+    align-items: stretch;
+  }
+
+  /* When open: shown as right-side drawer */
+  .forge-chat-room__workspace-column--open {
+    display: flex;
+  }
+
+  /* Workspace panel inside the drawer */
+  .forge-chat-room__workspace-column--open .forge-conversation-workspace {
+    width: min(360px, 94vw);
+    height: 100%;
+    border-radius: 0;
+    border-right: none;
+    border-top: none;
+    border-bottom: none;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
   }
 }
 
@@ -952,12 +991,8 @@ button {
   }
 
   .forge-chat-room__workspace-layout {
-    padding: 16px 14px 0;
-    gap: 14px;
-  }
-
-  .forge-chat-room__workspace-column {
-    min-height: 360px;
+    padding: 12px 12px 0;
+    gap: 10px;
   }
 
   .foundry-page {

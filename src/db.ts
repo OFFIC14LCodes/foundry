@@ -716,18 +716,20 @@ export async function saveConversationSummary(
 ) {
     if (dailyChatSummariesAvailable === false) return null;
 
+    const insertData: Record<string, any> = {
+        user_id: userId,
+        stage_id: stageId,
+        summary_date: summaryDate,
+        title,
+        summary,
+        message_count: messageCount,
+        updated_at: new Date().toISOString(),
+    };
+    if (workspaceSnapshot != null) insertData.workspace_snapshot = workspaceSnapshot;
+
     const { data, error } = await supabase
         .from("daily_chat_summaries")
-        .insert({
-            user_id: userId,
-            stage_id: stageId,
-            summary_date: summaryDate,
-            title,
-            summary,
-            message_count: messageCount,
-            workspace_snapshot: workspaceSnapshot ?? null,
-            updated_at: new Date().toISOString(),
-        })
+        .insert(insertData)
         .select()
         .single();
 
@@ -778,7 +780,7 @@ export async function updateConversationSummary(
     if (typeof updates.title === "string") payload.title = updates.title;
     if (typeof updates.summary === "string") payload.summary = updates.summary;
     if (typeof updates.messageCount === "number") payload.message_count = updates.messageCount;
-    if ("workspaceSnapshot" in updates) payload.workspace_snapshot = updates.workspaceSnapshot ?? null;
+    if (updates.workspaceSnapshot != null) payload.workspace_snapshot = updates.workspaceSnapshot;
 
     const { data, error } = await supabase
         .from("daily_chat_summaries")

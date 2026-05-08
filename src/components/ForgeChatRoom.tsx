@@ -137,6 +137,7 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
     const [activeTrendEntry, setActiveTrendEntry] = useState<MarketTrend | null>(marketIntelEntry);
     const [pastSummaries, setPastSummaries] = useState<{ id: string; title: string; date: string; summary: string }[]>([]);
     const [workspace, setWorkspace] = useState<ConversationWorkspaceSnapshot | null>(null);
+    const [workspaceOpen, setWorkspaceOpen] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -801,6 +802,24 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
                         New chat
                     </button>
                 )}
+                <button
+                    className="forge-workspace-toggle-btn"
+                    onClick={() => setWorkspaceOpen(v => !v)}
+                    style={{
+                        background: workspaceOpen ? "rgba(232,98,42,0.12)" : "rgba(255,255,255,0.04)",
+                        border: workspaceOpen ? "1px solid rgba(232,98,42,0.28)" : "1px solid rgba(255,255,255,0.08)",
+                        borderRadius: 8,
+                        padding: "5px 10px",
+                        color: workspaceOpen ? "#E8622A" : "#666",
+                        fontSize: 11,
+                        cursor: "pointer",
+                        flexShrink: 0,
+                        fontFamily: "'DM Sans', sans-serif",
+                        display: "none",
+                    }}
+                >
+                    Notes
+                </button>
             </div>
 
             <div className="forge-chat-room__workspace-layout">
@@ -1134,7 +1153,10 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
                         </div>
                     </div>
                 </div>
-                <div className="forge-chat-room__workspace-column">
+                <div
+                    className={`forge-chat-room__workspace-column${workspaceOpen ? " forge-chat-room__workspace-column--open" : ""}`}
+                    onClick={(e) => { if (e.currentTarget === e.target) setWorkspaceOpen(false); }}
+                >
                     <ForgeConversationWorkspace
                         messages={messages}
                         loading={loading}

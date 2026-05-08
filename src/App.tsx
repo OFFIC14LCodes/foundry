@@ -2522,11 +2522,9 @@ ${forgeReply}`;
               <ForgeConversationWorkspace
                 messages={messages}
                 loading={loading}
-                mode="forge"
                 title="Stage Workspace"
                 subtitle="Summary, Academy links, and next actions"
-                stageLabel={stage.label}
-                currentStage={activeStage}
+                source={{ type: "forge", title: stage.label, stageId: activeStage, contextId: null }}
               />
             </div>
           </>
