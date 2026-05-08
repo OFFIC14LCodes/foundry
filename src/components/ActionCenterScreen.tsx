@@ -224,7 +224,7 @@ export default function ActionCenterScreen({ userId, onBack, onOpenNav, onAskFor
                                                 <HelpTooltip content={section.description} />
                                             </div>
                                         </div>
-                                        <div style={{ fontSize: 11, color: "#E8622A", fontWeight: 900, fontFamily: "'DM Sans', system-ui, sans-serif" }}>{section.actions.length}</div>
+                                        <div style={{ fontSize: 11, color: "#8FC8F6", fontWeight: 900, fontFamily: "'DM Sans', system-ui, sans-serif" }}>{section.actions.length}</div>
                                     </div>
                                     {section.actions.map((action) => {
                                         const nextStatus = getNextActionStatus(action.status);
@@ -247,7 +247,7 @@ export default function ActionCenterScreen({ userId, onBack, onOpenNav, onAskFor
                                                     onAskForge={() => onAskForge(buildForgePromptForAction(action))}
                                                 />
                                                 {showOutcomePrompt && (
-                                                    <div style={{ marginLeft: 10, borderLeft: "2px solid rgba(232,98,42,0.35)", padding: "10px 0 10px 12px", display: "grid", gap: 9 }}>
+                                                    <div style={{ marginLeft: 10, borderLeft: "2px solid rgba(255,255,255,0.08)", padding: "10px 0 10px 12px", display: "grid", gap: 9 }}>
                                                         <div>
                                                             <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
                                                                 <div style={{ fontSize: 14, fontWeight: 900, color: "#F0EDE8" }}>Did this work?</div>
@@ -333,9 +333,9 @@ function FilterRow({ label, value, options, onChange }: { label: string; value: 
                     className="foundry-interactive"
                     style={{
                         borderRadius: 999,
-                        border: value === option ? "1px solid rgba(232,98,42,0.3)" : "1px solid rgba(255,255,255,0.08)",
-                        background: value === option ? "rgba(232,98,42,0.12)" : "rgba(255,255,255,0.03)",
-                        color: value === option ? "#E8622A" : "#9D978E",
+                        border: value === option ? "1px solid rgba(99,179,237,0.24)" : "1px solid rgba(255,255,255,0.08)",
+                        background: value === option ? "rgba(99,179,237,0.1)" : "rgba(255,255,255,0.03)",
+                        color: value === option ? "#8FC8F6" : "#9D978E",
                         padding: "6px 9px",
                         fontSize: 11,
                         cursor: "pointer",

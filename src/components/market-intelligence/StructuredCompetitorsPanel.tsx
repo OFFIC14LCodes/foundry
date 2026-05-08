@@ -75,8 +75,8 @@ export default function StructuredCompetitorsPanel({
                         style={{
                             width: "100%",
                             textAlign: "left",
-                            background: expanded ? "rgba(232,98,42,0.04)" : "rgba(255,255,255,0.02)",
-                            border: expanded ? "1px solid rgba(232,98,42,0.18)" : "1px solid rgba(255,255,255,0.06)",
+                            background: expanded ? "rgba(99,179,237,0.045)" : "rgba(255,255,255,0.02)",
+                            border: expanded ? "1px solid rgba(99,179,237,0.18)" : "1px solid rgba(255,255,255,0.06)",
                             borderRadius: 12,
                             padding: "16px 16px 14px",
                             color: "#F0EDE8",
@@ -86,7 +86,7 @@ export default function StructuredCompetitorsPanel({
                         }}
                     >
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, marginBottom: 8 }}>
-                            <div style={{ fontSize: 16, fontWeight: 700, color: "#E8622A", fontFamily: "'Lora', Georgia, serif", lineHeight: 1.35, minWidth: 0, flex: 1 }}>
+                            <div style={{ fontSize: 16, fontWeight: 700, color: "#63B3ED", fontFamily: "'Lora', Georgia, serif", lineHeight: 1.35, minWidth: 0, flex: 1 }}>
                                 {competitor.name}
                             </div>
                             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
@@ -96,7 +96,7 @@ export default function StructuredCompetitorsPanel({
                                     </div>
                                 )}
                                 {competitor.positioning && (
-                                    <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: "#E8622A", background: "rgba(232,98,42,0.15)", border: "1px solid rgba(232,98,42,0.6)", borderRadius: 6, padding: "4px 7px", lineHeight: 1.2 }}>
+                                    <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: "#63B3ED", background: "rgba(99,179,237,0.12)", border: "1px solid rgba(99,179,237,0.34)", borderRadius: 6, padding: "4px 7px", lineHeight: 1.2 }}>
                                         {competitor.positioning}
                                     </div>
                                 )}
@@ -121,7 +121,7 @@ export default function StructuredCompetitorsPanel({
                             <div style={{ marginTop: 14 }}>
                                 {competitor.summary && competitor.summary.trim() !== (competitor.description ?? "").trim() && (
                                     <div style={{ marginBottom: 16 }}>
-                                        <div style={{ fontSize: 10, fontFamily: "'DM Sans', system-ui, sans-serif", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#E8622A", marginBottom: 7 }}>
+                                        <div style={{ fontSize: 10, fontFamily: "'DM Sans', system-ui, sans-serif", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#63B3ED", marginBottom: 7 }}>
                                             What they offer
                                         </div>
                                         <div style={{ fontSize: 13, color: "rgba(240,237,232,0.8)", lineHeight: 1.75, fontFamily: "'DM Sans', system-ui, sans-serif", paddingBottom: 14, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
@@ -146,12 +146,12 @@ export default function StructuredCompetitorsPanel({
                                             )}
                                         </div>
                                         <div>
-                                            <div style={{ color: "#E8622A", fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 7 }}>
+                                            <div style={{ color: "#63B3ED", fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 7 }}>
                                                 Weaknesses
                                             </div>
                                             {weaknesses.length > 0 ? weaknesses.map((weakness) => (
                                                 <div key={weakness} style={{ display: "flex", gap: 7, color: "rgba(240,237,232,0.65)", fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, lineHeight: 1.6, marginBottom: 4 }}>
-                                                    <span style={{ color: "#E8622A" }}>•</span>
+                                                    <span style={{ color: "#63B3ED" }}>•</span>
                                                     <span>{weakness}</span>
                                                 </div>
                                             )) : (
@@ -175,7 +175,7 @@ export default function StructuredCompetitorsPanel({
                                             onClick={(event) => event.stopPropagation()}
                                             onMouseEnter={() => setHoveredWebsite(competitor.id)}
                                             onMouseLeave={() => setHoveredWebsite(null)}
-                                            style={{ color: "#E8622A", fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 11, textDecoration: hoveredWebsite === competitor.id ? "underline" : "none", textUnderlineOffset: 3 }}
+                                            style={{ color: "#63B3ED", fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 11, textDecoration: hoveredWebsite === competitor.id ? "underline" : "none", textUnderlineOffset: 3 }}
                                         >
                                             Visit website ↗
                                         </a>
@@ -195,7 +195,7 @@ export default function StructuredCompetitorsPanel({
                             </div>
                         )}
 
-                        <div style={{ textAlign: "right", color: expanded ? "rgba(232,98,42,0.5)" : "rgba(240,237,232,0.3)", fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 11, marginTop: 10 }}>
+                        <div style={{ textAlign: "right", color: expanded ? "rgba(99,179,237,0.55)" : "rgba(240,237,232,0.3)", fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 11, marginTop: 10 }}>
                             {expanded ? "See less ↑" : "See more ↓"}
                         </div>
                     </div>

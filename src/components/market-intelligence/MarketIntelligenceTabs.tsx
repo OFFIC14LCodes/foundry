@@ -13,6 +13,7 @@ export default function MarketIntelligenceTabs({
                 { key: "brief", label: "Daily Brief" },
                 { key: "competitors", label: "Competitors" },
                 { key: "trends", label: "Trends" },
+                { key: "actions", label: "Actions" },
                 { key: "benchmarks", label: "Benchmarks" },
                 { key: "sources", label: "Sources" },
             ].map((tab) => {
@@ -23,11 +24,11 @@ export default function MarketIntelligenceTabs({
                         onClick={() => onSelect(tab.key as MarketTab)}
                         style={{
                             flexShrink: 0,
-                            background: selected ? "rgba(232,98,42,0.12)" : "rgba(255,255,255,0.03)",
-                            border: selected ? "1px solid rgba(232,98,42,0.24)" : "1px solid rgba(255,255,255,0.08)",
+                            background: selected ? "rgba(99,179,237,0.1)" : "rgba(255,255,255,0.03)",
+                            border: selected ? "1px solid rgba(99,179,237,0.22)" : "1px solid rgba(255,255,255,0.08)",
                             borderRadius: 999,
                             padding: "8px 14px",
-                            color: selected ? "#E8622A" : "#A8A4A0",
+                            color: selected ? "#63B3ED" : "#A8A4A0",
                             fontSize: 12,
                             fontWeight: 600,
                             cursor: "pointer",

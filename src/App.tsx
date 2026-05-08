@@ -219,6 +219,111 @@ async function generateStageSummary(
   }
 }
 
+function formatMemoryDate(value: string | null | undefined) {
+  if (!value) return "unknown date";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "unknown date";
+  return date.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function clipMemoryText(value: string | null | undefined, maxLength: number) {
+  const cleaned = String(value ?? "").replace(/\s+/g, " ").trim();
+  if (cleaned.length <= maxLength) return cleaned;
+  return `${cleaned.slice(0, maxLength).trim()}...`;
+}
+
+function buildUniversalFounderMemory({
+  profile,
+  activeStage,
+  messagesByStage,
+  recentSummaries = [],
+  foundryDecisions = [],
+  journalEntries = [],
+  cofoundersContext = null,
+}: {
+  profile: any;
+  activeStage?: number;
+  messagesByStage?: Record<number, any[]>;
+  recentSummaries?: StageSummary[];
+  foundryDecisions?: FounderDecision[];
+  journalEntries?: any[];
+  cofoundersContext?: string | null;
+}) {
+  const sections: string[] = [];
+  const sortedJournalEntries = [...(journalEntries ?? [])]
+    .filter((entry) => entry?.content)
+    .sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime());
+  const latestJournal = sortedJournalEntries[0];
+
+  if (latestJournal) {
+    sections.push(`LATEST JOURNAL ENTRY — this is the source of truth if the founder asks about "my latest journal entry":
+Date: ${formatMemoryDate(latestJournal.createdAt)}
+Mood: ${latestJournal.mood || "not recorded"}
+Themes: ${(latestJournal.themes ?? []).join(", ") || "none recorded"}
+Forge summary: ${latestJournal.forgeSummary || "not summarized yet"}
+Entry excerpt: ${clipMemoryText(latestJournal.content, 1200)}`);
+  }
+
+  const recentJournal = sortedJournalEntries.slice(1, 5);
+  if (recentJournal.length > 0) {
+    sections.push(`RECENT JOURNAL MEMORY:
+${recentJournal.map((entry) => `- ${formatMemoryDate(entry.createdAt)}: ${clipMemoryText(entry.forgeSummary || entry.content, 240)}`).join("\n")}`);
+  }
+
+  const recentStageMessages = Object.entries(messagesByStage ?? {})
+    .flatMap(([stageId, messages]) => (messages ?? []).map((message: any) => ({
+      stageId: Number(stageId),
+      role: message.role === "forge" ? "Forge" : (profile?.nameNeedsReview ? "Founder" : profile?.name || "Founder"),
+      text: message.text,
+      createdAt: message.createdAt,
+    })))
+    .filter((message) => message.text)
+    .sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime())
+    .slice(0, 10)
+    .reverse();
+
+  if (recentStageMessages.length > 0) {
+    sections.push(`RECENT FORGE CHAT MEMORY ACROSS STAGES:
+${recentStageMessages.map((message) => `- ${formatMemoryDate(message.createdAt)} · Stage ${message.stageId} · ${message.role}: ${clipMemoryText(message.text, 220)}`).join("\n")}`);
+  }
+
+  const recentArchives = [...(recentSummaries ?? [])]
+    .filter((summary) => summary?.summary)
+    .sort((a, b) => new Date(b.summaryDate ?? 0).getTime() - new Date(a.summaryDate ?? 0).getTime())
+    .slice(0, 6);
+  if (recentArchives.length > 0) {
+    sections.push(`RECENT SAVED CONVERSATION MEMORY:
+${recentArchives.map((summary) => `- ${formatMemoryDate(summary.summaryDate)} · ${summary.title || "Saved conversation"}: ${clipMemoryText(summary.summary, 260)}`).join("\n")}`);
+  }
+
+  const recentDecisions = [...(foundryDecisions ?? [])].slice(0, 6);
+  if (recentDecisions.length > 0) {
+    sections.push(`RECENT DECISION MEMORY:
+${recentDecisions.map((decision) => `- ${formatMemoryDate(decision.decidedAt)}: ${clipMemoryText(decision.text, 220)}`).join("\n")}`);
+  }
+
+  if (cofoundersContext?.trim()) {
+    sections.push(`RECENT COFOUNDER MODE MEMORY:
+${clipMemoryText(cofoundersContext, 1800)}`);
+  }
+
+  if (sections.length === 0) return "";
+
+  return `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+UNIVERSAL FOUNDER MEMORY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Forge is one continuous partner across every Foundry feature, not a separate assistant per screen. Treat the following as shared memory from the founder's journal, stage chats, saved conversations, decisions, and cofounder workspace.
+If the founder asks about something recent, do not say you cannot see it when the relevant memory is below. Use it naturally and mention the specific artifact only when helpful.
+Current active stage: ${activeStage || profile?.currentStage || "unknown"}
+
+${sections.join("\n\n")}`;
+}
+
 async function buildRichContext(
   profile,
   activeStage,
@@ -345,6 +450,15 @@ Do not make this awkward or repetitive. Reassess naturally when it fits the conv
   const journalBlock = journalEntries && journalEntries.length > 0
     ? buildJournalContext(journalEntries, 14)
     : "";
+  const universalMemoryBlock = buildUniversalFounderMemory({
+    profile,
+    activeStage,
+    messagesByStage,
+    recentSummaries: recentSummaries ?? [],
+    foundryDecisions: foundryDecisions ?? [],
+    journalEntries: journalEntries ?? [],
+    cofoundersContext,
+  });
   const bmcBlock = businessModelCanvas
     ? buildBusinessModelCanvasContext(businessModelCanvas)
     : (activeStage === 2
@@ -400,7 +514,7 @@ ${longitudinalBlock ? `${longitudinalBlock}` : ""}
 ${recentActionOutcomesBlock ? `${recentActionOutcomesBlock}
 
 ` : ""}
-${journalBlock ? `${journalBlock}\n\n` : ""}${bmcBlock ? `${bmcBlock}\n\n` : ""}STAGE REFERENCES: When referencing work from another stage, wrap it like [STAGE_REF:N]text[/STAGE_REF]. Use naturally when prior work is relevant — not on every mention.${onboardingReviewSection}${cofounderSection}${methodSection}
+${universalMemoryBlock ? `${universalMemoryBlock}\n\n` : ""}${journalBlock ? `${journalBlock}\n\n` : ""}${bmcBlock ? `${bmcBlock}\n\n` : ""}STAGE REFERENCES: When referencing work from another stage, wrap it like [STAGE_REF:N]text[/STAGE_REF]. Use naturally when prior work is relevant — not on every mention.${onboardingReviewSection}${cofounderSection}${methodSection}
   `.trim();
 
   return {
@@ -3391,13 +3505,6 @@ export default function FoundryApp() {
     markNudgeSeen(user.id, activeNudge.id);
   };
 
-  const handleAskForgeAboutJournal = (entryContent: string) => {
-    const seedText = `I want to talk through something I wrote in my journal: ${entryContent.trim().slice(0, 200)}${entryContent.trim().length > 200 ? "..." : ""}`;
-    setJournalSeedPrompt(seedText);
-    setShowJournal(false);
-    openForge(null);
-  };
-
   const recordStageEntry = (stageId: number) => {
     if (!user?.id) return;
     const enteredAt = new Date().toISOString();
@@ -4039,6 +4146,16 @@ export default function FoundryApp() {
   }
 
   // ── Logged in and data ready ──
+  const universalMemoryContext = profile ? buildUniversalFounderMemory({
+    profile,
+    activeStage: profile.currentStage || 1,
+    messagesByStage,
+    recentSummaries,
+    foundryDecisions,
+    journalEntries,
+    cofoundersContext: null,
+  }) : "";
+
   if (billingRoute) {
     const paidReady = accessSummary.canAccessPaidStages;
 
@@ -4284,7 +4401,6 @@ export default function FoundryApp() {
             onBack={() => setShowJournal(false)}
             onOpenNav={() => setNavSidebarOpen(true)}
             profile={profile}
-            onAskForge={handleAskForgeAboutJournal}
           />
         </Suspense>
       )}
@@ -4351,6 +4467,7 @@ export default function FoundryApp() {
               initialArchive={chatRoomArchive}
               academyEntry={academyConversationEntry}
               marketIntelEntry={marketIntelTrendEntry}
+              universalMemoryContext={universalMemoryContext}
               onMarkAcademyLessonCompleted={handleMarkAcademyLessonCompleted}
               onBack={() => {
                 const returnToAcademy = Boolean(academyConversationEntry);
@@ -4520,6 +4637,7 @@ export default function FoundryApp() {
                             : screen
           }
           screenContext={showDocuments ? documentContext : showAcademy ? academyContext : null}
+          universalMemoryContext={universalMemoryContext}
           onBubbleSummaryAdded={(summary) => setBubbleSummaries(prev => [summary, ...prev])}
         />
       )}

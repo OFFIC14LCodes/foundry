@@ -189,7 +189,7 @@ export default function BusinessModelCanvasScreen({
                                         <div style={{ fontSize: 11, color: "rgba(240,237,232,0.45)" }}>
                                             {weakness ? weakness.message : "Click to refine or clean up entries."}
                                         </div>
-                                        <div style={{ fontSize: 12, color: "#E8622A", fontWeight: 600 }}>Open →</div>
+                                        <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", fontWeight: 600 }}>Open →</div>
                                     </div>
                                 </button>
                             );

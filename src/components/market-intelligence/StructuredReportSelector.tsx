@@ -34,8 +34,8 @@ export default function StructuredReportSelector({
                     display: "flex",
                     alignItems: "center",
                     gap: 6,
-                    background: open ? "rgba(232,98,42,0.08)" : "rgba(255,255,255,0.03)",
-                    border: open ? "1px solid rgba(232,98,42,0.22)" : "1px solid rgba(255,255,255,0.08)",
+                    background: open ? "rgba(99,179,237,0.08)" : "rgba(255,255,255,0.03)",
+                    border: open ? "1px solid rgba(99,179,237,0.2)" : "1px solid rgba(255,255,255,0.08)",
                     borderRadius: 8,
                     padding: "7px 11px",
                     cursor: "pointer",
@@ -44,7 +44,7 @@ export default function StructuredReportSelector({
                 }}
             >
                 <span style={{ fontSize: 11, color: "#666", fontWeight: 500 }}>Report:</span>
-                <span style={{ fontSize: 12, color: "#E8622A", fontWeight: 700 }}>
+                <span style={{ fontSize: 12, color: "#63B3ED", fontWeight: 700 }}>
                     {currentReport ? formatReportDate(currentReport.date) : "None"}
                 </span>
                 <span style={{ fontSize: 9, color: "#555", marginLeft: 2 }}>{open ? "▲" : "▼"}</span>
@@ -76,8 +76,8 @@ export default function StructuredReportSelector({
                                 style={{
                                     width: "100%",
                                     textAlign: "left",
-                                    background: selected ? "rgba(232,98,42,0.12)" : "transparent",
-                                    border: selected ? "1px solid rgba(232,98,42,0.22)" : "1px solid transparent",
+                                    background: selected ? "rgba(99,179,237,0.1)" : "transparent",
+                                    border: selected ? "1px solid rgba(99,179,237,0.22)" : "1px solid transparent",
                                     borderRadius: 8,
                                     padding: "9px 11px",
                                     color: "#F0EDE8",
@@ -87,7 +87,7 @@ export default function StructuredReportSelector({
                                 <div style={{
                                     fontSize: 13,
                                     fontWeight: 600,
-                                    color: selected ? "#E8622A" : "#C8C4BE",
+                                    color: selected ? "#63B3ED" : "#C8C4BE",
                                     fontFamily: "'DM Sans', system-ui, sans-serif",
                                 }}>
                                     {formatReportDate(entry.date)}

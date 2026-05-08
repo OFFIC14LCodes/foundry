@@ -151,7 +151,7 @@ button {
 
 .foundry-command-panel {
   background:
-    linear-gradient(155deg, rgba(255,255,255,0.055), rgba(255,255,255,0.02) 46%, rgba(232,98,42,0.035)),
+    linear-gradient(155deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018) 48%, rgba(232,98,42,0.026)),
     var(--foundry-surface-primary);
   border: var(--foundry-border-strong);
   border-radius: var(--foundry-radius-command);
@@ -159,9 +159,36 @@ button {
 }
 
 .foundry-module-card {
-  background: rgba(255,255,255,0.025);
-  border: var(--foundry-border-subtle);
+  background: rgba(255,255,255,0.021);
+  border: 1px solid rgba(255,255,255,0.062);
   border-radius: var(--foundry-radius-card);
+}
+
+.foundry-soft-panel {
+  background: rgba(255,255,255,0.024);
+  border: 1px solid rgba(255,255,255,0.066);
+  border-radius: var(--foundry-radius-card);
+}
+
+.foundry-quiet-panel {
+  background: rgba(255,255,255,0.016);
+  border: 1px solid rgba(255,255,255,0.048);
+  border-radius: var(--foundry-radius-card);
+}
+
+.foundry-toolbar {
+  background: rgba(255,255,255,0.022);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: var(--foundry-radius-card);
+}
+
+.foundry-muted-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--foundry-radius-pill);
+  background: rgba(255,255,255,0.035);
+  border: 1px solid rgba(255,255,255,0.065);
+  color: var(--foundry-text-secondary);
 }
 
 .foundry-control-surface {
@@ -712,6 +739,11 @@ button {
 
   .foundry-paywall-grid {
     grid-template-columns: 1fr !important;
+  }
+
+  .foundry-plan-comparison-grid {
+    grid-template-columns: 1fr !important;
+    text-align: left;
   }
 
   .hub-modal-backdrop {

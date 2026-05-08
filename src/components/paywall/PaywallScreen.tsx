@@ -91,14 +91,14 @@ function PlanCard({
                 minWidth: 260,
                 textAlign: "center",
                 background: planId === "pro"
-                    ? "linear-gradient(180deg, rgba(232,98,42,0.14), rgba(255,255,255,0.03))"
-                    : "rgba(255,255,255,0.03)",
+                    ? "linear-gradient(180deg, rgba(232,98,42,0.085), rgba(255,255,255,0.024))"
+                    : "rgba(255,255,255,0.024)",
                 border: planId === "pro"
-                    ? "1px solid rgba(232,98,42,0.28)"
-                    : "1px solid rgba(255,255,255,0.08)",
-                borderRadius: 20,
+                    ? "1px solid rgba(232,98,42,0.18)"
+                    : "1px solid rgba(255,255,255,0.065)",
+                borderRadius: 14,
                 padding: 20,
-                boxShadow: planId === "pro" ? "0 18px 48px rgba(0,0,0,0.28)" : "none",
+                boxShadow: planId === "pro" ? "0 14px 34px rgba(0,0,0,0.22)" : "none",
             }}
         >
             <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 10, marginBottom: 12, alignItems: "center" }}>
@@ -163,8 +163,8 @@ function PlanCard({
                         ? "rgba(255,255,255,0.04)"
                         : planId === "pro"
                             ? "linear-gradient(135deg, #E8622A, #c9521e)"
-                            : "linear-gradient(135deg, #F0EDE8, #D9D2C7)",
-                    color: isCurrent ? "#666" : planId === "pro" ? "#fff" : "#111",
+                            : "rgba(255,255,255,0.055)",
+                    color: isCurrent ? "#666" : planId === "pro" ? "#fff" : "#F0EDE8",
                     fontSize: 12,
                     fontWeight: 700,
                     cursor: isCurrent ? "default" : "pointer",
@@ -293,7 +293,7 @@ export default function PaywallScreen({ open, targetStage, access, onManageSubsc
                             <div style={{ fontSize: 11, color: "#666", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>
                                 Plan Comparison
                             </div>
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+                            <div className="foundry-plan-comparison-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
                                 <div style={{ textAlign: "center" }}>
                                     <div style={{ fontSize: 12, color: "#888", marginBottom: 8 }}>Free</div>
                                     {BILLING_PLANS.free.comparisonPoints.map((point) => (

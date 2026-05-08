@@ -1117,6 +1117,12 @@ export type NormalizedSourceInsight = {
     snippet: string;
 };
 
+type MarketReportSourceReference = {
+    title: string;
+    url: string;
+    snippet?: string | null;
+};
+
 export type NormalizedMarketIntelligence = {
     reportId: string;
     userId: string;
@@ -1297,6 +1303,7 @@ export async function saveMarketReport(
     options?: {
         searchQueries?: string[];
         founderContext?: Record<string, unknown> | null;
+        sourceReferences?: MarketReportSourceReference[];
     },
 ) {
     const today = getLocalDateKey();
@@ -1338,7 +1345,57 @@ export async function saveMarketReport(
         console.error("saveMarketReport automatic extraction error:", extractionError);
     }
 
+    await saveMarketReportSourceReferences(userId, savedReport.id, options?.sourceReferences ?? []);
+
     return savedReport;
+}
+
+function normalizeSourceReferences(sources: MarketReportSourceReference[]): MarketReportSourceReference[] {
+    const sourcesByUrl = new Map<string, MarketReportSourceReference>();
+
+    for (const source of sources) {
+        const title = source.title?.trim();
+        const url = source.url?.trim();
+        if (!title || !url || sourcesByUrl.has(url)) continue;
+        sourcesByUrl.set(url, {
+            title,
+            url,
+            snippet: source.snippet?.trim() || "",
+        });
+    }
+
+    return Array.from(sourcesByUrl.values()).slice(0, 25);
+}
+
+async function saveMarketReportSourceReferences(
+    userId: string,
+    reportId: string,
+    sourceReferences: MarketReportSourceReference[],
+) {
+    const normalizedSources = normalizeSourceReferences(sourceReferences);
+    if (normalizedSources.length === 0) return;
+
+    for (const source of normalizedSources) {
+        const { data: existingSourceRows, error: existingSourceError } = await supabase
+            .from("market_report_sources")
+            .select("id")
+            .eq("report_id", reportId)
+            .eq("url", source.url)
+            .limit(1);
+
+        if (existingSourceError) {
+            console.error("saveMarketReportSourceReferences error:", existingSourceError.message);
+            continue;
+        }
+
+        if ((existingSourceRows?.length ?? 0) > 0) continue;
+
+        await createMarketReportSource(userId, reportId, {
+            title: source.title,
+            url: source.url,
+            snippet: source.snippet ?? "",
+        });
+    }
 }
 
 export async function createCompetitor(

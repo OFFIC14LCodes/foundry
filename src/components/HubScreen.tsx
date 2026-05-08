@@ -1,15 +1,91 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { STAGES_DATA } from "../constants/stages";
 import { STAGE_COLORS } from "../constants/glossary";
 import { BUDGET_CARDS } from "../constants/onboarding";
 import { TAG_COLORS } from "../constants/styles";
 import { Icons } from "../icons";
-import { Archive } from "lucide-react";
+import { Archive, BarChart3, Map, Zap } from "lucide-react";
 import { formatCurrency, getBudgetRangeLabel, parseBudgetInput } from "../lib/budget";
 import { getBusinessHealth } from "../lib/businessHealth";
 import { summarizeBusinessIdea } from "../lib/businessSummary";
 import MicButton from "./MicButton";
 import PlaidConnectButton from "./PlaidConnectButton";
+
+function HubFocusCard({
+    eyebrow,
+    title,
+    body,
+    actionLabel,
+    icon,
+    onClick,
+    tone = "primary",
+}: {
+    eyebrow: string;
+    title: string;
+    body: string;
+    actionLabel: string;
+    icon: ReactNode;
+    onClick?: () => void;
+    tone?: "primary" | "learn" | "execute";
+}) {
+    const tones = {
+        primary: {
+            background: "linear-gradient(180deg, rgba(232,98,42,0.075), rgba(255,255,255,0.022))",
+            border: "1px solid rgba(232,98,42,0.16)",
+            color: "#E8622A",
+        },
+        learn: {
+            background: "linear-gradient(180deg, rgba(99,179,237,0.07), rgba(255,255,255,0.02))",
+            border: "1px solid rgba(99,179,237,0.15)",
+            color: "#8FC8F6",
+        },
+        execute: {
+            background: "linear-gradient(180deg, rgba(76,175,138,0.065), rgba(255,255,255,0.02))",
+            border: "1px solid rgba(76,175,138,0.15)",
+            color: "#8FD0B5",
+        },
+    } as const;
+    const selected = tones[tone];
+
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            disabled={!onClick}
+            style={{
+                background: selected.background,
+                border: selected.border,
+                borderRadius: "var(--foundry-radius-card)",
+                padding: "14px 14px 13px",
+                color: "inherit",
+                cursor: onClick ? "pointer" : "default",
+                display: "grid",
+                gap: 12,
+                textAlign: "left",
+                minHeight: 174,
+                alignContent: "space-between",
+            }}
+        >
+            <div style={{ display: "grid", gap: 9 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                    <div style={{ fontSize: 10, color: selected.color, letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: "'DM Sans', system-ui, sans-serif", fontWeight: 800 }}>
+                        {eyebrow}
+                    </div>
+                    <div style={{ color: selected.color, opacity: 0.9 }}>{icon}</div>
+                </div>
+                <div style={{ fontSize: 17, color: "#F0EDE8", fontFamily: "'Lora', Georgia, serif", fontWeight: 700, lineHeight: 1.18 }}>
+                    {title}
+                </div>
+                <div style={{ fontSize: 12, color: "#A8A4A0", lineHeight: 1.65 }}>
+                    {body}
+                </div>
+            </div>
+            <div style={{ fontSize: 12, color: selected.color, fontFamily: "'DM Sans', system-ui, sans-serif", fontWeight: 800 }}>
+                {actionLabel} →
+            </div>
+        </button>
+    );
+}
 
 export default function HubScreen({
     profile,
@@ -305,6 +381,52 @@ export default function HubScreen({
         stage.id < currentStage || isStageGoalsComplete(stage);
     const completedJourneyStages = STAGES_DATA.filter(isStageDoneInJourney).length;
     const journeyPct = Math.round((completedJourneyStages / STAGES_DATA.length) * 100);
+    const nextExecutionLabel = nextMilestone
+        ? `Next stage move: ${nextMilestone.label}`
+        : "Review the actions that keep execution honest.";
+    const primaryFocusCards = [
+        {
+            eyebrow: "Learn",
+            title: "Continue Academy",
+            body: `Use Academy to sharpen the founder skill behind Stage ${currentStage}: ${currentStageData.label}.`,
+            actionLabel: "Open Academy",
+            icon: <Icons.sidebar.academy size={17} />,
+            onClick: onOpenAcademy,
+            tone: "learn" as const,
+        },
+        {
+            eyebrow: "Execute",
+            title: "Move the work forward",
+            body: nextExecutionLabel,
+            actionLabel: onOpenActionCenter ? "Open Actions" : `Continue Stage ${currentStage}`,
+            icon: <Zap size={17} />,
+            onClick: onOpenActionCenter ?? (() => onEnterStage(currentStage)),
+            tone: "execute" as const,
+        },
+        {
+            eyebrow: "Think",
+            title: "Talk to Forge",
+            body: activeNudge?.nudgeText || "Use Forge to turn uncertainty, decisions, and messy next steps into a clear move.",
+            actionLabel: "Talk to Forge",
+            icon: <Icons.forge.chat size={17} />,
+            onClick: onOpenForge,
+            tone: "primary" as const,
+        },
+    ];
+    const executionShortcuts = [
+        { label: "Actions", body: "Track the work that came out of learning and Forge conversations.", icon: <Zap size={15} />, onClick: onOpenActionCenter },
+        { label: "Canvas", body: "Clarify the business model as Stage 2 thinking gets sharper.", icon: <Map size={15} />, onClick: onOpenBusinessModelCanvas },
+        { label: "Journal", body: "Capture the observations Forge should remember later.", icon: <Icons.sidebar.journal size={15} />, onClick: onOpenJournal },
+        { label: "Archive", body: "Return to saved teaching, decisions, and conversations.", icon: <Archive size={15} />, onClick: onOpenArchive },
+    ].filter((item) => Boolean(item.onClick));
+    const supportShortcuts = [
+        { label: "Market Research", body: "Use when the stage work needs outside proof.", icon: <Icons.sidebar.marketIntel size={15} />, onClick: onOpenMarketIntel },
+        { label: "Financials", body: "Use when runway, pricing, or burn affects the next move.", icon: <BarChart3 size={15} />, onClick: onOpenFinancialDashboard },
+        { label: "Documents", body: "Use when execution needs an artifact or operating record.", icon: <Icons.sidebar.documents size={15} />, onClick: onOpenDocuments },
+        { label: "Briefings", body: "Use for periodic synthesis, not daily navigation.", icon: <Icons.sidebar.briefings size={15} />, onClick: onOpenBriefings },
+        { label: "Pitch Practice", body: "Use when the current stage requires persuasive communication.", icon: <Icons.sidebar.pitchPractice size={15} />, onClick: onOpenPitchPractice },
+        { label: "Cofounder", body: "Use when shared execution or team memory matters.", icon: <Icons.sidebar.cofounder size={15} />, onClick: onOpenCofounder },
+    ].filter((item) => Boolean(item.onClick));
 
     return (
         <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8" }}>
@@ -387,9 +509,9 @@ export default function HubScreen({
                     }}
                 >
                     <div className="foundry-label" style={{ marginBottom: 12, color: "var(--foundry-orange)" }}>
-                        Today in Foundry
+                        Education + Execution
                     </div>
-                    <div className="foundry-hub-command-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 16, alignItems: "start" }}>
+                    <div className="foundry-hub-command-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 16, alignItems: "start", marginBottom: 16 }}>
                         <div style={{ minWidth: 0 }}>
                             <div
                                 style={{
@@ -414,62 +536,98 @@ export default function HubScreen({
                             >
                                 {businessSummary}
                             </div>
-                            <div
+                        </div>
+                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                            <button
+                                onClick={() => onEnterStage(currentStage)}
+                                className="foundry-btn foundry-btn--secondary"
                                 style={{
-                                    marginTop: 14,
-                                    padding: "12px 13px",
-                                    borderRadius: "var(--foundry-radius-card)",
-                                    background: "rgba(255,255,255,0.028)",
-                                    border: "1px solid rgba(255,255,255,0.07)",
+                                    padding: "10px 13px",
+                                    fontSize: 12,
+                                    whiteSpace: "nowrap",
+                                    alignSelf: "start",
                                 }}
                             >
-                                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 8 }}>
-                                    <div className="foundry-label" style={{ color: "var(--foundry-text-muted)" }}>
-                                        Stage {currentStage} · {currentStageData.label}
-                                    </div>
-                                    <div className="foundry-font-ui" style={{ fontSize: 12, color: "var(--foundry-ember)", fontWeight: 700 }}>
-                                        {currentStagePct}%
-                                    </div>
-                                </div>
-                                <div style={{ height: 5, borderRadius: 999, background: "rgba(255,255,255,0.06)", overflow: "hidden", marginBottom: 10 }}>
-                                    <div
-                                        className="foundry-progress-fill"
-                                        style={{
-                                            height: "100%",
-                                            width: `${currentStagePct}%`,
-                                            borderRadius: 999,
-                                            background: "linear-gradient(90deg, var(--foundry-orange), var(--foundry-ember))",
-                                        }}
-                                    />
-                                </div>
-                                <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.65 }}>
-                                    {nextMilestone
-                                        ? `Next best action: ${nextMilestone.label}`
-                                        : currentStageData.mission}
-                                </div>
+                                Continue Stage {currentStage}
+                            </button>
+                            <button
+                                onClick={onOpenForge}
+                                className="foundry-btn foundry-btn--primary"
+                                style={{
+                                    padding: "10px 13px",
+                                    fontSize: 12,
+                                    whiteSpace: "nowrap",
+                                    alignSelf: "start",
+                                }}
+                            >
+                                Ask Forge
+                            </button>
+                        </div>
+                    </div>
+
+                    <div style={{ display: "grid", gap: 14, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", marginBottom: 16 }}>
+                        {primaryFocusCards.map((card) => (
+                            <HubFocusCard
+                                key={card.eyebrow}
+                                eyebrow={card.eyebrow}
+                                title={card.title}
+                                body={card.body}
+                                actionLabel={card.actionLabel}
+                                icon={card.icon}
+                                onClick={card.onClick}
+                                tone={card.tone}
+                            />
+                        ))}
+                    </div>
+
+                    <div
+                        style={{
+                            padding: "12px 13px",
+                            borderRadius: "var(--foundry-radius-card)",
+                            background: "rgba(255,255,255,0.028)",
+                            border: "1px solid rgba(255,255,255,0.07)",
+                        }}
+                    >
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 8 }}>
+                            <div className="foundry-label" style={{ color: "var(--foundry-text-muted)" }}>
+                                Stage {currentStage} · {currentStageData.label}
+                            </div>
+                            <div className="foundry-font-ui" style={{ fontSize: 12, color: "var(--foundry-ember)", fontWeight: 700 }}>
+                                {currentStagePct}%
                             </div>
                         </div>
-                        <button
-                            onClick={() => onEnterStage(currentStage)}
-                            className="foundry-btn foundry-btn--primary"
-                            style={{
-                                padding: "11px 15px",
-                                fontSize: 12,
-                                whiteSpace: "nowrap",
-                                alignSelf: "start",
-                            }}
-                        >
-                            Continue Stage {currentStage}
-                        </button>
+                        <div style={{ height: 5, borderRadius: 999, background: "rgba(255,255,255,0.06)", overflow: "hidden", marginBottom: 10 }}>
+                            <div
+                                className="foundry-progress-fill"
+                                style={{
+                                    height: "100%",
+                                    width: `${currentStagePct}%`,
+                                    borderRadius: 999,
+                                    background: "linear-gradient(90deg, var(--foundry-orange), var(--foundry-ember))",
+                                }}
+                            />
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+                            <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.65 }}>
+                                {nextMilestone
+                                    ? `Next best action: ${nextMilestone.label}`
+                                    : currentStageData.mission}
+                            </div>
+                            <button
+                                onClick={() => onEnterStage(currentStage)}
+                                className="foundry-btn foundry-btn--ghost"
+                                style={{ padding: "7px 11px", fontSize: 11 }}
+                            >
+                                Open Stage
+                            </button>
+                        </div>
                     </div>
                 </div>
 
                 {activeNudge && (
                     <div
+                        className="foundry-soft-panel"
                         style={{
-                            background: "rgba(232, 98, 42, 0.08)",
-                            border: "1px solid rgba(232, 98, 42, 0.3)",
-                            borderRadius: 14,
                             padding: "14px 16px",
                             marginBottom: 14,
                             animation: "fadeSlideUp 0.4s ease 0.05s both",
@@ -508,31 +666,20 @@ export default function HubScreen({
                                     onActOnNudge?.();
                                     onOpenForge();
                                 }}
+                                className="foundry-btn foundry-btn--primary"
                                 style={{
-                                    background: "linear-gradient(135deg, #E8622A, #c9521e)",
-                                    border: "none",
-                                    borderRadius: 8,
                                     padding: "6px 14px",
-                                    color: "#fff",
                                     fontSize: 12,
-                                    fontWeight: 600,
-                                    cursor: "pointer",
-                                    fontFamily: "'Lora', Georgia, serif",
                                 }}
                             >
                                 Talk to Forge
                             </button>
                             <button
                                 onClick={() => onDismissNudge?.()}
+                                className="foundry-btn foundry-btn--ghost"
                                 style={{
-                                    background: "transparent",
-                                    border: "1px solid rgba(255,255,255,0.1)",
-                                    borderRadius: 8,
                                     padding: "6px 12px",
-                                    color: "#666",
                                     fontSize: 12,
-                                    cursor: "pointer",
-                                    fontFamily: "'Lora', Georgia, serif",
                                 }}
                             >
                                 Dismiss
@@ -620,10 +767,8 @@ export default function HubScreen({
                 ))}
 
                 <div
+                    className="foundry-quiet-panel"
                     style={{
-                        background: "rgba(255,255,255,0.02)",
-                        border: "1px solid rgba(255,255,255,0.06)",
-                        borderRadius: 16,
                         padding: "14px 16px",
                         marginBottom: 14,
                         animation: "fadeSlideUp 0.5s ease 0.1s both",
@@ -640,7 +785,7 @@ export default function HubScreen({
                         >
                             Your Journey
                         </div>
-                        <div style={{ fontSize: 11, color: "#E8622A" }}>
+                        <div style={{ fontSize: 11, color: "var(--foundry-text-muted)" }}>
                             Stage {currentStage} of 6
                         </div>
                     </div>
@@ -670,11 +815,14 @@ export default function HubScreen({
                                             borderRadius: 10,
                                             fontSize: 16,
                                             background: isComplete
-                                                ? "linear-gradient(135deg, #E8622A, #c9521e)"
+                                                ? "rgba(76,175,138,0.16)"
                                                 : isCurrent
                                                     ? "rgba(232,98,42,0.15)"
                                                     : "rgba(255,255,255,0.03)",
-                                            border: isCurrent && !isComplete ? "1px solid rgba(232,98,42,0.5)" : "none",
+                                            color: isComplete ? "#4CAF8A" : undefined,
+                                            border: isComplete
+                                                ? "1px solid rgba(76,175,138,0.24)"
+                                                : isCurrent && !isComplete ? "1px solid rgba(232,98,42,0.42)" : "1px solid rgba(255,255,255,0.04)",
                                             display: "flex",
                                             alignItems: "center",
                                             justifyContent: "center",
@@ -687,7 +835,7 @@ export default function HubScreen({
                                     <div
                                         style={{
                                             fontSize: 9,
-                                            color: isCurrent && !isComplete ? "#E8622A" : isComplete ? "#666" : "#333",
+                                            color: isCurrent && !isComplete ? "#E8622A" : isComplete ? "#4CAF8A" : "#555",
                                             fontWeight: isCurrent && !isComplete ? 600 : 400,
                                             textTransform: "uppercase",
                                             letterSpacing: "0.05em",
@@ -718,7 +866,7 @@ export default function HubScreen({
                         </div>
                         <div
                             onClick={() => onEnterStage(currentStage)}
-                            style={{ fontSize: 11, color: "#E8622A", cursor: "pointer" }}
+                            style={{ fontSize: 11, color: "var(--foundry-text-secondary)", cursor: "pointer" }}
                         >
                             Continue Stage {currentStage} →
                         </div>
@@ -751,13 +899,97 @@ export default function HubScreen({
                     )}
                 </div>
 
+                <div
+                    className="foundry-soft-panel"
+                    style={{
+                        padding: "14px 16px",
+                        marginBottom: 14,
+                        animation: "fadeSlideUp 0.5s ease 0.12s both",
+                    }}
+                >
+                    <div className="hub-section-header" style={{ marginBottom: 12 }}>
+                        <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>
+                            Execution System
+                        </div>
+                        <div style={{ fontSize: 11, color: "var(--foundry-text-muted)" }}>
+                            Capture, track, revisit
+                        </div>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(185px, 1fr))", gap: 10 }}>
+                        {executionShortcuts.map((item) => (
+                            <button
+                                key={item.label}
+                                onClick={item.onClick}
+                                style={{
+                                    background: "rgba(255,255,255,0.024)",
+                                    border: "1px solid rgba(255,255,255,0.06)",
+                                    borderRadius: 12,
+                                    padding: "11px 12px",
+                                    textAlign: "left",
+                                    cursor: "pointer",
+                                    display: "grid",
+                                    gap: 6,
+                                }}
+                            >
+                                <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#F0EDE8", fontSize: 13, fontWeight: 700 }}>
+                                    <span style={{ color: "#E8622A", display: "flex" }}>{item.icon}</span>
+                                    {item.label}
+                                </div>
+                                <div style={{ fontSize: 11, color: "#8D857C", lineHeight: 1.55 }}>{item.body}</div>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                <div
+                    className="foundry-quiet-panel"
+                    style={{
+                        padding: "14px 16px",
+                        marginBottom: 14,
+                        animation: "fadeSlideUp 0.5s ease 0.16s both",
+                    }}
+                >
+                    <div className="hub-section-header" style={{ marginBottom: 12 }}>
+                        <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>
+                            Support Tools
+                        </div>
+                        <div style={{ fontSize: 11, color: "var(--foundry-text-muted)" }}>
+                            Use when the work calls for them
+                        </div>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 9 }}>
+                        {supportShortcuts.map((item) => (
+                            <button
+                                key={item.label}
+                                onClick={item.onClick}
+                                style={{
+                                    background: "rgba(255,255,255,0.016)",
+                                    border: "1px solid rgba(255,255,255,0.046)",
+                                    borderRadius: 12,
+                                    padding: "10px 11px",
+                                    textAlign: "left",
+                                    cursor: "pointer",
+                                    display: "grid",
+                                    gap: 5,
+                                }}
+                            >
+                                <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#C8C4BE", fontSize: 12, fontWeight: 700 }}>
+                                    <span style={{ color: "#8D857C", display: "flex" }}>{item.icon}</span>
+                                    {item.label}
+                                </div>
+                                <div style={{ fontSize: 10, color: "#6E675F", lineHeight: 1.5 }}>{item.body}</div>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
                 <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "16px", marginBottom: 14, animation: "fadeSlideUp 0.5s ease 0.14s both" }}>
                     <div className="hub-section-header" style={{ marginBottom: 14 }}>
                         <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>
-                            Business Health
+                            Support Signal: Business Health
                         </div>
                         <div className="foundry-inline-actions">
-                            <div style={{ fontSize: 11, color: businessHealth.overallScore >= 62 ? "#4CAF8A" : businessHealth.overallScore >= 45 ? "#D9B15D" : "#E8622A" }}>
+                            <div style={{ fontSize: 11, color: businessHealth.overallScore >= 62 ? "#4CAF8A" : businessHealth.overallScore >= 45 ? "#D9B15D" : "#D96A55" }}>
                                 {businessHealth.statusLabel}
                             </div>
                             <button
@@ -839,12 +1071,12 @@ export default function HubScreen({
                 </div>
 
                 {accessSummary && (
-                    <div style={{ background: "linear-gradient(180deg, rgba(232,98,42,0.08), rgba(255,255,255,0.02))", border: "1px solid rgba(232,98,42,0.16)", borderRadius: 16, padding: "14px 16px", marginBottom: 14, animation: "fadeSlideUp 0.5s ease 0.18s both" }}>
+                    <div className="foundry-soft-panel" style={{ padding: "14px 16px", marginBottom: 14, animation: "fadeSlideUp 0.5s ease 0.18s both" }}>
                         <div className="hub-section-header" style={{ marginBottom: 8 }}>
                             <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>
                                 Access
                             </div>
-                            <div style={{ fontSize: 11, color: accessSummary.canAccessPaidStages ? "#4CAF8A" : "#E8622A" }}>
+                            <div style={{ fontSize: 11, color: accessSummary.canAccessPaidStages ? "#4CAF8A" : "#D9B15D" }}>
                                 {accessSummary.planName} · {accessSummary.statusLabel}
                             </div>
                         </div>
@@ -863,10 +1095,11 @@ export default function HubScreen({
                 )}
                 <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "14px 16px", marginBottom: 14, animation: "fadeSlideUp 0.5s ease 0.22s both" }}>
                     <div className="hub-section-header" style={{ marginBottom: 8 }}>
-                        <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>Business Model Canvas</div>
+                        <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>Execution: Business Model Canvas</div>
                         <button
                             onClick={() => onOpenBusinessModelCanvas?.()}
-                            style={{ background: "rgba(232,98,42,0.1)", border: "1px solid rgba(232,98,42,0.25)", borderRadius: 8, padding: "4px 12px", color: "#E8622A", fontSize: 11, cursor: "pointer", fontWeight: 600 }}
+                            className="foundry-btn foundry-btn--secondary"
+                            style={{ padding: "4px 12px", fontSize: 11 }}
                         >
                             Open Canvas
                         </button>
@@ -878,11 +1111,11 @@ export default function HubScreen({
                 {/* Financial Modeling */}
                 <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "14px 16px", marginBottom: 14, animation: "fadeSlideUp 0.5s ease 0.25s both" }}>
                     <div className="hub-section-header" style={{ marginBottom: 10 }}>
-                        <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>Financial Modeling</div>
+                        <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>Support: Financial Modeling</div>
                         <div className="foundry-inline-actions">
                             <button onClick={openBudgetModal} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "4px 12px", color: "#F0EDE8", fontSize: 11, cursor: "pointer", fontWeight: 500 }}>Customize</button>
                             <button onClick={() => setShowIncomeModal(true)} style={{ background: "rgba(76,175,138,0.1)", border: "1px solid rgba(76,175,138,0.25)", borderRadius: 8, padding: "4px 12px", color: "#4CAF8A", fontSize: 11, cursor: "pointer", fontWeight: 500 }}>+ Revenue</button>
-                            <button onClick={() => setShowExpenseModal(true)} style={{ background: "rgba(232,98,42,0.1)", border: "1px solid rgba(232,98,42,0.25)", borderRadius: 8, padding: "4px 12px", color: "#E8622A", fontSize: 11, cursor: "pointer", fontWeight: 500 }}>+ Expense</button>
+                            <button onClick={() => setShowExpenseModal(true)} style={{ background: "rgba(217,106,85,0.1)", border: "1px solid rgba(217,106,85,0.25)", borderRadius: 8, padding: "4px 12px", color: "#D96A55", fontSize: 11, cursor: "pointer", fontWeight: 500 }}>+ Expense</button>
                         </div>
                     </div>
                     <div style={{ fontSize: 12, color: "#A8A4A0", lineHeight: 1.6, marginBottom: 12 }}>
@@ -897,7 +1130,7 @@ export default function HubScreen({
                     <div className="hub-budget-grid" style={{ marginBottom: 14 }}>
                         {[
                             { label: "Available Cash", value: formatCurrency(financialSummary?.availableCash || profile.budget?.remaining || 0), color: "#F0EDE8" },
-                            { label: "Monthly Burn", value: formatCurrency(financialSummary?.monthlyBurn || 0), color: "#E8622A" },
+                            { label: "Monthly Burn", value: formatCurrency(financialSummary?.monthlyBurn || 0), color: "#D96A55" },
                             { label: "Runway", value: financialSummary?.runwayMonths != null ? `${financialSummary.runwayMonths.toFixed(1)} mo` : "TBD", color: "#4CAF8A" },
                             { label: "Net Snapshot", value: formatCurrency(financialSummary?.roughNetSnapshot || 0), color: (financialSummary?.roughNetSnapshot || 0) >= 0 ? "#4CAF8A" : "#FF6B6B" },
                         ].map(item => (
@@ -981,11 +1214,11 @@ export default function HubScreen({
                                                 onClick={() => handleDisconnectPlaid(item.plaidItemId, item.institutionName)}
                                                 disabled={syncingPlaidItemId === item.plaidItemId}
                                                 style={{
-                                                    background: "rgba(232,98,42,0.1)",
-                                                    border: "1px solid rgba(232,98,42,0.25)",
+                                                    background: "rgba(217,106,85,0.1)",
+                                                    border: "1px solid rgba(217,106,85,0.25)",
                                                     borderRadius: 8,
                                                     padding: "8px 12px",
-                                                    color: "#E8622A",
+                                                    color: "#D96A55",
                                                     fontSize: 11,
                                                     cursor: syncingPlaidItemId === item.plaidItemId ? "default" : "pointer",
                                                 }}
@@ -1011,7 +1244,7 @@ export default function HubScreen({
                                     <div style={{ fontSize: 11, color: "#C8C4BE" }}>{bucket.allocationPercent}% · {formatCurrency(bucket.estimatedAmount)}</div>
                                 </div>
                                 <div style={{ height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 999, overflow: "hidden" }}>
-                                    <div style={{ width: `${Math.max(0, Math.min(bucket.allocationPercent, 100))}%`, height: "100%", background: bucket.bucketType === "profit" || bucket.bucketType === "tax" ? "linear-gradient(90deg, #4CAF8A, #75D0A7)" : "linear-gradient(90deg, #E8622A, #F5A843)" }} />
+                                    <div style={{ width: `${Math.max(0, Math.min(bucket.allocationPercent, 100))}%`, height: "100%", background: bucket.bucketType === "profit" || bucket.bucketType === "tax" ? "linear-gradient(90deg, #4CAF8A, #75D0A7)" : "linear-gradient(90deg, #D96A55, #D9B15D)" }} />
                                 </div>
                             </div>
                         ))}
@@ -1023,7 +1256,7 @@ export default function HubScreen({
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10, marginBottom: 10 }}>
                             <div>
                                 <div style={{ fontSize: 10, color: "#666", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>Recurring Expenses</div>
-                                <div style={{ fontSize: 16, color: "#E8622A", fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>{formatCurrency(financialSummary?.monthlyRecurringExpenses || 0)}/mo</div>
+                                <div style={{ fontSize: 16, color: "#D96A55", fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>{formatCurrency(financialSummary?.monthlyRecurringExpenses || 0)}/mo</div>
                             </div>
                             <div>
                                 <div style={{ fontSize: 10, color: "#666", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>Recurring Revenue</div>
@@ -1046,7 +1279,7 @@ export default function HubScreen({
                                     </div>
                                     <div>
                                         <div style={{ fontSize: 10, color: "#666", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>Monthly Expenses</div>
-                                        <div style={{ fontSize: 15, color: "#E8622A", fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>{formatCurrency(financialSummary?.operatingView.monthlyExpenses || 0)}</div>
+                                        <div style={{ fontSize: 15, color: "#D96A55", fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>{formatCurrency(financialSummary?.operatingView.monthlyExpenses || 0)}</div>
                                     </div>
                                     <div>
                                         <div style={{ fontSize: 10, color: "#666", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>Operating Gap</div>
@@ -1082,12 +1315,12 @@ export default function HubScreen({
                                                 {formatFinancialDate(transaction.postedDate || transaction.authorizedDate)}{transaction.currency ? ` · ${transaction.currency}` : ""}
                                             </div>
                                         </div>
-                                        <div style={{ fontSize: 12, color: Number(transaction.amount || 0) >= 0 ? "#E8622A" : "#4CAF8A", fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>
+                                        <div style={{ fontSize: 12, color: Number(transaction.amount || 0) >= 0 ? "#D96A55" : "#4CAF8A", fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>
                                             {Number(transaction.amount || 0) >= 0 ? "-" : "+"}{formatCurrency(Math.abs(Number(transaction.amount || 0)))}
                                         </div>
                                     </div>
                                     <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
-                                        <button onClick={() => handleAcceptImportedExpense(transaction)} disabled={plaidActionId === transaction.id} style={{ background: "rgba(232,98,42,0.1)", border: "1px solid rgba(232,98,42,0.25)", borderRadius: 8, padding: "5px 10px", color: "#E8622A", fontSize: 11, cursor: plaidActionId === transaction.id ? "default" : "pointer" }}>Accept as Expense</button>
+                                        <button onClick={() => handleAcceptImportedExpense(transaction)} disabled={plaidActionId === transaction.id} style={{ background: "rgba(217,106,85,0.1)", border: "1px solid rgba(217,106,85,0.25)", borderRadius: 8, padding: "5px 10px", color: "#D96A55", fontSize: 11, cursor: plaidActionId === transaction.id ? "default" : "pointer" }}>Accept as Expense</button>
                                         <button onClick={() => handleAcceptImportedRevenue(transaction)} disabled={plaidActionId === transaction.id} style={{ background: "rgba(76,175,138,0.1)", border: "1px solid rgba(76,175,138,0.25)", borderRadius: 8, padding: "5px 10px", color: "#4CAF8A", fontSize: 11, cursor: plaidActionId === transaction.id ? "default" : "pointer" }}>Accept as Revenue</button>
                                         <button onClick={() => handleIgnoreImportedTransaction(transaction.id)} disabled={plaidActionId === transaction.id} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "5px 10px", color: "#A8A4A0", fontSize: 11, cursor: plaidActionId === transaction.id ? "default" : "pointer" }}>Ignore</button>
                                     </div>
@@ -1109,7 +1342,7 @@ export default function HubScreen({
                                         <div style={{ fontSize: 10, color: "#666", marginTop: 2 }}>{exp.category} · {String(exp.frequency).replace("_", " ")}{exp.incurredOn ? ` · ${formatFinancialDate(exp.incurredOn)}` : ""}</div>
                                     </div>
                                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                        <div style={{ fontSize: 12, color: "#E8622A", fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>-{formatCurrency(exp.amount)}</div>
+                                        <div style={{ fontSize: 12, color: "#D96A55", fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>-{formatCurrency(exp.amount)}</div>
                                         <button onClick={() => deleteExpense(exp.id)} style={{ background: "none", border: "none", color: "#555", cursor: "pointer", fontSize: 14, lineHeight: 1, padding: "0 2px" }} title="Delete expense">×</button>
                                     </div>
                                 </div>
@@ -1184,26 +1417,11 @@ export default function HubScreen({
                     </div>
                 )}
 
-                {/* Archive quick-access */}
-                <button
-                    onClick={() => onOpenArchive?.()}
-                    style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderLeft: "4px solid rgba(232,98,42,0.4)", borderRadius: 16, padding: "14px 16px", marginBottom: 14, animation: "fadeSlideUp 0.5s ease 0.28s both", cursor: "pointer", textAlign: "left" }}
-                >
-                    <div style={{ width: 40, height: 40, borderRadius: 11, background: "rgba(232,98,42,0.1)", border: "1px solid rgba(232,98,42,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <Archive size={18} color="#E8622A" />
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 14, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 2 }}>Archive</div>
-                        <div style={{ fontSize: 11, color: "#666", fontFamily: "'Lora', Georgia, serif" }}>Browse saved conversation snapshots</div>
-                    </div>
-                    <span style={{ fontSize: 12, color: "#555" }}>→</span>
-                </button>
-
                 {/* Decisions */}
                 <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "14px 16px", animation: "fadeSlideUp 0.5s ease 0.3s both" }}>
                         <div className="hub-section-header" style={{ marginBottom: 14 }}>
                             <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>Decisions</div>
-                        <button onClick={() => setShowDecisionModal(true)} style={{ background: "rgba(232,98,42,0.1)", border: "1px solid rgba(232,98,42,0.25)", borderRadius: 8, padding: "4px 12px", color: "#E8622A", fontSize: 11, cursor: "pointer", fontWeight: 500 }}>+ Log Decision</button>
+                        <button onClick={() => setShowDecisionModal(true)} className="foundry-btn foundry-btn--secondary" style={{ padding: "4px 12px", fontSize: 11 }}>+ Log Decision</button>
                     </div>
                     {(!profile.decisions || profile.decisions.length === 0) ? (
                         <div style={{ fontSize: 13, color: "#444", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", textAlign: "center", padding: "16px 0" }}>No decisions logged yet. Every call you make deliberately is worth recording.</div>
@@ -1476,7 +1694,7 @@ function BusinessHealthDonut({ health }) {
         return cos > 0.25 ? "start" : cos < -0.25 ? "end" : "middle";
     };
 
-    const scoreColor = health.overallScore >= 62 ? "#4CAF8A" : health.overallScore >= 45 ? "#D9B15D" : "#E8622A";
+    const scoreColor = health.overallScore >= 62 ? "#4CAF8A" : health.overallScore >= 45 ? "#D9B15D" : "#D96A55";
 
     return (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10 }}>

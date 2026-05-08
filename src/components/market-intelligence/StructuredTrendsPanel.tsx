@@ -19,9 +19,9 @@ function getImpactDisplay(impactLevel: string) {
     if (normalized === "medium") {
         return {
             label: "Watch This",
-            color: "#E8622A",
-            border: "#E8622A",
-            background: "rgba(232,98,42,0.15)",
+            color: "#D9B15D",
+            border: "#D9B15D",
+            background: "rgba(217,177,93,0.13)",
             tooltip: "This trend is growing and will matter to your business soon",
         };
     }
@@ -37,7 +37,7 @@ function getImpactDisplay(impactLevel: string) {
 function getTimeframeDisplay(timeframe: string) {
     const normalized = timeframe.trim().toLowerCase();
     if (normalized === "current") return { label: "Happening Now", color: "#4CAF8A" };
-    if (normalized === "emerging") return { label: "Emerging", color: "#E8622A" };
+    if (normalized === "emerging") return { label: "Emerging", color: "#63B3ED" };
     if (normalized === "future") return { label: "Future Signal", color: "rgba(240,237,232,0.4)" };
     return { label: timeframe || "Unspecified", color: "rgba(240,237,232,0.4)" };
 }
@@ -86,7 +86,7 @@ export default function StructuredTrendsPanel({
                     return (
                         <div key={trend.id} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "16px 16px 14px" }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, marginBottom: 8 }}>
-                                <div style={{ fontSize: 15, fontWeight: 700, color: "#E8622A", fontFamily: "'Lora', Georgia, serif", lineHeight: 1.35, flex: 1, minWidth: 0 }}>{trend.name}</div>
+                                <div style={{ fontSize: 15, fontWeight: 700, color: "#63B3ED", fontFamily: "'Lora', Georgia, serif", lineHeight: 1.35, flex: 1, minWidth: 0 }}>{trend.name}</div>
                                 <div
                                     onMouseEnter={() => setHoveredTrendId(trend.id)}
                                     onMouseLeave={() => setHoveredTrendId(null)}

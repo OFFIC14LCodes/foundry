@@ -84,6 +84,45 @@ function normalizeSource(entry: unknown): NormalizedSourceInsight {
     };
 }
 
+export function extractSourceInsightsFromMarkdown(content: string): NormalizedSourceInsight[] {
+    const sourcesByUrl = new Map<string, NormalizedSourceInsight>();
+    const linkPattern = /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g;
+    let match: RegExpExecArray | null;
+
+    while ((match = linkPattern.exec(content)) !== null) {
+        const title = match[1]?.replace(/^Source:\s*/i, "").trim();
+        const url = match[2]?.trim();
+        if (!title || !url || sourcesByUrl.has(url)) continue;
+        sourcesByUrl.set(url, {
+            title,
+            url,
+            snippet: "",
+        });
+    }
+
+    return Array.from(sourcesByUrl.values());
+}
+
+export function mergeSourceInsights(
+    extractedSources: NormalizedSourceInsight[],
+    fallbackSources: NormalizedSourceInsight[],
+): NormalizedSourceInsight[] {
+    const sourcesByUrl = new Map<string, NormalizedSourceInsight>();
+
+    for (const source of [...extractedSources, ...fallbackSources]) {
+        const title = source.title?.trim();
+        const url = source.url?.trim();
+        if (!title || !url || sourcesByUrl.has(url)) continue;
+        sourcesByUrl.set(url, {
+            title,
+            url,
+            snippet: source.snippet?.trim() ?? "",
+        });
+    }
+
+    return Array.from(sourcesByUrl.values());
+}
+
 export function buildMarketIntelligenceExtractionPrompt(
     reportContent: string,
     founderContext?: MarketIntelligenceFounderContext | null,
@@ -172,16 +211,24 @@ export function parseMarketIntelligenceExtraction(rawText: string): Pick<
         const parsed = JSON.parse(rawText) as Record<string, unknown>;
         return {
             competitors: Array.isArray(parsed.competitors)
-                ? parsed.competitors.map(normalizeCompetitor)
+                ? parsed.competitors
+                    .map(normalizeCompetitor)
+                    .filter((competitor) => competitor.name.trim() && (competitor.description.trim() || competitor.summary.trim()))
                 : [],
             trends: Array.isArray(parsed.trends)
-                ? parsed.trends.map(normalizeTrend)
+                ? parsed.trends
+                    .map(normalizeTrend)
+                    .filter((trend) => trend.name.trim() && trend.description.trim() && trend.impactLevel.trim() && trend.timeframe.trim())
                 : [],
             benchmarks: Array.isArray(parsed.benchmarks)
-                ? parsed.benchmarks.map(normalizeBenchmark)
+                ? parsed.benchmarks
+                    .map(normalizeBenchmark)
+                    .filter((benchmark) => benchmark.metric.trim() && benchmark.value.trim())
                 : [],
             sources: Array.isArray(parsed.sources)
-                ? parsed.sources.map(normalizeSource)
+                ? parsed.sources
+                    .map(normalizeSource)
+                    .filter((source) => source.title.trim() && source.url.trim())
                 : [],
         };
     } catch {

@@ -43,6 +43,7 @@ interface ForgeBubbleProps {
     currentScreen: string;
     screenContext?: DocContext | AcademyBubbleContext | null;
     onBubbleSummaryAdded?: (summary: any) => void;
+    universalMemoryContext?: string;
 }
 
 const SCREEN_LABELS: Record<string, string> = {
@@ -69,6 +70,7 @@ const DOC_PHASE_LABELS: Record<string, string> = {
 
 const BUBBLE_SIZE = 56;
 const BUBBLE_STORAGE_KEY = "forge-bubble-pos";
+const SCREEN_TEXT_LIMIT = 6000;
 
 function clamp(val: number, min: number, max: number) {
     return Math.max(min, Math.min(max, val));
@@ -85,7 +87,68 @@ function loadSavedPos(): { bottom: number; right: number } {
     return { bottom: 24, right: 24 };
 }
 
-export default function ForgeBubble({ profile, userId, currentScreen, screenContext, onBubbleSummaryAdded }: ForgeBubbleProps) {
+function collectVisibleScreenText() {
+    if (typeof document === "undefined") return "";
+    const body = document.body;
+    if (!body) return "";
+
+    const lines: string[] = [];
+    let totalLength = 0;
+    const walker = document.createTreeWalker(
+        body,
+        NodeFilter.SHOW_TEXT,
+        {
+            acceptNode(node) {
+                const text = node.textContent?.replace(/\s+/g, " ").trim();
+                if (!text) return NodeFilter.FILTER_REJECT;
+
+                const parent = node.parentElement;
+                if (!parent) return NodeFilter.FILTER_REJECT;
+                if (parent.closest("[data-forge-bubble]")) return NodeFilter.FILTER_REJECT;
+
+                const tagName = parent.tagName.toLowerCase();
+                if (["script", "style", "noscript", "svg"].includes(tagName)) {
+                    return NodeFilter.FILTER_REJECT;
+                }
+
+                let element: HTMLElement | null = parent;
+                while (element && element !== body) {
+                    const style = window.getComputedStyle(element);
+                    if (
+                        style.display === "none" ||
+                        style.visibility === "hidden" ||
+                        style.opacity === "0" ||
+                        element.getAttribute("aria-hidden") === "true"
+                    ) {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    element = element.parentElement;
+                }
+
+                const rect = parent.getBoundingClientRect();
+                const isInViewport = rect.bottom >= 0 &&
+                    rect.right >= 0 &&
+                    rect.top <= window.innerHeight &&
+                    rect.left <= window.innerWidth;
+
+                return isInViewport ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+            },
+        },
+    );
+
+    while (walker.nextNode() && totalLength < SCREEN_TEXT_LIMIT) {
+        const text = walker.currentNode.textContent?.replace(/\s+/g, " ").trim();
+        if (!text) continue;
+        const previous = lines[lines.length - 1];
+        if (previous === text) continue;
+        lines.push(text);
+        totalLength += text.length + 1;
+    }
+
+    return lines.join("\n").slice(0, SCREEN_TEXT_LIMIT).trim();
+}
+
+export default function ForgeBubble({ profile, userId, currentScreen, screenContext, onBubbleSummaryAdded, universalMemoryContext = "" }: ForgeBubbleProps) {
     const [open, setOpen] = useState(false);
     const [messages, setMessages] = useState<BubbleMessage[]>([]);
     const [input, setInput] = useState("");
@@ -161,6 +224,7 @@ export default function ForgeBubble({ profile, userId, currentScreen, screenCont
     const buildContext = (currentPrompt: string) => {
         const now = new Date();
         const dateStr = now.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+        const visibleScreenText = collectVisibleScreenText();
         const bookContext = buildFoundryBookContext(
             Number(profile.currentStage) || 1,
             [...messages.slice(-4).map((message) => message.text), currentPrompt],
@@ -203,6 +267,8 @@ Strategy: ${profile.strategyLabel || profile.strategy} | Current Stage: ${profil
 Budget: $${(profile.budget?.remaining || 0).toLocaleString()} remaining of $${(profile.budget?.total || 0).toLocaleString()} | Spent: $${(profile.budget?.spent || 0).toLocaleString()}
 
 You are in a quick-access floating chat bubble. The founder is asking a quick question or needs help with what they're looking at. Be helpful, warm, and concise — this is a quick-assist context, not a deep coaching session. You are still Forge — same personality, same expertise — just more conversational. You can help them understand what they see on the screen, navigate the app, or think through a quick question.${documentSection}
+${visibleScreenText ? `\n\nVISIBLE SCREEN TEXT SNAPSHOT:\nThis is text currently visible in the Foundry app viewport, excluding the Forge bubble itself. If the founder asks about "this", "what I'm reading", "this screen", or any visible item, use this as immediate screen context.\n\n${visibleScreenText}` : ""}
+${universalMemoryContext ? `\n\n${universalMemoryContext}` : ""}
 ${bookContext.context ? `\n\n${bookContext.context}` : ""}
         `.trim(),
             bookMatches: bookContext.matches,
@@ -314,6 +380,7 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
             {/* Chat Window */}
             {open && (
                 <div
+                    data-forge-bubble="true"
                     style={{
                         position: "fixed",
                         bottom: pos.bottom + BUBBLE_SIZE + 12,
@@ -646,6 +713,7 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
 
             {/* Floating Bubble Button */}
             <button
+                data-forge-bubble="true"
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}

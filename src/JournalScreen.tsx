@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { saveJournalEntry, updateJournalEntry, deleteJournalEntry, loadWeeklySummary, saveWeeklySummary } from "./db";
 import { generateWeeklyJournalSummary, summarizeJournalEntry } from "./lib/journalIntelligence";
+import { callForgeAPI } from "./lib/forgeApi";
 import Logo from "./components/Logo";
 import MicButton from "./components/MicButton";
 
@@ -51,6 +52,13 @@ const ENTRY_TEMPLATES = [
     },
 ];
 
+const JOURNAL_QUICK_CHAT_SYSTEM = `You are Forge, a direct but thoughtful founder coach.
+You are responding inside a private journal quick chat. The founder clicked "Ask Forge" on one journal entry.
+Respond first. Do not ask what they want to talk about.
+If the entry contains a decision, fear, tension, blocker, or pattern, reflect the real issue back and ask one or two focused follow-up questions.
+If the entry is mostly a status update, identify the useful signal and suggest one practical next thought.
+Keep it under 180 words. Be warm without being therapeutic. Do not diagnose, moralize, or over-explain.`;
+
 type JournalEntryView = {
     id: string;
     content: string;
@@ -64,8 +72,52 @@ type JournalEntryView = {
     mood?: string | null;
 };
 
+type JournalQuickChatMessage = {
+    id: string;
+    role: "user" | "forge";
+    text: string;
+};
+
 function calcWordCount(text: string): number {
     return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+function buildJournalQuickChatPrompt(entry: JournalEntryView, profile: any) {
+    const businessContext = [
+        profile?.businessName ? `Business: ${profile.businessName}` : null,
+        profile?.industry ? `Industry: ${profile.industry}` : null,
+        profile?.currentStage ? `Current stage: ${profile.currentStage}` : null,
+        profile?.strategyLabel ? `Strategy: ${profile.strategyLabel}` : null,
+    ].filter(Boolean).join("\n");
+
+    return `Founder context:
+${businessContext || "No additional business context available."}
+
+Journal entry date: ${new Date(entry.createdAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+Mood: ${entry.mood || "Not recorded"}
+Themes: ${(entry.themes ?? []).join(", ") || "None recorded"}
+
+Journal entry:
+${entry.content}
+
+Start the quick chat by responding to this entry directly.`;
+}
+
+function buildJournalQuickChatFollowupPrompt(entry: JournalEntryView, profile: any) {
+    const businessContext = [
+        profile?.businessName ? `Business: ${profile.businessName}` : null,
+        profile?.industry ? `Industry: ${profile.industry}` : null,
+        profile?.currentStage ? `Current stage: ${profile.currentStage}` : null,
+        profile?.strategyLabel ? `Strategy: ${profile.strategyLabel}` : null,
+    ].filter(Boolean).join("\n");
+
+    return `Keep this private journal entry as the grounding context for the conversation.
+
+Founder context:
+${businessContext || "No additional business context available."}
+
+Journal entry:
+${entry.content}`;
 }
 
 function getReadTimeLabel(wordCount: number) {
@@ -169,7 +221,7 @@ function ThemePills({ themes }: { themes?: string[] }) {
     );
 }
 
-export default function JournalScreen({ userId, entries, onEntriesChange, onBack, onOpenNav, profile, onAskForge }) {
+export default function JournalScreen({ userId, entries, onEntriesChange, onBack, onOpenNav, profile }) {
     const typedEntries = entries as JournalEntryView[];
     const [writing, setWriting] = useState(false);
     const [draft, setDraft] = useState("");
@@ -186,6 +238,11 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
     const [writingPrompts, setWritingPrompts] = useState<string[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
+    const [quickChatEntry, setQuickChatEntry] = useState<JournalEntryView | null>(null);
+    const [quickChatMessages, setQuickChatMessages] = useState<JournalQuickChatMessage[]>([]);
+    const [quickChatDraft, setQuickChatDraft] = useState("");
+    const [quickChatLoading, setQuickChatLoading] = useState(false);
+    const [quickChatError, setQuickChatError] = useState<string | null>(null);
 
     // Edit mode
     const [editingEntry, setEditingEntry] = useState<JournalEntryView | null>(null);
@@ -199,6 +256,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
+    const quickChatScrollRef = useRef<HTMLDivElement>(null);
 
     const wordCount = calcWordCount(draft);
     const recentEntries = useMemo(() => getRecentEntries(typedEntries), [typedEntries]);
@@ -209,6 +267,11 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
         if (!writing) return;
         textareaRef.current?.focus();
     }, [writing]);
+
+    useEffect(() => {
+        if (!quickChatEntry) return;
+        quickChatScrollRef.current?.scrollTo({ top: quickChatScrollRef.current.scrollHeight, behavior: "smooth" });
+    }, [quickChatEntry, quickChatMessages, quickChatLoading]);
 
     useEffect(() => {
         const handler = (event: KeyboardEvent) => {
@@ -440,6 +503,83 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
         } catch (error) {
             console.error("copy journal entry error:", error);
         }
+    };
+
+    const openQuickChat = async (entry: JournalEntryView) => {
+        setQuickChatEntry(entry);
+        setQuickChatMessages([]);
+        setQuickChatDraft("");
+        setQuickChatError(null);
+        setQuickChatLoading(true);
+
+        try {
+            const response = await callForgeAPI(
+                [{ role: "user", content: buildJournalQuickChatPrompt(entry, profile) }],
+                JOURNAL_QUICK_CHAT_SYSTEM,
+                700,
+            );
+            setQuickChatMessages([
+                {
+                    id: `journal-quick-forge-${Date.now()}`,
+                    role: "forge",
+                    text: response.trim() || "I read it. What part of this feels most important to unpack first?",
+                },
+            ]);
+        } catch (error) {
+            console.error("journal quick chat open error:", error);
+            setQuickChatError("Forge could not respond to this entry right now.");
+        } finally {
+            setQuickChatLoading(false);
+        }
+    };
+
+    const sendQuickChatMessage = async () => {
+        if (!quickChatEntry || !quickChatDraft.trim() || quickChatLoading) return;
+        const userText = quickChatDraft.trim();
+        const nextMessages: JournalQuickChatMessage[] = [
+            ...quickChatMessages,
+            {
+                id: `journal-quick-user-${Date.now()}`,
+                role: "user",
+                text: userText,
+            },
+        ];
+        setQuickChatMessages(nextMessages);
+        setQuickChatDraft("");
+        setQuickChatError(null);
+        setQuickChatLoading(true);
+
+        try {
+            const apiMessages = [
+                { role: "user", content: buildJournalQuickChatFollowupPrompt(quickChatEntry, profile) },
+                ...nextMessages.map((message) => ({
+                    role: message.role === "forge" ? "assistant" : "user",
+                    content: message.text,
+                })),
+            ];
+            const response = await callForgeAPI(apiMessages, JOURNAL_QUICK_CHAT_SYSTEM, 800);
+            setQuickChatMessages([
+                ...nextMessages,
+                {
+                    id: `journal-quick-forge-${Date.now()}`,
+                    role: "forge",
+                    text: response.trim() || "Say a little more about what feels stuck here.",
+                },
+            ]);
+        } catch (error) {
+            console.error("journal quick chat send error:", error);
+            setQuickChatError("Forge could not send a response. Try again.");
+        } finally {
+            setQuickChatLoading(false);
+        }
+    };
+
+    const closeQuickChat = () => {
+        setQuickChatEntry(null);
+        setQuickChatMessages([]);
+        setQuickChatDraft("");
+        setQuickChatError(null);
+        setQuickChatLoading(false);
     };
 
     const formatDate = (isoString: string) => {
@@ -864,7 +1004,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                     borderTop: "1px solid rgba(255,255,255,0.04)",
                                 }}>
                                     <button
-                                        onClick={() => onAskForge?.(entry.content)}
+                                        onClick={() => void openQuickChat(entry)}
                                         style={{
                                             background: "transparent",
                                             border: "none",
@@ -899,6 +1039,198 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
 
                 <div style={{ height: 40 }} />
             </div>
+
+            {quickChatEntry && (
+                <div style={{
+                    position: "fixed",
+                    inset: 0,
+                    zIndex: 270,
+                    background: "rgba(8,8,9,0.94)",
+                    backdropFilter: "blur(16px)",
+                    display: "flex",
+                    flexDirection: "column",
+                    color: "#F0EDE8",
+                }}>
+                    <div style={{
+                        padding: "max(13px, calc(9px + env(safe-area-inset-top))) 16px 13px",
+                        borderBottom: "1px solid rgba(255,255,255,0.07)",
+                        background: "rgba(8,8,9,0.9)",
+                        flexShrink: 0,
+                    }}>
+                        <div style={{
+                            maxWidth: 820,
+                            margin: "0 auto",
+                            display: "grid",
+                            gridTemplateColumns: "minmax(0, 1fr) auto",
+                            gap: 12,
+                            alignItems: "center",
+                        }}>
+                            <div style={{ minWidth: 0 }}>
+                                <div style={{
+                                    fontSize: 11,
+                                    color: "rgba(232,98,42,0.8)",
+                                    fontFamily: "'DM Sans', sans-serif",
+                                    textTransform: "uppercase",
+                                    letterSpacing: "0.08em",
+                                    marginBottom: 3,
+                                }}>
+                                    Journal quick chat
+                                </div>
+                                <div style={{
+                                    fontSize: 14,
+                                    color: "rgba(240,237,232,0.72)",
+                                    fontFamily: "'Lora', Georgia, serif",
+                                    whiteSpace: "nowrap",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                }}>
+                                    {formatDate(quickChatEntry.createdAt)}
+                                </div>
+                            </div>
+                            <button
+                                onClick={closeQuickChat}
+                                style={{
+                                    background: "rgba(255,255,255,0.04)",
+                                    border: "1px solid rgba(255,255,255,0.08)",
+                                    borderRadius: 9,
+                                    color: "rgba(240,237,232,0.58)",
+                                    fontSize: 13,
+                                    fontFamily: "'DM Sans', sans-serif",
+                                    cursor: "pointer",
+                                    padding: "8px 12px",
+                                }}
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+
+                    <div ref={quickChatScrollRef} style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
+                        <div style={{ maxWidth: 820, margin: "0 auto", display: "grid", gap: 14 }}>
+                            <div style={{
+                                background: "rgba(255,255,255,0.025)",
+                                border: "1px solid rgba(255,255,255,0.07)",
+                                borderRadius: 14,
+                                padding: "14px 16px",
+                            }}>
+                                <div style={{
+                                    fontSize: 10,
+                                    color: "rgba(240,237,232,0.34)",
+                                    fontFamily: "'DM Sans', sans-serif",
+                                    textTransform: "uppercase",
+                                    letterSpacing: "0.08em",
+                                    marginBottom: 8,
+                                }}>
+                                    Entry
+                                </div>
+                                <div style={{
+                                    fontSize: 13,
+                                    color: "rgba(240,237,232,0.62)",
+                                    lineHeight: 1.75,
+                                    whiteSpace: "pre-wrap",
+                                    maxHeight: 170,
+                                    overflowY: "auto",
+                                }}>
+                                    {quickChatEntry.content}
+                                </div>
+                            </div>
+
+                            {quickChatMessages.map((message) => (
+                                <div
+                                    key={message.id}
+                                    style={{
+                                        display: "flex",
+                                        justifyContent: message.role === "user" ? "flex-end" : "flex-start",
+                                    }}
+                                >
+                                    <div style={{
+                                        maxWidth: "min(680px, 88%)",
+                                        background: message.role === "user" ? "rgba(232,98,42,0.12)" : "rgba(255,255,255,0.04)",
+                                        border: message.role === "user" ? "1px solid rgba(232,98,42,0.25)" : "1px solid rgba(255,255,255,0.08)",
+                                        borderRadius: 14,
+                                        padding: "12px 14px",
+                                        color: message.role === "user" ? "#F0EDE8" : "rgba(240,237,232,0.82)",
+                                        fontSize: 14,
+                                        lineHeight: 1.75,
+                                        whiteSpace: "pre-wrap",
+                                        fontFamily: message.role === "user" ? "'DM Sans', sans-serif" : "'Lora', Georgia, serif",
+                                    }}>
+                                        {message.text}
+                                    </div>
+                                </div>
+                            ))}
+
+                            {quickChatLoading && (
+                                <div style={{ display: "flex", alignItems: "center", gap: 7, color: "rgba(240,237,232,0.42)", fontSize: 12, fontFamily: "'DM Sans', sans-serif", padding: "4px 2px" }}>
+                                    <span style={{ display: "inline-flex", gap: 4 }}>
+                                        {[0, 1, 2].map(index => (
+                                            <span key={index} style={{ width: 6, height: 6, borderRadius: "50%", background: "#E8622A", animation: "forgePulse 1.2s ease-in-out infinite", animationDelay: `${index * 0.18}s` }} />
+                                        ))}
+                                    </span>
+                                    Forge is reading this
+                                </div>
+                            )}
+
+                            {quickChatError && (
+                                <div style={{ color: "#F5A843", fontSize: 12, lineHeight: 1.6, fontFamily: "'DM Sans', sans-serif" }}>
+                                    {quickChatError}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div style={{
+                        flexShrink: 0,
+                        borderTop: "1px solid rgba(255,255,255,0.07)",
+                        background: "rgba(8,8,9,0.96)",
+                        padding: "12px 16px max(12px, env(safe-area-inset-bottom))",
+                    }}>
+                        <form
+                            onSubmit={(event) => {
+                                event.preventDefault();
+                                void sendQuickChatMessage();
+                            }}
+                            style={{ maxWidth: 820, margin: "0 auto", display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 10, alignItems: "center" }}
+                        >
+                            <input
+                                value={quickChatDraft}
+                                onChange={(event) => setQuickChatDraft(event.target.value)}
+                                placeholder="Reply to Forge..."
+                                disabled={quickChatLoading}
+                                style={{
+                                    width: "100%",
+                                    background: "rgba(255,255,255,0.04)",
+                                    border: "1px solid rgba(255,255,255,0.08)",
+                                    borderRadius: 12,
+                                    color: "#F0EDE8",
+                                    fontSize: 14,
+                                    fontFamily: "'DM Sans', sans-serif",
+                                    padding: "12px 13px",
+                                    outline: "none",
+                                    boxSizing: "border-box",
+                                }}
+                            />
+                            <button
+                                type="submit"
+                                disabled={!quickChatDraft.trim() || quickChatLoading}
+                                style={{
+                                    background: !quickChatDraft.trim() || quickChatLoading ? "rgba(232,98,42,0.08)" : "linear-gradient(135deg, #E8622A, #c9521e)",
+                                    border: !quickChatDraft.trim() || quickChatLoading ? "1px solid rgba(232,98,42,0.14)" : "1px solid rgba(232,98,42,0.35)",
+                                    borderRadius: 12,
+                                    color: !quickChatDraft.trim() || quickChatLoading ? "rgba(232,98,42,0.38)" : "#fff",
+                                    fontSize: 13,
+                                    fontWeight: 700,
+                                    fontFamily: "'DM Sans', sans-serif",
+                                    cursor: !quickChatDraft.trim() || quickChatLoading ? "default" : "pointer",
+                                    padding: "12px 15px",
+                                }}
+                            >
+                                Send
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             {writing && (
                 <div style={{

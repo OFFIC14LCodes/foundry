@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode, type ChangeEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode, type ChangeEvent, type CSSProperties } from "react";
 import { Archive } from "lucide-react";
 import { STAGES_DATA } from "../constants/stages";
 import { supabase } from "../supabase";
@@ -123,6 +123,32 @@ type PathRecommendation = {
     action: "Continue" | "Start";
 };
 
+type AcademyView = "path" | "library" | "glossary";
+type LibraryStatusFilter = "all" | AcademyProgressStatus;
+type LibraryTypeFilter = "all" | AcademyContentType | "series";
+type LibrarySortOption = "recommended" | "stage" | "recent" | "shortest";
+
+type AcademyCatalogItem = {
+    id: string;
+    kind: LibraryTypeFilter;
+    title: string;
+    description: string;
+    categoryLabel: string;
+    typeLabel: string;
+    stageLabel: string;
+    stageNumber: number;
+    minutes: number | null;
+    status: AcademyProgressStatus;
+    lastActivity: string;
+    priority: number;
+    featured: boolean;
+    completedItems?: number;
+    totalItems?: number;
+    nextTitle?: string | null;
+    content?: AcademyContent;
+    series?: AcademySeries;
+};
+
 function isMissingRelationError(error: any) {
     const message = String(error?.message ?? "").toLowerCase();
     return error?.code === "PGRST205" || message.includes("user_lesson_progress");
@@ -162,13 +188,17 @@ export default function ForgeAcademyScreen({
     const [selectedSeries, setSelectedSeries] = useState<AcademySeries | null>(null);
     const [busyKey, setBusyKey] = useState<string | null>(null);
     const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 900);
-    const [activeView, setActiveView] = useState<"path" | "library" | "glossary" | "guide">("path");
+    const [activeView, setActiveView] = useState<AcademyView>("path");
     const [glossaryTerms, setGlossaryTerms] = useState<GlossaryTerm[]>([]);
     const [glossaryLoading, setGlossaryLoading] = useState(false);
     const [pathProgressRows, setPathProgressRows] = useState<UserLessonProgressRow[]>([]);
     const [pathProgressLoading, setPathProgressLoading] = useState(true);
     const [expandedEnrichmentStages, setExpandedEnrichmentStages] = useState<Record<number, boolean>>({});
     const [actionNotice, setActionNotice] = useState<string | null>(null);
+    const [librarySearch, setLibrarySearch] = useState("");
+    const [libraryStatusFilter, setLibraryStatusFilter] = useState<LibraryStatusFilter>("all");
+    const [libraryTypeFilter, setLibraryTypeFilter] = useState<LibraryTypeFilter>("all");
+    const [librarySort, setLibrarySort] = useState<LibrarySortOption>("recommended");
 
     useEffect(() => {
         const onResize = () => setIsMobile(window.innerWidth <= 900);
@@ -317,6 +347,126 @@ export default function ForgeAcademyScreen({
             return categoryMatch && stageMatch;
         });
     }, [selectedCategoryId, selectedStageId, visibleSeries]);
+
+    const libraryCatalogItems = useMemo<AcademyCatalogItem[]>(() => {
+        const query = librarySearch.trim().toLowerCase();
+        const matchesQuery = (parts: Array<string | null | undefined>) => {
+            if (!query) return true;
+            return parts
+                .filter(Boolean)
+                .join(" ")
+                .toLowerCase()
+                .includes(query);
+        };
+
+        const contentItems: AcademyCatalogItem[] = visibleContent
+            .filter((entry) => {
+                const categoryMatch = selectedCategoryId === "all" || entry.categoryId === selectedCategoryId;
+                const stageMatch = selectedStageId === 0 || entry.stageIds.includes(selectedStageId);
+                const typeMatch = libraryTypeFilter === "all" || libraryTypeFilter === entry.contentType;
+                return categoryMatch && stageMatch && typeMatch;
+            })
+            .map((entry) => {
+                const progress = completionAwareContentProgressById.get(entry.id);
+                const stageNumber = entry.pathStage ?? entry.stageIds[0] ?? 1;
+                return {
+                    id: entry.id,
+                    kind: entry.contentType,
+                    title: entry.title,
+                    description: entry.shortDescription,
+                    categoryLabel: entry.category?.title ?? getAcademyContentTypeLabel(entry.contentType),
+                    typeLabel: getAcademyContentTypeLabel(entry.contentType),
+                    stageLabel: getAcademyStageLabels(entry.stageIds).join(" · ") || `Stage ${stageNumber}`,
+                    stageNumber,
+                    minutes: entry.estimatedMinutes,
+                    status: progress?.status ?? "not_started",
+                    lastActivity: progress?.lastOpenedAt ?? progress?.lastForgeOpenedAt ?? progress?.updatedAt ?? "",
+                    priority: entry.priority,
+                    featured: entry.featured,
+                    content: entry,
+                } satisfies AcademyCatalogItem;
+            })
+            .filter((item) => libraryStatusFilter === "all" || item.status === libraryStatusFilter)
+            .filter((item) => matchesQuery([
+                item.title,
+                item.description,
+                item.categoryLabel,
+                item.typeLabel,
+                item.content?.whyThisMatters,
+                item.content?.learningGoal,
+                ...(item.content?.tags.map((tag) => tag.name) ?? []),
+            ]));
+
+        const seriesItems: AcademyCatalogItem[] = visibleSeries
+            .filter((entry) => {
+                const categoryMatch = selectedCategoryId === "all" || entry.categoryId === selectedCategoryId;
+                const stageMatch = selectedStageId === 0 || entry.stageIds.includes(selectedStageId);
+                const typeMatch = libraryTypeFilter === "all" || libraryTypeFilter === "series";
+                return categoryMatch && stageMatch && typeMatch;
+            })
+            .map((entry) => {
+                const completedItems = entry.items.filter((item) => item.content && completionAwareContentProgressById.get(item.content.id)?.status === "completed").length;
+                const startedItems = entry.items.filter((item) => item.content && completionAwareContentProgressById.get(item.content.id)?.status === "in_progress").length;
+                const nextItem = getNextSeriesItem(entry, completionAwareContentProgressById);
+                const status: AcademyProgressStatus = completedItems >= entry.items.length && entry.items.length > 0
+                    ? "completed"
+                    : completedItems > 0 || startedItems > 0
+                        ? "in_progress"
+                        : "not_started";
+                const activityDates = entry.items
+                    .map((item) => item.content ? completionAwareContentProgressById.get(item.content.id)?.lastOpenedAt ?? completionAwareContentProgressById.get(item.content.id)?.updatedAt ?? "" : "")
+                    .sort();
+                const lastActivity = activityDates[activityDates.length - 1] ?? "";
+                const stageNumber = entry.stageIds[0] ?? 1;
+                const seriesMinutes = entry.estimatedMinutes ?? entry.items.reduce((sum, item) => sum + (item.content?.estimatedMinutes ?? 0), 0);
+                const minutes = seriesMinutes || null;
+                return {
+                    id: entry.id,
+                    kind: "series",
+                    title: entry.title,
+                    description: entry.shortDescription,
+                    categoryLabel: entry.category?.title ?? "Lesson series",
+                    typeLabel: "Series",
+                    stageLabel: getAcademyStageLabels(entry.stageIds).join(" · ") || `Stage ${stageNumber}`,
+                    stageNumber,
+                    minutes,
+                    status,
+                    lastActivity,
+                    priority: entry.priority,
+                    featured: entry.featured,
+                    completedItems,
+                    totalItems: entry.items.length,
+                    nextTitle: nextItem ? getSeriesItemTitle(nextItem) : null,
+                    series: entry,
+                } satisfies AcademyCatalogItem;
+            })
+            .filter((item) => libraryStatusFilter === "all" || item.status === libraryStatusFilter)
+            .filter((item) => matchesQuery([
+                item.title,
+                item.description,
+                item.categoryLabel,
+                item.typeLabel,
+                item.series?.learningGoal,
+                item.nextTitle,
+            ]));
+
+        const statusRank: Record<AcademyProgressStatus, number> = {
+            in_progress: 0,
+            not_started: 1,
+            completed: 2,
+        };
+
+        return [...contentItems, ...seriesItems].sort((a, b) => {
+            if (librarySort === "recent") return b.lastActivity.localeCompare(a.lastActivity) || a.title.localeCompare(b.title);
+            if (librarySort === "shortest") return (a.minutes ?? 9999) - (b.minutes ?? 9999) || a.title.localeCompare(b.title);
+            if (librarySort === "stage") return a.stageNumber - b.stageNumber || a.priority - b.priority || a.title.localeCompare(b.title);
+            return statusRank[a.status] - statusRank[b.status]
+                || Number(b.featured) - Number(a.featured)
+                || a.stageNumber - b.stageNumber
+                || a.priority - b.priority
+                || a.title.localeCompare(b.title);
+        });
+    }, [completionAwareContentProgressById, librarySearch, librarySort, libraryStatusFilter, libraryTypeFilter, selectedCategoryId, selectedStageId, visibleContent, visibleSeries]);
 
     const featuredTopics = filteredContent.filter((entry) => {
         if (entry.contentType !== "topic" || !entry.featured) return false;
@@ -675,11 +825,10 @@ export default function ForgeAcademyScreen({
 
     return (
         <AcademyShell onBack={onBack} onOpenNav={onOpenNav} onOpenArchive={onOpenArchive}>
-            <div style={{ display: "flex", gap: 8, marginBottom: 4, overflowX: "auto", WebkitOverflowScrolling: "touch" as any, paddingBottom: 4 }}>
+            <div style={{ maxWidth: 1180, margin: "0 auto 10px", display: "flex", gap: 8, overflowX: "auto", WebkitOverflowScrolling: "touch" as any, paddingBottom: 4 }}>
                 <FilterPill active={activeView === "path"} onClick={() => setActiveView("path")}>Path</FilterPill>
                 <FilterPill active={activeView === "library"} onClick={() => setActiveView("library")}>Library</FilterPill>
                 <FilterPill active={activeView === "glossary"} onClick={() => setActiveView("glossary")}>Glossary</FilterPill>
-                <FilterPill active={activeView === "guide"} onClick={() => setActiveView("guide")}>Guide</FilterPill>
             </div>
 
             <AcademyStatsBar
@@ -719,18 +868,40 @@ export default function ForgeAcademyScreen({
                 <GlossaryView terms={glossaryTerms} loading={glossaryLoading} />
             )}
 
-            {activeView === "guide" && (
-                <div style={{ maxWidth: 1180, margin: "0 auto" }}>
-                    <AcademyGuideCard activeView={activeView} />
-                </div>
+            {activeView === "library" && (
+                <LibraryView
+                    items={libraryCatalogItems}
+                    categories={workspace.categories.filter((category) => category.isActive)}
+                    stageOptions={stageOptions}
+                    selectedCategoryId={selectedCategoryId}
+                    selectedStageId={selectedStageId}
+                    search={librarySearch}
+                    statusFilter={libraryStatusFilter}
+                    typeFilter={libraryTypeFilter}
+                    sort={librarySort}
+                    totalLessonsCount={totalLessonsCount}
+                    completedContentCount={completedContentCount}
+                    seriesCount={visibleSeries.length}
+                    trialNotice={trialNotice}
+                    onSearchChange={setLibrarySearch}
+                    onCategoryChange={setSelectedCategoryId}
+                    onStageChange={setSelectedStageId}
+                    onStatusChange={setLibraryStatusFilter}
+                    onTypeChange={setLibraryTypeFilter}
+                    onSortChange={setLibrarySort}
+                    onOpenContent={(content) => void openContent(content, content.contentType === "video" ? "started_video" : "viewed")}
+                    onOpenSeries={(series) => void openSeries(series)}
+                    onLaunchForge={(content) => void handleLaunchForge(content, "learn")}
+                    isForgeBusyFor={isForgeBusyFor}
+                />
             )}
 
-            {activeView === "library" && (
+            {false && activeView === "library" && (
             <div style={{ maxWidth: 1180, margin: "0 auto", display: "grid", gap: 18 }}>
                 <div style={{
-                    background: "linear-gradient(180deg, rgba(232,98,42,0.07), rgba(255,255,255,0.025))",
-                    border,
-                    borderRadius: 28,
+                    background: "linear-gradient(180deg, rgba(255,255,255,0.032), rgba(255,255,255,0.016))",
+                    border: "1px solid rgba(255,255,255,0.065)",
+                    borderRadius: 18,
                     padding: "28px 26px 24px",
                 }}>
                     <div style={{ display: "grid", gap: 18, maxWidth: 780, margin: "0 auto", textAlign: "center" }}>
@@ -1112,6 +1283,317 @@ export default function ForgeAcademyScreen({
     );
 }
 
+function AcademyPageHeader({
+    eyebrow,
+    title,
+    description,
+    meta,
+}: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    meta?: ReactNode;
+}) {
+    return (
+        <div style={{ display: "grid", gap: 10 }}>
+            <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700 }}>
+                {eyebrow}
+            </div>
+            <div style={{ maxWidth: 720, display: "grid", gap: 8 }}>
+                <div style={{ fontSize: "clamp(26px, 4vw, 38px)", lineHeight: 1.04, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
+                    {title}
+                </div>
+                <div style={{ fontSize: 14, color: "#BDAFA2", lineHeight: 1.8 }}>
+                    {description}
+                </div>
+            </div>
+            {meta}
+        </div>
+    );
+}
+
+function AcademyPanel({
+    children,
+    tone = "default",
+    style,
+}: {
+    children: ReactNode;
+    tone?: "default" | "active" | "success" | "muted";
+    style?: CSSProperties;
+}) {
+    const tones = {
+        default: {
+            background: "rgba(255,255,255,0.024)",
+            borderColor: "rgba(255,255,255,0.065)",
+        },
+        active: {
+            background: "linear-gradient(180deg, rgba(232,98,42,0.055), rgba(255,255,255,0.02))",
+            borderColor: "rgba(232,98,42,0.16)",
+        },
+        success: {
+            background: "linear-gradient(180deg, rgba(76,175,138,0.06), rgba(255,255,255,0.018))",
+            borderColor: "rgba(76,175,138,0.16)",
+        },
+        muted: {
+            background: "rgba(255,255,255,0.016)",
+            borderColor: "rgba(255,255,255,0.048)",
+        },
+    } as const;
+    const selected = tones[tone];
+    return (
+        <div style={{
+            background: selected.background,
+            border: `1px solid ${selected.borderColor}`,
+            borderRadius: 14,
+            padding: 18,
+            ...style,
+        }}>
+            {children}
+        </div>
+    );
+}
+
+function LibraryView({
+    items,
+    categories,
+    stageOptions,
+    selectedCategoryId,
+    selectedStageId,
+    search,
+    statusFilter,
+    typeFilter,
+    sort,
+    totalLessonsCount,
+    completedContentCount,
+    seriesCount,
+    trialNotice,
+    onSearchChange,
+    onCategoryChange,
+    onStageChange,
+    onStatusChange,
+    onTypeChange,
+    onSortChange,
+    onOpenContent,
+    onOpenSeries,
+    onLaunchForge,
+    isForgeBusyFor,
+}: {
+    items: AcademyCatalogItem[];
+    categories: AcademyCategory[];
+    stageOptions: Array<{ id: number; label: string }>;
+    selectedCategoryId: string | "all";
+    selectedStageId: number;
+    search: string;
+    statusFilter: LibraryStatusFilter;
+    typeFilter: LibraryTypeFilter;
+    sort: LibrarySortOption;
+    totalLessonsCount: number;
+    completedContentCount: number;
+    seriesCount: number;
+    trialNotice?: string | null;
+    onSearchChange: (value: string) => void;
+    onCategoryChange: (value: string | "all") => void;
+    onStageChange: (value: number) => void;
+    onStatusChange: (value: LibraryStatusFilter) => void;
+    onTypeChange: (value: LibraryTypeFilter) => void;
+    onSortChange: (value: LibrarySortOption) => void;
+    onOpenContent: (content: AcademyContent) => void;
+    onOpenSeries: (series: AcademySeries) => void;
+    onLaunchForge: (content: AcademyContent) => void;
+    isForgeBusyFor: (contentId: string) => boolean;
+}) {
+    return (
+        <div style={{ maxWidth: 1180, margin: "0 auto", display: "grid", gap: 16 }}>
+            <AcademyPanel>
+                <div style={{ display: "grid", gap: 16 }}>
+                    <AcademyPageHeader
+                        eyebrow="Academy Library"
+                        title="Find the right lesson without losing the thread"
+                        description="Search the full curriculum, narrow by stage or discipline, and keep track of what is new, started, and complete."
+                        meta={
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                                <HeroPill label={`${totalLessonsCount} lessons`} />
+                                <HeroPill label={`${seriesCount} series`} />
+                                <HeroPill label={`${completedContentCount} completed`} />
+                                <HeroPill label={`${items.length} visible`} />
+                            </div>
+                        }
+                    />
+                    {trialNotice && (
+                        <AcademyPanel tone="active" style={{ padding: "11px 13px" }}>
+                            <div style={{ fontSize: 12, color: "#D9C7B8", lineHeight: 1.65 }}>{trialNotice}</div>
+                        </AcademyPanel>
+                    )}
+                </div>
+            </AcademyPanel>
+
+            <AcademyPanel tone="muted">
+                <div style={{ display: "grid", gap: 14 }}>
+                    <input
+                        type="text"
+                        placeholder="Search lessons, series, disciplines, or concepts..."
+                        value={search}
+                        onChange={(event) => onSearchChange(event.target.value)}
+                        style={{
+                            width: "100%",
+                            boxSizing: "border-box",
+                            padding: "12px 14px",
+                            background: "rgba(255,255,255,0.035)",
+                            border: "1px solid rgba(255,255,255,0.075)",
+                            borderRadius: 12,
+                            color: "#F0EDE8",
+                            fontSize: 14,
+                            fontFamily: "'Lora', Georgia, serif",
+                            outline: "none",
+                        }}
+                    />
+                    <div style={{ display: "grid", gap: 10 }}>
+                        <div style={{ display: "flex", gap: 8, overflowX: "auto", WebkitOverflowScrolling: "touch" as any, paddingBottom: 2 }}>
+                            <FilterPill active={selectedCategoryId === "all"} onClick={() => onCategoryChange("all")}>All disciplines</FilterPill>
+                            {categories.map((category) => (
+                                <FilterPill key={category.id} active={selectedCategoryId === category.id} onClick={() => onCategoryChange(category.id)}>
+                                    {category.title}
+                                </FilterPill>
+                            ))}
+                        </div>
+                        <div style={{ display: "flex", gap: 8, overflowX: "auto", WebkitOverflowScrolling: "touch" as any, paddingBottom: 2 }}>
+                            {stageOptions.map((stage) => (
+                                <FilterPill key={stage.id} active={selectedStageId === stage.id} onClick={() => onStageChange(stage.id)}>
+                                    {stage.label}
+                                </FilterPill>
+                            ))}
+                        </div>
+                        <div style={{ display: "flex", gap: 8, overflowX: "auto", WebkitOverflowScrolling: "touch" as any, paddingBottom: 2 }}>
+                            {[
+                                ["all", "All status"],
+                                ["not_started", "Not started"],
+                                ["in_progress", "In progress"],
+                                ["completed", "Completed"],
+                            ].map(([value, label]) => (
+                                <FilterPill key={value} active={statusFilter === value} onClick={() => onStatusChange(value as LibraryStatusFilter)}>
+                                    {label}
+                                </FilterPill>
+                            ))}
+                        </div>
+                        <div style={{ display: "flex", gap: 8, overflowX: "auto", WebkitOverflowScrolling: "touch" as any, paddingBottom: 2 }}>
+                            {[
+                                ["all", "All types"],
+                                ["topic", "Lessons"],
+                                ["series", "Series"],
+                                ["video", "Videos"],
+                                ["resource", "Resources"],
+                                ["mindset", "Mindset"],
+                            ].map(([value, label]) => (
+                                <FilterPill key={value} active={typeFilter === value} onClick={() => onTypeChange(value as LibraryTypeFilter)}>
+                                    {label}
+                                </FilterPill>
+                            ))}
+                        </div>
+                        <div style={{ display: "flex", gap: 8, overflowX: "auto", WebkitOverflowScrolling: "touch" as any, paddingBottom: 2 }}>
+                            {[
+                                ["recommended", "Recommended"],
+                                ["stage", "Stage order"],
+                                ["recent", "Recently active"],
+                                ["shortest", "Shortest first"],
+                            ].map(([value, label]) => (
+                                <FilterPill key={value} active={sort === value} onClick={() => onSortChange(value as LibrarySortOption)}>
+                                    {label}
+                                </FilterPill>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </AcademyPanel>
+
+            {items.length === 0 ? (
+                <AliveEmptyState
+                    title="No Academy items match those filters"
+                    body="Widen the search, clear one filter, or switch back to the Path when you want the next recommended lesson."
+                />
+            ) : (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>
+                    {items.map((item) => (
+                        <AcademyCatalogCard
+                            key={`${item.kind}-${item.id}`}
+                            item={item}
+                            onOpenContent={onOpenContent}
+                            onOpenSeries={onOpenSeries}
+                            onLaunchForge={onLaunchForge}
+                            isForgeBusyFor={isForgeBusyFor}
+                        />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+function AcademyCatalogCard({
+    item,
+    onOpenContent,
+    onOpenSeries,
+    onLaunchForge,
+    isForgeBusyFor,
+}: {
+    item: AcademyCatalogItem;
+    onOpenContent: (content: AcademyContent) => void;
+    onOpenSeries: (series: AcademySeries) => void;
+    onLaunchForge: (content: AcademyContent) => void;
+    isForgeBusyFor: (contentId: string) => boolean;
+}) {
+    const statusTone = item.status === "completed" ? "success" : item.status === "in_progress" ? "active" : "default";
+    const actionLabel = item.status === "in_progress" ? "Continue" : item.kind === "series" ? "Open series" : "Start";
+    return (
+        <AcademyPanel tone={statusTone} style={{ minHeight: 230, display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                <Pill tone={item.kind === "series" ? "blue" : item.kind === "mindset" ? "warm" : "neutral"}>{item.typeLabel}</Pill>
+                <Pill>{item.categoryLabel}</Pill>
+                <ProgressPill status={item.status} />
+            </div>
+            <div style={{ display: "grid", gap: 8 }}>
+                <div style={{ fontSize: 18, lineHeight: 1.18, color: "#F0EDE8", fontWeight: 700 }}>
+                    {item.title}
+                </div>
+                <div style={{ fontSize: 13, color: "#B8B1A8", lineHeight: 1.7 }}>
+                    {item.description}
+                </div>
+            </div>
+            <div style={{ display: "grid", gap: 7, marginTop: "auto" }}>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, color: "#8D857C", fontSize: 12 }}>
+                    <span>{item.stageLabel}</span>
+                    <span>{item.minutes ? `${item.minutes} min` : "Guided"}</span>
+                    {item.kind === "series" && typeof item.completedItems === "number" && typeof item.totalItems === "number" && (
+                        <span>{item.completedItems}/{item.totalItems} complete</span>
+                    )}
+                </div>
+                {item.nextTitle && (
+                    <div style={{ fontSize: 12, color: "#C8C4BE", lineHeight: 1.55 }}>
+                        Next: <span style={{ color: "#F0EDE8", fontWeight: 700 }}>{item.nextTitle}</span>
+                    </div>
+                )}
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, paddingTop: 4 }}>
+                    {item.series ? (
+                        <InlineButton onClick={() => onOpenSeries(item.series!)} tone={item.status === "completed" ? "muted" : "primary"}>
+                            {actionLabel}
+                        </InlineButton>
+                    ) : item.content ? (
+                        <>
+                            <InlineButton onClick={() => onOpenContent(item.content!)} tone={item.status === "completed" ? "muted" : "primary"}>
+                                {actionLabel}
+                            </InlineButton>
+                            {canLaunchForgeFromContent(item.content) && (
+                                <InlineButton onClick={() => onLaunchForge(item.content!)} tone="muted" disabled={isForgeBusyFor(item.content.id)}>
+                                    {isForgeBusyFor(item.content.id) ? "Opening..." : "Dive Deeper"}
+                                </InlineButton>
+                            )}
+                        </>
+                    ) : null}
+                </div>
+            </div>
+        </AcademyPanel>
+    );
+}
+
 function AcademyStatsBar({
     completedLessons,
     assessmentsPassed,
@@ -1126,7 +1608,7 @@ function AcademyStatsBar({
     stageLabel: string;
 }) {
     return (
-        <div style={{ maxWidth: 1180, margin: "0 auto 8px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 10 }}>
+        <div style={{ maxWidth: 1180, margin: "0 auto 10px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 10 }}>
             <StatTile label="Lessons completed" value={String(completedLessons)} />
             <StatTile label="Assessments passed" value={String(assessmentsPassed)} />
             <StatTile label="Current streak" value={`${currentStreak} day${currentStreak === 1 ? "" : "s"}`} />
@@ -1137,7 +1619,7 @@ function AcademyStatsBar({
 
 function StatTile({ label, value }: { label: string; value: string }) {
     return (
-        <div style={{ background: "rgba(255,255,255,0.035)", border, borderRadius: 16, padding: "12px 14px", display: "grid", gap: 4 }}>
+        <div style={{ background: "rgba(255,255,255,0.022)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "11px 13px", display: "grid", gap: 4 }}>
             <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "#8D857C", letterSpacing: "0.10em", textTransform: "uppercase", fontWeight: 700 }}>{label}</div>
             <div style={{ fontSize: 20, color: "#F0EDE8", fontWeight: 800 }}>{value}</div>
         </div>
@@ -1320,49 +1802,30 @@ function PathView({
     trialNotice?: string | null;
 }) {
     return (
-        <div style={{ maxWidth: 980, margin: "0 auto", display: "grid", gap: 18 }}>
-            <div style={{
-                background: "linear-gradient(180deg, rgba(232,98,42,0.08), rgba(255,255,255,0.02))",
-                border,
-                borderRadius: 26,
-                padding: "24px 22px",
-                display: "grid",
-                gap: 16,
-            }}>
-                <div style={{ display: "grid", gap: 8 }}>
-                    <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#E8622A", letterSpacing: "0.16em", textTransform: "uppercase" }}>
-                        Forge Academy Path
-                    </div>
-                    <div style={{ fontSize: "clamp(28px, 4.4vw, 40px)", lineHeight: 1.02, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
-                        A roadmap, not a pile of lessons
-                    </div>
-                    <div style={{ fontSize: 14, color: "#BDAFA2", lineHeight: 1.8, fontStyle: "italic" }}>
-                        Move stage by stage. Clear the core path first. Go deeper when the business needs depth, not distraction.
-                    </div>
-                </div>
+        <div style={{ maxWidth: 1180, margin: "0 auto", display: "grid", gap: 16 }}>
+            <AcademyPanel style={{ display: "grid", gap: 16 }}>
+                <AcademyPageHeader
+                    eyebrow="Forge Academy Path"
+                    title="A roadmap for learning, applying, and tracking progress"
+                    description="Move stage by stage, clear the core path first, and use deeper lessons when the business needs more context."
+                    meta={
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                            <HeroPill label={`Active stage ${activeStage}`} />
+                            <HeroPill label="Core first" />
+                            <HeroPill label="Go deeper when needed" />
+                        </div>
+                    }
+                />
 
                 {trialNotice && (
-                    <div style={{
-                        padding: "12px 14px",
-                        borderRadius: 14,
-                        background: "rgba(232,98,42,0.08)",
-                        border: "1px solid rgba(232,98,42,0.18)",
-                        fontSize: 12,
-                        color: "#D9C7B8",
-                        lineHeight: 1.65,
-                    }}>
+                    <AcademyPanel tone="active" style={{ padding: "11px 13px" }}>
+                        <div style={{ fontSize: 12, color: "#D9C7B8", lineHeight: 1.65 }}>
                         {trialNotice}
-                    </div>
+                        </div>
+                    </AcademyPanel>
                 )}
 
-                <div style={{
-                    background: "rgba(255,255,255,0.03)",
-                    border,
-                    borderRadius: 20,
-                    padding: "18px 18px 16px",
-                    display: "grid",
-                    gap: 12,
-                }}>
+                <AcademyPanel tone="active" style={{ display: "grid", gap: 12 }}>
                     <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700 }}>
                         Your next step
                     </div>
@@ -1390,8 +1853,8 @@ function PathView({
                     ) : (
                         <div style={{ fontSize: 14, color: textMuted, lineHeight: 1.7 }}>No lessons are available on the path yet.</div>
                     )}
-                </div>
-            </div>
+                </AcademyPanel>
+            </AcademyPanel>
 
             <div style={{ position: "relative", display: "grid", gap: 18 }}>
                 <div style={{
@@ -1399,10 +1862,9 @@ function PathView({
                     left: 30,
                     top: 12,
                     bottom: 12,
-                    width: 3,
+                    width: 2,
                     borderRadius: 999,
-                    background: "linear-gradient(180deg, rgba(232,98,42,0.42), rgba(255,255,255,0.1))",
-                    boxShadow: "0 0 18px rgba(232,98,42,0.08)",
+                    background: "linear-gradient(180deg, rgba(232,98,42,0.30), rgba(255,255,255,0.08))",
                     pointerEvents: "none",
                 }} />
                 {stages.map((stage) => (
@@ -1458,9 +1920,9 @@ function PathStageCard({
                 width: 30,
                 height: 30,
                 borderRadius: "50%",
-                background: `radial-gradient(circle at 35% 35%, ${stageColor}55, rgba(8,8,9,0.95))`,
+                background: "rgba(8,8,9,0.96)",
                 border: `1px solid ${stageColor}`,
-                boxShadow: `0 0 0 6px ${stageColor}14, inset 0 0 18px rgba(255,255,255,0.05)`,
+                boxShadow: `0 0 0 5px ${stageColor}10`,
                 zIndex: 1,
             }} />
             <div style={{
@@ -1479,16 +1941,16 @@ function PathStageCard({
                 left: 46,
                 top: 22,
                 width: 34,
-                height: 3,
+                height: 2,
                 borderRadius: 999,
-                background: `linear-gradient(90deg, ${stageColor}, rgba(255,255,255,0.18))`,
-                opacity: 0.95,
+                background: stageColor,
+                opacity: 0.5,
             }} />
 
             <div style={{
-                background: "rgba(255,255,255,0.025)",
-                border,
-                borderRadius: 22,
+                background: stage.stage === activeStage ? "rgba(232,98,42,0.045)" : "rgba(255,255,255,0.022)",
+                border: stage.stage === activeStage ? "1px solid rgba(232,98,42,0.14)" : "1px solid rgba(255,255,255,0.06)",
+                borderRadius: 14,
                 padding: "20px 20px 18px",
                 display: "grid",
                 gap: 16,
@@ -1499,7 +1961,7 @@ function PathStageCard({
                             <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: stageColor, letterSpacing: "0.16em", textTransform: "uppercase", fontWeight: 700 }}>
                                 Stage {stage.stage}
                             </div>
-                            <div style={{ fontSize: 24, lineHeight: 1.08, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
+                            <div style={{ fontSize: 22, lineHeight: 1.12, fontWeight: 700, color: "#F0EDE8" }}>
                                 {stage.title}
                             </div>
                         </div>
@@ -1533,7 +1995,7 @@ function PathStageCard({
                             style={{
                                 background: "rgba(255,255,255,0.02)",
                                 border: "1px solid rgba(255,255,255,0.06)",
-                                borderRadius: 14,
+                                borderRadius: 12,
                                 padding: "12px 14px",
                                 color: "rgba(240,237,232,0.6)",
                                 cursor: "pointer",
@@ -1585,7 +2047,7 @@ function PathSeriesGroup({
         <div style={{
             background: muted ? "rgba(255,255,255,0.02)" : "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.025))",
             border: "1px solid rgba(255,255,255,0.07)",
-            borderRadius: 18,
+            borderRadius: 14,
             padding: "14px 14px 12px 14px",
             display: "grid",
             gap: 12,
@@ -1593,7 +2055,7 @@ function PathSeriesGroup({
             <div style={{ display: "grid", gap: 6 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                        <div style={{ fontSize: 16, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: muted ? "rgba(240,237,232,0.72)" : "#F0EDE8" }}>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: muted ? "rgba(240,237,232,0.72)" : "#F0EDE8" }}>
                             {block.title}
                         </div>
                         {allCompleted && <CompletionBadge label="Series Complete" />}
@@ -1651,14 +2113,14 @@ function PathLessonNode({
             <div style={{
                 background: muted ? "rgba(255,255,255,0.015)" : "rgba(255,255,255,0.03)",
                 border: "1px solid rgba(255,255,255,0.06)",
-                borderRadius: 16,
+                borderRadius: 12,
                 padding: "14px 14px 13px",
                 display: "grid",
                 gap: 10,
             }}>
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
                     <div style={{ display: "grid", gap: 6 }}>
-                        <div style={{ fontSize: 18, lineHeight: 1.16, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: textColor }}>
+                        <div style={{ fontSize: 17, lineHeight: 1.22, fontWeight: 700, color: textColor }}>
                             {lesson.title}
                         </div>
                         {lesson.shortDescription && (
@@ -1729,15 +2191,18 @@ function CompletionBadge({ label }: { label: string }) {
 
 function GlossaryView({ terms, loading }: { terms: GlossaryTerm[]; loading: boolean }) {
     const [search, setSearch] = useState("");
+    const [categoryFilter, setCategoryFilter] = useState<string>("all");
+    const [stageFilter, setStageFilter] = useState<number>(0);
 
     const filtered = useMemo(() => {
         const q = search.trim().toLowerCase();
-        if (!q) return terms;
-        return terms.filter((t) =>
-            t.term.toLowerCase().includes(q) ||
-            t.definition.toLowerCase().includes(q)
-        );
-    }, [search, terms]);
+        return terms.filter((t) => {
+            const matchesSearch = !q || t.term.toLowerCase().includes(q) || t.definition.toLowerCase().includes(q) || t.usage_example.toLowerCase().includes(q);
+            const matchesCategory = categoryFilter === "all" || t.category === categoryFilter;
+            const matchesStage = stageFilter === 0 || t.stage_unlock === stageFilter;
+            return matchesSearch && matchesCategory && matchesStage;
+        });
+    }, [categoryFilter, search, stageFilter, terms]);
 
     const byCategory = useMemo(() => {
         const map = new Map<string, GlossaryTerm[]>();
@@ -1750,6 +2215,15 @@ function GlossaryView({ terms, loading }: { terms: GlossaryTerm[]; loading: bool
     }, [filtered]);
 
     const categoryOrder = ["Strategy", "Finance", "Marketing", "Sales", "Legal"];
+    const availableCategories = Array.from(new Set(terms.map((term) => term.category))).sort((a, b) => {
+        const ai = categoryOrder.indexOf(a);
+        const bi = categoryOrder.indexOf(b);
+        if (ai === -1 && bi === -1) return a.localeCompare(b);
+        if (ai === -1) return 1;
+        if (bi === -1) return -1;
+        return ai - bi;
+    });
+    const availableStages = Array.from(new Set(terms.map((term) => term.stage_unlock))).sort((a, b) => a - b);
     const sortedCategories = Array.from(byCategory.keys()).sort((a, b) => {
         const ai = categoryOrder.indexOf(a);
         const bi = categoryOrder.indexOf(b);
@@ -1768,23 +2242,25 @@ function GlossaryView({ terms, loading }: { terms: GlossaryTerm[]; loading: bool
     }
 
     return (
-        <div style={{ maxWidth: 1180, margin: "0 auto", display: "grid", gap: 24 }}>
-            <div style={{ display: "grid", gap: 10, maxWidth: 760, margin: "0 auto", textAlign: "center", width: "100%" }}>
-                <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#E8622A", letterSpacing: "0.16em", textTransform: "uppercase" }}>
-                    Forge Glossary
-                </div>
-                <div style={{ fontSize: "clamp(26px, 4vw, 38px)", lineHeight: 1.05, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
-                    The language that changes how you think
-                </div>
-                <div style={{ fontSize: 14, color: "#BDAFA2", lineHeight: 1.8, fontStyle: "italic" }}>
-                    Terms unlock as you advance through the stages. Every one of these is a concept the market will teach you one way or another.
-                </div>
-            </div>
+        <div style={{ maxWidth: 1180, margin: "0 auto", display: "grid", gap: 16 }}>
+            <AcademyPanel>
+                <AcademyPageHeader
+                    eyebrow="Forge Glossary"
+                    title="A reference tool for founder language"
+                    description="Search terms by name, meaning, example, category, or stage so unfamiliar language never slows the lesson down."
+                    meta={
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                            <HeroPill label={`${terms.length} terms`} />
+                            <HeroPill label={`${filtered.length} visible`} />
+                        </div>
+                    }
+                />
+            </AcademyPanel>
 
-            <div style={{ position: "relative", maxWidth: 520, margin: "0 auto", width: "100%" }}>
+            <AcademyPanel tone="muted" style={{ display: "grid", gap: 12 }}>
                 <input
                     type="text"
-                    placeholder="Search terms…"
+                    placeholder="Search terms, definitions, or examples..."
                     value={search}
                     onChange={(e: ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
                     style={{
@@ -1800,7 +2276,23 @@ function GlossaryView({ terms, loading }: { terms: GlossaryTerm[]; loading: bool
                         boxSizing: "border-box",
                     }}
                 />
-            </div>
+                <div style={{ display: "flex", gap: 8, overflowX: "auto", WebkitOverflowScrolling: "touch" as any, paddingBottom: 2 }}>
+                    <FilterPill active={categoryFilter === "all"} onClick={() => setCategoryFilter("all")}>All categories</FilterPill>
+                    {availableCategories.map((category) => (
+                        <FilterPill key={category} active={categoryFilter === category} onClick={() => setCategoryFilter(category)}>
+                            {category}
+                        </FilterPill>
+                    ))}
+                </div>
+                <div style={{ display: "flex", gap: 8, overflowX: "auto", WebkitOverflowScrolling: "touch" as any, paddingBottom: 2 }}>
+                    <FilterPill active={stageFilter === 0} onClick={() => setStageFilter(0)}>All stages</FilterPill>
+                    {availableStages.map((stage) => (
+                        <FilterPill key={stage} active={stageFilter === stage} onClick={() => setStageFilter(stage)}>
+                            Stage {stage}
+                        </FilterPill>
+                    ))}
+                </div>
+            </AcademyPanel>
 
             {terms.length === 0 && (
                 <div style={{ textAlign: "center", padding: "40px 20px", color: textMuted, fontSize: 14, lineHeight: 1.8 }}>
@@ -1828,9 +2320,9 @@ function GlossaryView({ terms, loading }: { terms: GlossaryTerm[]; loading: bool
                             {categoryTerms.map((t) => {
                                 const stageColor = STAGE_COLORS[t.stage_unlock as keyof typeof STAGE_COLORS] ?? "#F5A843";
                                 return (
-                                    <div key={t.id} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, padding: 18, display: "grid", gap: 12 }}>
+                                    <div key={t.id} style={{ background: "rgba(255,255,255,0.024)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: 16, display: "grid", gap: 10 }}>
                                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
-                                            <div style={{ fontSize: 16, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", lineHeight: 1.2 }}>
+                                            <div style={{ fontSize: 16, fontWeight: 700, color: "#F0EDE8", lineHeight: 1.25 }}>
                                                 {t.term}
                                             </div>
                                             <div style={{ fontSize: 10, color: stageColor, background: `${stageColor}18`, border: `1px solid ${stageColor}30`, borderRadius: 20, padding: "2px 9px", fontWeight: 500, flexShrink: 0 }}>
@@ -1931,28 +2423,28 @@ function AcademySection({
 }) {
     const sectionStyles = {
         neutral: {
-            panel: "rgba(255,255,255,0.03)",
-            borderColor: "rgba(255,255,255,0.08)",
+            panel: "rgba(255,255,255,0.022)",
+            borderColor: "rgba(255,255,255,0.06)",
         },
         ember: {
-            panel: "linear-gradient(180deg, rgba(232,98,42,0.09), rgba(255,255,255,0.02))",
-            borderColor: "rgba(232,98,42,0.18)",
+            panel: "linear-gradient(180deg, rgba(232,98,42,0.045), rgba(255,255,255,0.018))",
+            borderColor: "rgba(232,98,42,0.11)",
         },
         glow: {
-            panel: "linear-gradient(180deg, rgba(232,98,42,0.08), rgba(99,179,237,0.04), rgba(255,255,255,0.02))",
-            borderColor: "rgba(232,98,42,0.16)",
+            panel: "linear-gradient(180deg, rgba(99,179,237,0.055), rgba(255,255,255,0.018))",
+            borderColor: "rgba(99,179,237,0.12)",
         },
         blue: {
-            panel: "linear-gradient(180deg, rgba(99,179,237,0.09), rgba(255,255,255,0.02))",
-            borderColor: "rgba(99,179,237,0.16)",
+            panel: "linear-gradient(180deg, rgba(99,179,237,0.06), rgba(255,255,255,0.018))",
+            borderColor: "rgba(99,179,237,0.12)",
         },
         stone: {
-            panel: "linear-gradient(180deg, rgba(200,169,110,0.08), rgba(255,255,255,0.02))",
-            borderColor: "rgba(200,169,110,0.16)",
+            panel: "linear-gradient(180deg, rgba(217,177,93,0.05), rgba(255,255,255,0.018))",
+            borderColor: "rgba(217,177,93,0.12)",
         },
         mindset: {
-            panel: "linear-gradient(180deg, rgba(199,107,75,0.12), rgba(255,255,255,0.02))",
-            borderColor: "rgba(199,107,75,0.18)",
+            panel: "linear-gradient(180deg, rgba(217,106,85,0.06), rgba(255,255,255,0.018))",
+            borderColor: "rgba(217,106,85,0.12)",
         },
     } as const;
     const style = sectionStyles[tone];
@@ -1961,7 +2453,7 @@ function AcademySection({
         <div style={{ display: "grid", gap: 14 }}>
             <SectionHeader eyebrow={eyebrow} title={title} description={description} />
             {items.length === 0 ? (
-                <div style={{ background: style.panel, border: `1px solid ${style.borderColor}`, borderRadius: 22, padding: 20 }}>
+                <div style={{ background: style.panel, border: `1px solid ${style.borderColor}`, borderRadius: 14, padding: 18 }}>
                     <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
                         <div style={{ fontSize: 16, color: "#F0EDE8", fontWeight: 600 }}>{emptyTitle}</div>
                         <HelpTooltip content={emptyBody} />
@@ -2002,19 +2494,17 @@ function ContentCard({
         <div
             style={{
                 background: emphasis === "mindset"
-                    ? "linear-gradient(180deg, rgba(199,107,75,0.14), rgba(255,255,255,0.03))"
-                    : "linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))",
-                border: isContinueLearning ? "1px solid rgba(99,179,237,0.22)" : border,
-                borderLeft: isContinueLearning ? "3px solid rgba(99,179,237,0.4)" : undefined,
-                borderRadius: 22,
+                    ? "linear-gradient(180deg, rgba(217,106,85,0.055), rgba(255,255,255,0.02))"
+                    : "linear-gradient(180deg, rgba(255,255,255,0.032), rgba(255,255,255,0.017))",
+                border: isContinueLearning ? "1px solid rgba(99,179,237,0.18)" : "1px solid rgba(255,255,255,0.062)",
+                borderLeft: isContinueLearning ? "2px solid rgba(99,179,237,0.34)" : undefined,
+                borderRadius: 14,
                 padding: 18,
                 display: "flex",
                 flexDirection: "column",
                 gap: 14,
                 minHeight: 262,
-                boxShadow: emphasis === "mindset"
-                    ? "0 14px 32px rgba(0,0,0,0.20)"
-                    : "0 12px 28px rgba(0,0,0,0.16)",
+                boxShadow: "0 10px 24px rgba(0,0,0,0.12)",
             }}
         >
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center", alignItems: "center" }}>
@@ -2026,15 +2516,15 @@ function ContentCard({
 
             <div
                 style={{
-                    borderRadius: 18,
+                    borderRadius: 12,
                     height: 96,
                     overflow: "hidden",
                     border: "1px solid rgba(255,255,255,0.06)",
                     background: thumbnailUrl
-                        ? `linear-gradient(180deg, rgba(8,8,9,0.18), rgba(8,8,9,0.62)), url(${thumbnailUrl}) center/cover`
+                            ? `linear-gradient(180deg, rgba(8,8,9,0.18), rgba(8,8,9,0.62)), url(${thumbnailUrl}) center/cover`
                         : emphasis === "mindset"
-                            ? "linear-gradient(135deg, rgba(199,107,75,0.28), rgba(12,12,14,0.84))"
-                            : "linear-gradient(135deg, rgba(232,98,42,0.24), rgba(99,179,237,0.16), rgba(12,12,14,0.88))",
+                            ? "linear-gradient(135deg, rgba(217,106,85,0.16), rgba(12,12,14,0.84))"
+                            : "linear-gradient(135deg, rgba(99,179,237,0.13), rgba(232,98,42,0.10), rgba(12,12,14,0.88))",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -2055,7 +2545,7 @@ function ContentCard({
             <div style={{ display: "grid", gap: 8 }}>
                 {content.whyThisMatters && (
                     <div style={{ fontSize: "var(--foundry-academy-md-font)", color: "#E9C7B8", lineHeight: 1.7, textAlign: "left" }}>
-                        <span style={{ color: "#E8622A", fontWeight: 700 }}>Why this matters:</span> {content.whyThisMatters}
+                        <span style={{ color: "#F5A843", fontWeight: 700 }}>Why this matters:</span> {content.whyThisMatters}
                     </div>
                 )}
                 {content.commonMistake && (
@@ -2123,16 +2613,16 @@ function SeriesCard({
             type="button"
             onClick={onOpen}
             style={{
-                background: "linear-gradient(180deg, rgba(99,179,237,0.10), rgba(255,255,255,0.02))",
+                background: "linear-gradient(180deg, rgba(99,179,237,0.06), rgba(255,255,255,0.018))",
                 border,
-                borderRadius: 22,
+                borderRadius: 14,
                 padding: 18,
                 textAlign: "center",
                 cursor: "pointer",
                 display: "grid",
                 gap: 14,
                 minHeight: 240,
-                boxShadow: "0 12px 28px rgba(0,0,0,0.16)",
+                boxShadow: "0 10px 24px rgba(0,0,0,0.12)",
             }}
         >
             <div style={{ display: "grid", justifyItems: "center", gap: 10 }}>
@@ -2185,17 +2675,17 @@ function AsideCard({
 }) {
     const cardStyles = {
         neutral: { background: surface, borderColor: "rgba(255,255,255,0.08)" },
-        ember: { background: "linear-gradient(180deg, rgba(232,98,42,0.10), rgba(255,255,255,0.03))", borderColor: "rgba(232,98,42,0.18)" },
-        glow: { background: "linear-gradient(180deg, rgba(232,98,42,0.08), rgba(99,179,237,0.05), rgba(255,255,255,0.03))", borderColor: "rgba(232,98,42,0.14)" },
-        blue: { background: "linear-gradient(180deg, rgba(99,179,237,0.10), rgba(255,255,255,0.03))", borderColor: "rgba(99,179,237,0.16)" },
-        stone: { background: "linear-gradient(180deg, rgba(200,169,110,0.08), rgba(255,255,255,0.03))", borderColor: "rgba(200,169,110,0.14)" },
-        mindset: { background: "linear-gradient(180deg, rgba(199,107,75,0.12), rgba(255,255,255,0.03))", borderColor: "rgba(199,107,75,0.18)" },
+        ember: { background: "linear-gradient(180deg, rgba(232,98,42,0.045), rgba(255,255,255,0.018))", borderColor: "rgba(232,98,42,0.11)" },
+        glow: { background: "linear-gradient(180deg, rgba(99,179,237,0.055), rgba(255,255,255,0.018))", borderColor: "rgba(99,179,237,0.12)" },
+        blue: { background: "linear-gradient(180deg, rgba(99,179,237,0.06), rgba(255,255,255,0.018))", borderColor: "rgba(99,179,237,0.12)" },
+        stone: { background: "linear-gradient(180deg, rgba(217,177,93,0.05), rgba(255,255,255,0.018))", borderColor: "rgba(217,177,93,0.12)" },
+        mindset: { background: "linear-gradient(180deg, rgba(217,106,85,0.06), rgba(255,255,255,0.018))", borderColor: "rgba(217,106,85,0.12)" },
     } as const;
     const style = cardStyles[tone];
 
     return (
-        <div style={{ background: style.background, border: `1px solid ${style.borderColor}`, borderRadius: 22, padding: 18, display: "grid", gap: 12 }}>
-            <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase" }}>{eyebrow}</div>
+        <div style={{ background: style.background, border: `1px solid ${style.borderColor}`, borderRadius: 14, padding: 18, display: "grid", gap: 12 }}>
+            <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "rgba(255,255,255,0.48)", letterSpacing: "0.14em", textTransform: "uppercase" }}>{eyebrow}</div>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
                 <div style={{ fontSize: 24, lineHeight: 1.06, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>{title}</div>
                 <HelpTooltip content={description} />
@@ -2508,7 +2998,7 @@ function ContentDetailModal({
                         </div>
                     </div>
 
-                    <div style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02))", border, borderRadius: 24, overflow: "hidden" }}>
+                    <div style={{ background: "rgba(255,255,255,0.024)", border: "1px solid rgba(255,255,255,0.065)", borderRadius: 14, overflow: "hidden" }}>
                         {activeSlideIndex === 0 && (
                             <div style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                                 {embedUrl ? (
@@ -2526,7 +3016,7 @@ function ContentDetailModal({
                                         style={{
                                             background: thumbnailUrl
                                                 ? `linear-gradient(180deg, rgba(8,8,9,0.18), rgba(8,8,9,0.62)), url(${thumbnailUrl}) center/cover`
-                                                : "linear-gradient(135deg, rgba(232,98,42,0.26), rgba(99,179,237,0.18), rgba(12,12,14,0.9))",
+                                                : "rgba(255,255,255,0.024)",
                                             display: "grid",
                                             alignContent: "start",
                                             padding: "16px 18px",
@@ -2550,10 +3040,10 @@ function ContentDetailModal({
                                 <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase" }}>
                                     {activeSlide.eyebrow}
                                 </div>
-                                <div style={{ fontSize: 30, lineHeight: 1.02, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
+                                <div style={{ fontSize: 28, lineHeight: 1.08, fontWeight: 700, color: "#F0EDE8" }}>
                                     {activeSlide.title}
                                 </div>
-                                <div style={{ fontSize: 15, color: "#C8C4BE", lineHeight: 1.95, whiteSpace: "pre-wrap" }}>
+                                <div style={{ maxWidth: 760, fontSize: 15, color: "#C8C4BE", lineHeight: 1.9, whiteSpace: "pre-wrap" }}>
                                     {activeSlide.body}
                                 </div>
                             </div>
@@ -2561,7 +3051,7 @@ function ContentDetailModal({
                             {activeSlide.bullets && activeSlide.bullets.length > 0 && (
                                 <div style={{ display: "grid", gap: 10 }}>
                                     {activeSlide.bullets.map((bullet) => (
-                                        <div key={bullet} style={{ background: "rgba(255,255,255,0.04)", border, borderRadius: 16, padding: "12px 14px", fontSize: 13, color: "#D7D1CA", lineHeight: 1.8 }}>
+                                        <div key={bullet} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "12px 14px", fontSize: 13, color: "#D7D1CA", lineHeight: 1.8 }}>
                                             {renderSlideBullet(bullet)}
                                         </div>
                                     ))}
@@ -2569,7 +3059,7 @@ function ContentDetailModal({
                             )}
 
                             {activeSlide.note && (
-                                <div style={{ background: "rgba(232,98,42,0.08)", border: "1px solid rgba(232,98,42,0.18)", borderRadius: 16, padding: "12px 14px", fontSize: 13, color: "#E7D5CA", lineHeight: 1.8 }}>
+                                <div style={{ background: "rgba(232,98,42,0.055)", border: "1px solid rgba(232,98,42,0.14)", borderRadius: 12, padding: "12px 14px", fontSize: 13, color: "#E7D5CA", lineHeight: 1.8 }}>
                                     {activeSlide.note}
                                 </div>
                             )}
@@ -2642,7 +3132,7 @@ function ApplyLessonCard({
 }) {
     const suggestion = suggestActionFromAcademyLesson(content);
     return (
-        <div style={{ background: "linear-gradient(180deg, rgba(99,179,237,0.10), rgba(255,255,255,0.025))", border: "1px solid rgba(99,179,237,0.18)", borderRadius: 22, padding: 18, display: "grid", gap: 10 }}>
+        <div style={{ background: "rgba(99,179,237,0.055)", border: "1px solid rgba(99,179,237,0.16)", borderRadius: 14, padding: 18, display: "grid", gap: 10 }}>
             <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#8FC8F6", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700 }}>Dive Deeper</div>
             <div style={{ fontSize: 18, color: "#F0EDE8", fontWeight: 700 }}>Take "{content.title}" into a real Forge conversation</div>
             <div style={{ fontSize: 13, color: "#C8C4BE", lineHeight: 1.8 }}>
@@ -2702,13 +3192,13 @@ function SeriesDetailModal({
                 </div>
 
                 {series.description && (
-                    <div style={{ background: surface, border, borderRadius: 18, padding: 16, fontSize: 14, color: "#C8C4BE", lineHeight: 1.9 }}>
+                    <div style={{ background: surface, border, borderRadius: 14, padding: 16, fontSize: 14, color: "#C8C4BE", lineHeight: 1.9 }}>
                         {series.description}
                     </div>
                 )}
 
                 {nextItem && (
-                    <div style={{ background: "rgba(99,179,237,0.10)", border: "1px solid rgba(99,179,237,0.18)", borderRadius: 18, padding: 16, display: "grid", gap: 6 }}>
+                    <div style={{ background: "rgba(99,179,237,0.055)", border: "1px solid rgba(99,179,237,0.16)", borderRadius: 14, padding: 16, display: "grid", gap: 6 }}>
                         <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#63B3ED", letterSpacing: "0.14em", textTransform: "uppercase" }}>
                             Recommended next step
                         </div>
@@ -2727,7 +3217,7 @@ function SeriesDetailModal({
                         const completed = status === "completed";
                         const isNext = nextItem?.id === item.id;
                         return (
-                            <div key={item.id} style={{ background: isNext ? "rgba(99,179,237,0.08)" : "rgba(255,255,255,0.03)", border: isNext ? "1px solid rgba(99,179,237,0.18)" : border, borderRadius: 18, padding: 16, display: "grid", gap: 12 }}>
+                            <div key={item.id} style={{ background: isNext ? "rgba(99,179,237,0.055)" : "rgba(255,255,255,0.024)", border: isNext ? "1px solid rgba(99,179,237,0.16)" : "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: 16, display: "grid", gap: 12 }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
                                     <div>
                                         <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 8 }}>
@@ -2764,7 +3254,7 @@ function SeriesDetailModal({
 function ModalShell({ children, onClose }: { children: ReactNode; onClose: () => void }) {
     return (
         <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 140, background: "rgba(3,3,4,0.82)", backdropFilter: "blur(10px)", padding: 18, overflowY: "auto" }}>
-            <div onClick={(event) => event.stopPropagation()} style={{ width: "min(920px, 100%)", margin: "40px auto", background: "#0C0C0E", border, borderRadius: 24, padding: 20 }}>
+            <div onClick={(event) => event.stopPropagation()} style={{ width: "min(920px, 100%)", margin: "40px auto", background: "#0C0C0E", border: "1px solid rgba(255,255,255,0.075)", borderRadius: 16, padding: 20 }}>
                 {children}
             </div>
         </div>
@@ -2908,13 +3398,18 @@ function InlineButton({
     children: ReactNode;
     onClick: () => void;
     disabled?: boolean;
-    tone?: "primary" | "success" | "muted";
+    tone?: "primary" | "blue" | "success" | "muted";
 }) {
     const styles = {
         primary: {
             background: "linear-gradient(135deg, #E8622A, #C9521E)",
             border: "none",
             color: "#fff",
+        },
+        blue: {
+            background: "rgba(99,179,237,0.14)",
+            border: "1px solid rgba(99,179,237,0.24)",
+            color: "#8FC8F6",
         },
         success: {
             background: "rgba(76,175,138,0.14)",

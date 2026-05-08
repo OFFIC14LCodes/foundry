@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import type { MarketReportSource } from "../../db";
 import { ReportSection, formatReportDate, type MarketReport } from "./shared";
 
 type GenerationPhase = "idle" | "searching" | "generating";
@@ -25,6 +26,24 @@ function extractCitations(content: string): Citation[] {
     return Array.from(citations.values());
 }
 
+function mergeCitations(contentCitations: Citation[], sourceReferences: MarketReportSource[]): Citation[] {
+    const citations = new Map<string, Citation>();
+
+    for (const citation of contentCitations) {
+        citations.set(citation.url, citation);
+    }
+
+    for (const source of sourceReferences) {
+        const title = source.title?.trim();
+        const url = source.url?.trim();
+        if (title && url && !citations.has(url)) {
+            citations.set(url, { title, url });
+        }
+    }
+
+    return Array.from(citations.values());
+}
+
 export default function DailyBriefPanel({
     profileIndustry,
     mounted,
@@ -41,6 +60,7 @@ export default function DailyBriefPanel({
     generationLimit,
     saveError,
     searchQueries,
+    sourceReferences = [],
     onGenerate,
 }: {
     profileIndustry?: string | null;
@@ -58,6 +78,7 @@ export default function DailyBriefPanel({
     generationLimit: number | null;
     saveError: string | null;
     searchQueries: string[];
+    sourceReferences?: MarketReportSource[];
     onGenerate: () => void;
 }) {
     const reportKey = currentReport?.id ?? currentReport?.date ?? "draft";
@@ -68,7 +89,10 @@ export default function DailyBriefPanel({
     const displayContent = generating
         ? streamedContent || currentReport?.content || ""
         : currentReport?.content || "";
-    const citations = useMemo(() => extractCitations(displayContent), [displayContent]);
+    const citations = useMemo(
+        () => mergeCitations(extractCitations(displayContent), sourceReferences),
+        [displayContent, sourceReferences],
+    );
     const loadingText = generationPhase === "searching"
         ? "Searching live sources across the web..."
         : "Analyzing and generating your report...";
@@ -80,10 +104,10 @@ export default function DailyBriefPanel({
                     marginBottom: 14,
                     padding: "12px 14px",
                     borderRadius: 12,
-                    background: hasReachedLimit ? "rgba(232,98,42,0.07)" : "rgba(232,98,42,0.05)",
-                    border: hasReachedLimit ? "1px solid rgba(232,98,42,0.2)" : "1px solid rgba(232,98,42,0.14)",
+                    background: hasReachedLimit ? "rgba(217,177,93,0.08)" : "rgba(99,179,237,0.055)",
+                    border: hasReachedLimit ? "1px solid rgba(217,177,93,0.2)" : "1px solid rgba(99,179,237,0.15)",
                     fontSize: 12,
-                    color: hasReachedLimit ? "#D9B9A6" : "#BDAFA2",
+                    color: hasReachedLimit ? "#D9B15D" : "#BDAFA2",
                     lineHeight: 1.65,
                 }}>
                     {hasReachedLimit
@@ -107,8 +131,8 @@ export default function DailyBriefPanel({
                         <div style={{ fontSize: 10, color: "#444", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>What you'll get</div>
                         {["Market overview for your specific industry", "Key trends reshaping the space", "Competitive landscape at your stage", "Financial and funding signals", "Risks and opportunities right now", "What matters most — given your stage and strategy"].map((item, i) => (
                             <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8 }}>
-                                <div style={{ width: 14, height: 14, borderRadius: "50%", background: "rgba(232,98,42,0.15)", border: "1px solid rgba(232,98,42,0.25)", flexShrink: 0, marginTop: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                    <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#E8622A" }} />
+                                <div style={{ width: 14, height: 14, borderRadius: "50%", background: "rgba(99,179,237,0.12)", border: "1px solid rgba(99,179,237,0.22)", flexShrink: 0, marginTop: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                    <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#63B3ED" }} />
                                 </div>
                                 <span style={{ fontSize: 12, color: "#888", lineHeight: 1.5 }}>{item}</span>
                             </div>
@@ -149,7 +173,7 @@ export default function DailyBriefPanel({
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 14, padding: "70px 0", animation: "fadeIn 0.3s ease" }}>
                     <div style={{ display: "flex", gap: 6 }}>
                         {[0, 1, 2].map(i => (
-                            <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: "#E8622A", animation: "forgePulse 1.4s infinite ease-in-out", animationDelay: `${i * 0.2}s` }} />
+                            <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: "#63B3ED", animation: "forgePulse 1.4s infinite ease-in-out", animationDelay: `${i * 0.2}s` }} />
                         ))}
                     </div>
                     <div style={{ fontSize: 13, color: "#555", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic" }}>
@@ -166,7 +190,7 @@ export default function DailyBriefPanel({
                         </div>
                         <div style={{ fontSize: 11, color: "#555" }}>
                             {generating ? "Writing..." : currentReportDate ? formatReportDate(currentReportDate) : "Today"}
-                            {generating && <span style={{ marginLeft: 8, color: "#E8622A" }}>● Live</span>}
+                            {generating && <span style={{ marginLeft: 8, color: "#63B3ED" }}>● Live</span>}
                         </div>
                     </div>
 
@@ -207,7 +231,7 @@ export default function DailyBriefPanel({
                                                         href={source.url}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        style={{ color: "#E8622A", textDecoration: "none", fontSize: 12, fontFamily: "'DM Sans', system-ui, sans-serif" }}
+                                                        style={{ color: "#63B3ED", textDecoration: "none", fontSize: 12, fontFamily: "'DM Sans', system-ui, sans-serif" }}
                                                     >
                                                         {source.title}
                                                     </a>

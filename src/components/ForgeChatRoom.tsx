@@ -34,6 +34,7 @@ interface ForgeChatRoomProps {
     academyEntry?: AcademyTopicLaunch | null;
     onMarkAcademyLessonCompleted?: (contentId: string, options?: { knowledgeCheckedAt?: string; lastCheckResponse?: string | null; lastCheckFeedback?: string | null }) => Promise<void> | void;
     marketIntelEntry?: MarketTrend | null;
+    universalMemoryContext?: string;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -49,6 +50,7 @@ function buildChatRoomContext(
     marketIntelEntry?: MarketTrend | null,
     pastSummaries?: { id: string; title: string; date: string; summary: string }[],
     activeArchiveId?: string | null,
+    universalMemoryContext?: string,
 ) {
     const academyMode = academyEntry?.sessionMode ?? "learn";
     const modeInstruction = !academyEntry ? "" : testingMode
@@ -97,6 +99,7 @@ ${archiveSummary ? `\n\nARCHIVE CONTEXT:\nThe founder is continuing a prior arch
 ${academyEntry ? `\n\nACADEMY ENTRY CONTEXT:\nThe founder opened this conversation from Forge Academy.\nMode: ${academyMode}\nTopic: ${academyEntry.title}\nCategory: ${academyEntry.categoryTitle || "Forge Academy"}\nLearning goal: ${academyEntry.learningGoal || "Help the founder understand the topic deeply and practically."}\nWho this is for: ${academyEntry.whoThisIsFor || "A first-time founder who needs a more grounded understanding before the stakes get higher."}\nWhen this matters: ${academyEntry.whenThisMatters || "Before the founder drifts into weak assumptions or avoidable execution mistakes."}\nCommon mistake: ${academyEntry.commonMistake || "Founders often treat this as obvious until they are forced to make a real decision under pressure."}\nWhy this matters: ${academyEntry.whyThisMatters || "Teach the founder why this topic matters before they need it."}\nWhat to watch for: ${academyEntry.whatToWatchFor || "Surface the subtle mistakes and weak thinking patterns that matter here."}\nKnowledge check prompt: ${academyEntry.knowledgeCheckPrompt || "Not explicitly set"}\nExpected understanding points: ${academyEntry.knowledgeCheckExpectedPoints.join(" | ") || "Use broad founder judgment"}\nConcept tags: ${academyEntry.tags.join(", ") || "None"}\nRelevant stages: ${academyEntry.stageIds.length > 0 ? academyEntry.stageIds.join(", ") : "General"}\nSupporting context: ${academyEntry.forgeContext || "None provided"}\n\n${modeInstruction}` : ""}
 ${marketIntelEntry ? `\n\nMARKET INTELLIGENCE CONTEXT:\nThe founder opened this conversation from Market Intelligence to explore a specific trend.\nTrend name: ${marketIntelEntry.name}\nImpact level: ${marketIntelEntry.impactLevel}\nTimeframe: ${marketIntelEntry.timeframe}\nDescription: ${marketIntelEntry.description}\n\nForge should help the founder understand this trend deeply and practically — what it means for their business, how to respond or position, and what concrete actions they could take. Ask probing questions to help them think it through. Keep it strategic and grounded.` : ""}
 ${pastConversationsSection}
+${universalMemoryContext ? `\n\n${universalMemoryContext}` : ""}
 ${bookContext.context ? `\n\n${bookContext.context}` : ""}
     `.trim(),
         bookMatches: bookContext.matches,
@@ -110,7 +113,7 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
 // ─────────────────────────────────────────────────────────────
 // Component
 // ─────────────────────────────────────────────────────────────
-export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved, initialArchive = null, academyEntry = null, onMarkAcademyLessonCompleted, marketIntelEntry = null }: ForgeChatRoomProps) {
+export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved, initialArchive = null, academyEntry = null, onMarkAcademyLessonCompleted, marketIntelEntry = null, universalMemoryContext = "" }: ForgeChatRoomProps) {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
@@ -360,6 +363,7 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
                 activeTrendEntry,
                 pastSummaries,
                 activeArchive?.id || null,
+                universalMemoryContext,
             );
             const apiMsgs = [
                 ...history.slice(0, -1).map(m => ({
@@ -421,7 +425,12 @@ Start with a confident first lesson message that frames the topic, explains the 
                 [starterPrompt],
                 null,
                 null,
-                entry
+                entry,
+                false,
+                null,
+                undefined,
+                null,
+                universalMemoryContext,
             );
 
             await streamForgeAPI(
@@ -476,7 +485,7 @@ Start by making the trend real and concrete for them. No vague advice — be dir
         setLoading(true);
 
         try {
-            const ctx = buildChatRoomContext(profile, [kickoffPrompt], null, null, null, false, entry);
+            const ctx = buildChatRoomContext(profile, [kickoffPrompt], null, null, null, false, entry, undefined, null, universalMemoryContext);
             await streamForgeAPI(
                 [{ role: "user", content: kickoffPrompt }],
                 FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", ctx.context),
@@ -512,7 +521,7 @@ Start by making the trend real and concrete for them. No vague advice — be dir
         setMessages((prev) => [...prev, forgeMsg]);
         setLoading(true);
         try {
-            const ctx = buildChatRoomContext(profile, [completionPrompt], null, null, entry);
+            const ctx = buildChatRoomContext(profile, [completionPrompt], null, null, entry, false, null, undefined, null, universalMemoryContext);
             await streamForgeAPI(
                 [{ role: "user", content: completionPrompt }],
                 FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", ctx.context),
@@ -544,7 +553,7 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
         setMessages((prev) => [...prev, forgeMsg]);
         setLoading(true);
         try {
-            const ctx = buildChatRoomContext(profile, [kickoffPrompt], null, null, entry, true);
+            const ctx = buildChatRoomContext(profile, [kickoffPrompt], null, null, entry, true, null, undefined, null, universalMemoryContext);
             await streamForgeAPI(
                 [{ role: "user", content: kickoffPrompt }],
                 FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", ctx.context),
@@ -568,7 +577,7 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
         setMessages((prev) => [...prev, forgeMsg]);
         setLoading(true);
         try {
-            const ctx = buildChatRoomContext(profile, [teachingPrompt], null, null, entry);
+            const ctx = buildChatRoomContext(profile, [teachingPrompt], null, null, entry, false, null, undefined, null, universalMemoryContext);
             await streamForgeAPI(
                 [{ role: "user", content: teachingPrompt }],
                 FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", ctx.context),

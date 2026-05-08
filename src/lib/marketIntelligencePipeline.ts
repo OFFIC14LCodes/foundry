@@ -7,6 +7,8 @@ import {
 import {
     parseMarketIntelligenceExtraction,
     buildMarketIntelligenceExtractionPrompt,
+    extractSourceInsightsFromMarkdown,
+    mergeSourceInsights,
     MARKET_INTELLIGENCE_EXTRACTION_SYSTEM,
     type MarketIntelligenceFounderContext,
 } from "./marketIntelligenceExtractor";
@@ -68,7 +70,7 @@ export async function extractAndSaveMarketIntelligenceFromReport(
         competitors: parsed.competitors,
         trends: parsed.trends,
         benchmarks: parsed.benchmarks,
-        sources: parsed.sources,
+        sources: mergeSourceInsights(parsed.sources, extractSourceInsightsFromMarkdown(report.content)),
     };
 
     return saveNormalizedMarketIntelligence(userId, normalized);

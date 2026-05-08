@@ -13,7 +13,7 @@ export interface MarketReport {
     searchQueries?: string[];
 }
 
-export type MarketTab = "brief" | "competitors" | "trends" | "benchmarks" | "sources";
+export type MarketTab = "brief" | "competitors" | "trends" | "actions" | "benchmarks" | "sources";
 
 export type ExtractionDebugPreview = {
     rawText: string;
@@ -45,7 +45,7 @@ function InlineCitationLink({ href, children }: { href: string; children: string
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
             style={{
-                color: "#E8622A",
+                color: "#63B3ED",
                 fontSize: "inherit",
                 textDecoration: hovered ? "underline" : "none",
                 textUnderlineOffset: 3,
@@ -115,7 +115,7 @@ export function ReportSection({ content }: { content: string }) {
 
         if (line.startsWith("## ")) {
             elements.push(
-                <div key={i} style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#E8622A", fontWeight: 700, marginTop: i > 0 ? 26 : 0, marginBottom: 8, paddingBottom: 5, borderBottom: "1px solid rgba(232,98,42,0.15)", fontFamily: "'Lora', Georgia, serif" }}>
+                <div key={i} style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#63B3ED", fontWeight: 700, marginTop: i > 0 ? 26 : 0, marginBottom: 8, paddingBottom: 5, borderBottom: "1px solid rgba(99,179,237,0.14)", fontFamily: "'Lora', Georgia, serif" }}>
                     {line.slice(3)}
                 </div>,
             );

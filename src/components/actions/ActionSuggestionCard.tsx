@@ -21,7 +21,7 @@ type Props = {
 const priorityColors = {
     low: "#8D857C",
     medium: "#C8A96E",
-    high: "#E8622A",
+    high: "#D9B15D",
     critical: "#F05D5E",
 } as const;
 
@@ -56,8 +56,8 @@ export default function ActionSuggestionCard({
 
     return (
         <div style={{
-            background: "linear-gradient(180deg, rgba(232,98,42,0.07), rgba(255,255,255,0.025))",
-            border: "1px solid rgba(232,98,42,0.16)",
+            background: "linear-gradient(180deg, rgba(255,255,255,0.028), rgba(255,255,255,0.014))",
+            border: "1px solid rgba(255,255,255,0.062)",
             borderRadius: compact ? 12 : 16,
             padding: compact ? 12 : 16,
             display: "grid",
@@ -65,7 +65,7 @@ export default function ActionSuggestionCard({
         }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start", flexWrap: "wrap" }}>
                 <div style={{ minWidth: 0, display: "grid", gap: 5 }}>
-                    <div style={{ fontSize: 11, color: "#E8622A", letterSpacing: "0.12em", textTransform: "uppercase", fontWeight: 800, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+                    <div style={{ fontSize: 11, color: "#8FC8F6", letterSpacing: "0.12em", textTransform: "uppercase", fontWeight: 800, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
                         Next action
                     </div>
                     <div style={{ fontSize: compact ? 15 : 18, color: "#F0EDE8", lineHeight: 1.25, fontWeight: 800 }}>

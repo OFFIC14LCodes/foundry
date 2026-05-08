@@ -31,12 +31,17 @@ function NavItem({
     label,
     onClick,
     badge,
+    description,
+    emphasis = "normal",
 }: {
     icon: ReactNode;
     label: string;
     onClick: () => void;
     badge?: number;
+    description?: string;
+    emphasis?: "primary" | "normal" | "muted";
 }) {
+    const isPrimary = emphasis === "primary";
     return (
         <button
             onClick={onClick}
@@ -44,35 +49,44 @@ function NavItem({
             style={{
                 width: "100%",
                 display: "flex",
-                alignItems: "center",
+                alignItems: description ? "flex-start" : "center",
                 gap: 11,
-                padding: "10px 16px",
-                background: "transparent",
-                border: "none",
-                borderLeft: "2px solid transparent",
-                color: "var(--foundry-text-secondary)",
-                fontSize: 13,
+                padding: isPrimary ? "12px 14px" : "9px 16px",
+                background: isPrimary ? "rgba(232,98,42,0.075)" : "transparent",
+                border: isPrimary ? "1px solid rgba(232,98,42,0.14)" : "none",
+                borderLeft: isPrimary ? "2px solid rgba(232,98,42,0.55)" : "2px solid transparent",
+                borderRadius: isPrimary ? 12 : 0,
+                color: isPrimary ? "var(--foundry-text-primary)" : emphasis === "muted" ? "rgba(168,164,160,0.72)" : "var(--foundry-text-secondary)",
+                fontSize: isPrimary ? 13 : 12,
                 cursor: "pointer",
                 textAlign: "left",
                 fontFamily: "'DM Sans', system-ui, sans-serif",
-                fontWeight: 650,
+                fontWeight: isPrimary ? 750 : 650,
                 transition: "color 0.15s, background 0.15s",
                 position: "relative",
                 boxSizing: "border-box",
+                margin: isPrimary ? "0 10px 8px" : 0,
             }}
             onMouseEnter={e => {
                 e.currentTarget.style.color = "#F0EDE8";
-                e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+                e.currentTarget.style.background = isPrimary ? "rgba(232,98,42,0.11)" : "rgba(255,255,255,0.04)";
             }}
             onMouseLeave={e => {
-                e.currentTarget.style.color = "var(--foundry-text-secondary)";
-                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.color = isPrimary ? "var(--foundry-text-primary)" : emphasis === "muted" ? "rgba(168,164,160,0.72)" : "var(--foundry-text-secondary)";
+                e.currentTarget.style.background = isPrimary ? "rgba(232,98,42,0.075)" : "transparent";
             }}
         >
-            <span style={{ width: 16, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: 0.7 }}>
+            <span style={{ width: 16, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: isPrimary ? 0.95 : 0.68, marginTop: description ? 1 : 0 }}>
                 {icon}
             </span>
-            <span style={{ flex: 1 }}>{label}</span>
+            <span style={{ flex: 1, display: "grid", gap: 2 }}>
+                <span>{label}</span>
+                {description && (
+                    <span style={{ color: "rgba(189,175,162,0.68)", fontSize: 10, lineHeight: 1.45, fontWeight: 500 }}>
+                        {description}
+                    </span>
+                )}
+            </span>
             {badge ? (
                 <span style={{
                     background: "#E8622A",
@@ -91,8 +105,23 @@ function NavItem({
     );
 }
 
-function Divider() {
-    return <div style={{ height: 1, background: "rgba(255,255,255,0.05)", margin: "6px 0" }} />;
+function NavSection({ label, children }: { label: string; children: ReactNode }) {
+    return (
+        <div style={{ padding: "8px 0" }}>
+            <div style={{
+                padding: "0 16px 7px",
+                color: "rgba(255,255,255,0.36)",
+                fontSize: 10,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                fontFamily: "'DM Sans', system-ui, sans-serif",
+                fontWeight: 800,
+            }}>
+                {label}
+            </div>
+            {children}
+        </div>
+    );
 }
 
 export default function NavSidebar({
@@ -206,75 +235,92 @@ export default function NavSidebar({
 
                 {/* Navigation */}
                 <div style={{ flex: 1, padding: "8px 0", overflowY: "auto" }}>
-                    <NavItem
-                        icon={<ChatIcon size={16} />}
-                        label="Chat with Forge"
-                        onClick={onOpenForge}
-                    />
-                    <NavItem
-                        icon={<House size={16} />}
-                        label="Hub"
-                        onClick={onOpenHub}
-                    />
+                    <NavSection label="Primary">
+                        <NavItem
+                            icon={<House size={16} />}
+                            label="Hub"
+                            description="Your daily direction"
+                            onClick={onOpenHub}
+                            emphasis="primary"
+                        />
+                        <NavItem
+                            icon={<ChatIcon size={16} />}
+                            label="Forge"
+                            description="Think, decide, execute"
+                            onClick={onOpenForge}
+                            emphasis="primary"
+                        />
+                        <NavItem
+                            icon={<AcademyIcon size={16} />}
+                            label="Academy"
+                            description="Learn the next founder skill"
+                            onClick={onOpenAcademy}
+                            emphasis="primary"
+                        />
+                    </NavSection>
 
-                    <Divider />
+                    <NavSection label="Execution">
+                        <NavItem
+                            icon={<Zap size={16} />}
+                            label="Actions"
+                            onClick={onOpenActionCenter}
+                        />
+                        <NavItem
+                            icon={<Map size={16} />}
+                            label="Business Model Canvas"
+                            onClick={onOpenBusinessModelCanvas}
+                        />
+                        <NavItem
+                            icon={<JournalIcon size={16} />}
+                            label="Journal"
+                            onClick={onOpenJournal}
+                        />
+                        <NavItem
+                            icon={<Archive size={16} />}
+                            label="Archive"
+                            onClick={onOpenArchive}
+                        />
+                    </NavSection>
 
-                    <NavItem
-                        icon={<AcademyIcon size={16} />}
-                        label="Forge Academy"
-                        onClick={onOpenAcademy}
-                    />
-                    <NavItem
-                        icon={<JournalIcon size={16} />}
-                        label="Journal"
-                        onClick={onOpenJournal}
-                    />
-                    <NavItem
-                        icon={<BriefingsIcon size={16} />}
-                        label="Monday Briefings"
-                        onClick={onOpenBriefings}
-                    />
-                    <NavItem
-                        icon={<PitchIcon size={16} />}
-                        label="Pitch Practice"
-                        onClick={onOpenPitchPractice}
-                    />
-                    <NavItem
-                        icon={<MarketIcon size={16} />}
-                        label="Market Intelligence"
-                        onClick={onOpenMarketIntel}
-                    />
-                    <NavItem
-                        icon={<DocsIcon size={16} />}
-                        label="Document Vault"
-                        onClick={onOpenDocuments}
-                    />
-                    <NavItem
-                        icon={<Map size={16} />}
-                        label="Business Model Canvas"
-                        onClick={onOpenBusinessModelCanvas}
-                    />
-                    <NavItem
-                        icon={<Zap size={16} />}
-                        label="Action Center"
-                        onClick={onOpenActionCenter}
-                    />
-                    <NavItem
-                        icon={<BarChart3 size={16} />}
-                        label="Financial Dashboard"
-                        onClick={onOpenFinancialDashboard}
-                    />
-                    <NavItem
-                        icon={<Archive size={16} />}
-                        label="Archive"
-                        onClick={onOpenArchive}
-                    />
-                    <NavItem
-                        icon={<CofounderIcon size={16} />}
-                        label="Cofounder Mode"
-                        onClick={onOpenCofounder}
-                        badge={cofounderUnreadCount > 0 ? cofounderUnreadCount : undefined}
-                    />
+                    <NavSection label="Support">
+                        <NavItem
+                            icon={<MarketIcon size={16} />}
+                            label="Market Research"
+                            onClick={onOpenMarketIntel}
+                            emphasis="muted"
+                        />
+                        <NavItem
+                            icon={<BarChart3 size={16} />}
+                            label="Financials"
+                            onClick={onOpenFinancialDashboard}
+                            emphasis="muted"
+                        />
+                        <NavItem
+                            icon={<DocsIcon size={16} />}
+                            label="Documents"
+                            onClick={onOpenDocuments}
+                            emphasis="muted"
+                        />
+                        <NavItem
+                            icon={<BriefingsIcon size={16} />}
+                            label="Briefings"
+                            onClick={onOpenBriefings}
+                            emphasis="muted"
+                        />
+                        <NavItem
+                            icon={<PitchIcon size={16} />}
+                            label="Pitch Practice"
+                            onClick={onOpenPitchPractice}
+                            emphasis="muted"
+                        />
+                        <NavItem
+                            icon={<CofounderIcon size={16} />}
+                            label="Cofounder Mode"
+                            onClick={onOpenCofounder}
+                            badge={cofounderUnreadCount > 0 ? cofounderUnreadCount : undefined}
+                            emphasis="muted"
+                        />
+                    </NavSection>
                 </div>
 
                 {/* Footer */}

@@ -69,7 +69,7 @@ const BUCKET_LABELS: Record<ProfitBucketType, string> = {
 
 const BUCKET_COLORS: Record<ProfitBucketType, string> = {
     income: "#F0EDE8",
-    profit: "#E8622A",
+    profit: "#4CAF8A",
     owner_comp: "#4CAF8A",
     tax: "#4CAF8A",
     opex: "rgba(240,237,232,0.3)",
@@ -740,9 +740,9 @@ Be the partner who has been watching the whole time.`;
     const isEstimated = summary?.usesEstimatedInputs ?? false;
 
     const cardStyle: React.CSSProperties = {
-        background: "rgba(255,255,255,0.02)",
-        border: "1px solid rgba(255,255,255,0.06)",
-        borderRadius: 12,
+        background: "rgba(255,255,255,0.018)",
+        border: "1px solid rgba(255,255,255,0.052)",
+        borderRadius: 14,
         padding: 14,
         marginBottom: 14,
     };
@@ -768,13 +768,13 @@ Be the partner who has been watching the whole time.`;
         {
             label: "Monthly Burn",
             value: formatCurrency(summary?.monthlyBurn ?? 0),
-            color: (summary?.monthlyBurn ?? 0) > 0 ? "#E8622A" : "#4CAF8A",
+            color: (summary?.monthlyBurn ?? 0) > 0 ? "#D96A55" : "#4CAF8A",
             tooltip: null,
         },
         {
             label: "Runway",
             value: summary?.runwayMonths != null ? `${isEstimated ? "~" : ""}${summary.runwayMonths.toFixed(1)} mo` : "TBD",
-            color: summary?.runwayMonths == null ? "#888" : summary.runwayMonths > 6 ? "#4CAF8A" : summary.runwayMonths > 3 ? "#E8C42A" : "#E8622A",
+            color: summary?.runwayMonths == null ? "#888" : summary.runwayMonths > 6 ? "#4CAF8A" : summary.runwayMonths > 3 ? "#D9B15D" : "#D96A55",
             tooltip: isEstimated ? "Runway estimate based on manually entered expenses. May differ from actual burn." : null,
         },
         {
@@ -916,8 +916,8 @@ Be the partner who has been watching the whole time.`;
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 12 }}>
                                 {[
                                     { label: "Revenue", value: formatCurrency(profitLoss.revenue), color: "#4CAF8A" },
-                                    { label: "Expenses", value: formatCurrency(profitLoss.expenses), color: "#E8622A" },
-                                    { label: profitLoss.netIncome >= 0 ? "Net Income" : "Net Loss", value: formatCurrency(Math.abs(profitLoss.netIncome)), color: profitLoss.netIncome >= 0 ? "#4CAF8A" : "#FF6B6B" },
+                                    { label: "Expenses", value: formatCurrency(profitLoss.expenses), color: "#D96A55" },
+                                    { label: profitLoss.netIncome >= 0 ? "Net Income" : "Net Loss", value: formatCurrency(Math.abs(profitLoss.netIncome)), color: profitLoss.netIncome >= 0 ? "#4CAF8A" : "#D96A55" },
                                 ].map((item) => (
                                     <div key={item.label} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
                                         <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: item.color, marginBottom: 2 }}>{item.value}</div>
@@ -930,7 +930,7 @@ Be the partner who has been watching the whole time.`;
                                     {profitLoss.categoryRows.map((row) => (
                                         <div key={row.category} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 10, alignItems: "center", fontSize: 12, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
                                             <div style={{ color: "#C8C4BE", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.category}</div>
-                                            <div style={{ color: row.net >= 0 ? "#4CAF8A" : "#E8622A", fontWeight: 700 }}>{formatCurrency(Math.abs(row.net))}</div>
+                                            <div style={{ color: row.net >= 0 ? "#4CAF8A" : "#D96A55", fontWeight: 700 }}>{formatCurrency(Math.abs(row.net))}</div>
                                         </div>
                                     ))}
                                 </div>
@@ -980,8 +980,8 @@ Be the partner who has been watching the whole time.`;
                                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 12 }}>
                                         {[
                                             { label: "Monthly Revenue", value: formatCurrency(summary.operatingView.monthlyRevenue), color: "#4CAF8A" },
-                                            { label: "Monthly Expenses", value: formatCurrency(summary.operatingView.monthlyExpenses), color: "#E8622A" },
-                                            { label: summary.operatingView.monthlyOperatingGap >= 0 ? "Monthly Surplus" : "Monthly Gap", value: formatCurrency(Math.abs(summary.operatingView.monthlyOperatingGap)), color: summary.operatingView.monthlyOperatingGap >= 0 ? "#4CAF8A" : "#FF6B6B" },
+                                            { label: "Monthly Expenses", value: formatCurrency(summary.operatingView.monthlyExpenses), color: "#D96A55" },
+                                            { label: summary.operatingView.monthlyOperatingGap >= 0 ? "Monthly Surplus" : "Monthly Gap", value: formatCurrency(Math.abs(summary.operatingView.monthlyOperatingGap)), color: summary.operatingView.monthlyOperatingGap >= 0 ? "#4CAF8A" : "#D96A55" },
                                         ].map((item) => (
                                             <div key={item.label} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
                                                 <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: item.color, marginBottom: 2 }}>{item.value}</div>
@@ -996,7 +996,7 @@ Be the partner who has been watching the whole time.`;
                                                 <span>{Math.round((summary.operatingView.monthlyRevenue / summary.operatingView.monthlyExpenses) * 100)}%</span>
                                             </div>
                                             <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: 4, height: 6, overflow: "hidden" }}>
-                                                <div style={{ width: `${Math.min(100, (summary.operatingView.monthlyRevenue / summary.operatingView.monthlyExpenses) * 100)}%`, height: "100%", background: summary.operatingView.monthlyOperatingGap >= 0 ? "#4CAF8A" : "#E8622A", borderRadius: 4, transition: "width 0.3s" }} />
+                                                <div style={{ width: `${Math.min(100, (summary.operatingView.monthlyRevenue / summary.operatingView.monthlyExpenses) * 100)}%`, height: "100%", background: summary.operatingView.monthlyOperatingGap >= 0 ? "#4CAF8A" : "#D96A55", borderRadius: 4, transition: "width 0.3s" }} />
                                             </div>
                                         </>
                                     )}
@@ -1029,7 +1029,7 @@ Be the partner who has been watching the whole time.`;
                                         <button onClick={() => setShowAddRevenueModal(true)} style={{ background: "rgba(76,175,138,0.12)", border: "1px solid rgba(76,175,138,0.3)", borderRadius: 8, padding: "7px 14px", color: "#4CAF8A", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', system-ui, sans-serif" }}>
                                             Add Revenue
                                         </button>
-                                        <button onClick={() => setShowAddExpenseModal(true)} style={{ background: "rgba(232,98,42,0.12)", border: "1px solid rgba(232,98,42,0.3)", borderRadius: 8, padding: "7px 14px", color: "#E8622A", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+                                        <button onClick={() => setShowAddExpenseModal(true)} style={{ background: "rgba(217,106,85,0.1)", border: "1px solid rgba(217,106,85,0.25)", borderRadius: 8, padding: "7px 14px", color: "#D96A55", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', system-ui, sans-serif" }}>
                                             Add Expense
                                         </button>
                                     </div>
@@ -1044,7 +1044,7 @@ Be the partner who has been watching the whole time.`;
                                                 <div key={`${month.year}-${month.month}`} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
                                                     <div style={{ flex: 1, width: "100%", display: "flex", alignItems: "flex-end", gap: 2 }}>
                                                         <div title={`Cash in: ${formatCurrency(month.revenue)}`} style={{ flex: 1, height: `${revH}%`, background: "#4CAF8A", borderRadius: "3px 3px 0 0", minHeight: 2, transition: "height 0.3s" }} />
-                                                        <div title={`Cash out: ${formatCurrency(month.expenses)}`} style={{ flex: 1, height: `${expH}%`, background: "#E8622A", borderRadius: "3px 3px 0 0", minHeight: 2, opacity: 0.8, transition: "height 0.3s" }} />
+                                                        <div title={`Cash out: ${formatCurrency(month.expenses)}`} style={{ flex: 1, height: `${expH}%`, background: "#D96A55", borderRadius: "3px 3px 0 0", minHeight: 2, opacity: 0.8, transition: "height 0.3s" }} />
                                                     </div>
                                                     <div style={{ fontSize: 9, color: "#555", letterSpacing: "0.04em" }}>{month.label}</div>
                                                 </div>
@@ -1056,7 +1056,7 @@ Be the partner who has been watching the whole time.`;
                                             <div style={{ width: 10, height: 10, borderRadius: 2, background: "#4CAF8A" }} />Cash In
                                         </div>
                                         <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, color: "#888" }}>
-                                            <div style={{ width: 10, height: 10, borderRadius: 2, background: "#E8622A" }} />Cash Out
+                                            <div style={{ width: 10, height: 10, borderRadius: 2, background: "#D96A55" }} />Cash Out
                                         </div>
                                     </div>
                                     {chartActiveMonths === 1 && (
@@ -1085,7 +1085,7 @@ Be the partner who has been watching the whole time.`;
                                                 </div>
                                                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                                                     {[
-                                                        { label: "Expense", handler: () => void handleAcceptAsExpense(tx), bg: "rgba(232,98,42,0.12)", border: "rgba(232,98,42,0.3)", color: "#E8622A" },
+                                                        { label: "Expense", handler: () => void handleAcceptAsExpense(tx), bg: "rgba(217,106,85,0.1)", border: "rgba(217,106,85,0.25)", color: "#D96A55" },
                                                         { label: "Revenue", handler: () => void handleAcceptAsRevenue(tx), bg: "rgba(76,175,138,0.12)", border: "rgba(76,175,138,0.3)", color: "#4CAF8A" },
                                                         { label: "Ignore", handler: () => void handleIgnore(tx), bg: "none", border: "rgba(255,255,255,0.08)", color: "#666" },
                                                     ].map((btn) => (
@@ -1133,7 +1133,7 @@ Be the partner who has been watching the whole time.`;
                                                     <div style={{ fontSize: 10, color: "#666" }}>{entry.date} · {entry.category} · {entry.type === "credit" ? "cash in" : "cash out"}</div>
                                                 </div>
                                                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                                    <div style={{ fontSize: 12, color: entry.type === "credit" ? "#4CAF8A" : "#E8622A", fontWeight: 700 }}>{formatCurrency(entry.amount)}</div>
+                                                    <div style={{ fontSize: 12, color: entry.type === "credit" ? "#4CAF8A" : "#D96A55", fontWeight: 700 }}>{formatCurrency(entry.amount)}</div>
                                                     <button onClick={() => void handleConfirmLedgerReconciled(entry.id)} disabled={busy} style={{ background: "rgba(76,175,138,0.12)", border: "1px solid rgba(76,175,138,0.3)", borderRadius: 7, padding: "5px 9px", color: "#4CAF8A", fontSize: 10, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1 }}>
                                                         {busy ? "Confirming..." : "Confirm"}
                                                     </button>
@@ -1180,7 +1180,7 @@ Be the partner who has been watching the whole time.`;
                                                     <button onClick={() => void handleSync(item.plaidItemId)} disabled={isSyncing} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "7px 11px", color: "#F0EDE8", fontSize: 11, cursor: isSyncing ? "default" : "pointer", opacity: isSyncing ? 0.6 : 1 }}>
                                                         {isSyncing ? "Syncing..." : "Sync"}
                                                     </button>
-                                                    <button onClick={() => setDisconnectConfirmId(item.plaidItemId)} disabled={isSyncing} style={{ background: "rgba(232,98,42,0.1)", border: "1px solid rgba(232,98,42,0.25)", borderRadius: 8, padding: "7px 11px", color: "#E8622A", fontSize: 11, cursor: isSyncing ? "default" : "pointer" }}>
+                                                    <button onClick={() => setDisconnectConfirmId(item.plaidItemId)} disabled={isSyncing} style={{ background: "rgba(217,106,85,0.1)", border: "1px solid rgba(217,106,85,0.25)", borderRadius: 8, padding: "7px 11px", color: "#D96A55", fontSize: 11, cursor: isSyncing ? "default" : "pointer" }}>
                                                         Unlink
                                                     </button>
                                                 </div>
@@ -1220,7 +1220,7 @@ Be the partner who has been watching the whole time.`;
                                                 {[
                                                     { label: "PDF", handler: () => handleDownloadInvoice(inv), style: { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#A8A4A0" } },
                                                     { label: "Edit", handler: () => openEditInvoice(inv), style: { background: "none", border: "1px solid rgba(255,255,255,0.08)", color: "#888" } },
-                                                    { label: "×", handler: () => void handleDeleteInvoice(inv.id), style: { background: "none", border: "1px solid rgba(232,98,42,0.2)", color: "#E8622A" } },
+                                                    { label: "×", handler: () => void handleDeleteInvoice(inv.id), style: { background: "none", border: "1px solid rgba(217,106,85,0.22)", color: "#D96A55" } },
                                                 ].map((btn) => (
                                                     <button key={btn.label} onClick={btn.handler} style={{ ...btn.style, borderRadius: 7, padding: "5px 9px", fontSize: 10, cursor: "pointer" }}>{btn.label}</button>
                                                 ))}
@@ -1235,7 +1235,7 @@ Be the partner who has been watching the whole time.`;
                         <div style={cardStyle}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                                 <p style={{ ...sectionHeadingStyle, marginBottom: 0 }}>Tax Estimate Tracker</p>
-                                <button onClick={() => setShowTaxAsideModal(true)} style={{ background: "rgba(232,98,42,0.12)", border: "1px solid rgba(232,98,42,0.3)", borderRadius: 8, padding: "6px 12px", color: "#E8622A", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+                                <button onClick={() => setShowTaxAsideModal(true)} style={{ background: "rgba(217,177,93,0.1)", border: "1px solid rgba(217,177,93,0.25)", borderRadius: 8, padding: "6px 12px", color: "#D9B15D", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
                                     Set Aside
                                 </button>
                             </div>
@@ -1349,12 +1349,12 @@ Be the partner who has been watching the whole time.`;
             {/* ── Disconnect Confirm ────────────────────────────────────────── */}
             {disconnectConfirmId && (
                 <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setDisconnectConfirmId(null)}>
-                    <div style={{ background: "rgb(16,16,18)", border: "1px solid rgba(232,98,42,0.3)", borderRadius: 16, padding: 24, width: "100%", maxWidth: 380, boxSizing: "border-box" }} onClick={(e) => e.stopPropagation()}>
+                    <div style={{ background: "rgb(16,16,18)", border: "1px solid rgba(217,106,85,0.3)", borderRadius: 16, padding: 24, width: "100%", maxWidth: 380, boxSizing: "border-box" }} onClick={(e) => e.stopPropagation()}>
                         <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 10 }}>Unlink bank?</div>
                         <div style={{ marginBottom: 20 }}><HelpTooltip content="This removes the bank connection. Imported transactions that have already been accepted will remain." /></div>
                         <div style={{ display: "flex", gap: 10 }}>
                             <button onClick={() => setDisconnectConfirmId(null)} style={{ flex: 1, background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, padding: "10px", color: "#888", fontSize: 13, cursor: "pointer" }}>Cancel</button>
-                            <button onClick={() => void handleDisconnect(disconnectConfirmId)} style={{ flex: 2, background: "rgba(232,98,42,0.15)", border: "1px solid rgba(232,98,42,0.4)", borderRadius: 9, padding: "10px", color: "#E8622A", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Unlink Bank</button>
+                            <button onClick={() => void handleDisconnect(disconnectConfirmId)} style={{ flex: 2, background: "rgba(217,106,85,0.14)", border: "1px solid rgba(217,106,85,0.34)", borderRadius: 9, padding: "10px", color: "#D96A55", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Unlink Bank</button>
                         </div>
                     </div>
                 </div>
@@ -1434,7 +1434,7 @@ Be the partner who has been watching the whole time.`;
             {/* ── Add Expense (quick) ───────────────────────────────────────── */}
             {showAddExpenseModal && (
                 <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowAddExpenseModal(false)}>
-                    <div style={{ background: "rgb(16,16,18)", border: "1px solid rgba(232,98,42,0.2)", borderRadius: 16, padding: 24, width: "100%", maxWidth: 380, boxSizing: "border-box" }} onClick={(e) => e.stopPropagation()}>
+                    <div style={{ background: "rgb(16,16,18)", border: "1px solid rgba(217,106,85,0.22)", borderRadius: 16, padding: 24, width: "100%", maxWidth: 380, boxSizing: "border-box" }} onClick={(e) => e.stopPropagation()}>
                         <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 16 }}>Add Expense</div>
                         {[
                             { label: "Label *", field: "label", type: "text", placeholder: "AWS hosting" },
@@ -1456,7 +1456,7 @@ Be the partner who has been watching the whole time.`;
                         </div>
                         <div style={{ display: "flex", gap: 10 }}>
                             <button onClick={() => setShowAddExpenseModal(false)} style={{ flex: 1, background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, padding: "10px", color: "#888", fontSize: 13, cursor: "pointer" }}>Cancel</button>
-                            <button onClick={() => void handleSaveQuickExpense()} disabled={savingQuick} style={{ flex: 2, background: "rgba(232,98,42,0.15)", border: "1px solid rgba(232,98,42,0.4)", borderRadius: 9, padding: "10px", color: "#E8622A", fontSize: 13, fontWeight: 600, cursor: savingQuick ? "default" : "pointer", opacity: savingQuick ? 0.7 : 1 }}>
+                            <button onClick={() => void handleSaveQuickExpense()} disabled={savingQuick} style={{ flex: 2, background: "rgba(217,106,85,0.14)", border: "1px solid rgba(217,106,85,0.34)", borderRadius: 9, padding: "10px", color: "#D96A55", fontSize: 13, fontWeight: 600, cursor: savingQuick ? "default" : "pointer", opacity: savingQuick ? 0.7 : 1 }}>
                                 {savingQuick ? "Saving..." : "Add Expense"}
                             </button>
                         </div>
@@ -1502,7 +1502,7 @@ Be the partner who has been watching the whole time.`;
                                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 20 }}>
                                     {[
                                         { label: "Revenue", value: formatCurrency(closeMonthData.revenue), color: "#4CAF8A" },
-                                        { label: "Expenses", value: formatCurrency(closeMonthData.expenses), color: "#E8622A" },
+                                        { label: "Expenses", value: formatCurrency(closeMonthData.expenses), color: "#D96A55" },
                                         { label: closeMonthData.net >= 0 ? "Surplus" : "Deficit", value: formatCurrency(Math.abs(closeMonthData.net)), color: closeMonthData.net >= 0 ? "#4CAF8A" : "#FF6B6B" },
                                     ].map((item) => (
                                         <div key={item.label} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "12px 10px", textAlign: "center" }}>
@@ -1514,7 +1514,7 @@ Be the partner who has been watching the whole time.`;
 
                                 {summary?.runwayMonths != null && (
                                     <div style={{ fontSize: 12, color: "#A8A4A0", fontFamily: "'DM Sans', system-ui, sans-serif", marginBottom: 20, padding: "10px 14px", background: "rgba(255,255,255,0.02)", borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)" }}>
-                                        Current runway: <strong style={{ color: summary.runwayMonths > 6 ? "#4CAF8A" : summary.runwayMonths > 3 ? "#E8C42A" : "#E8622A" }}>{summary.runwayMonths.toFixed(1)} months</strong>
+                                        Current runway: <strong style={{ color: summary.runwayMonths > 6 ? "#4CAF8A" : summary.runwayMonths > 3 ? "#D9B15D" : "#D96A55" }}>{summary.runwayMonths.toFixed(1)} months</strong>
                                     </div>
                                 )}
 

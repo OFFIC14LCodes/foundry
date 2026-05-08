@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { streamForgeAPI } from "../lib/forgeApi";
 import {
     buildMarketReportPrompt,
@@ -124,6 +124,25 @@ function buildFounderContext(profile: any) {
         currentStage: profile.currentStage ?? null,
         strategyLabel: profile.strategyLabel ?? null,
     };
+}
+
+function flattenSearchSources(searchResults: SearchResult[]) {
+    const sourcesByUrl = new Map<string, { title: string; url: string; snippet: string }>();
+
+    for (const result of searchResults) {
+        for (const source of result.sources ?? []) {
+            const title = source.title?.trim();
+            const url = source.url?.trim();
+            if (!title || !url || sourcesByUrl.has(url)) continue;
+            sourcesByUrl.set(url, {
+                title,
+                url,
+                snippet: source.snippet?.trim() || result.query,
+            });
+        }
+    }
+
+    return Array.from(sourcesByUrl.values()).slice(0, 25);
 }
 
 function nextWeeklyRefreshDate(from = new Date()) {
@@ -341,6 +360,82 @@ export default function MarketIntelligenceScreen({
         names[competitor.id] = competitor.name;
         return names;
     }, {});
+    const displayCompetitors = useMemo(() => {
+        if (!currentReport?.id) return competitors;
+        const competitorsById = competitors.reduce<Record<string, Competitor>>((index, competitor) => {
+            index[competitor.id] = competitor;
+            return index;
+        }, {});
+        const currentSnapshots = competitorSnapshots.filter((snapshot) => snapshot.reportId === currentReport.id);
+
+        return currentSnapshots
+            .map((snapshot) => {
+                const competitor = competitorsById[snapshot.competitorId];
+                if (!competitor) return null;
+                return {
+                    ...competitor,
+                    summary: snapshot.summary,
+                    strengths: snapshot.strengths,
+                    weaknesses: snapshot.weaknesses,
+                    pricingNotes: snapshot.pricingNotes,
+                    positioning: snapshot.positioning,
+                    latestReportId: snapshot.reportId,
+                };
+            })
+            .filter((competitor): competitor is Competitor & {
+                summary: string;
+                strengths: unknown[];
+                weaknesses: unknown[];
+                pricingNotes: string | null;
+                positioning: string | null;
+                latestReportId: string | null;
+            } => Boolean(competitor));
+    }, [competitors, competitorSnapshots, currentReport?.id]);
+    const displayCompetitorNames = useMemo(
+        () => new Set(displayCompetitors.map((competitor) => competitor.name.trim().toLowerCase()).filter(Boolean)),
+        [displayCompetitors],
+    );
+    const displayTrends = useMemo(() => {
+        if (!currentReport?.id) return trends;
+        const trendsByName = trends.reduce<Record<string, MarketTrend>>((index, trend) => {
+            index[trend.name.trim().toLowerCase()] = trend;
+            return index;
+        }, {});
+        const snapshotsByName = trendSnapshots.reduce<Record<string, TrendSnapshot[]>>((groups, snapshot) => {
+            const key = snapshot.trendName.trim().toLowerCase();
+            groups[key] = groups[key] || [];
+            groups[key].push(snapshot);
+            return groups;
+        }, {});
+
+        return trendSnapshots
+            .filter((snapshot) => snapshot.reportId === currentReport.id)
+            .filter((snapshot) => !displayCompetitorNames.has(snapshot.trendName.trim().toLowerCase()))
+            .map((snapshot) => {
+                const key = snapshot.trendName.trim().toLowerCase();
+                const trend = trendsByName[key];
+                const allSnapshots = snapshotsByName[key] ?? [];
+
+                return {
+                    id: trend?.id ?? snapshot.id,
+                    userId,
+                    name: trend?.name ?? snapshot.trendName,
+                    description: trend?.description || snapshot.notes,
+                    impactLevel: snapshot.impactLevel || trend?.impactLevel || "medium",
+                    timeframe: trend?.timeframe || "current",
+                    createdAt: trend?.createdAt ?? snapshot.createdAt,
+                    recurrenceCount: allSnapshots.length,
+                    firstSeenAt: allSnapshots.length
+                        ? allSnapshots[allSnapshots.length - 1].snapshotDate
+                        : snapshot.snapshotDate,
+                    latestReportId: snapshot.reportId,
+                };
+            });
+    }, [trends, trendSnapshots, currentReport?.id, userId, displayCompetitorNames]);
+    const displayBenchmarks = useMemo(
+        () => benchmarks.filter((benchmark) => !displayCompetitorNames.has(benchmark.metric.trim().toLowerCase())),
+        [benchmarks, displayCompetitorNames],
+    );
     const currentCompetitorIds = new Set(
         currentReport?.id
             ? competitorSnapshots.filter((snapshot) => snapshot.reportId === currentReport.id).map((snapshot) => snapshot.competitorId)
@@ -433,6 +528,7 @@ export default function MarketIntelligenceScreen({
             const saved = await saveMarketReport(userId, final, profile.industry || industry, {
                 searchQueries,
                 founderContext: buildFounderContext(profile),
+                sourceReferences: flattenSearchSources(searchResults),
             });
             if (saved) {
                 latestLocalMutationRef.current = Date.now();
@@ -522,7 +618,7 @@ export default function MarketIntelligenceScreen({
                             checked={scheduleEnabled}
                             disabled={scheduleSaving}
                             onChange={(event) => toggleWeeklyRefresh(event.target.checked)}
-                            style={{ accentColor: "#E8622A", width: 16, height: 16 }}
+                            style={{ accentColor: "#63B3ED", width: 16, height: 16 }}
                         />
                         <span style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, color: "#C8C4BE", fontWeight: 700 }}>
                             Schedule weekly refresh
@@ -551,7 +647,7 @@ export default function MarketIntelligenceScreen({
                     <div style={{ marginBottom: 16 }}>
                         {automaticExtractionRunning && (
                             <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#77716A", padding: "12px 2px 6px", fontFamily: "'DM Sans', system-ui, sans-serif" }}>
-                                <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#E8622A", animation: "forgePulse 1.4s infinite ease-in-out" }} />
+                                <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#63B3ED", animation: "forgePulse 1.4s infinite ease-in-out" }} />
                                 <span>Analyzing report...</span>
                             </div>
                         )}
@@ -573,13 +669,14 @@ export default function MarketIntelligenceScreen({
                             </div>
                         ) : (
                             <div style={{ display: "grid", gap: 14 }}>
-                                <WhatChangedPanel changes={marketChanges} />
                                 {activeTab === "competitors" ? (
-                                    <StructuredCompetitorsPanel competitors={competitors} onCreateAction={createSuggestedAction} onAskForgeAboutAction={onAskForgeAboutAction} />
+                                    <StructuredCompetitorsPanel competitors={displayCompetitors} onCreateAction={createSuggestedAction} onAskForgeAboutAction={onAskForgeAboutAction} />
                                 ) : activeTab === "trends" ? (
-                                    <StructuredTrendsPanel trends={trends} onCreateAction={createSuggestedAction} onAskForgeAboutAction={onAskForgeAboutAction} onAskForgeAboutTrend={onAskForgeAboutTrend} />
+                                    <StructuredTrendsPanel trends={displayTrends} onCreateAction={createSuggestedAction} onAskForgeAboutAction={onAskForgeAboutAction} onAskForgeAboutTrend={onAskForgeAboutTrend} />
+                                ) : activeTab === "actions" ? (
+                                    <WhatChangedPanel changes={marketChanges} />
                                 ) : activeTab === "benchmarks" ? (
-                                    <StructuredBenchmarksPanel benchmarks={benchmarks} onCreateAction={createSuggestedAction} onAskForgeAboutAction={onAskForgeAboutAction} />
+                                    <StructuredBenchmarksPanel benchmarks={displayBenchmarks} onCreateAction={createSuggestedAction} onAskForgeAboutAction={onAskForgeAboutAction} />
                                 ) : (
                                     <StructuredSourcesPanel sources={sources} />
                                 )}
@@ -605,8 +702,8 @@ export default function MarketIntelligenceScreen({
                                                 style={{
                                                     flexShrink: 0,
                                                     textAlign: "left",
-                                                    background: selected ? "rgba(232,98,42,0.12)" : "rgba(255,255,255,0.02)",
-                                                    border: selected ? "1px solid rgba(232,98,42,0.24)" : "1px solid rgba(255,255,255,0.06)",
+                                                    background: selected ? "rgba(99,179,237,0.1)" : "rgba(255,255,255,0.02)",
+                                                    border: selected ? "1px solid rgba(99,179,237,0.22)" : "1px solid rgba(255,255,255,0.06)",
                                                     borderRadius: 10,
                                                     padding: "10px 14px",
                                                     color: "#F0EDE8",
@@ -614,7 +711,7 @@ export default function MarketIntelligenceScreen({
                                                     maxWidth: 220,
                                                 }}
                                             >
-                                                <div style={{ fontSize: 13, fontWeight: 600, color: selected ? "#E8622A" : "#C8C4BE", whiteSpace: "nowrap" }}>
+                                                <div style={{ fontSize: 13, fontWeight: 600, color: selected ? "#63B3ED" : "#C8C4BE", whiteSpace: "nowrap" }}>
                                                     {formatReportDate(entry.date)}
                                                 </div>
                                                 <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 6 }}>
@@ -637,8 +734,8 @@ export default function MarketIntelligenceScreen({
                                                             marginTop: 8,
                                                             padding: "5px 9px",
                                                             borderRadius: 8,
-                                                            border: "1px solid rgba(232,98,42,0.22)",
-                                                            color: "#E8622A",
+                                                            border: "1px solid rgba(99,179,237,0.22)",
+                                                            color: "#63B3ED",
                                                             fontSize: 10,
                                                             fontWeight: 700,
                                                         }}
@@ -671,6 +768,7 @@ export default function MarketIntelligenceScreen({
                                     generationLimit={generationLimit}
                                     saveError={saveError}
                                     searchQueries={currentReport?.searchQueries ?? []}
+                                    sourceReferences={sources}
                                     onGenerate={generate}
                                 />
                             </div>
@@ -691,15 +789,15 @@ export default function MarketIntelligenceScreen({
                                                     onClick={() => selectReport(entry)}
                                                     style={{
                                                         textAlign: "left",
-                                                        background: selected ? "rgba(232,98,42,0.12)" : "rgba(255,255,255,0.02)",
-                                                        border: selected ? "1px solid rgba(232,98,42,0.24)" : "1px solid rgba(255,255,255,0.06)",
+                                                        background: selected ? "rgba(99,179,237,0.1)" : "rgba(255,255,255,0.02)",
+                                                        border: selected ? "1px solid rgba(99,179,237,0.22)" : "1px solid rgba(255,255,255,0.06)",
                                                         borderRadius: 10,
                                                         padding: "12px 14px",
                                                         color: "#F0EDE8",
                                                         cursor: "pointer",
                                                     }}
                                                 >
-                                                    <div style={{ fontSize: 14, fontWeight: 600, color: selected ? "#E8622A" : "#C8C4BE", marginBottom: 6, lineHeight: 1.35 }}>
+                                                    <div style={{ fontSize: 14, fontWeight: 600, color: selected ? "#63B3ED" : "#C8C4BE", marginBottom: 6, lineHeight: 1.35 }}>
                                                         {formatReportDate(entry.date)}
                                                     </div>
                                                     <div style={{ fontSize: 12, color: "#77716A", lineHeight: 1.6 }}>
@@ -720,8 +818,8 @@ export default function MarketIntelligenceScreen({
                                                                     flexShrink: 0,
                                                                     padding: "5px 8px",
                                                                     borderRadius: 8,
-                                                                    border: "1px solid rgba(232,98,42,0.22)",
-                                                                    color: "#E8622A",
+                                                                    border: "1px solid rgba(99,179,237,0.22)",
+                                                                    color: "#63B3ED",
                                                                     fontSize: 10,
                                                                     fontWeight: 700,
                                                                 }}
