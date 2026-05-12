@@ -211,7 +211,7 @@ export default function NavSidebar({
                             border: "1px solid rgba(255,255,255,0.08)",
                             borderRadius: 6,
                             padding: "5px 10px",
-                            color: "#666",
+                            color: "var(--foundry-text-secondary)",
                             fontSize: 11,
                             cursor: "pointer",
                             fontFamily: "'DM Sans', sans-serif",

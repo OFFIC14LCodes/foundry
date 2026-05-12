@@ -26,7 +26,7 @@ export default function DocumentFilesPanel(props: {
             <div style={{ padding: "12px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
                 <div>
                     <div style={{ fontSize: 13, color: "#F0EDE8", fontWeight: 600 }}>Files</div>
-                    <div style={{ fontSize: 10, color: "#666", marginTop: 2 }}>Attachments plus saved vault artifacts</div>
+                    <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", marginTop: 2 }}>Attachments plus saved vault artifacts</div>
                 </div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     <button
@@ -38,7 +38,7 @@ export default function DocumentFilesPanel(props: {
                     </button>
                     <button
                         onClick={onRefresh}
-                        style={{ padding: "7px 10px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, color: "#888", fontSize: 11, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}
+                        style={{ padding: "7px 10px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, color: "rgba(240,237,232,0.62)", fontSize: 11, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}
                     >
                         Refresh
                     </button>
@@ -51,10 +51,10 @@ export default function DocumentFilesPanel(props: {
                 />
             </div>
             <div style={{ padding: 12 }}>
-                {loading && <div style={{ fontSize: 12, color: "#666", padding: "8px 4px" }}>Loading files...</div>}
+                {loading && <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", padding: "8px 4px" }}>Loading files...</div>}
                 {!loading && error && <div style={{ fontSize: 12, color: "#D28B76", lineHeight: 1.6, padding: "8px 4px" }}>{error}</div>}
                 {!loading && !error && files.length === 0 && (
-                    <div style={{ fontSize: 12, color: "#666", lineHeight: 1.6, padding: "14px 4px" }}>
+                    <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.6, padding: "14px 4px" }}>
                         No files saved yet. Upload an attachment or save a DOCX/HTML artifact from the preview panel so this document is ready for sharing and future signature workflows.
                     </div>
                 )}
@@ -74,13 +74,13 @@ export default function DocumentFilesPanel(props: {
                                 <div style={{ fontSize: 12, color: "#F0EDE8", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{file.filename}</div>
                                 <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginTop: 3 }}>
                                     <NeutralBadge label={FILE_KIND_LABELS[file.fileKind]} />
-                                    <span style={{ fontSize: 10, color: "#777" }}>{formatFileSize(file.fileSize)}</span>
+                                    <span style={{ fontSize: 10, color: "var(--foundry-text-muted)" }}>{formatFileSize(file.fileSize)}</span>
                                 </div>
                             </div>
-                            <div style={{ fontSize: 10, color: "#666", whiteSpace: "nowrap" }}>{formatShortDate(file.createdAt)}</div>
+                            <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", whiteSpace: "nowrap" }}>{formatShortDate(file.createdAt)}</div>
                         </div>
                         <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
-                            <div style={{ fontSize: 10, color: "#555" }}>{file.mimeType}</div>
+                            <div style={{ fontSize: 10, color: "var(--foundry-text-muted)" }}>{file.mimeType}</div>
                             <div style={{ display: "flex", gap: 8 }}>
                                 <button
                                     onClick={() => onOpenFile(file.id)}
@@ -92,7 +92,7 @@ export default function DocumentFilesPanel(props: {
                                 <button
                                     onClick={() => onDeleteFile(file.id)}
                                     disabled={fileActionId === file.id}
-                                    style={{ padding: "5px 9px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, color: "#888", fontSize: 10, cursor: fileActionId === file.id ? "wait" : "pointer", fontFamily: "'Lora', Georgia, serif" }}
+                                    style={{ padding: "5px 9px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, color: "rgba(240,237,232,0.62)", fontSize: 10, cursor: fileActionId === file.id ? "wait" : "pointer", fontFamily: "'Lora', Georgia, serif" }}
                                 >
                                     Delete
                                 </button>

@@ -10,6 +10,7 @@ import Logo from './Logo';
 import LoadingForgeAnimation from './LoadingForgeAnimation';
 import { MessageActions } from './AnimatedChatText';
 import MicButton from './MicButton';
+import { formatForgeMemoryBlock, getRecentWorkspaceMemory } from '../lib/forgeMemory';
 import { clearCofounderInviteTokenFromUrl, getPendingCofounderInviteToken } from '../lib/cofounderInviteRoute';
 import type { CofounderTeam, CofounderMember, CofounderMessage, CofounderTask, CofounderTaskComment, CofounderDecision, CofounderFileLink, CofounderEmailInvite } from '../lib/cofounderDb';
 import {
@@ -711,6 +712,15 @@ If you want to step back gracefully after fully answering, end your reply with [
 Otherwise, continue naturally — no preamble, get right to what matters. Team members can say "dismiss forge" at any time.`
             : `You were mentioned with @forge. Respond as Forge — direct, useful, invested. No preamble. Get right to what matters for this team. End with a question to continue the conversation, or [STEPPING_BACK] if you've fully addressed it.`;
 
+        let workspaceMemoryContext = '';
+        try {
+            workspaceMemoryContext = formatForgeMemoryBlock(
+                'WORKSPACE_MEMORY',
+                await getRecentWorkspaceMemory(team.id, 8),
+                'Shared workspace memory intentionally attached by a member. It is safe to reference as team-known context.'
+            );
+        } catch { /* memory context is optional */ }
+
         const teamCtx = [
             `You are responding in the shared team workspace chat for ${team.business_name}.`,
             ``,
@@ -718,6 +728,7 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
             ...members.map(m => `- ${m.display_name} (${m.role})`),
             ``,
             engagementNote,
+            ...(workspaceMemoryContext ? ['', workspaceMemoryContext] : []),
             ...(bookContext.context ? ['', bookContext.context] : []),
         ].join('\n');
 

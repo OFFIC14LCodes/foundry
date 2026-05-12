@@ -84,7 +84,7 @@ export default function StageRefModal({ stageId, messages, profile, onClose }) {
                             </div>
                         </div>
 
-                        <div style={{ fontSize: 11, color: "#555" }}>
+                        <div style={{ fontSize: 11, color: "var(--foundry-text-muted)" }}>
                             {messages.length} messages · tap outside to close
                         </div>
                     </div>
@@ -96,7 +96,7 @@ export default function StageRefModal({ stageId, messages, profile, onClose }) {
                             border: "1px solid rgba(255,255,255,0.1)",
                             borderRadius: 8,
                             padding: "6px 14px",
-                            color: "#888",
+                            color: "rgba(240,237,232,0.62)",
                             fontSize: 12,
                             cursor: "pointer",
                         }}
@@ -124,7 +124,7 @@ export default function StageRefModal({ stageId, messages, profile, onClose }) {
                         <div
                             style={{
                                 textAlign: "center",
-                                color: "#444",
+                                color: "var(--foundry-text-secondary)",
                                 fontFamily: "'Lora', Georgia, serif",
                                 fontStyle: "italic",
                                 padding: "40px 0",

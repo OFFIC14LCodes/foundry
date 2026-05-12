@@ -245,10 +245,10 @@ function ScoreCard({ label, value }: { label: string; value?: number | null }) {
     const color = scoreColor(safeValue);
     return (
         <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: 16 }}>
-            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(240,237,232,0.5)", fontFamily: "'DM Sans', sans-serif", marginBottom: 8 }}>{label}</div>
+            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(240,237,232,0.7)", fontFamily: "'DM Sans', sans-serif", marginBottom: 8 }}>{label}</div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
                 <span style={{ fontSize: 36, color, fontFamily: "'Playfair Display', Georgia, serif", lineHeight: 1 }}>{safeValue || "—"}</span>
-                <span style={{ fontSize: 14, color: "rgba(240,237,232,0.3)", fontFamily: "'DM Sans', sans-serif" }}>/5</span>
+                <span style={{ fontSize: 14, color: "rgba(240,237,232,0.55)", fontFamily: "'DM Sans', sans-serif" }}>/5</span>
             </div>
             <div style={{ display: "flex", gap: 5, marginTop: 10 }}>
                 {[1, 2, 3, 4, 5].map(dot => (
@@ -264,10 +264,10 @@ function OverallScoreCard({ value }: { value?: number | null }) {
     const color = scoreColor(safeValue);
     return (
         <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: 18, marginBottom: 18 }}>
-            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(240,237,232,0.5)", fontFamily: "'DM Sans', sans-serif", marginBottom: 8 }}>Overall</div>
+            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(240,237,232,0.7)", fontFamily: "'DM Sans', sans-serif", marginBottom: 8 }}>Overall</div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginBottom: 12 }}>
                 <span style={{ fontSize: 48, color, fontFamily: "'Playfair Display', Georgia, serif", lineHeight: 1 }}>{safeValue || "—"}</span>
-                <span style={{ fontSize: 14, color: "rgba(240,237,232,0.3)", fontFamily: "'DM Sans', sans-serif" }}>/5</span>
+                <span style={{ fontSize: 14, color: "rgba(240,237,232,0.55)", fontFamily: "'DM Sans', sans-serif" }}>/5</span>
             </div>
             <div style={{ height: 6, borderRadius: 3, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
                 <div style={{ width: `${Math.max(0, Math.min(100, (safeValue / 5) * 100))}%`, height: "100%", background: color, borderRadius: 3 }} />
@@ -753,13 +753,13 @@ export default function PitchPracticeScreen({
                 <div style={{ padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)", zIndex: 10 }}>
                     <button
                         onClick={onOpenNav}
-                        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "#888", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "rgba(240,237,232,0.62)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                     >
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg>
                     </button>
                     <div>
                         <div style={{ fontSize: "var(--foundry-app-header-title-font)", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>Pitch Practice</div>
-                        <div style={{ fontSize: "var(--foundry-app-header-meta-font)", color: "#555" }}>Rehearse your pitch with Forge</div>
+                        <div style={{ fontSize: "var(--foundry-app-header-meta-font)", color: "var(--foundry-text-muted)" }}>Rehearse your pitch with Forge</div>
                     </div>
                 </div>
 
@@ -822,7 +822,7 @@ export default function PitchPracticeScreen({
 
                     {/* Mode Selector */}
                     <div style={{ marginBottom: 24, animation: "fadeSlideUp 0.4s ease 0.05s both" }}>
-                        <div style={{ fontSize: 10, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>Input Mode</div>
+                        <div style={{ fontSize: 10, color: "var(--foundry-text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>Input Mode</div>
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                             {(["text", "voice"] as Mode[]).map(m => {
                                 const unavailable = m === "voice" && !speechSupported;
@@ -869,7 +869,7 @@ export default function PitchPracticeScreen({
 
                     {/* Scenario Selector */}
                     <div style={{ marginBottom: 24, animation: "fadeSlideUp 0.4s ease 0.1s both" }}>
-                        <div style={{ fontSize: 10, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>Scenario</div>
+                        <div style={{ fontSize: 10, color: "var(--foundry-text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>Scenario</div>
                         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                             {SCENARIOS.map(s => (
                                 (() => {
@@ -984,9 +984,9 @@ export default function PitchPracticeScreen({
                             </div>
 
                             {historyLoading ? (
-                                <div style={{ color: "#555", fontSize: 13 }}>Loading pitch history...</div>
+                                <div style={{ color: "var(--foundry-text-muted)", fontSize: 13 }}>Loading pitch history...</div>
                             ) : history.length === 0 ? (
-                                <div style={{ color: "#666", fontSize: 13, lineHeight: 1.7 }}>No pitch sessions saved yet. Run a practice session and your scores will appear here.</div>
+                                <div style={{ color: "var(--foundry-text-secondary)", fontSize: 13, lineHeight: 1.7 }}>No pitch sessions saved yet. Run a practice session and your scores will appear here.</div>
                             ) : (
                                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                                     {history.map(session => (
@@ -994,7 +994,7 @@ export default function PitchPracticeScreen({
                                             <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginBottom: 8 }}>
                                                 <div>
                                                     <div style={{ fontSize: 14, color: "#F0EDE8", fontWeight: 600 }}>{scenarioLabelFor(session.scenario)}</div>
-                                                    <div style={{ fontSize: 12, color: "rgba(240,237,232,0.4)", fontFamily: "'DM Sans', sans-serif" }}>{formatSessionDate(session.createdAt)} · {session.mode}</div>
+                                                    <div style={{ fontSize: 12, color: "rgba(240,237,232,0.58)", fontFamily: "'DM Sans', sans-serif" }}>{formatSessionDate(session.createdAt)} · {session.mode}</div>
                                                 </div>
                                                 <div style={{ color: scoreColor(session.overallScore), fontSize: 24, fontFamily: "'Playfair Display', Georgia, serif" }}>{session.overallScore ?? "—"}</div>
                                             </div>
@@ -1017,9 +1017,9 @@ export default function PitchPracticeScreen({
                             <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 14 }}>
                                 <div>
                                     <div style={{ fontSize: 18, color: "#F0EDE8", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>{scenarioLabelFor(historyModal.scenario)}</div>
-                                    <div style={{ fontSize: 12, color: "rgba(240,237,232,0.4)", fontFamily: "'DM Sans', sans-serif" }}>{formatSessionDate(historyModal.createdAt)} · {historyModal.mode}</div>
+                                    <div style={{ fontSize: 12, color: "rgba(240,237,232,0.58)", fontFamily: "'DM Sans', sans-serif" }}>{formatSessionDate(historyModal.createdAt)} · {historyModal.mode}</div>
                                 </div>
-                                <button onClick={() => setHistoryModal(null)} style={{ background: "transparent", border: "none", color: "#888", fontSize: 22, cursor: "pointer" }}>×</button>
+                                <button onClick={() => setHistoryModal(null)} style={{ background: "transparent", border: "none", color: "rgba(240,237,232,0.62)", fontSize: 22, cursor: "pointer" }}>×</button>
                             </div>
                             <OverallScoreCard value={historyModal.overallScore} />
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
@@ -1033,7 +1033,7 @@ export default function PitchPracticeScreen({
                                     <FeedbackText text={historyModal.feedback} />
                                 </div>
                             )}
-                            <div style={{ fontSize: 13, color: "rgba(240,237,232,0.5)", fontFamily: "'DM Sans', sans-serif", marginBottom: 10 }}>Session Transcript</div>
+                            <div style={{ fontSize: 13, color: "rgba(240,237,232,0.7)", fontFamily: "'DM Sans', sans-serif", marginBottom: 10 }}>Session Transcript</div>
                             <TranscriptReplay messages={historyModal.transcript} />
                         </div>
                     </div>
@@ -1050,18 +1050,18 @@ export default function PitchPracticeScreen({
         return (
             <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8" }}>
                 <div style={{ padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)", zIndex: 10 }}>
-                    <button onClick={onOpenNav} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "6px 10px", color: "#888", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg></button>
+                    <button onClick={onOpenNav} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "6px 10px", color: "rgba(240,237,232,0.62)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg></button>
                     <div>
                         <div style={{ fontSize: 16, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>Session Complete</div>
-                        <div style={{ fontSize: 10, color: "#555" }}>{formatTime(sessionTime)} · {scenarioLabel}</div>
+                        <div style={{ fontSize: 10, color: "var(--foundry-text-muted)" }}>{formatTime(sessionTime)} · {scenarioLabel}</div>
                     </div>
                 </div>
 
                 <div style={{ maxWidth: 560, margin: "0 auto", padding: "28px 16px 60px" }}>
                     {loading ? (
-                        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 16, padding: "80px 0", color: "#555" }}>
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 16, padding: "80px 0", color: "var(--foundry-text-muted)" }}>
                             <Logo variant="flame" style={{ width: 32, height: 32, objectFit: "contain" }} />
-                            <div style={{ fontSize: 14, fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", color: "#666" }}>
+                            <div style={{ fontSize: 14, fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", color: "var(--foundry-text-secondary)" }}>
                                 Forge is reviewing your pitch...
                             </div>
                         </div>
@@ -1069,7 +1069,7 @@ export default function PitchPracticeScreen({
                         <>
                             <div style={{ marginBottom: 20, animation: "fadeSlideUp 0.4s ease both", textAlign: "left" }}>
                                 <div style={{ fontSize: 22, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 4 }}>Coaching Feedback</div>
-                                <div style={{ fontSize: 12, color: "#555" }}>From your {scenarioLabel.toLowerCase()} · {formatTime(sessionTime)}</div>
+                                <div style={{ fontSize: 12, color: "var(--foundry-text-muted)" }}>From your {scenarioLabel.toLowerCase()} · {formatTime(sessionTime)}</div>
                                 <div style={{ fontSize: 11, color: archiveSaved ? "#4CAF8A" : archiveSaving ? "#D9B15D" : "#666", marginTop: 8, lineHeight: 1.6 }}>
                                     {archiveSaved
                                         ? "Saved to Archive. You can recap it with Forge, rename it, or delete it from the Archive."
@@ -1096,7 +1096,7 @@ export default function PitchPracticeScreen({
                             </div>
 
                             <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, marginBottom: 14, overflow: "hidden" }}>
-                                <button onClick={() => setTranscriptOpen(prev => !prev)} style={{ width: "100%", background: "transparent", border: "none", color: "rgba(240,237,232,0.5)", fontSize: 13, fontFamily: "'DM Sans', sans-serif", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px", cursor: "pointer" }}>
+                                <button onClick={() => setTranscriptOpen(prev => !prev)} style={{ width: "100%", background: "transparent", border: "none", color: "rgba(240,237,232,0.7)", fontSize: 13, fontFamily: "'DM Sans', sans-serif", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px", cursor: "pointer" }}>
                                     <span>Session Transcript</span>
                                     <span>{transcriptOpen ? "↑" : "↓"}</span>
                                 </button>
@@ -1167,7 +1167,7 @@ export default function PitchPracticeScreen({
                     <Logo variant="flame" style={{ width: 32, height: 32, objectFit: "contain" }} />
                     <div>
                         <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "'Playfair Display', Georgia, serif" }}>{scenarioLabel}</div>
-                        <div style={{ fontSize: 10, color: "#555" }}>{mode === "voice" ? "Voice" : "Text"}</div>
+                        <div style={{ fontSize: 10, color: "var(--foundry-text-muted)" }}>{mode === "voice" ? "Voice" : "Text"}</div>
                     </div>
                 </div>
                 <div style={{ textAlign: "center", flex: 1 }}>
@@ -1178,7 +1178,7 @@ export default function PitchPracticeScreen({
                 </div>
                 <button
                     onClick={endSession}
-                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "6px 14px", color: "#888", fontSize: 12, cursor: "pointer", fontWeight: 500 }}
+                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "6px 14px", color: "rgba(240,237,232,0.62)", fontSize: 12, cursor: "pointer", fontWeight: 500 }}
                 >
                     End Session
                 </button>
@@ -1188,11 +1188,11 @@ export default function PitchPracticeScreen({
             <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 8px" }}>
                 {showScenarioContext && (
                     <div style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: 18, marginBottom: 14, animation: "fadeSlideUp 0.3s ease both" }}>
-                        <div style={{ fontSize: 11, color: "rgba(240,237,232,0.4)", fontFamily: "'DM Sans', sans-serif", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>You're pitching to</div>
+                        <div style={{ fontSize: 11, color: "rgba(240,237,232,0.58)", fontFamily: "'DM Sans', sans-serif", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>You're pitching to</div>
                         <div style={{ fontSize: 16, color: "#F0EDE8", fontFamily: "'Lora', Georgia, serif", fontWeight: 600, marginBottom: 14 }}>
                             {SCENARIO_CONTEXT[scenario].persona}
                         </div>
-                        <div style={{ fontSize: 12, color: "rgba(240,237,232,0.45)", fontFamily: "'DM Sans', sans-serif", marginBottom: 8 }}>Tips for this scenario:</div>
+                        <div style={{ fontSize: 12, color: "rgba(240,237,232,0.62)", fontFamily: "'DM Sans', sans-serif", marginBottom: 8 }}>Tips for this scenario:</div>
                         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                             {SCENARIO_CONTEXT[scenario].tips.map(tip => (
                                 <div key={tip} style={{ fontSize: 13, color: "rgba(240,237,232,0.7)", fontFamily: "'DM Sans', sans-serif", lineHeight: 1.5 }}>• {tip}</div>
@@ -1239,11 +1239,11 @@ export default function PitchPracticeScreen({
             {mode === "voice" && (
                 <div style={{ padding: "7px 16px", background: "rgba(232,98,42,0.07)", borderTop: "1px solid rgba(232,98,42,0.12)", display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                     <div style={{ width: listening ? 8 : speaking ? 18 : 7, height: 7, borderRadius: listening ? "50%" : speaking ? 999 : "50%", background: listening ? "#D8563A" : speaking ? "#E8622A" : "rgba(240,237,232,0.25)", animation: listening || speaking ? "forgePulse 1s infinite" : "none" }} />
-                    <span style={{ fontSize: 13, color: "#777", fontFamily: "'DM Sans', sans-serif" }}>
+                    <span style={{ fontSize: 13, color: "var(--foundry-text-muted)", fontFamily: "'DM Sans', sans-serif" }}>
                         {listening ? "Listening... speak now" : speaking ? "Forge is responding..." : "Tap to speak"}
                     </span>
                     {speaking && (
-                        <button onClick={cancelSpeech} style={{ marginLeft: "auto", background: "none", border: "none", color: "#555", fontSize: 11, cursor: "pointer" }}>
+                        <button onClick={cancelSpeech} style={{ marginLeft: "auto", background: "none", border: "none", color: "var(--foundry-text-muted)", fontSize: 11, cursor: "pointer" }}>
                             Skip
                         </button>
                     )}

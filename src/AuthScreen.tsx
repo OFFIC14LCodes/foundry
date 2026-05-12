@@ -206,7 +206,7 @@ export default function AuthScreen({
                                 fontFamily: "'Playfair Display', Georgia, serif",
                                 marginBottom: 6
                             }}>Set a new password</div>
-                            <div style={{ fontSize: 12, color: "#666", lineHeight: 1.5 }}>
+                            <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.5 }}>
                                 Choose something you haven't used before.
                             </div>
                         </div>
@@ -269,7 +269,7 @@ export default function AuthScreen({
                         <button
                             onClick={() => switchMode("login")}
                             style={{
-                                background: "none", border: "none", color: "#555",
+                                background: "none", border: "none", color: "var(--foundry-text-muted)",
                                 fontSize: 12, cursor: "pointer", padding: 0,
                                 marginBottom: 16, display: "flex", alignItems: "center", gap: 6
                             }}
@@ -283,7 +283,7 @@ export default function AuthScreen({
                                 fontFamily: "'Playfair Display', Georgia, serif",
                                 marginBottom: 6
                             }}>Reset your password</div>
-                            <div style={{ fontSize: 12, color: "#666", lineHeight: 1.5 }}>
+                            <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.5 }}>
                                 Enter the email you signed up with and we'll send you a reset link.
                                 This only works for email/password accounts, not Google sign-in.
                             </div>
@@ -394,7 +394,7 @@ export default function AuthScreen({
                                     display: "flex", alignItems: "center", gap: 12, marginBottom: 16
                                 }}>
                                     <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.07)" }} />
-                                    <div style={{ fontSize: 11, color: "#444" }}>or</div>
+                                    <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)" }}>or</div>
                                     <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.07)" }} />
                                 </div>
 
@@ -429,7 +429,7 @@ export default function AuthScreen({
                                             onClick={() => switchMode("forgot")}
                                             style={{
                                                 background: "none", border: "none",
-                                                color: "#555", fontSize: 11,
+                                                color: "var(--foundry-text-muted)", fontSize: 11,
                                                 cursor: "pointer", padding: 0,
                                                 fontFamily: "'Lora', Georgia, serif",
                                             }}

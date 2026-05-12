@@ -15,12 +15,22 @@ import Logo from "./Logo";
 import { AnimatedChatText, renderText, MessageActions } from "./AnimatedChatText";
 import MicButton from "./MicButton";
 import ForgeConversationWorkspace from "./ForgeConversationWorkspace";
+import ForgeContextApplyCard from "./ForgeContextApplyCard";
 import {
     createConversationWorkspaceSnapshot,
     normalizeConversationWorkspaceSnapshot,
     type ConversationWorkspaceSnapshot,
     type WorkspaceSource,
 } from "../lib/conversationWorkspace";
+import type { CofounderWorkspaceSummary } from "../lib/cofounderDb";
+import {
+    createForgeMemoryItem,
+    formatForgeMemoryBlock,
+    getForgeContextLabel,
+    getRelevantForgeMemory,
+    type ActiveForgeContext,
+    type ForgeMemorySource,
+} from "../lib/forgeMemory";
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -32,6 +42,14 @@ interface ChatMessage {
     createdAt?: string;
 }
 
+type ClaritySessionEntry = {
+    id: string;
+    title: string;
+    nudgeText: string;
+    prompt: string;
+    signalSource?: string | null;
+};
+
 interface ForgeChatRoomProps {
     userId: string;
     profile: any;
@@ -41,7 +59,9 @@ interface ForgeChatRoomProps {
     academyEntry?: AcademyTopicLaunch | null;
     onMarkAcademyLessonCompleted?: (contentId: string, options?: { knowledgeCheckedAt?: string; lastCheckResponse?: string | null; lastCheckFeedback?: string | null }) => Promise<void> | void;
     marketIntelEntry?: MarketTrend | null;
+    clarityEntry?: ClaritySessionEntry | null;
     universalMemoryContext?: string;
+    workspaces?: CofounderWorkspaceSummary[];
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -55,9 +75,11 @@ function buildChatRoomContext(
     academyEntry?: AcademyTopicLaunch | null,
     testingMode?: boolean,
     marketIntelEntry?: MarketTrend | null,
+    clarityEntry?: ClaritySessionEntry | null,
     pastSummaries?: { id: string; title: string; date: string; summary: string }[],
     activeArchiveId?: string | null,
     universalMemoryContext?: string,
+    scopedMemoryContext?: string,
 ) {
     const academyMode = academyEntry?.sessionMode ?? "learn";
     const modeInstruction = !academyEntry ? "" : testingMode
@@ -105,12 +127,43 @@ Be the knowledgeable business partner they can talk to freely — about their bu
 ${archiveSummary ? `\n\nARCHIVE CONTEXT:\nThe founder is continuing a prior archived conversation titled "${archiveTitle || "Saved conversation"}". Use this summary as prior context for the current discussion. Build on it naturally and answer follow-up questions as a continuation, not as a fresh topic.\n\n${archiveSummary}` : ""}
 ${academyEntry ? `\n\nACADEMY ENTRY CONTEXT:\nThe founder opened this conversation from Forge Academy.\nMode: ${academyMode}\nTopic: ${academyEntry.title}\nCategory: ${academyEntry.categoryTitle || "Forge Academy"}\nLearning goal: ${academyEntry.learningGoal || "Help the founder understand the topic deeply and practically."}\nWho this is for: ${academyEntry.whoThisIsFor || "A first-time founder who needs a more grounded understanding before the stakes get higher."}\nWhen this matters: ${academyEntry.whenThisMatters || "Before the founder drifts into weak assumptions or avoidable execution mistakes."}\nCommon mistake: ${academyEntry.commonMistake || "Founders often treat this as obvious until they are forced to make a real decision under pressure."}\nWhy this matters: ${academyEntry.whyThisMatters || "Teach the founder why this topic matters before they need it."}\nWhat to watch for: ${academyEntry.whatToWatchFor || "Surface the subtle mistakes and weak thinking patterns that matter here."}\nKnowledge check prompt: ${academyEntry.knowledgeCheckPrompt || "Not explicitly set"}\nExpected understanding points: ${academyEntry.knowledgeCheckExpectedPoints.join(" | ") || "Use broad founder judgment"}\nConcept tags: ${academyEntry.tags.join(", ") || "None"}\nRelevant stages: ${academyEntry.stageIds.length > 0 ? academyEntry.stageIds.join(", ") : "General"}\nSupporting context: ${academyEntry.forgeContext || "None provided"}\n\n${modeInstruction}` : ""}
 ${marketIntelEntry ? `\n\nMARKET INTELLIGENCE CONTEXT:\nThe founder opened this conversation from Market Intelligence to explore a specific trend.\nTrend name: ${marketIntelEntry.name}\nImpact level: ${marketIntelEntry.impactLevel}\nTimeframe: ${marketIntelEntry.timeframe}\nDescription: ${marketIntelEntry.description}\n\nForge should help the founder understand this trend deeply and practically — what it means for their business, how to respond or position, and what concrete actions they could take. Ask probing questions to help them think it through. Keep it strategic and grounded.` : ""}
+${clarityEntry ? `\n\nCLARITY SESSION CONTEXT:\nThe founder opened this as a quick Clarity chat from the Hub. This is separate from the main stage chat and should stay tightly focused on the recurring issue or confusion that prompted it.\nSession title: ${clarityEntry.title}\nRecurring issue: ${clarityEntry.nudgeText}\nSignal source: ${clarityEntry.signalSource || "Not specified"}\n\nForge should help the founder name what is unresolved, understand why it matters, and identify the next useful question, decision, or action. Keep it conversational and focused. The founder can archive this conversation from the chat room when finished.` : ""}
 ${pastConversationsSection}
+${scopedMemoryContext ? `\n\n${scopedMemoryContext}` : ""}
 ${universalMemoryContext ? `\n\n${universalMemoryContext}` : ""}
 ${bookContext.context ? `\n\n${bookContext.context}` : ""}
     `.trim(),
         bookMatches: bookContext.matches,
     };
+}
+
+function conversationLooksBusinessSpecific(text: string) {
+    return /\b(our business|my business|pricing|launch|customers?|market|offer|brand|documents?|financials?|cofounder|workspace|revenue|runway|sales|positioning|product|plan)\b/i.test(text);
+}
+
+function getChatRoomMemorySource(
+    academyEntry: AcademyTopicLaunch | null,
+    trendEntry: MarketTrend | null,
+    clarityEntry: ClaritySessionEntry | null,
+): ForgeMemorySource {
+    if (academyEntry) return "academy";
+    if (trendEntry) return "market_intelligence";
+    if (clarityEntry) return "forge_chat";
+    return "forge_chat";
+}
+
+function summarizeMemoryContent(text: string) {
+    return text.replace(/\s+/g, " ").trim().slice(0, 520);
+}
+
+function buildMemoryContent(text: string, context: ActiveForgeContext, founderName: string, source: ForgeMemorySource) {
+    const sourceLabel = source.replace(/_/g, " ");
+    const prefix = context.scope === "workspace"
+        ? `${founderName} intentionally connected this ${sourceLabel} takeaway to the workspace.`
+        : context.scope === "custom"
+            ? `${founderName} saved this ${sourceLabel} takeaway privately for "${context.customLabel || "a custom project"}".`
+            : `${founderName} saved this ${sourceLabel} takeaway privately.`;
+    return `${prefix}\n\n${text.trim()}`;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -120,7 +173,7 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
 // ─────────────────────────────────────────────────────────────
 // Component
 // ─────────────────────────────────────────────────────────────
-export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved, initialArchive = null, academyEntry = null, onMarkAcademyLessonCompleted, marketIntelEntry = null, universalMemoryContext = "" }: ForgeChatRoomProps) {
+export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved, initialArchive = null, academyEntry = null, onMarkAcademyLessonCompleted, marketIntelEntry = null, clarityEntry = null, universalMemoryContext = "", workspaces = [] }: ForgeChatRoomProps) {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
@@ -130,19 +183,28 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
     const [saveArchiveModalOpen, setSaveArchiveModalOpen] = useState(false);
     const [archiveTitleInput, setArchiveTitleInput] = useState("");
     const [savingArchive, setSavingArchive] = useState(false);
+    const [archiveError, setArchiveError] = useState<string | null>(null);
     const [academyLessonCompleted, setAcademyLessonCompleted] = useState(false);
     const [testingMode, setTestingMode] = useState(false);
     const [activeArchive, setActiveArchive] = useState<any | null>(initialArchive);
     const [activeAcademyEntry, setActiveAcademyEntry] = useState<AcademyTopicLaunch | null>(academyEntry);
     const [activeTrendEntry, setActiveTrendEntry] = useState<MarketTrend | null>(marketIntelEntry);
+    const [activeClarityEntry, setActiveClarityEntry] = useState<ClaritySessionEntry | null>(clarityEntry);
     const [pastSummaries, setPastSummaries] = useState<{ id: string; title: string; date: string; summary: string }[]>([]);
     const [workspace, setWorkspace] = useState<ConversationWorkspaceSnapshot | null>(null);
     const [workspaceOpen, setWorkspaceOpen] = useState(false);
+    const [activeForgeContext, setActiveForgeContext] = useState<ActiveForgeContext | null>(null);
+    const [scopedMemoryContext, setScopedMemoryContext] = useState("");
+    const [contextCardOpen, setContextCardOpen] = useState(false);
+    const [contextCardDismissed, setContextCardDismissed] = useState(false);
+    const [pendingApplyText, setPendingApplyText] = useState<string | null>(null);
+    const [applyStatus, setApplyStatus] = useState<string | null>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const academyBootstrappedRef = useRef(false);
     const trendBootstrappedRef = useRef(false);
+    const clarityBootstrappedRef = useRef(false);
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -239,18 +301,32 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
         localStorage.setItem(`trend-chat-${activeTrendEntry.id}`, JSON.stringify(messages));
     }, [messages, activeTrendEntry?.id]);
 
+    useEffect(() => {
+        setActiveClarityEntry(clarityEntry ?? null);
+        clarityBootstrappedRef.current = false;
+        if (clarityEntry) setMessages([]);
+    }, [clarityEntry]);
+
+    useEffect(() => {
+        if (!activeClarityEntry || activeArchive || clarityBootstrappedRef.current) return;
+        clarityBootstrappedRef.current = true;
+        void sendClarityKickoff();
+    }, [activeClarityEntry?.id, activeArchive?.id]);
+
     const workspaceSource = useMemo<WorkspaceSource>(() => {
         if (activeAcademyEntry) return { type: "academy", title: activeAcademyEntry.title, stageId: null, contextId: activeAcademyEntry.id };
         if (activeTrendEntry) return { type: "market", title: activeTrendEntry.name, stageId: null, contextId: activeTrendEntry.id };
+        if (activeClarityEntry) return { type: "chatroom", title: activeClarityEntry.title, stageId: null, contextId: activeClarityEntry.id };
         return { type: "forge", title: null, stageId: Number(profile.currentStage) || 1, contextId: activeArchive?.id ?? null };
-    }, [activeAcademyEntry, activeTrendEntry, profile.currentStage, activeArchive?.id]);
+    }, [activeAcademyEntry, activeTrendEntry, activeClarityEntry, profile.currentStage, activeArchive?.id]);
 
     const workspaceKey = useMemo(() => {
         if (activeAcademyEntry) return `workspace-academy-${activeAcademyEntry.id}`;
         if (activeTrendEntry) return `workspace-trend-${activeTrendEntry.id}`;
+        if (activeClarityEntry) return `workspace-clarity-${activeClarityEntry.id}`;
         if (activeArchive?.id) return `workspace-archive-${activeArchive.id}`;
         return `workspace-forge-${userId}`;
-    }, [activeAcademyEntry, activeTrendEntry, activeArchive?.id, userId]);
+    }, [activeAcademyEntry, activeTrendEntry, activeClarityEntry, activeArchive?.id, userId]);
 
     useEffect(() => {
         const saved = localStorage.getItem(workspaceKey);
@@ -272,23 +348,135 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
         localStorage.setItem(workspaceKey, JSON.stringify(workspace));
     }, [workspace, workspaceKey]);
 
+    useEffect(() => {
+        let cancelled = false;
+        const selectedWorkspaceId = activeForgeContext?.scope === "workspace" ? activeForgeContext.workspaceId ?? null : null;
+        getRelevantForgeMemory({
+            userId,
+            workspaceId: selectedWorkspaceId,
+            activeForgeContext,
+            query: messages.slice(-4).map(message => message.text).join("\n"),
+            includePersonalMemory: activeForgeContext?.scope !== "workspace",
+            includeWorkspaceMemory: activeForgeContext?.scope === "workspace",
+        }).then((memory) => {
+            if (cancelled) return;
+            const blocks = [
+                formatForgeMemoryBlock(
+                    "PERSONAL_MEMORY",
+                    memory.personal,
+                    "Private memory for this user only. Do not imply other workspace members know this."
+                ),
+                formatForgeMemoryBlock(
+                    "WORKSPACE_MEMORY",
+                    memory.workspace,
+                    "Shared workspace memory intentionally attached by a member."
+                ),
+                formatForgeMemoryBlock(
+                    "PERSONAL_MEMORY",
+                    memory.hybrid,
+                    "Private takeaways linked to this workspace for this user only. Reference as the user's prior takeaway, not team knowledge."
+                ),
+                formatForgeMemoryBlock(
+                    "PERSONAL_MEMORY",
+                    memory.custom,
+                    "Private custom-context memory for this user only."
+                ),
+            ].filter(Boolean);
+            setScopedMemoryContext(blocks.join("\n\n"));
+        }).catch(() => {
+            if (!cancelled) setScopedMemoryContext("");
+        });
+
+        return () => { cancelled = true; };
+    }, [userId, activeForgeContext?.scope, activeForgeContext?.workspaceId, activeForgeContext?.customLabel, messages.length]);
+
+    useEffect(() => {
+        if (contextCardDismissed || contextCardOpen || workspaces.length === 0 || activeForgeContext) return;
+        if (activeAcademyEntry && messages.length > 0) {
+            setContextCardOpen(true);
+            setPendingApplyText(null);
+            return;
+        }
+        const latestUserMessage = [...messages].reverse().find(message => message.role === "user")?.text ?? "";
+        if (conversationLooksBusinessSpecific(latestUserMessage)) {
+            setContextCardOpen(true);
+            setPendingApplyText(null);
+        }
+    }, [activeAcademyEntry?.id, activeForgeContext, contextCardDismissed, contextCardOpen, messages, workspaces.length]);
+
+    const contextSource = getChatRoomMemorySource(activeAcademyEntry, activeTrendEntry, activeClarityEntry);
+
+    const getApplyText = () => {
+        if (pendingApplyText?.trim()) return pendingApplyText.trim();
+        const latestForge = [...messages].reverse().find(message => message.role === "forge" && message.text.trim());
+        if (latestForge?.text.trim()) return latestForge.text.trim();
+        const latestUser = [...messages].reverse().find(message => message.role === "user" && message.text.trim());
+        return latestUser?.text.trim() || "";
+    };
+
+    const buildApplyTitle = () => {
+        if (activeAcademyEntry) return `Academy takeaway — ${activeAcademyEntry.title}`;
+        if (activeTrendEntry) return `Market intelligence takeaway — ${activeTrendEntry.name}`;
+        if (activeClarityEntry) return `Clarity takeaway — ${activeClarityEntry.title}`;
+        return "Forge chat takeaway";
+    };
+
+    const saveContextMemory = async (context: ActiveForgeContext) => {
+        const content = getApplyText();
+        if (!content) {
+            setApplyStatus("There is no takeaway to save yet.");
+            return;
+        }
+
+        const saved = await createForgeMemoryItem({
+            userId,
+            workspaceId: context.scope === "workspace" ? context.workspaceId ?? null : null,
+            scope: context.scope === "workspace" ? "workspace" : context.scope,
+            visibility: context.scope === "workspace" ? "shared" : "private",
+            source: contextSource,
+            sourceRefId: activeAcademyEntry?.id || activeTrendEntry?.id || activeClarityEntry?.id || activeArchive?.id || null,
+            title: buildApplyTitle(),
+            content: buildMemoryContent(content, context, profile.name || "The founder", contextSource),
+            summary: summarizeMemoryContent(content),
+            customContextLabel: context.scope === "custom" ? context.customLabel ?? null : null,
+            confidence: 0.7,
+        });
+
+        if (!saved) {
+            setApplyStatus("Could not save this memory. Try again.");
+            return;
+        }
+
+        setActiveForgeContext(context);
+        setContextCardOpen(false);
+        setContextCardDismissed(true);
+        setPendingApplyText(null);
+        setApplyStatus(context.scope === "workspace"
+            ? "Saved as shared workspace memory."
+            : "Saved privately to your Forge memory.");
+    };
+
     const openSaveArchiveModal = () => {
+        setArchiveError(null);
         const defaultTitle = activeArchive?.title
             || (activeAcademyEntry
                 ? `Academy — ${activeAcademyEntry.title}`
                 : activeTrendEntry
                     ? `Market Intel — ${activeTrendEntry.name}`
-                    : `Chat with Forge — ${new Date().toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                    })}`);
+                    : activeClarityEntry
+                        ? `Clarity — ${activeClarityEntry.title}`
+                        : `Chat with Forge — ${new Date().toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                        })}`);
         setArchiveTitleInput(defaultTitle);
         setSaveArchiveModalOpen(true);
     };
 
     const handleSaveArchive = async () => {
         if (savingArchive || messages.length === 0) return;
+        setArchiveError(null);
 
         const title = archiveTitleInput.trim() || activeAcademyEntry?.title || activeTrendEntry?.name || "Chat with Forge";
         const transcript = messages
@@ -329,10 +517,14 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
                     workspace
                 );
 
-            if (!saved) return;
+            if (!saved) {
+                setArchiveError("Failed to save to database. Please try again.");
+                return;
+            }
             const wasAcademyEntry = activeAcademyEntry;
             const wasCompleted = academyLessonCompleted;
             const wasTrendEntry = activeTrendEntry;
+            const wasClarityEntry = activeClarityEntry;
             onArchiveSaved?.(saved);
             if (activeAcademyEntry) {
                 localStorage.removeItem(`academy-chat-${activeAcademyEntry.id}`);
@@ -351,13 +543,16 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
             setActiveArchive(null);
             setActiveAcademyEntry(null);
             setActiveTrendEntry(null);
+            setActiveClarityEntry(null);
             academyBootstrappedRef.current = false;
             trendBootstrappedRef.current = false;
-            if ((wasCompleted && wasAcademyEntry) || wasTrendEntry) {
+            clarityBootstrappedRef.current = false;
+            if ((wasCompleted && wasAcademyEntry) || wasTrendEntry || wasClarityEntry) {
                 onBack();
             }
         } catch (error) {
             console.error("chat room archive save error:", error);
+            setArchiveError(error instanceof Error ? error.message : "Something went wrong. Please try again.");
         } finally {
             setSavingArchive(false);
         }
@@ -407,9 +602,11 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
                 activeAcademyEntry,
                 testingMode,
                 activeTrendEntry,
+                activeClarityEntry,
                 pastSummaries,
                 activeArchive?.id || null,
                 universalMemoryContext,
+                scopedMemoryContext,
             );
             const apiMsgs = [
                 ...history.slice(0, -1).map(m => ({
@@ -474,9 +671,11 @@ Start with a confident first lesson message that frames the topic, explains the 
                 entry,
                 false,
                 null,
+                null,
                 undefined,
                 null,
                 universalMemoryContext,
+                scopedMemoryContext,
             );
 
             await streamForgeAPI(
@@ -531,7 +730,7 @@ Start by making the trend real and concrete for them. No vague advice — be dir
         setLoading(true);
 
         try {
-            const ctx = buildChatRoomContext(profile, [kickoffPrompt], null, null, null, false, entry, undefined, null, universalMemoryContext);
+            const ctx = buildChatRoomContext(profile, [kickoffPrompt], null, null, null, false, entry, null, undefined, null, universalMemoryContext, scopedMemoryContext);
             await streamForgeAPI(
                 [{ role: "user", content: kickoffPrompt }],
                 FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", ctx.context),
@@ -554,6 +753,38 @@ Start by making the trend real and concrete for them. No vague advice — be dir
         }
     };
 
+    const sendClarityKickoff = async (entryOverride?: ClaritySessionEntry | null) => {
+        const entry = entryOverride ?? activeClarityEntry;
+        if (!entry || loading) return;
+
+        const forgeMsg: ChatMessage = { id: `f-${Date.now()}`, role: "forge", text: "", createdAt: new Date().toISOString() };
+        setMessages([forgeMsg]);
+        setLoading(true);
+
+        try {
+            const ctx = buildChatRoomContext(profile, [entry.prompt], null, null, null, false, null, entry, undefined, null, universalMemoryContext, scopedMemoryContext);
+            await streamForgeAPI(
+                [{ role: "user", content: entry.prompt }],
+                FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", ctx.context),
+                (chunk) => {
+                    const { cleanText } = applyFoundryBookCitations(chunk, ctx.bookMatches);
+                    setMessages((prev) => prev.map((message) => (
+                        message.id === forgeMsg.id ? { ...message, text: cleanText } : message
+                    )));
+                }
+            );
+        } catch (error) {
+            console.error("clarity kickoff error:", error);
+            setMessages((prev) => prev.map((message) => (
+                message.id === forgeMsg.id
+                    ? { ...message, text: "Something went wrong opening this clarity chat. Try again." }
+                    : message
+            )));
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
@@ -567,7 +798,7 @@ Start by making the trend real and concrete for them. No vague advice — be dir
         setMessages((prev) => [...prev, forgeMsg]);
         setLoading(true);
         try {
-            const ctx = buildChatRoomContext(profile, [completionPrompt], null, null, entry, false, null, undefined, null, universalMemoryContext);
+            const ctx = buildChatRoomContext(profile, [completionPrompt], null, null, entry, false, null, null, undefined, null, universalMemoryContext, scopedMemoryContext);
             await streamForgeAPI(
                 [{ role: "user", content: completionPrompt }],
                 FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", ctx.context),
@@ -599,7 +830,7 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
         setMessages((prev) => [...prev, forgeMsg]);
         setLoading(true);
         try {
-            const ctx = buildChatRoomContext(profile, [kickoffPrompt], null, null, entry, true, null, undefined, null, universalMemoryContext);
+            const ctx = buildChatRoomContext(profile, [kickoffPrompt], null, null, entry, true, null, null, undefined, null, universalMemoryContext, scopedMemoryContext);
             await streamForgeAPI(
                 [{ role: "user", content: kickoffPrompt }],
                 FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", ctx.context),
@@ -623,7 +854,7 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
         setMessages((prev) => [...prev, forgeMsg]);
         setLoading(true);
         try {
-            const ctx = buildChatRoomContext(profile, [teachingPrompt], null, null, entry, false, null, undefined, null, universalMemoryContext);
+            const ctx = buildChatRoomContext(profile, [teachingPrompt], null, null, entry, false, null, null, undefined, null, universalMemoryContext, scopedMemoryContext);
             await streamForgeAPI(
                 [{ role: "user", content: teachingPrompt }],
                 FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", ctx.context),
@@ -670,12 +901,16 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
         ? `Forge Academy · ${activeAcademyEntry.title}`
         : activeTrendEntry
             ? `Market Intel · ${activeTrendEntry.name}`
-            : "Chat with Forge";
+            : activeClarityEntry
+                ? `Clarity · ${activeClarityEntry.title}`
+                : "Chat with Forge";
     const chatSubtitle = activeAcademyEntry
         ? getAcademySessionSubtitle(activeAcademyEntry.sessionMode)
         : activeTrendEntry
             ? "Trend deep-dive · strategic analysis"
-            : "Ask anything · learn freely";
+            : activeClarityEntry
+                ? "Focused quick chat · archive when finished"
+                : "Ask anything · learn freely";
 
     return (
         <div style={{
@@ -703,7 +938,7 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
                         background: "none",
                         border: "none",
                         cursor: "pointer",
-                        color: "#666",
+                        color: "var(--foundry-text-secondary)",
                         padding: "4px 2px",
                         display: "flex",
                         alignItems: "center",
@@ -733,6 +968,18 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
                         {chatSubtitle}
                     </div>
                 </div>
+                <div className="forge-context-indicator" title="Current Forge memory context">
+                    Forge Context: {getForgeContextLabel(activeForgeContext)}
+                </div>
+                <button
+                    className="forge-context-apply-button"
+                    onClick={() => {
+                        setPendingApplyText(null);
+                        setContextCardOpen(true);
+                    }}
+                >
+                    Apply this to...
+                </button>
                 {activeAcademyEntry && onMarkAcademyLessonCompleted && (
                     <button
                         className="forge-chat-room__action"
@@ -791,7 +1038,7 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
                             border: "1px solid rgba(255,255,255,0.08)",
                             borderRadius: 8,
                             padding: "5px 12px",
-                            color: "#555",
+                            color: "var(--foundry-text-muted)",
                             fontSize: 11,
                             cursor: "pointer",
                             transition: "all 0.15s",
@@ -826,6 +1073,7 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
                 <div className="forge-chat-room__thread">
                     {/* Messages */}
                     <div
+                        className="forge-chat-room__messages"
                         ref={scrollRef}
                         style={{
                             flex: 1,
@@ -835,7 +1083,7 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
                             display: "flex",
                             flexDirection: "column",
                             gap: 16,
-                            maxWidth: 760,
+                            maxWidth: "min(100%, var(--foundry-forge-chat-width))",
                             width: "100%",
                             margin: "0 auto",
                             boxSizing: "border-box",
@@ -854,12 +1102,43 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
                         <div style={{ fontSize: 18, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 8 }}>
                             {activeArchive.title}
                         </div>
-                        <div style={{ fontSize: 12, color: "#666", lineHeight: 1.7 }}>
+                        <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.7 }}>
                             {getArchivePreviewText(activeArchive.summary).slice(0, 220)}...
                         </div>
-                        <div style={{ fontSize: 11, color: "#888", lineHeight: 1.6, marginTop: 10 }}>
+                        <div style={{ fontSize: 11, color: "rgba(240,237,232,0.62)", lineHeight: 1.6, marginTop: 10 }}>
                             Ask follow-up questions normally. Saving will update this same archive card instead of creating a new one.
                         </div>
+                    </div>
+                )}
+
+                {contextCardOpen && (
+                    <ForgeContextApplyCard
+                        workspaces={workspaces}
+                        source={contextSource}
+                        suggestedReason={activeAcademyEntry
+                            ? "This Academy conversation may produce a takeaway that belongs to a specific business context."
+                            : "Save only the takeaway you choose. Private contexts stay private unless you attach them to a workspace."}
+                        onSelectPersonal={() => void saveContextMemory({ scope: "personal" })}
+                        onSelectWorkspace={(workspaceId) => {
+                            const selected = workspaces.find((workspace) => workspace.id === workspaceId);
+                            void saveContextMemory({
+                                scope: "workspace",
+                                workspaceId,
+                                workspaceName: selected?.business_name ?? "Workspace",
+                            });
+                        }}
+                        onSubmitCustom={(label) => void saveContextMemory({ scope: "custom", customLabel: label })}
+                        onDismiss={() => {
+                            setContextCardOpen(false);
+                            setContextCardDismissed(true);
+                            setPendingApplyText(null);
+                        }}
+                    />
+                )}
+
+                {applyStatus && (
+                    <div className="forge-context-card__privacy" style={{ width: "min(100%, 620px)", margin: "0 auto" }}>
+                        {applyStatus}
                     </div>
                 )}
 
@@ -891,7 +1170,7 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
                             <div style={{ fontSize: 20, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 8 }}>
                                 {activeAcademyEntry ? activeAcademyEntry.title : "What's on your mind?"}
                             </div>
-                            <div style={{ fontSize: 13, color: "#555", lineHeight: 1.7, maxWidth: 380 }}>
+                            <div style={{ fontSize: 13, color: "var(--foundry-text-muted)", lineHeight: 1.7, maxWidth: 380 }}>
                                 {activeAcademyEntry
                                     ? activeAcademyEntry.learningGoal || "Forge is opening this Academy topic with context already loaded. Keep going by asking follow-up questions, pressure-testing the ideas, or applying them directly to your business."
                                     : "This is your open space to talk through anything — business questions, ideas, concepts you're learning, or things you're unsure about. No agenda. Just a conversation."}
@@ -921,7 +1200,7 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
                                         border: "1px solid rgba(255,255,255,0.08)",
                                         borderRadius: 20,
                                         padding: "7px 14px",
-                                        color: "#888",
+                                        color: "rgba(240,237,232,0.62)",
                                         fontSize: 12,
                                         cursor: "pointer",
                                         transition: "all 0.15s",
@@ -969,7 +1248,15 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
                                     ? (msg.text ? <AnimatedChatText text={msg.text} createdAt={msg.createdAt} /> : <TypingDots />)
                                     : renderText(msg.text)}
                             </div>
-                            {msg.role === "forge" && <MessageActions text={msg.text} />}
+                            {msg.role === "forge" && (
+                                <MessageActions
+                                    text={msg.text}
+                                    onApplyToContext={msg.text.trim() ? () => {
+                                        setPendingApplyText(msg.text);
+                                        setContextCardOpen(true);
+                                    } : undefined}
+                                />
+                            )}
                         </div>
                     </div>
                 ))}
@@ -983,13 +1270,15 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
                         background: "#0C0C0E",
                         flexShrink: 0,
                     }}>
-                        <div style={{
-                            maxWidth: 760,
-                            margin: "0 auto",
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 8,
-                        }}>
+                        <div
+                            className="forge-chat-room__composer-inner"
+                            style={{
+                                maxWidth: "min(100%, var(--foundry-forge-chat-width))",
+                                margin: "0 auto",
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 8,
+                            }}>
                     {attachedFiles.length > 0 && (
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                             {attachedFiles.map(file => (
@@ -1019,7 +1308,7 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
                                             if (file.previewUrl) URL.revokeObjectURL(file.previewUrl);
                                             setAttachedFiles(prev => prev.filter(f => f.id !== file.id));
                                         }}
-                                        style={{ background: "none", border: "none", color: "#777", cursor: "pointer", padding: 0, fontSize: 14, lineHeight: 1, flexShrink: 0 }}
+                                        style={{ background: "none", border: "none", color: "var(--foundry-text-muted)", cursor: "pointer", padding: 0, fontSize: 14, lineHeight: 1, flexShrink: 0 }}
                                     >×</button>
                                 </div>
                             ))}
@@ -1160,7 +1449,7 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
                     <ForgeConversationWorkspace
                         messages={messages}
                         loading={loading}
-                        title={activeAcademyEntry ? "Lesson Workspace" : activeTrendEntry ? "Market Workspace" : "Forge Workspace"}
+                        title={activeAcademyEntry ? "Lesson Workspace" : activeTrendEntry ? "Market Workspace" : activeClarityEntry ? "Clarity Workspace" : "Forge Workspace"}
                         subtitle="Live notes, lesson links, and next steps"
                         academyEntry={activeAcademyEntry}
                         source={workspaceSource}
@@ -1176,7 +1465,7 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
                         <div style={{ fontSize: 22, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 6 }}>
                             {activeArchive?.id ? "Update Chat Archive" : "Archive Chat with Forge"}
                         </div>
-                        <div style={{ fontSize: 12, color: "#666", lineHeight: 1.6, marginBottom: 14 }}>
+                        <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.6, marginBottom: 14 }}>
                             {activeArchive?.id
                                 ? "Update this existing archive card with the new continuation."
                                 : "Save this conversation into your archive and clear the current chat."}
@@ -1199,15 +1488,20 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
                                 marginBottom: 14,
                             }}
                         />
+                        {archiveError && (
+                            <div style={{ fontSize: 12, color: "#D96A55", background: "rgba(217,106,85,0.08)", border: "1px solid rgba(217,106,85,0.2)", borderRadius: 8, padding: "10px 12px", marginBottom: 12, lineHeight: 1.5 }}>
+                                {archiveError}
+                            </div>
+                        )}
                         <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
                             <button
-                                onClick={() => setSaveArchiveModalOpen(false)}
+                                onClick={() => { setSaveArchiveModalOpen(false); setArchiveError(null); }}
                                 style={{
                                     background: "rgba(255,255,255,0.04)",
                                     border: "1px solid rgba(255,255,255,0.08)",
                                     borderRadius: 10,
                                     padding: "10px 14px",
-                                    color: "#888",
+                                    color: "rgba(240,237,232,0.62)",
                                     cursor: "pointer",
                                 }}
                             >

@@ -32,7 +32,7 @@ const DOCUMENT_STATUS_STYLES: Record<DocumentStatus, { color: string; background
     partially_signed: { color: "#F5A843", background: "rgba(245,168,67,0.1)", border: "1px solid rgba(245,168,67,0.22)" },
     signed: { color: "#4CAF8A", background: "rgba(76,175,138,0.1)", border: "1px solid rgba(76,175,138,0.22)" },
     declined: { color: "#D65037", background: "rgba(214,80,55,0.1)", border: "1px solid rgba(214,80,55,0.22)" },
-    archived: { color: "#777", background: "rgba(119,119,119,0.1)", border: "1px solid rgba(119,119,119,0.18)" },
+    archived: { color: "var(--foundry-text-muted)", background: "rgba(119,119,119,0.1)", border: "1px solid rgba(119,119,119,0.18)" },
 };
 
 export const SIGNATURE_STATUS_LABELS: Record<SignatureRequestStatus, string> = {
@@ -53,7 +53,7 @@ const SIGNATURE_STATUS_STYLES: Record<SignatureRequestStatus, { color: string; b
     completed: { color: "#4CAF8A", background: "rgba(76,175,138,0.1)", border: "1px solid rgba(76,175,138,0.22)" },
     declined: { color: "#D65037", background: "rgba(214,80,55,0.1)", border: "1px solid rgba(214,80,55,0.22)" },
     expired: { color: "#A06DD5", background: "rgba(160,109,213,0.1)", border: "1px solid rgba(160,109,213,0.22)" },
-    canceled: { color: "#777", background: "rgba(119,119,119,0.1)", border: "1px solid rgba(119,119,119,0.18)" },
+    canceled: { color: "var(--foundry-text-muted)", background: "rgba(119,119,119,0.1)", border: "1px solid rgba(119,119,119,0.18)" },
     error: { color: "#F08A5D", background: "rgba(240,138,93,0.1)", border: "1px solid rgba(240,138,93,0.22)" },
 };
 
@@ -126,7 +126,7 @@ export function StageBadge({ stageId }: { stageId: number | null }) {
             borderRadius: 4,
             border: "1px solid rgba(255,255,255,0.15)",
             background: "rgba(255,255,255,0.06)",
-            color: "rgba(240,237,232,0.5)",
+            color: "rgba(240,237,232,0.7)",
             fontFamily: "'DM Sans', system-ui, sans-serif",
             fontSize: 10,
             fontWeight: 700,

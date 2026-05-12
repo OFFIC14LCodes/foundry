@@ -108,25 +108,62 @@ export interface CofounderEmailInvite {
     responded_at: string | null;
 }
 
+export interface CofounderWorkspaceSummary extends CofounderTeam {
+    member_id: string;
+    member_role: string;
+    display_name: string;
+    joined_at: string;
+}
+
 // ── TEAM ──────────────────────────────────────────────────────
 
 export async function getTeamForUser(userId: string): Promise<CofounderTeam | null> {
-    const { data: memberRow } = await supabase
+    const workspaces = await getWorkspacesForUser(userId);
+    if (workspaces.length === 0) return null;
+    const { member_id: _memberId, member_role: _memberRole, display_name: _displayName, joined_at: _joinedAt, ...team } = workspaces[0];
+    return team;
+}
+
+export async function getWorkspacesForUser(userId: string): Promise<CofounderWorkspaceSummary[]> {
+    const { data: memberRows, error: memberError } = await supabase
         .from('cofounder_members')
-        .select('team_id')
+        .select('id, team_id, role, display_name, joined_at')
         .eq('user_id', userId)
-        .limit(1)
-        .maybeSingle();
+        .order('joined_at', { ascending: true });
 
-    if (!memberRow?.team_id) return null;
+    if (memberError) {
+        console.error('getWorkspacesForUser member error:', memberError.message);
+        return [];
+    }
 
-    const { data: team } = await supabase
+    const rows = (memberRows ?? []) as Array<{ id: string; team_id: string; role: string; display_name: string; joined_at: string }>;
+    const ids = rows.map(row => row.team_id).filter(Boolean);
+    if (ids.length === 0) return [];
+
+    const { data: teams, error: teamError } = await supabase
         .from('cofounder_teams')
         .select('*')
-        .eq('id', memberRow.team_id)
-        .single();
+        .in('id', ids);
 
-    return (team as CofounderTeam) ?? null;
+    if (teamError) {
+        console.error('getWorkspacesForUser team error:', teamError.message);
+        return [];
+    }
+
+    const teamById = new Map((teams ?? []).map(team => [(team as CofounderTeam).id, team as CofounderTeam]));
+    return rows
+        .map(row => {
+            const team = teamById.get(row.team_id);
+            if (!team) return null;
+            return {
+                ...team,
+                member_id: row.id,
+                member_role: row.role,
+                display_name: row.display_name,
+                joined_at: row.joined_at,
+            } satisfies CofounderWorkspaceSummary;
+        })
+        .filter((workspace): workspace is CofounderWorkspaceSummary => Boolean(workspace));
 }
 
 export async function createTeam(

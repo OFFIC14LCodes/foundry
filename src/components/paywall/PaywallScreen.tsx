@@ -44,7 +44,7 @@ function PriceLine({
                 <span style={{ fontSize: 28, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
                     {formatUsd(foundingCents)}
                 </span>
-                <span style={{ fontSize: 12, color: "#888" }}>{intervalLabel}</span>
+                <span style={{ fontSize: 12, color: "rgba(240,237,232,0.62)" }}>{intervalLabel}</span>
                 <span style={{ fontSize: 11, color: "#B08A6B", textDecoration: "line-through" }}>
                     {formatUsd(standardCents)}
                 </span>
@@ -57,7 +57,7 @@ function PriceLine({
             <span style={{ fontSize: 28, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
                 {formatUsd(standardCents)}
             </span>
-            <span style={{ fontSize: 12, color: "#888" }}>{intervalLabel}</span>
+            <span style={{ fontSize: 12, color: "rgba(240,237,232,0.62)" }}>{intervalLabel}</span>
         </div>
     );
 }
@@ -290,14 +290,14 @@ export default function PaywallScreen({ open, targetStage, access, onManageSubsc
                         </div>
 
                         <div className="foundry-module-card" style={{ marginTop: 18, padding: 20, textAlign: "center" }}>
-                            <div style={{ fontSize: 11, color: "#666", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>
+                            <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>
                                 Plan Comparison
                             </div>
                             <div className="foundry-plan-comparison-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
                                 <div style={{ textAlign: "center" }}>
-                                    <div style={{ fontSize: 12, color: "#888", marginBottom: 8 }}>Free</div>
+                                    <div style={{ fontSize: 12, color: "rgba(240,237,232,0.62)", marginBottom: 8 }}>Free</div>
                                     {BILLING_PLANS.free.comparisonPoints.map((point) => (
-                                        <div key={point} style={{ fontSize: 12, color: "#666", lineHeight: 1.6, marginBottom: 6 }}>{point}</div>
+                                        <div key={point} style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.6, marginBottom: 6 }}>{point}</div>
                                     ))}
                                 </div>
                                 <div style={{ textAlign: "center" }}>
@@ -318,7 +318,7 @@ export default function PaywallScreen({ open, targetStage, access, onManageSubsc
 
                     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                         <div className="foundry-module-card" style={{ padding: 18, textAlign: "center" }}>
-                            <div style={{ fontSize: 11, color: "#666", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>
+                            <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>
                                 Current Access
                             </div>
                             <div style={{ fontSize: 18, fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8", marginBottom: 6 }}>
@@ -335,7 +335,7 @@ export default function PaywallScreen({ open, targetStage, access, onManageSubsc
                         </div>
 
                         <div className="foundry-module-card" style={{ padding: 18, textAlign: "center" }}>
-                            <div style={{ fontSize: 11, color: "#666", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>
+                            <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>
                                 Team Add-On
                             </div>
                             <div style={{ fontSize: 16, fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8", marginBottom: 8 }}>
@@ -353,7 +353,7 @@ export default function PaywallScreen({ open, targetStage, access, onManageSubsc
                                 </button>
                                 <div style={{ flex: 1, textAlign: "center" }}>
                                     <div style={{ fontSize: 24, fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8" }}>{extraSeats}</div>
-                                    <div style={{ fontSize: 10, color: "#666", letterSpacing: "0.1em", textTransform: "uppercase" }}>Extra seats</div>
+                                    <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Extra seats</div>
                                 </div>
                                 <button
                                     onClick={() => setExtraSeats((value) => Math.min(10, value + 1))}
@@ -365,7 +365,7 @@ export default function PaywallScreen({ open, targetStage, access, onManageSubsc
                         </div>
 
                         <div className="foundry-module-card" style={{ padding: 18, textAlign: "center" }}>
-                            <div style={{ fontSize: 11, color: "#666", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>
+                            <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>
                                 Access Rules
                             </div>
                             <div style={{ fontSize: 12, color: "#A8A4A0", lineHeight: 1.7 }}>

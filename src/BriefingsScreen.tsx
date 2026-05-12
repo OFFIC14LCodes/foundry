@@ -168,12 +168,12 @@ function SourceCountsPanel({
         <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.05)" }}>
             <button
                 onClick={onToggle}
-                style={{ background: "transparent", border: "none", padding: 0, color: "rgba(240,237,232,0.4)", fontSize: 11, fontFamily: "'DM Sans', sans-serif", cursor: "pointer" }}
+                style={{ background: "transparent", border: "none", padding: 0, color: "rgba(240,237,232,0.58)", fontSize: 11, fontFamily: "'DM Sans', sans-serif", cursor: "pointer" }}
             >
                 What Forge used {expanded ? "↓" : "→"}
             </button>
             {expanded && (
-                <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 5, color: "rgba(240,237,232,0.5)", fontSize: 12, fontFamily: "'DM Sans', sans-serif", lineHeight: 1.55 }}>
+                <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 5, color: "rgba(240,237,232,0.7)", fontSize: 12, fontFamily: "'DM Sans', sans-serif", lineHeight: 1.55 }}>
                     <div>• {counts.journal_entries ?? 0} journal entries this week</div>
                     <div>• {counts.decisions ?? 0} decisions logged</div>
                     <div>• {counts.chat_summaries ?? 0} Forge conversations</div>
@@ -381,7 +381,7 @@ export default function BriefingsScreen({
                         fontSize: "var(--foundry-app-header-title-font)", fontFamily: "'Lora', Georgia, serif",
                         fontWeight: 600, color: "#F0EDE8",
                     }}>Monday Briefings</div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", fontSize: "var(--foundry-app-header-meta-font)", color: "#555" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", fontSize: "var(--foundry-app-header-meta-font)", color: "var(--foundry-text-muted)" }}>
                         <span>{briefings.length} {briefings.length === 1 ? "briefing" : "briefings"}</span>
                         {generationLimit !== null && <span>· {Math.max(0, generationLimit - briefings.length)} free left</span>}
                         {currentStreak >= 2 && <span style={{ color: "#E8622A", fontFamily: "'DM Sans', sans-serif", fontSize: 12 }}>🔥 {currentStreak} week streak</span>}
@@ -405,7 +405,7 @@ export default function BriefingsScreen({
                         {generating ? "Writing..." : hasReachedLimit ? "Preview limit reached" : canGenerate ? "+ New" : "Up to date"}
                     </button>
                     {nextBriefingLabel && (
-                        <div style={{ maxWidth: 190, textAlign: "right", fontSize: 10, color: "rgba(240,237,232,0.35)", fontFamily: "'DM Sans', sans-serif", lineHeight: 1.35 }}>
+                        <div style={{ maxWidth: 190, textAlign: "right", fontSize: 10, color: "rgba(240,237,232,0.55)", fontFamily: "'DM Sans', sans-serif", lineHeight: 1.35 }}>
                             {nextBriefingLabel}
                         </div>
                     )}
@@ -428,7 +428,7 @@ export default function BriefingsScreen({
                 }}>
                     <div style={{ flex: 1, color: "rgba(240,237,232,0.8)", fontSize: 13, fontFamily: "'DM Sans', sans-serif", lineHeight: 1.5 }}>{error}</div>
                     <button onClick={() => { setError(null); void generateBriefing(); }} style={{ background: "transparent", border: "none", color: "#E8622A", fontSize: 12, fontFamily: "'DM Sans', sans-serif", cursor: "pointer" }}>Try again</button>
-                    <button onClick={() => setError(null)} style={{ background: "transparent", border: "none", color: "rgba(240,237,232,0.45)", fontSize: 18, cursor: "pointer", lineHeight: 1 }}>×</button>
+                    <button onClick={() => setError(null)} style={{ background: "transparent", border: "none", color: "rgba(240,237,232,0.62)", fontSize: 18, cursor: "pointer", lineHeight: 1 }}>×</button>
                 </div>
             )}
             {actionNotice && (
@@ -503,7 +503,7 @@ export default function BriefingsScreen({
                                 }} />
                             ))}
                         </div>
-                        <div style={{ fontSize: 13, color: "#555", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic" }}>
+                        <div style={{ fontSize: 13, color: "var(--foundry-text-muted)", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic" }}>
                             Forge is thinking about your week...
                         </div>
                     </div>
@@ -556,7 +556,7 @@ export default function BriefingsScreen({
                                                 {formatDate(briefing.createdAt)}
                                             </div>
                                         )}
-                                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, fontSize: 11, color: "rgba(240,237,232,0.4)", fontFamily: "'DM Sans', sans-serif", lineHeight: 1.4 }}>
+                                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, fontSize: 11, color: "rgba(240,237,232,0.58)", fontFamily: "'DM Sans', sans-serif", lineHeight: 1.4 }}>
                                             <span>{wordCount(briefing.content)} words</span>
                                             <span>·</span>
                                             <span>{formatTimeAgo(briefing.createdAt)}</span>

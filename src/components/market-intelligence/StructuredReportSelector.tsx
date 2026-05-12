@@ -43,11 +43,11 @@ export default function StructuredReportSelector({
                     fontFamily: "'DM Sans', system-ui, sans-serif",
                 }}
             >
-                <span style={{ fontSize: 11, color: "#666", fontWeight: 500 }}>Report:</span>
+                <span style={{ fontSize: 11, color: "var(--foundry-text-secondary)", fontWeight: 500 }}>Report:</span>
                 <span style={{ fontSize: 12, color: "#63B3ED", fontWeight: 700 }}>
                     {currentReport ? formatReportDate(currentReport.date) : "None"}
                 </span>
-                <span style={{ fontSize: 9, color: "#555", marginLeft: 2 }}>{open ? "▲" : "▼"}</span>
+                <span style={{ fontSize: 9, color: "var(--foundry-text-muted)", marginLeft: 2 }}>{open ? "▲" : "▼"}</span>
             </button>
 
             {open && (

@@ -109,7 +109,7 @@ export default function ChatInput({
                                 style={{
                                     background: "none",
                                     border: "none",
-                                    color: "#888",
+                                    color: "rgba(240,237,232,0.62)",
                                     cursor: "pointer",
                                     padding: 0,
                                     fontSize: 14,

@@ -150,7 +150,7 @@ export default function SettingsScreen({
             title="Settings"
             subtitle="Manage your account, billing posture, and workspace policies in one place."
             onBack={onBack}
-            footer={<div style={{ fontSize: 11, color: "#555", textAlign: "center" }}>{version}</div>}
+            footer={<div style={{ fontSize: 11, color: "var(--foundry-text-muted)", textAlign: "center" }}>{version}</div>}
         >
             <div style={{ display: "grid", gap: 18 }}>
                 <SettingsSection
@@ -504,7 +504,7 @@ export default function SettingsScreen({
                                         <div style={{ fontSize: 12, color: "#A8A4A0", lineHeight: 1.7, marginBottom: 4 }}>
                                             {notification.message}
                                         </div>
-                                        <div style={{ fontSize: 10, color: "#666" }}>
+                                        <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)" }}>
                                             {notification.channel.replace("_", " ")} · {notification.status} · {new Date(notification.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                                         </div>
                                     </div>

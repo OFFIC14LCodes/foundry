@@ -288,7 +288,7 @@ function ScreenHeader({
                         style={{
                             display: "flex", alignItems: "center", justifyContent: "center",
                             background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
-                            borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "#888", cursor: "pointer",
+                            borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "rgba(240,237,232,0.62)", cursor: "pointer",
                         }}
                     >
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg>
@@ -299,7 +299,7 @@ function ScreenHeader({
                     style={{
                         display: "flex", alignItems: "center", gap: 5,
                         background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
-                        borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "#888", fontSize: "var(--foundry-app-header-button-font)", cursor: "pointer",
+                        borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "rgba(240,237,232,0.62)", fontSize: "var(--foundry-app-header-button-font)", cursor: "pointer",
                         fontFamily: "'Lora', Georgia, serif",
                     }}
                 >
@@ -1702,7 +1702,7 @@ export default function DocumentProductionScreen({
                     {vaultDocuments.length >= 3 && (
                         <div style={{ marginBottom: 18, padding: 16, borderRadius: 12, background: "rgba(232,98,42,0.06)", border: "1px solid rgba(232,98,42,0.15)", position: "relative" }}>
                             <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 8 }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(240,237,232,0.4)" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(240,237,232,0.58)" }}>
                                     <span style={{ width: 18, height: 18, borderRadius: "50%", background: "rgba(232,98,42,0.16)", display: "inline-flex", alignItems: "center", justifyContent: "center", color: "#E8622A", fontSize: 11 }}>F</span>
                                     Forge
                                 </div>
@@ -1713,7 +1713,7 @@ export default function DocumentProductionScreen({
                                     }}
                                     disabled={vaultHealthLoading}
                                     aria-label="Refresh vault summary"
-                                    style={{ background: "transparent", border: "none", color: "rgba(240,237,232,0.3)", cursor: vaultHealthLoading ? "wait" : "pointer", fontSize: 18, lineHeight: 1 }}
+                                    style={{ background: "transparent", border: "none", color: "rgba(240,237,232,0.55)", cursor: vaultHealthLoading ? "wait" : "pointer", fontSize: 18, lineHeight: 1 }}
                                 >
                                     ↻
                                 </button>
@@ -1789,7 +1789,7 @@ export default function DocumentProductionScreen({
                                     <div style={{ padding: "12px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
                                         <div>
                                             <div style={{ fontSize: 13, color: "#F0EDE8", fontWeight: 600 }}>Latest Content Preview</div>
-                                            <div style={{ fontSize: 10, color: "#666", marginTop: 2 }}>
+                                            <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", marginTop: 2 }}>
                                                 {selectedVaultVersion ? `Version ${selectedVaultVersion.versionNumber} · ${selectedVaultVersion.source}` : "No linked version selected yet"}
                                             </div>
                                         </div>
@@ -1811,7 +1811,7 @@ export default function DocumentProductionScreen({
                                                 </div>
                                                 <button
                                                     onClick={() => setLegalDisclaimerDismissed(true)}
-                                                    style={{ background: "transparent", border: "none", color: "rgba(240,237,232,0.5)", cursor: "pointer", fontSize: 13 }}
+                                                    style={{ background: "transparent", border: "none", color: "rgba(240,237,232,0.7)", cursor: "pointer", fontSize: 13 }}
                                                 >
                                                     X
                                                 </button>
@@ -1869,13 +1869,13 @@ export default function DocumentProductionScreen({
                                                     >
                                                         {artifactSavingKind === "generated_html" ? "Saving HTML..." : "Save HTML Artifact"}
                                                     </button>
-                                                    <span style={{ fontSize: 10, color: "#666", lineHeight: 1.5 }}>
+                                                    <span style={{ fontSize: 10, color: "var(--foundry-text-secondary)", lineHeight: 1.5 }}>
                                                         PDF stays browser-controlled for now, so only DOCX and HTML artifacts are saved to the vault.
                                                     </span>
                                                 </div>
                                             </>
                                         ) : (
-                                            <div style={{ padding: "32px 18px", textAlign: "center", color: "#666", fontSize: 12, lineHeight: 1.6 }}>
+                                            <div style={{ padding: "32px 18px", textAlign: "center", color: "var(--foundry-text-secondary)", fontSize: 12, lineHeight: 1.6 }}>
                                                 <div style={{ marginBottom: linkedProducedDocumentForVault ? 10 : 0 }}>
                                                     No version content is linked yet for this vault record. If this is an older mirrored document, open the original saved document from Generate or create a fresh version from Studio.
                                                 </div>
@@ -1968,14 +1968,14 @@ export default function DocumentProductionScreen({
                         style={{
                             display: "flex", alignItems: "center", gap: 5,
                             background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
-                            borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "#888", fontSize: "var(--foundry-app-header-button-font)", cursor: "pointer",
+                            borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "rgba(240,237,232,0.62)", fontSize: "var(--foundry-app-header-button-font)", cursor: "pointer",
                         }}
                     >
                         <ArrowLeft size={"var(--foundry-app-header-icon-size)"} /> Hub
                     </button>
                     <div>
                         <div style={{ fontSize: "var(--foundry-app-header-title-font)", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>Document Vault</div>
-                        <div style={{ fontSize: "var(--foundry-app-header-meta-font)", color: "#555" }}>Vault dashboard plus Forge generation · {DOC_CATEGORIES.reduce((n, c) => n + c.documents.length, 0)} documents</div>
+                        <div style={{ fontSize: "var(--foundry-app-header-meta-font)", color: "var(--foundry-text-muted)" }}>Vault dashboard plus Forge generation · {DOC_CATEGORIES.reduce((n, c) => n + c.documents.length, 0)} documents</div>
                     </div>
                 </div>
                 <ModeTabs mode={surfaceMode} onChange={setSurfaceMode} />
@@ -1986,7 +1986,7 @@ export default function DocumentProductionScreen({
                         <div style={{ fontSize: "clamp(22px, 2vw, 24px)", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 6, lineHeight: 1.25 }}>
                             What do you need?
                         </div>
-                        <div style={{ fontSize: "var(--foundry-doc-card-body-font)", color: "#666", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", lineHeight: 1.7 }}>
+                        <div style={{ fontSize: "var(--foundry-doc-card-body-font)", color: "var(--foundry-text-secondary)", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", lineHeight: 1.7 }}>
                             Every document a founder needs, from day one through exit — generated by Forge and tailored to your business.
                         </div>
                     </div>
@@ -1994,11 +1994,11 @@ export default function DocumentProductionScreen({
                     {/* Recent documents */}
                     {(documents.length > 0 || documentsLoading) && (
                         <div style={{ marginBottom: 28, animation: "fadeSlideUp 0.4s ease 0.02s both" }}>
-                            <div style={{ fontSize: "var(--foundry-doc-card-meta-font)", color: "#555", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
+                            <div style={{ fontSize: "var(--foundry-doc-card-meta-font)", color: "var(--foundry-text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
                                 Recent Documents
                             </div>
                             {documentsLoading ? (
-                                <div style={{ fontSize: "var(--foundry-doc-card-body-font)", color: "#444" }}>Loading...</div>
+                                <div style={{ fontSize: "var(--foundry-doc-card-body-font)", color: "var(--foundry-text-secondary)" }}>Loading...</div>
                             ) : (
                                 <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
                                     {documents.slice(0, 4).map(doc => (
@@ -2014,13 +2014,13 @@ export default function DocumentProductionScreen({
                                         >
                                             <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 2 }}>
                                                 <span style={{ fontSize: "var(--foundry-doc-card-large-font)", color: "#C8C4BE", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.title}</span>
-                                                <span style={{ fontSize: "var(--foundry-doc-card-meta-font)", color: "#555", flexShrink: 0 }}>{new Date(doc.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+                                                <span style={{ fontSize: "var(--foundry-doc-card-meta-font)", color: "var(--foundry-text-muted)", flexShrink: 0 }}>{new Date(doc.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
                                             </div>
-                                            <div style={{ fontSize: "var(--foundry-doc-card-meta-font)", color: "#555" }}>{doc.docType} · {doc.audience} · {doc.tone}</div>
+                                            <div style={{ fontSize: "var(--foundry-doc-card-meta-font)", color: "var(--foundry-text-muted)" }}>{doc.docType} · {doc.audience} · {doc.tone}</div>
                                         </button>
                                     ))}
                                     {documents.length > 4 && (
-                                        <div style={{ fontSize: "var(--foundry-doc-card-meta-font)", color: "#444", textAlign: "center", paddingTop: 4 }}>
+                                        <div style={{ fontSize: "var(--foundry-doc-card-meta-font)", color: "var(--foundry-text-secondary)", textAlign: "center", paddingTop: 4 }}>
                                             +{documents.length - 4} more saved
                                         </div>
                                     )}
@@ -2030,7 +2030,7 @@ export default function DocumentProductionScreen({
                     )}
 
                     {/* Category grid */}
-                    <div style={{ fontSize: "var(--foundry-doc-card-meta-font)", color: "#555", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>
+                    <div style={{ fontSize: "var(--foundry-doc-card-meta-font)", color: "var(--foundry-text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>
                         Document Categories
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -2073,7 +2073,7 @@ export default function DocumentProductionScreen({
                                 <div style={{
                                     flexShrink: 0, padding: "3px 9px", borderRadius: 20,
                                     background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
-                                    fontSize: "var(--foundry-doc-card-body-font)", color: "#666", fontWeight: 600,
+                                    fontSize: "var(--foundry-doc-card-body-font)", color: "var(--foundry-text-secondary)", fontWeight: 600,
                                 }}>
                                     {cat.documents.length}
                                 </div>
@@ -2191,10 +2191,10 @@ export default function DocumentProductionScreen({
                     <div style={{ marginBottom: 24, padding: "16px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.02)", animation: "fadeSlideUp 0.3s ease both" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                             <CategoryIcon name={selectedCategory.icon} size={16} color="#E8622A" />
-                            <span style={{ fontSize: "var(--foundry-doc-card-meta-font)", color: "#555", textTransform: "uppercase", letterSpacing: "0.08em" }}>{selectedCategory.name}</span>
+                            <span style={{ fontSize: "var(--foundry-doc-card-meta-font)", color: "var(--foundry-text-muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>{selectedCategory.name}</span>
                         </div>
                         <div style={{ fontSize: "calc(var(--foundry-doc-card-title-font) + 1px)", color: "#C8C4BE", fontWeight: 600, marginBottom: 8 }}>{selectedDoc.name}</div>
-                        <div style={{ fontSize: "var(--foundry-doc-card-body-font)", color: "#666", lineHeight: 1.6 }}>{selectedDoc.whenToUse}</div>
+                        <div style={{ fontSize: "var(--foundry-doc-card-body-font)", color: "var(--foundry-text-secondary)", lineHeight: 1.6 }}>{selectedDoc.whenToUse}</div>
                         <div style={{ display: "flex", gap: 5, marginTop: 8, flexWrap: "wrap" }}>
                             {selectedDoc.isMostPopular && <PopularBadge />}
                             {selectedDoc.isStateAware && <StateAwareBadge />}
@@ -2204,7 +2204,7 @@ export default function DocumentProductionScreen({
                     {/* Audience */}
                     <div style={{ marginBottom: 20, animation: "fadeSlideUp 0.3s ease 0.08s both" }}>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 8 }}>
-                            <div style={{ fontSize: "var(--foundry-doc-card-meta-font)", color: "#555", letterSpacing: "0.1em", textTransform: "uppercase" }}>Audience</div>
+                            <div style={{ fontSize: "var(--foundry-doc-card-meta-font)", color: "var(--foundry-text-muted)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Audience</div>
                             {suggestedSettings && (
                                 <div style={{ fontSize: "var(--foundry-doc-card-meta-font)", color: "#E8622A" }}>Suggested: {suggestedSettings.audience}</div>
                             )}
@@ -2215,7 +2215,7 @@ export default function DocumentProductionScreen({
                     {/* Tone */}
                     <div style={{ marginBottom: 22, animation: "fadeSlideUp 0.3s ease 0.11s both" }}>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 8 }}>
-                            <div style={{ fontSize: "var(--foundry-doc-card-meta-font)", color: "#555", letterSpacing: "0.1em", textTransform: "uppercase" }}>Tone</div>
+                            <div style={{ fontSize: "var(--foundry-doc-card-meta-font)", color: "var(--foundry-text-muted)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Tone</div>
                             {suggestedSettings && (
                                 <div style={{ fontSize: "var(--foundry-doc-card-meta-font)", color: "#E8622A" }}>Suggested: {suggestedSettings.tone}</div>
                             )}
@@ -2252,7 +2252,7 @@ export default function DocumentProductionScreen({
                                     <div style={{ fontSize: 12, color: "#F0EDE8", fontWeight: 700, marginBottom: 3 }}>
                                         Document readiness
                                     </div>
-                                    <div style={{ fontSize: 11, color: "#777", lineHeight: 1.5 }}>
+                                    <div style={{ fontSize: 11, color: "var(--foundry-text-muted)", lineHeight: 1.5 }}>
                                         {completedRequiredCount} of {requiredFieldCount} required fields complete
                                     </div>
                                 </div>
@@ -2283,7 +2283,7 @@ export default function DocumentProductionScreen({
                                     <span style={{ display: "block", fontSize: 12, color: "#D8D4CE", fontWeight: 700, marginBottom: 2 }}>
                                         Auto-fill current date
                                     </span>
-                                    <span style={{ display: "block", fontSize: 10, color: "#666", lineHeight: 1.5 }}>
+                                    <span style={{ display: "block", fontSize: 10, color: "var(--foundry-text-secondary)", lineHeight: 1.5 }}>
                                         Uses {formatLongDate(todayIso)} for document and signature dates unless you override it.
                                     </span>
                                 </span>
@@ -2306,7 +2306,7 @@ export default function DocumentProductionScreen({
 
                     {/* Smart prompt suggestions */}
                     <div style={{ marginBottom: 22, animation: "fadeSlideUp 0.3s ease 0.14s both" }}>
-                        <div style={{ fontSize: 10, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Quick Instructions</div>
+                        <div style={{ fontSize: 10, color: "var(--foundry-text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>Quick Instructions</div>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
                             {smartPrompts.map(p => (
                                 <button
@@ -2381,21 +2381,21 @@ export default function DocumentProductionScreen({
                         style={{
                             display: "flex", alignItems: "center", gap: 5,
                             background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
-                            borderRadius: 8, padding: "5px 11px", color: "#888", fontSize: 12, cursor: "pointer",
+                            borderRadius: 8, padding: "5px 11px", color: "rgba(240,237,232,0.62)", fontSize: 12, cursor: "pointer",
                         }}
                     >
                         <ArrowLeft size={12} /> Hub
                     </button>
                     <div>
                         <div style={{ fontSize: 14, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, lineHeight: 1.2 }}>Document Studio</div>
-                        <div style={{ fontSize: 10, color: "#555" }}>
+                        <div style={{ fontSize: 10, color: "var(--foundry-text-muted)" }}>
                             {docType} · {audience} · {tone}{docState ? ` · ${docState}` : ""}{saveLabel ? ` · ${saveLabel}` : ""}
                         </div>
                     </div>
                 </div>
                 <button
                     onClick={resetToCategories}
-                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 8, padding: "5px 12px", color: "#666", fontSize: 11, cursor: "pointer" }}
+                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 8, padding: "5px 12px", color: "var(--foundry-text-secondary)", fontSize: 11, cursor: "pointer" }}
                 >
                     New Doc
                 </button>
@@ -2435,13 +2435,13 @@ export default function DocumentProductionScreen({
                 {activeTab === "preview" && (
                     <>
                         {generating && !currentDoc && (
-                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, padding: "80px 0", color: "#555" }}>
+                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, padding: "80px 0", color: "var(--foundry-text-muted)" }}>
                                 <div style={{ display: "flex", gap: 6 }}>
                                     {[0, 1, 2].map(i => (
                                         <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: "#E8622A", animation: "forgePulse 1.4s infinite ease-in-out", animationDelay: `${i * 0.2}s` }} />
                                     ))}
                                 </div>
-                                <div style={{ fontSize: 13, color: "#555", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic" }}>Forge is drafting your document...</div>
+                                <div style={{ fontSize: 13, color: "var(--foundry-text-muted)", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic" }}>Forge is drafting your document...</div>
                             </div>
                         )}
 
@@ -2511,7 +2511,7 @@ export default function DocumentProductionScreen({
                     <div style={{ maxWidth: 600, margin: "0 auto" }}>
                         <div style={{ marginBottom: 20, animation: "fadeSlideUp 0.3s ease both" }}>
                             <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 4 }}>Refine your document</div>
-                            <div style={{ fontSize: 12, color: "#555", lineHeight: 1.6 }}>
+                            <div style={{ fontSize: 12, color: "var(--foundry-text-muted)", lineHeight: 1.6 }}>
                                 Give Forge a direction and it will revise the entire document. Your previous version is preserved in history.
                             </div>
                         </div>
@@ -2553,7 +2553,7 @@ export default function DocumentProductionScreen({
                         <div style={{ display: "flex", gap: 8, animation: "fadeSlideUp 0.3s ease 0.15s both" }}>
                             <button
                                 onClick={() => setActiveTab("preview")}
-                                style={{ flex: 1, padding: "12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#666", fontSize: 13, cursor: "pointer" }}
+                                style={{ flex: 1, padding: "12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "var(--foundry-text-secondary)", fontSize: 13, cursor: "pointer" }}
                             >
                                 View Current
                             </button>
@@ -2568,10 +2568,10 @@ export default function DocumentProductionScreen({
 
                         {history.length > 1 && (
                             <div style={{ marginTop: 28 }}>
-                                <div style={{ fontSize: 10, color: "#444", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>Refinement History</div>
+                                <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>Refinement History</div>
                                 {history.slice(1).map((rec, i) => (
                                     <div key={i} style={{ padding: "10px 12px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 10, marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
-                                        <div style={{ fontSize: 12, color: "#666", flex: 1 }}>"{rec.instruction}"</div>
+                                        <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", flex: 1 }}>"{rec.instruction}"</div>
                                         <button
                                             onClick={() => {
                                                 setCurrentDoc(rec.doc);
@@ -2579,7 +2579,7 @@ export default function DocumentProductionScreen({
                                                 setHistory(nextHistory);
                                                 persistDocument(rec.doc, nextHistory);
                                             }}
-                                            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 6, padding: "3px 10px", color: "#555", fontSize: 10, cursor: "pointer", flexShrink: 0 }}
+                                            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 6, padding: "3px 10px", color: "var(--foundry-text-muted)", fontSize: 10, cursor: "pointer", flexShrink: 0 }}
                                         >
                                             Restore
                                         </button>

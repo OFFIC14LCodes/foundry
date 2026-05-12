@@ -4315,8 +4315,10 @@ export async function loadRecentSummaries(
     }));
 }
 
-// Upserts a coaching summary for today's date into daily_chat_summaries.
-// If a row already exists for (user_id, stage_id, today) it is updated in place.
+// Saves an auto-generated coaching summary for today's stage session.
+// Checks for an existing auto-summary (identified by the Stage X title pattern)
+// and updates it; otherwise inserts a new row. Does not use ON CONFLICT since
+// the unique constraint was dropped to allow multiple manual archives per day.
 export async function persistStageSummaryToday(
     userId: string,
     stageId: number,
@@ -4328,10 +4330,30 @@ export async function persistStageSummaryToday(
     const today = getLocalDateKey();
     const title = `Stage ${stageId} — ${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
 
-    const { error } = await supabase
+    const { data: existing, error: selectError } = await supabase
         .from("daily_chat_summaries")
-        .upsert(
-            {
+        .select("id")
+        .eq("user_id", userId)
+        .eq("stage_id", stageId)
+        .eq("summary_date", today)
+        .like("title", `Stage ${stageId} — %`)
+        .maybeSingle();
+
+    if (selectError && !isMissingRelationError(selectError, "daily_chat_summaries")) {
+        console.error("persistStageSummaryToday select error:", selectError.message);
+        return;
+    }
+
+    if (existing?.id) {
+        const { error } = await supabase
+            .from("daily_chat_summaries")
+            .update({ summary, message_count: messageCount, updated_at: new Date().toISOString() })
+            .eq("id", existing.id);
+        if (error) console.error("persistStageSummaryToday update error:", error.message);
+    } else {
+        const { error } = await supabase
+            .from("daily_chat_summaries")
+            .insert({
                 user_id: userId,
                 stage_id: stageId,
                 summary_date: today,
@@ -4339,16 +4361,16 @@ export async function persistStageSummaryToday(
                 summary,
                 message_count: messageCount,
                 updated_at: new Date().toISOString(),
-            },
-            { onConflict: "user_id,stage_id,summary_date" }
-        );
-
-    if (error) {
-        if (isMissingRelationError(error, "daily_chat_summaries")) {
-            dailyChatSummariesAvailable = false;
-            return;
+            });
+        if (error) {
+            if (isMissingRelationError(error, "daily_chat_summaries")) {
+                dailyChatSummariesAvailable = false;
+                return;
+            }
+            console.error("persistStageSummaryToday insert error:", error.message);
+        } else {
+            dailyChatSummariesAvailable = true;
         }
-        console.error("persistStageSummaryToday error:", error.message);
     }
 }
 

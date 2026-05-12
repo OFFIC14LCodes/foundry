@@ -300,7 +300,7 @@ export function AnimatedChatText({ text, createdAt }: { text: string; createdAt?
     );
 }
 
-export function MessageActions({ text }: { text: string }) {
+export function MessageActions({ text, onApplyToContext }: { text: string; onApplyToContext?: () => void }) {
     const [reaction, setReaction] = useState<"up" | "down" | null>(null);
     const [copied, setCopied] = useState(false);
 
@@ -379,6 +379,22 @@ export function MessageActions({ text }: { text: string }) {
                     </svg>
                 )}
             </button>
+            {onApplyToContext && (
+                <>
+                    <div style={{ width: 1, height: 10, background: "rgba(255,255,255,0.08)", margin: "0 2px" }} />
+                    <button
+                        onClick={onApplyToContext}
+                        title="Apply this to..."
+                        style={{ ...btnBase, color: "#3a3a3a", width: 22, height: 22 }}
+                        onMouseEnter={e => { e.currentTarget.style.color = "#A78BFA"; }}
+                        onMouseLeave={e => { e.currentTarget.style.color = "#3a3a3a"; }}
+                    >
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                            <path d="M8 2v12M2 8h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                        </svg>
+                    </button>
+                </>
+            )}
         </div>
     );
 }

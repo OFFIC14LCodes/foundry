@@ -127,7 +127,7 @@ export default function VaultDetailPanel(props: {
                 <div style={{ padding: "40px 28px", textAlign: "center" }}>
                     <FolderOpen size={30} color="#555" style={{ marginBottom: 10 }} />
                     <div style={{ fontSize: 15, color: "#D0CCC6", marginBottom: 4 }}>Select a document</div>
-                    <div style={{ fontSize: 12, color: "#666", lineHeight: 1.6 }}>
+                    <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.6 }}>
                         Choose a vault document to inspect its content, versions, files, and future signature state.
                     </div>
                 </div>
@@ -135,13 +135,13 @@ export default function VaultDetailPanel(props: {
                 <>
                     <div style={{ padding: "18px 18px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                         {loading || !document ? (
-                            <div style={{ color: "#666", fontSize: 12 }}>Loading document detail...</div>
+                            <div style={{ color: "var(--foundry-text-secondary)", fontSize: 12 }}>Loading document detail...</div>
                         ) : (
                             <>
                                 <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", marginBottom: 10 }}>
                                     <div style={{ minWidth: 0 }}>
                                         <div style={{ fontSize: 20, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, lineHeight: 1.25 }}>{document.title}</div>
-                                        <div style={{ fontSize: 12, color: "#777", marginTop: 5 }}>
+                                        <div style={{ fontSize: 12, color: "var(--foundry-text-muted)", marginTop: 5 }}>
                                             {document.docType}
                                             {document.category ? ` · ${document.category}` : ""}
                                             {document.folderId ? ` · ${folderNameById[document.folderId] || "Folder"}` : " · Unfiled"}
@@ -149,7 +149,7 @@ export default function VaultDetailPanel(props: {
                                     </div>
                                     <StatusBadge status={document.status} />
                                 </div>
-                                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, fontSize: 11, color: "#666" }}>
+                                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, fontSize: 11, color: "var(--foundry-text-secondary)" }}>
                                     <span>Created {formatShortDate(document.createdAt)}</span>
                                     <span>Updated {formatShortDate(document.updatedAt)}</span>
                                     <span>{getVersionPreviewLabel(versionCount)}</span>
@@ -159,7 +159,7 @@ export default function VaultDetailPanel(props: {
                                     {!document.currentVersionId && <span>Legacy mirror pending full version linkage</span>}
                                 </div>
                                 <div style={{ marginTop: 10, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                                    <span style={{ fontSize: 11, color: "#777" }}>Folder</span>
+                                    <span style={{ fontSize: 11, color: "var(--foundry-text-muted)" }}>Folder</span>
                                     <select
                                         value={document.folderId ?? "unfiled"}
                                         onChange={(event) => onMoveToFolder(document.id, event.target.value === "unfiled" ? null : event.target.value)}
@@ -171,7 +171,7 @@ export default function VaultDetailPanel(props: {
                                             <option key={folder.id} value={folder.id}>{folder.name}</option>
                                         ))}
                                     </select>
-                                    {movingDocumentId === document.id && <span style={{ fontSize: 11, color: "#666" }}>Moving...</span>}
+                                    {movingDocumentId === document.id && <span style={{ fontSize: 11, color: "var(--foundry-text-secondary)" }}>Moving...</span>}
                                 </div>
                             </>
                         )}
@@ -192,13 +192,13 @@ export default function VaultDetailPanel(props: {
                                     <div style={{ border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, background: "rgba(255,255,255,0.018)", overflow: "hidden" }}>
                                         <div style={{ padding: "12px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
                                             <div style={{ fontSize: 13, color: "#F0EDE8", fontWeight: 600 }}>Version History</div>
-                                            <div style={{ fontSize: 10, color: "#666", marginTop: 2 }}>Immutable snapshots from the normalized vault</div>
+                                            <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", marginTop: 2 }}>Immutable snapshots from the normalized vault</div>
                                         </div>
                                         <div style={{ maxHeight: 290, overflowY: "auto", padding: 12 }}>
-                                            {versionsLoading && <div style={{ fontSize: 12, color: "#666", padding: "8px 4px" }}>Loading versions...</div>}
+                                            {versionsLoading && <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", padding: "8px 4px" }}>Loading versions...</div>}
                                             {!versionsLoading && versionsError && <div style={{ fontSize: 12, color: "#D28B76", lineHeight: 1.6, padding: "8px 4px" }}>{versionsError}</div>}
                                             {!versionsLoading && !versionsError && versions.length === 0 && (
-                                                <div style={{ padding: "20px 8px", textAlign: "center", fontSize: 12, color: "#666", lineHeight: 1.6 }}>
+                                                <div style={{ padding: "20px 8px", textAlign: "center", fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.6 }}>
                                                     No versions found for this document yet.
                                                 </div>
                                             )}
@@ -223,10 +223,10 @@ export default function VaultDetailPanel(props: {
                                                     >
                                                         <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 4 }}>
                                                             <span style={{ fontSize: 12, color: "#F0EDE8", fontWeight: 600 }}>Version {version.versionNumber}</span>
-                                                            <span style={{ fontSize: 10, color: "#666" }}>{formatShortDate(version.createdAt)}</span>
+                                                            <span style={{ fontSize: 10, color: "var(--foundry-text-secondary)" }}>{formatShortDate(version.createdAt)}</span>
                                                         </div>
-                                                        <div style={{ fontSize: 11, color: "#777", marginBottom: 4 }}>{version.source}</div>
-                                                        <div style={{ fontSize: 11, color: "#666", lineHeight: 1.55 }}>
+                                                        <div style={{ fontSize: 11, color: "var(--foundry-text-muted)", marginBottom: 4 }}>{version.source}</div>
+                                                        <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)", lineHeight: 1.55 }}>
                                                             {version.changeSummary || "No change summary provided."}
                                                         </div>
                                                         {!isLatest && (
@@ -272,7 +272,7 @@ export default function VaultDetailPanel(props: {
                             <div style={{ fontSize: 18, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>Compare Versions</div>
                             <button
                                 onClick={() => setCompareVersion(null)}
-                                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, color: "#888", padding: "6px 10px", cursor: "pointer" }}
+                                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, color: "rgba(240,237,232,0.62)", padding: "6px 10px", cursor: "pointer" }}
                             >
                                 Close
                             </button>
@@ -291,7 +291,7 @@ export default function VaultDetailPanel(props: {
                         )}
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                             <div>
-                                <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, color: "rgba(240,237,232,0.45)", marginBottom: 8 }}>
+                                <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, color: "rgba(240,237,232,0.62)", marginBottom: 8 }}>
                                     Version {compareVersion.versionNumber} — {formatShortDate(compareVersion.createdAt)}
                                 </div>
                                 <div style={{ maxHeight: "62vh", overflowY: "auto", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: 14, background: "rgba(255,255,255,0.02)" }}>
@@ -299,7 +299,7 @@ export default function VaultDetailPanel(props: {
                                 </div>
                             </div>
                             <div>
-                                <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, color: "rgba(240,237,232,0.45)", marginBottom: 8 }}>
+                                <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, color: "rgba(240,237,232,0.62)", marginBottom: 8 }}>
                                     Latest — {formatShortDate(latestVersion.createdAt)}
                                 </div>
                                 <div style={{ maxHeight: "62vh", overflowY: "auto", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: 14, background: "rgba(255,255,255,0.02)" }}>

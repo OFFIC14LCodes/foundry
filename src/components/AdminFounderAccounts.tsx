@@ -273,7 +273,7 @@ ${summariesText}`;
                         <div style={{ fontSize: 22, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 4 }}>
                             {user.name ?? "Unnamed Founder"}
                         </div>
-                        <div style={{ fontSize: 13, color: "#888", marginBottom: 8 }}>{user.email ?? "—"}</div>
+                        <div style={{ fontSize: 13, color: "rgba(240,237,232,0.62)", marginBottom: 8 }}>{user.email ?? "—"}</div>
                         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                             <StageBadge stage={stage} />
                             <PaidPill paid={paid} />
@@ -291,7 +291,7 @@ ${summariesText}`;
                             border: "1px solid rgba(255,255,255,0.1)",
                             borderRadius: 8,
                             padding: "7px 12px",
-                            color: "#888",
+                            color: "rgba(240,237,232,0.62)",
                             fontSize: 12,
                             cursor: "pointer",
                             flexShrink: 0,
@@ -312,14 +312,14 @@ ${summariesText}`;
                         { label: "Cost 30d", value: loadingDetail ? "…" : formatEstimatedCost(detail?.tokenUsage30d.estimatedCostUsd ?? 0) },
                     ].map(item => (
                         <div key={item.label} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "12px 14px" }}>
-                            <div style={{ fontSize: 10, color: "#666", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>{item.label}</div>
+                            <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>{item.label}</div>
                             <div style={{ fontSize: 14, color: "#F0EDE8", fontWeight: 600 }}>{item.value}</div>
                         </div>
                     ))}
                 </div>
 
                 {loadingDetail ? (
-                    <div style={{ fontSize: 13, color: "#666", padding: "8px 0" }}>Loading account data…</div>
+                    <div style={{ fontSize: 13, color: "var(--foundry-text-secondary)", padding: "8px 0" }}>Loading account data…</div>
                 ) : detail && (
                     <>
                         <div style={{ background: "rgba(76,175,138,0.05)", border: "1px solid rgba(76,175,138,0.14)", borderRadius: 16, padding: 16 }}>
@@ -332,17 +332,17 @@ ${summariesText}`;
                                     { label: "Messages · 30d", value: String(detail.tokenUsage30d.messageCount) },
                                 ].map(item => (
                                     <div key={item.label} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "11px 12px" }}>
-                                        <div style={{ fontSize: 10, color: "#666", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>{item.label}</div>
+                                        <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>{item.label}</div>
                                         <div style={{ fontSize: 14, color: "#F0EDE8", fontWeight: 700 }}>{item.value}</div>
                                     </div>
                                 ))}
                             </div>
-                            <div style={{ fontSize: 11, color: "#777", lineHeight: 1.6 }}>{tokenUsageEstimateNote()}</div>
+                            <div style={{ fontSize: 11, color: "var(--foundry-text-muted)", lineHeight: 1.6 }}>{tokenUsageEstimateNote()}</div>
                         </div>
 
                         {/* Stage Progress */}
                         <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: 16 }}>
-                            <div style={{ fontSize: 10, color: "#888", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 12 }}>Stage Progress</div>
+                            <div style={{ fontSize: 10, color: "rgba(240,237,232,0.62)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 12 }}>Stage Progress</div>
                             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                                 {[1, 2, 3, 4, 5, 6].map(stageId => {
                                     const row = detail.stageProgress.find(r => r.stage_id === stageId);
@@ -368,16 +368,16 @@ ${summariesText}`;
                         {/* Archive Summaries */}
                         {detail.recentSummaries.length > 0 && (
                             <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: 16 }}>
-                                <div style={{ fontSize: 10, color: "#888", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 12 }}>Recent Archive (last 5)</div>
+                                <div style={{ fontSize: 10, color: "rgba(240,237,232,0.62)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 12 }}>Recent Archive (last 5)</div>
                                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                                     {detail.recentSummaries.map(s => (
                                         <div key={s.id} style={{ borderLeft: `2px solid ${(STAGE_COLORS as Record<number, string>)[s.stage_id] ?? "#444"}`, paddingLeft: 12 }}>
                                             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
                                                 <span style={{ fontSize: 12, fontWeight: 600, color: "#F0EDE8" }}>{s.title ?? "Untitled"}</span>
-                                                <span style={{ fontSize: 10, color: "#555" }}>{formatDate(s.created_at)}</span>
+                                                <span style={{ fontSize: 10, color: "var(--foundry-text-muted)" }}>{formatDate(s.created_at)}</span>
                                             </div>
                                             {s.summary && (
-                                                <div style={{ fontSize: 12, color: "#888", lineHeight: 1.6 }}>
+                                                <div style={{ fontSize: 12, color: "rgba(240,237,232,0.62)", lineHeight: 1.6 }}>
                                                     {s.summary.length > 160 ? s.summary.slice(0, 160) + "…" : s.summary}
                                                 </div>
                                             )}
@@ -394,7 +394,7 @@ ${summariesText}`;
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: summary ? 14 : 0 }}>
                         <div>
                             <div style={{ fontSize: 13, fontWeight: 600, color: "#F0EDE8", marginBottom: 2 }}>Forge Account Summary</div>
-                            {summary && <div style={{ fontSize: 10, color: "#666" }}>Generated {formatRelative(summary.generatedAt)}</div>}
+                            {summary && <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)" }}>Generated {formatRelative(summary.generatedAt)}</div>}
                         </div>
                         <button
                             onClick={() => void generateSummary()}
@@ -522,7 +522,7 @@ export default function AdminFounderAccounts({ onBack }: Props) {
                 </button>
                 <span style={{ fontSize: 15, fontWeight: 600, color: "#F0EDE8" }}>Founder Accounts</span>
                 {!loading && (
-                    <span style={{ fontSize: 12, color: "#555", marginLeft: 4 }}>
+                    <span style={{ fontSize: 12, color: "var(--foundry-text-muted)", marginLeft: 4 }}>
                         {filtered.length} founder{filtered.length !== 1 ? "s" : ""}
                     </span>
                 )}
@@ -554,7 +554,7 @@ export default function AdminFounderAccounts({ onBack }: Props) {
             <div style={{ flex: 1, overflowY: "auto", padding: "12px 16px 32px" }}>
                 <div style={{ maxWidth: 900, margin: "0 auto" }}>
                     {loading ? (
-                        <div style={{ fontSize: 13, color: "#666", padding: "24px 0" }}>Loading founders…</div>
+                        <div style={{ fontSize: 13, color: "var(--foundry-text-secondary)", padding: "24px 0" }}>Loading founders…</div>
                     ) : error ? (
                         <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "24px 0" }}>
                             <div style={{ fontSize: 13, color: "#D28B76" }}>{error}</div>
@@ -575,7 +575,7 @@ export default function AdminFounderAccounts({ onBack }: Props) {
                             </button>
                         </div>
                     ) : filtered.length === 0 ? (
-                        <div style={{ fontSize: 13, color: "#666", padding: "24px 0" }}>
+                        <div style={{ fontSize: 13, color: "var(--foundry-text-secondary)", padding: "24px 0" }}>
                             {search ? "No founders match that search." : "No founders registered yet."}
                         </div>
                     ) : (
@@ -588,7 +588,7 @@ export default function AdminFounderAccounts({ onBack }: Props) {
                                     gap: "0 12px",
                                     padding: "0 14px 6px",
                                     fontSize: 10,
-                                    color: "#555",
+                                    color: "var(--foundry-text-muted)",
                                     letterSpacing: "0.1em",
                                     textTransform: "uppercase",
                                 }}
@@ -635,9 +635,9 @@ export default function AdminFounderAccounts({ onBack }: Props) {
                                         }}
                                     >
                                         <div style={{ fontSize: 13, color: "#F0EDE8", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                            {user.name ?? <span style={{ color: "#555" }}>Unnamed</span>}
+                                            {user.name ?? <span style={{ color: "var(--foundry-text-muted)" }}>Unnamed</span>}
                                         </div>
-                                        <div style={{ fontSize: 12, color: "#888", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                        <div style={{ fontSize: 12, color: "rgba(240,237,232,0.62)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                             {user.email ?? "—"}
                                         </div>
                                         <StageBadge stage={stage} />
@@ -645,8 +645,8 @@ export default function AdminFounderAccounts({ onBack }: Props) {
                                         <div style={{ fontSize: 11, color: usage && usage.estimatedCostUsd > 0 ? "#4CAF8A" : "#666", whiteSpace: "nowrap", fontWeight: 700 }}>
                                             {formatEstimatedCost(usage?.estimatedCostUsd ?? 0)}
                                         </div>
-                                        <div style={{ fontSize: 11, color: "#666", whiteSpace: "nowrap" }}>{formatDate(user.created_at)}</div>
-                                        <div style={{ fontSize: 11, color: "#666", whiteSpace: "nowrap" }}>{formatRelative(user.last_active_at)}</div>
+                                        <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)", whiteSpace: "nowrap" }}>{formatDate(user.created_at)}</div>
+                                        <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)", whiteSpace: "nowrap" }}>{formatRelative(user.last_active_at)}</div>
                                     </button>
                                 );
                             })}

@@ -87,7 +87,7 @@ export default function GlossaryModal({
                 </div>
 
                 <div style={{ marginBottom: 16 }}>
-                    <div style={{ fontSize: 10, color: "#555", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>What it means</div>
+                    <div style={{ fontSize: 10, color: "var(--foundry-text-muted)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>What it means</div>
                     <div style={{ fontSize: 14, fontFamily: "'Lora', Georgia, serif", color: "#C8C4BE", lineHeight: 1.75 }}>{entry.definition}</div>
                 </div>
 
@@ -105,8 +105,8 @@ export default function GlossaryModal({
                 </div>
 
                 <div style={{ marginBottom: 22 }}>
-                    <div style={{ fontSize: 10, color: "#555", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>Real example</div>
-                    <div style={{ fontSize: 13, fontFamily: "'Lora', Georgia, serif", color: "#888", lineHeight: 1.7 }}>{entry.usage_example}</div>
+                    <div style={{ fontSize: 10, color: "var(--foundry-text-muted)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>Real example</div>
+                    <div style={{ fontSize: 13, fontFamily: "'Lora', Georgia, serif", color: "rgba(240,237,232,0.62)", lineHeight: 1.7 }}>{entry.usage_example}</div>
                 </div>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>

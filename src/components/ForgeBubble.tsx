@@ -428,7 +428,7 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
                                 border: "1px solid rgba(255,255,255,0.08)",
                                 borderRadius: 8,
                                 padding: "5px 10px",
-                                color: "#888",
+                                color: "rgba(240,237,232,0.62)",
                                 fontSize: 11,
                                 cursor: "pointer",
                                 display: "flex",
@@ -496,7 +496,7 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
                                 <div style={{ fontSize: 13, color: "#C8C4BE", fontWeight: 500 }}>
                                     What can I help with?
                                 </div>
-                                <div style={{ fontSize: 11, color: "#555", lineHeight: 1.6, maxWidth: 240 }}>
+                                <div style={{ fontSize: 11, color: "var(--foundry-text-muted)", lineHeight: 1.6, maxWidth: 240 }}>
                                     Ask me anything about what you're seeing, or just think out loud. I'm here.
                                 </div>
                             </div>
@@ -600,7 +600,7 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
                                                 if (file.previewUrl) URL.revokeObjectURL(file.previewUrl);
                                                 setAttachedFiles(prev => prev.filter(f => f.id !== file.id));
                                             }}
-                                            style={{ background: "none", border: "none", color: "#777", cursor: "pointer", padding: 0, fontSize: 12, lineHeight: 1, flexShrink: 0 }}
+                                            style={{ background: "none", border: "none", color: "var(--foundry-text-muted)", cursor: "pointer", padding: 0, fontSize: 12, lineHeight: 1, flexShrink: 0 }}
                                         >×</button>
                                     </div>
                                 ))}

@@ -104,7 +104,7 @@ export default function MilestonesPanel({
                         ))}
                     </div>
 
-                    <div style={{ fontSize: 11, color: "#555", marginTop: 6 }}>
+                    <div style={{ fontSize: 11, color: "var(--foundry-text-muted)", marginTop: 6 }}>
                         {completedMilestones.length} of {stage.milestones.length} milestones
                         complete
                     </div>
@@ -180,7 +180,7 @@ export default function MilestonesPanel({
                                     </div>
 
                                     {!done && (
-                                        <div style={{ fontSize: 10, color: "#444", marginTop: 3 }}>
+                                        <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", marginTop: 3 }}>
                                             Discuss with Forge to unlock
                                         </div>
                                     )}
@@ -204,7 +204,7 @@ export default function MilestonesPanel({
                         <div style={{ fontSize: 14, fontFamily: "'Lora', Georgia, serif", color: "#4CAF8A", fontWeight: 600, marginBottom: 6 }}>
                             ✓ All goals complete — ready to advance
                         </div>
-                        <div style={{ fontSize: 12, color: "#888", marginBottom: 14 }}>
+                        <div style={{ fontSize: 12, color: "rgba(240,237,232,0.62)", marginBottom: 14 }}>
                             You've finished Stage {stageId}.
                             {STAGES_DATA[stageId]
                                 ? ` Stage ${stageId + 1} — ${STAGES_DATA[stageId].label} — is next. Your full chat history carries over.`
@@ -281,7 +281,7 @@ export default function MilestonesPanel({
                     <div
                         style={{
                             fontSize: 10,
-                            color: "#555",
+                            color: "var(--foundry-text-muted)",
                             letterSpacing: "0.12em",
                             textTransform: "uppercase",
                             marginBottom: 8,
@@ -295,7 +295,7 @@ export default function MilestonesPanel({
                             key={i}
                             style={{
                                 fontSize: 12,
-                                color: "#888",
+                                color: "rgba(240,237,232,0.62)",
                                 fontFamily: "'Lora', Georgia, serif",
                                 padding: "3px 0",
                             }}
@@ -317,7 +317,7 @@ export default function MilestonesPanel({
                     <div
                         style={{
                             fontSize: 10,
-                            color: "#555",
+                            color: "var(--foundry-text-muted)",
                             letterSpacing: "0.12em",
                             textTransform: "uppercase",
                             marginBottom: 8,
@@ -331,7 +331,7 @@ export default function MilestonesPanel({
                             key={i}
                             style={{
                                 fontSize: 12,
-                                color: "#888",
+                                color: "rgba(240,237,232,0.62)",
                                 fontFamily: "'Lora', Georgia, serif",
                                 fontStyle: "italic",
                                 padding: "3px 0",

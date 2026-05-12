@@ -516,7 +516,7 @@ export default function AdminAcademyManager({ userId, onBack }: Props) {
                                     <div key={tag.id} style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", background: surface, border, borderRadius: 14, padding: "12px 14px" }}>
                                         <div>
                                             <div style={{ fontSize: 13, color: "#F0EDE8", fontWeight: 600 }}>{tag.name}</div>
-                                            <div style={{ fontSize: 11, color: "#777" }}>{tag.slug}</div>
+                                            <div style={{ fontSize: 11, color: "var(--foundry-text-muted)" }}>{tag.slug}</div>
                                         </div>
                                         <button
                                             onClick={async () => {

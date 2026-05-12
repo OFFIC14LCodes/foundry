@@ -36,7 +36,7 @@ export default function CinematicIntro({ onComplete }) {
                 <div style={{ fontSize: 11, fontFamily: "'Lora', Georgia, serif", color: "#E8622A", letterSpacing: "0.25em", textTransform: "uppercase", marginTop: 8 }}>Build Something Real</div>
             </div>
             <div style={{ opacity: phase >= 3 ? 1 : 0, transform: phase >= 3 ? "translateY(0)" : "translateY(8px)", transition: "all 0.8s ease", textAlign: "center", maxWidth: 380, padding: "0 32px" }}>
-                <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", color: "rgba(240,237,232,0.5)", lineHeight: 1.7 }}>"Every great business started with one person who decided to try."</div>
+                <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", color: "rgba(240,237,232,0.7)", lineHeight: 1.7 }}>"Every great business started with one person who decided to try."</div>
             </div>
             <div style={{ position: "absolute", inset: 0, background: "#080809", opacity: phase >= 4 ? 1 : 0, transition: "opacity 0.9s ease", pointerEvents: "none" }} />
         </div>

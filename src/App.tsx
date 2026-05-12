@@ -60,6 +60,7 @@ import GlossaryModal from "./components/GlossaryModal";
 import ConceptModal from "./components/ConceptModal";
 import CinematicIntro from "./components/CinematicIntro";
 import MessageBubble from "./components/MessageBubble";
+import ForgeContextApplyCard from "./components/ForgeContextApplyCard";
 import HubPanel from "./components/HubPanel";
 import OnboardingScreen from "./components/OnboardingScreen";
 import MilestonesPanel from "./components/MilestonesPanel";
@@ -75,8 +76,15 @@ import PaywallScreen from "./components/paywall/PaywallScreen";
 import BillingReturnScreen from "./components/BillingReturnScreen";
 import { buildMarketIntelContext } from "./constants/marketPrompt";
 import { callForgeAPI, streamForgeAPI } from "./lib/forgeApi";
-import { getTeamForUser, getRecentCofounderContext, getPendingEmailInvitesForUser, respondToEmailInvite, acceptInvite } from "./lib/cofounderDb";
-import type { CofounderEmailInvite } from "./lib/cofounderDb";
+import { getTeamForUser, getRecentCofounderContext, getPendingEmailInvitesForUser, respondToEmailInvite, acceptInvite, getWorkspacesForUser, loadCofounderTasks, loadDecisions as loadCofounderDecisions } from "./lib/cofounderDb";
+import type { CofounderEmailInvite, CofounderWorkspaceSummary } from "./lib/cofounderDb";
+import {
+  createForgeMemoryItem,
+  formatForgeMemoryBlock,
+  getForgeContextLabel,
+  getRelevantForgeMemory,
+  type ActiveForgeContext,
+} from "./lib/forgeMemory";
 import { completeAcademyLesson } from "./lib/academyCompletion";
 import {
   getFounderSessionState,
@@ -330,7 +338,7 @@ async function buildRichContext(
   activeStage,
   completedByStage,
   messagesByStage,
-  userTeamId?: string | null,
+  _userTeamId?: string | null,
   currentPrompt?: string,
   recentSummaries?: StageSummary[],
   foundryDecisions?: FounderDecision[],
@@ -339,10 +347,71 @@ async function buildRichContext(
   journalEntries?: any[],
   financialSummary?: FinancialSummary | null,
   businessModelCanvas?: BusinessModelCanvasRecord | null,
+  forgeContextOptions: {
+    activeForgeContext?: ActiveForgeContext | null;
+    workspaceId?: string | null;
+    includePersonalMemory?: boolean;
+    includeWorkspaceMemory?: boolean;
+    query?: string;
+  } = {},
 ) {
+  const selectedWorkspaceId = forgeContextOptions.workspaceId
+    ?? (forgeContextOptions.activeForgeContext?.scope === "workspace" ? forgeContextOptions.activeForgeContext.workspaceId ?? null : null);
+  const includeWorkspaceMemory = Boolean(forgeContextOptions.includeWorkspaceMemory && selectedWorkspaceId);
+  const includePersonalMemory = forgeContextOptions.includePersonalMemory !== false;
   let cofoundersContext: string | null = null;
-  if (userTeamId) {
-    try { cofoundersContext = await getRecentCofounderContext(userTeamId, 20); } catch { /* ignore */ }
+  if (selectedWorkspaceId && includeWorkspaceMemory) {
+    try { cofoundersContext = await getRecentCofounderContext(selectedWorkspaceId, 20); } catch { /* ignore */ }
+  }
+  let workspaceOperationsContext = "";
+  if (selectedWorkspaceId && includeWorkspaceMemory) {
+    try {
+      const [tasks, decisions] = await Promise.all([
+        loadCofounderTasks(selectedWorkspaceId),
+        loadCofounderDecisions(selectedWorkspaceId),
+      ]);
+      const taskLines = tasks.slice(0, 8).map(task => `- ${task.title} · ${task.status}${task.priority === "high" ? " · high priority" : ""}`);
+      const decisionLines = decisions.slice(0, 6).map(decision => `- ${decision.title}${decision.chosen_option ? ` · chose ${decision.chosen_option}` : ""}`);
+      workspaceOperationsContext = [
+        taskLines.length > 0 ? `Shared tasks:\n${taskLines.join("\n")}` : "",
+        decisionLines.length > 0 ? `Shared decisions:\n${decisionLines.join("\n")}` : "",
+      ].filter(Boolean).join("\n\n");
+    } catch { /* ignore workspace operations */ }
+  }
+  let forgeMemoryContext = "";
+  if (userId) {
+    try {
+      const scopedMemory = await getRelevantForgeMemory({
+        userId,
+        workspaceId: selectedWorkspaceId,
+        activeForgeContext: forgeContextOptions.activeForgeContext ?? null,
+        query: forgeContextOptions.query ?? currentPrompt ?? "",
+        includePersonalMemory,
+        includeWorkspaceMemory,
+      });
+      forgeMemoryContext = [
+        formatForgeMemoryBlock(
+          "PERSONAL_MEMORY",
+          scopedMemory.personal,
+          "Private memory for this founder only. Do not imply workspace members know this."
+        ),
+        formatForgeMemoryBlock(
+          "WORKSPACE_MEMORY",
+          scopedMemory.workspace,
+          "Shared workspace memory intentionally attached by a member."
+        ),
+        formatForgeMemoryBlock(
+          "PERSONAL_MEMORY",
+          scopedMemory.hybrid,
+          "Private takeaways linked to this workspace for this founder only. Reference as the founder's prior takeaway, not team knowledge."
+        ),
+        formatForgeMemoryBlock(
+          "PERSONAL_MEMORY",
+          scopedMemory.custom,
+          "Private custom-context memory for this founder only."
+        ),
+      ].filter(Boolean).join("\n\n");
+    } catch { /* ignore memory failures */ }
   }
   let recentActionOutcomesBlock = "";
   if (userId) {
@@ -424,6 +493,12 @@ COFOUNDER TEAM CONTEXT
 This founder is part of a team. The following is from their shared team chat. Use it naturally when relevant — it represents knowledge the founder should not have to repeat. Reference it when it directly bears on the current conversation.
 
 ${cofoundersContext}` : "";
+  const workspaceOperationsSection = workspaceOperationsContext ? `
+
+[COFOUNDER_CONTEXT]
+The founder selected a shared workspace context. These are shared workspace artifacts, not private personal memory.
+${workspaceOperationsContext}
+[/COFOUNDER_CONTEXT]` : "";
 
   const onboardingReviewSection = profile?.nameNeedsReview || profile?.ideaNeedsReview ? `
 
@@ -515,7 +590,7 @@ ${longitudinalBlock ? `${longitudinalBlock}` : ""}
 ${recentActionOutcomesBlock ? `${recentActionOutcomesBlock}
 
 ` : ""}
-${universalMemoryBlock ? `${universalMemoryBlock}\n\n` : ""}${journalBlock ? `${journalBlock}\n\n` : ""}${bmcBlock ? `${bmcBlock}\n\n` : ""}STAGE REFERENCES: When referencing work from another stage, wrap it like [STAGE_REF:N]text[/STAGE_REF]. Use naturally when prior work is relevant — not on every mention.${onboardingReviewSection}${cofounderSection}${methodSection}
+${universalMemoryBlock ? `${universalMemoryBlock}\n\n` : ""}${forgeMemoryContext ? `${forgeMemoryContext}\n\n` : ""}${journalBlock ? `${journalBlock}\n\n` : ""}${bmcBlock ? `${bmcBlock}\n\n` : ""}STAGE REFERENCES: When referencing work from another stage, wrap it like [STAGE_REF:N]text[/STAGE_REF]. Use naturally when prior work is relevant — not on every mention.${onboardingReviewSection}${cofounderSection}${workspaceOperationsSection}${methodSection}
   `.trim();
 
   return {
@@ -947,6 +1022,7 @@ function ForgeScreen({
   onLoadEarlierMessages = null as ((stageId: number) => void) | null,
   hasEarlierMessagesByStage = {} as Record<number, boolean>,
   loadingEarlierStage = null as number | null,
+  workspaces = [] as CofounderWorkspaceSummary[],
 }) {
   const [activeStage, setActiveStage] = useState(pendingUpgradeStage || initialStage || profile.currentStage || 1);
   const [activeTab, setActiveTab] = useState("chat");
@@ -963,6 +1039,10 @@ function ForgeScreen({
   const [glossaryTerms, setGlossaryTerms] = useState<GlossaryTerm[]>([]);
   const [conceptModal, setConceptModal] = useState<{ name: string } | null>(null);
   const [briefingDismissed, setBriefingDismissed] = useState(false);
+  const [activeForgeContext, setActiveForgeContext] = useState<ActiveForgeContext>({ scope: "personal" });
+  const [contextCardOpen, setContextCardOpen] = useState(false);
+  const [pendingApplyMessage, setPendingApplyMessage] = useState<any | null>(null);
+  const [applyStatus, setApplyStatus] = useState<string | null>(null);
 
   const [summariesByStage, setSummariesByStage] = useState<Record<number, any[]>>({ 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] });
   const [summaryModal, setSummaryModal] = useState<any | null>(null);
@@ -979,6 +1059,13 @@ function ForgeScreen({
   const [archiveFilter, setArchiveFilter] = useState<"all" | "forge" | "chatroom" | "academy" | "bubble" | "pitchpractice">("all");
   const [sessionLastSeenAt, setSessionLastSeenAt] = useState<string | null>(initialLastSeenAt);
   const processedCanvasSeedRef = useRef<string | null>(null);
+  const selectedWorkspaceId = activeForgeContext.scope === "workspace" ? activeForgeContext.workspaceId ?? null : null;
+  const richContextOptions = {
+    activeForgeContext,
+    workspaceId: selectedWorkspaceId,
+    includePersonalMemory: activeForgeContext.scope !== "workspace",
+    includeWorkspaceMemory: activeForgeContext.scope === "workspace",
+  };
 
   useEffect(() => {
     setSessionLastSeenAt(initialLastSeenAt);
@@ -1138,7 +1225,8 @@ function ForgeScreen({
       try {
         const seedContext = appendMarketContext(await buildRichContext(
           profile, activeStage, completedByStage, messagesByStage,
-          teamId, seedMessage, recentSummaries, foundryDecisions, userId, stageProgressDates, journalEntries, financialSummary, businessModelCanvas
+          teamId, seedMessage, recentSummaries, foundryDecisions, userId, stageProgressDates, journalEntries, financialSummary, businessModelCanvas,
+          { ...richContextOptions, query: seedMessage }
         ), marketReport);
         const seedReply = await callForgeAPI(
           [{ role: "user", content: seedMessage }],
@@ -1186,7 +1274,8 @@ function ForgeScreen({
         const seedMessage = journalSeedPrompt;
         const seedContext = appendMarketContext(await buildRichContext(
           profile, activeStage, completedByStage, messagesByStage,
-          teamId, seedMessage, recentSummaries, foundryDecisions, userId, stageProgressDates, journalEntries, financialSummary, businessModelCanvas
+          teamId, seedMessage, recentSummaries, foundryDecisions, userId, stageProgressDates, journalEntries, financialSummary, businessModelCanvas,
+          { ...richContextOptions, query: seedMessage }
         ), marketReport);
         setLoading(true);
         try {
@@ -1262,7 +1351,8 @@ Start with a short recap of what they told Foundry during onboarding: the busine
         stageProgressDates,
         journalEntries,
         financialSummary,
-        businessModelCanvas
+        businessModelCanvas,
+        { ...richContextOptions, query: greetingPrompt }
       ), marketReport);
 
       setLoading(true);
@@ -1637,14 +1727,14 @@ Where do you want to start?`;
                 Stage {stageData.id} — {stageData.label}
               </span>
             )}
-            <span style={{ fontSize: 10, color: "rgba(240,237,232,0.3)", fontFamily: "’DM Sans’, sans-serif", marginLeft: "auto" }}>
+            <span style={{ fontSize: 10, color: "rgba(240,237,232,0.55)", fontFamily: "’DM Sans’, sans-serif", marginLeft: "auto" }}>
               {dateLabel}
             </span>
           </div>
           <div style={{ fontSize: 15, fontFamily: "’Playfair Display’, Georgia, serif", fontWeight: 700, marginBottom: 5, lineHeight: 1.3 }}>
             {getArchiveDisplayTitle(entry.title, entry.summary, fallbackTitle)}
           </div>
-          <div style={{ fontSize: 12, color: "rgba(240,237,232,0.45)", lineHeight: 1.7 }}>
+          <div style={{ fontSize: 12, color: "rgba(240,237,232,0.62)", lineHeight: 1.7 }}>
             {getSummaryPreview(entry.summary)}
           </div>
         </button>
@@ -1776,7 +1866,8 @@ Where do you want to start?`;
         stageProgressDates,
         journalEntries,
         financialSummary,
-        businessModelCanvas
+        businessModelCanvas,
+        { ...richContextOptions, query: text }
       );
       const ctxPackage = appendArchiveSessionContext(
         appendMarketContext(baseContextPackage, marketReport),
@@ -1902,6 +1993,48 @@ ${forgeReply}`;
     }
   };
 
+  const getStageApplyText = () => {
+    if (pendingApplyMessage?.text?.trim()) return pendingApplyMessage.text.trim();
+    const latestForge = [...combinedMessages].reverse().find((message: any) => !message._stageMarker && (message.role === "forge" || message.role === "assistant") && message.text?.trim());
+    return latestForge?.text?.trim() || "";
+  };
+
+  const saveStageContextMemory = async (context: ActiveForgeContext) => {
+    const content = getStageApplyText();
+    if (!content) {
+      setApplyStatus("There is no Forge takeaway to save yet.");
+      return;
+    }
+
+    const saved = await createForgeMemoryItem({
+      userId,
+      workspaceId: context.scope === "workspace" ? context.workspaceId ?? null : null,
+      scope: context.scope === "workspace" ? "workspace" : context.scope,
+      visibility: context.scope === "workspace" ? "shared" : "private",
+      source: "stage_chat",
+      sourceRefId: `stage-${activeStage}`,
+      title: context.scope === "workspace"
+        ? `Stage ${activeStage} takeaway for ${context.workspaceName || "workspace"}`
+        : `Stage ${activeStage} personal takeaway`,
+      content: `${profile.name || "The founder"} intentionally applied this Stage ${activeStage} Forge takeaway to ${getForgeContextLabel(context)}.\n\n${content}`,
+      summary: content.replace(/\s+/g, " ").slice(0, 520),
+      customContextLabel: context.scope === "custom" ? context.customLabel ?? null : null,
+      confidence: 0.7,
+    });
+
+    if (!saved) {
+      setApplyStatus("Could not save this memory. Try again.");
+      return;
+    }
+
+    setActiveForgeContext(context);
+    setContextCardOpen(false);
+    setPendingApplyMessage(null);
+    setApplyStatus(context.scope === "workspace"
+      ? "Saved as shared workspace memory."
+      : "Saved privately to your Forge memory.");
+  };
+
   return (
     <div
       style={{
@@ -1961,7 +2094,7 @@ ${forgeReply}`;
               border: "1px solid rgba(255,255,255,0.07)",
               borderRadius: 8,
               padding: "var(--foundry-forge-header-menu-padding)",
-              color: "#666",
+              color: "var(--foundry-text-secondary)",
               fontSize: "var(--foundry-forge-header-button-font)",
               cursor: "pointer",
             }}
@@ -2019,7 +2152,7 @@ ${forgeReply}`;
                 ● Active · {completionPct}% complete
               </div>
             </div>
-            <span className="forge-screen__stage-chevron" style={{ fontSize: "var(--foundry-forge-header-stage-meta-font)", color: "#555", marginLeft: 2 }}><Icons.forge.chat size={"var(--foundry-forge-header-chevron-icon-size)"} /></span>
+            <span className="forge-screen__stage-chevron" style={{ fontSize: "var(--foundry-forge-header-stage-meta-font)", color: "var(--foundry-text-muted)", marginLeft: 2 }}><Icons.forge.chat size={"var(--foundry-forge-header-chevron-icon-size)"} /></span>
           </button>
 
           {showStageSelector && (
@@ -2106,12 +2239,12 @@ ${forgeReply}`;
                           Stage {s.id} — {s.label}
                         </div>
                         {!locked && (
-                          <div style={{ fontSize: 10, color: "#555", marginTop: 1 }}>
+                          <div style={{ fontSize: 10, color: "var(--foundry-text-muted)", marginTop: 1 }}>
                             {pct}% complete
                           </div>
                         )}
                         {locked && (
-                          <div style={{ fontSize: 10, color: "#444", marginTop: 1 }}>
+                          <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", marginTop: 1 }}>
                             Locked
                           </div>
                         )}
@@ -2144,6 +2277,18 @@ ${forgeReply}`;
             msOverflowStyle: "none",
           }}
         >
+          <div className="forge-context-indicator" title="Current Forge memory context">
+            {getForgeContextLabel(activeForgeContext)}
+          </div>
+          <button
+            className="forge-context-apply-button"
+            onClick={() => {
+              setPendingApplyMessage(null);
+              setContextCardOpen(true);
+            }}
+          >
+            Apply this to...
+          </button>
           {activeStage === 2 && (
             <button
               onClick={() => onOpenBusinessModelCanvas?.()}
@@ -2245,11 +2390,9 @@ ${forgeReply}`;
         {activeTab === "chat" && !showBriefing && (
           <>
             <div
-              className="forge-screen__content"
+              className="forge-screen__content forge-screen__content--with-workspace"
               ref={scrollRef}
               style={{
-                position: "absolute",
-                inset: 0,
                 overflowY: "auto",
                 WebkitOverflowScrolling: "touch",
                 padding: "16px",
@@ -2334,6 +2477,34 @@ ${forgeReply}`;
               />
             )}
 
+            {contextCardOpen && (
+              <ForgeContextApplyCard
+                workspaces={workspaces}
+                source="stage_chat"
+                suggestedReason="Save only the takeaway you choose. Personal memories stay private; workspace memories are shared with that workspace."
+                onSelectPersonal={() => void saveStageContextMemory({ scope: "personal" })}
+                onSelectWorkspace={(workspaceId) => {
+                  const selected = workspaces.find((workspace) => workspace.id === workspaceId);
+                  void saveStageContextMemory({
+                    scope: "workspace",
+                    workspaceId,
+                    workspaceName: selected?.business_name ?? "Workspace",
+                  });
+                }}
+                onSubmitCustom={(label) => void saveStageContextMemory({ scope: "custom", customLabel: label })}
+                onDismiss={() => {
+                  setContextCardOpen(false);
+                  setPendingApplyMessage(null);
+                }}
+              />
+            )}
+
+            {applyStatus && (
+              <div className="forge-context-card__privacy" style={{ width: "min(100%, 620px)", margin: "0 auto" }}>
+                {applyStatus}
+              </div>
+            )}
+
             {archiveSession?.entry && archiveSession.stageId === activeStage && (
               <div
                 style={{
@@ -2367,10 +2538,10 @@ ${forgeReply}`;
                     Clear
                   </button>
                 </div>
-                <div style={{ fontSize: 12, color: "#666", lineHeight: 1.7 }}>
+                <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.7 }}>
                   {getSummaryPreview(archiveSession.entry.summary)}
                 </div>
-                <div style={{ fontSize: 11, color: "#888", lineHeight: 1.6, marginTop: 10 }}>
+                <div style={{ fontSize: 11, color: "rgba(240,237,232,0.62)", lineHeight: 1.6, marginTop: 10 }}>
                   Ask follow-up questions normally. When you save, this archive card will be updated instead of creating a new one.
                 </div>
               </div>
@@ -2413,7 +2584,7 @@ ${forgeReply}`;
                       background: "rgba(255,255,255,0.03)",
                       border: "1px solid rgba(255,255,255,0.08)",
                       borderRadius: 20,
-                      fontSize: 10, color: "#555",
+                      fontSize: 10, color: "var(--foundry-text-muted)",
                       letterSpacing: "0.08em", textTransform: "uppercase" as const,
                       whiteSpace: "nowrap" as const,
                     }}>
@@ -2433,6 +2604,10 @@ ${forgeReply}`;
                   onConceptTap={(name: string) => setConceptModal({ name })}
                   renderWithBold={(t, sr, gt, ct) => renderWithBold(t, sr, gt, ct, glossaryTerms, profile.glossaryLearned || [])}
                   userName={profile?.name || "You"}
+                  onApplyToContext={(message: any) => {
+                    setPendingApplyMessage(message);
+                    setContextCardOpen(true);
+                  }}
                   onAction={(action: any) => {
                     if (action.type === "upgrade") {
                       if (onRequestUpgrade) onRequestUpgrade(action.stage || activeStage);
@@ -2487,7 +2662,7 @@ ${forgeReply}`;
                   ✓ Forge says you're ready to advance
                 </div>
 
-                <div style={{ fontSize: 12, color: "#888", marginBottom: 12 }}>
+                <div style={{ fontSize: 12, color: "rgba(240,237,232,0.62)", marginBottom: 12 }}>
                   Stage {activeStage} work is done.
                   {STAGES_DATA[activeStage]
                     ? ` Stage ${activeStage + 1} — ${STAGES_DATA[activeStage].label} — is next.`
@@ -2582,7 +2757,7 @@ ${forgeReply}`;
               <div style={{ fontSize: 18, fontFamily: "’Playfair Display’, Georgia, serif", fontWeight: 700, marginBottom: 4 }}>
                 Full Archive
               </div>
-              <div style={{ fontSize: 12, color: "#666", marginBottom: 16, lineHeight: 1.6 }}>
+              <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", marginBottom: 16, lineHeight: 1.6 }}>
                 Saved snapshots of your Forge conversations, chat sessions, and Academy lessons — all in one place.
               </div>
 
@@ -2622,11 +2797,11 @@ ${forgeReply}`;
                   {filteredEntries.map((entry) => renderArchiveCard(entry))}
                 </div>
               ) : allEntries.length === 0 ? (
-                <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "18px 16px", color: "#888", fontSize: 13, lineHeight: 1.7 }}>
+                <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "18px 16px", color: "rgba(240,237,232,0.62)", fontSize: 13, lineHeight: 1.7 }}>
                   No saved archives yet. Use Archive Chat from the chat tab whenever you want to store a named snapshot.
                 </div>
               ) : (
-                <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "18px 16px", color: "#888", fontSize: 13, lineHeight: 1.7 }}>
+                <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "18px 16px", color: "rgba(240,237,232,0.62)", fontSize: 13, lineHeight: 1.7 }}>
                   No {filterOptions.find((o) => o.key === archiveFilter)?.label} archives saved yet.
                 </div>
               )}
@@ -2703,12 +2878,12 @@ ${forgeReply}`;
             <div style={{ fontSize: 22, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 6 }}>
               {archiveSession?.entry ? "Update Archive" : "Archive Chat"}
             </div>
-            <div style={{ fontSize: 12, color: "#666", lineHeight: 1.6, marginBottom: 14 }}>
+            <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.6, marginBottom: 14 }}>
               {archiveSession?.entry
                 ? "This updates the current archive card with the new continuation. The saved date and summary will be refreshed."
                 : `This saves the current Stage ${activeStage} chat as a named archive entry and clears the live chat.`}
             </div>
-            <div style={{ fontSize: 10, color: "#888", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>
+            <div style={{ fontSize: 10, color: "rgba(240,237,232,0.62)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>
               Archive Name
             </div>
             <input
@@ -2776,7 +2951,7 @@ ${forgeReply}`;
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, gap: 12 }}>
-              <div style={{ fontSize: 11, color: "#666", lineHeight: 1.5 }}>
+              <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)", lineHeight: 1.5 }}>
                 Save this stage chat to the archive whenever you want. Nothing is archived automatically now.
               </div>
               <button
@@ -2886,6 +3061,7 @@ export default function FoundryApp() {
   const [showArchivePanel, setShowArchivePanel] = useState(false);
   const [navSidebarOpen, setNavSidebarOpen] = useState(false);
   const [userTeamId, setUserTeamId] = useState<string | null>(null);
+  const [userWorkspaces, setUserWorkspaces] = useState<CofounderWorkspaceSummary[]>([]);
   const [accountAccess, setAccountAccess] = useState<AccountAccess | null>(null);
   const [billingSubscription, setBillingSubscription] = useState<BillingSubscription | null>(null);
   const [billingRoute, setBillingRoute] = useState(() => getBillingRouteState());
@@ -2901,6 +3077,7 @@ export default function FoundryApp() {
   const [chatRoomArchive, setChatRoomArchive] = useState<any | null>(null);
   const [academyConversationEntry, setAcademyConversationEntry] = useState<AcademyTopicLaunch | null>(null);
   const [marketIntelTrendEntry, setMarketIntelTrendEntry] = useState<MarketTrend | null>(null);
+  const [claritySessionEntry, setClaritySessionEntry] = useState<{ id: string; title: string; nudgeText: string; prompt: string; signalSource?: string | null } | null>(null);
   const [archiveMutationTick, setArchiveMutationTick] = useState(0);
   const [recentSummaries, setRecentSummaries] = useState<StageSummary[]>([]);
   const [foundryDecisions, setFoundryDecisions] = useState<FounderDecision[]>([]);
@@ -2974,6 +3151,7 @@ export default function FoundryApp() {
     setSettingsView(null);
     setShowAdminHub(false);
     setUserTeamId(null);
+    setUserWorkspaces([]);
     setAccountAccess(null);
     setBillingSubscription(null);
     setBillingRoute(getBillingRouteState());
@@ -3758,6 +3936,7 @@ export default function FoundryApp() {
     setShowActionCenter(false);
     setShowChatRoom(false);
     setShowArchivePanel(false);
+    setClaritySessionEntry(null);
   };
 
   const askForgeAboutAction = (action: FoundryActionSuggestion | string) => {
@@ -3766,6 +3945,7 @@ export default function FoundryApp() {
     closeOverlayScreens();
     setAcademyConversationEntry(null);
     setMarketIntelTrendEntry(null);
+    setClaritySessionEntry(null);
     setChatRoomArchive(null);
     setForgeSeedStage(profile?.currentStage || 1);
     setForgeSeedPrompt(prompt);
@@ -3794,6 +3974,7 @@ export default function FoundryApp() {
   const openAcademyAskForgeAnything = () => {
     markMeaningfulActivity();
     setAcademyConversationEntry(null);
+    setClaritySessionEntry(null);
     setShowAcademy(false);
     setChatRoomArchive(null);
     setShowChatRoom(true);
@@ -3828,6 +4009,7 @@ export default function FoundryApp() {
     setAcademyConversationEntry(entry);
     setChatRoomArchive(null);
     setMarketIntelTrendEntry(null);
+    setClaritySessionEntry(null);
     setShowAcademy(false);
     setShowChatRoom(true);
   };
@@ -3836,7 +4018,35 @@ export default function FoundryApp() {
     markMeaningfulActivity(true);
     setMarketIntelTrendEntry(trend);
     setAcademyConversationEntry(null);
+    setClaritySessionEntry(null);
     setChatRoomArchive(null);
+    setShowMarketIntel(false);
+    setShowChatRoom(true);
+  };
+
+  const openClaritySession = (nudge: FounderNudge) => {
+    markMeaningfulActivity(true);
+    const title = nudge.signalSource?.toLowerCase().includes("pricing")
+      ? "Pricing clarity session"
+      : nudge.signalSource?.toLowerCase().includes("cash")
+        ? "Financial clarity session"
+        : "Clarity session";
+    setClaritySessionEntry({
+      id: `clarity-${nudge.id}-${Date.now()}`,
+      title,
+      nudgeText: nudge.nudgeText,
+      signalSource: nudge.signalSource,
+      prompt: `Open a quick Clarity chat with the founder.
+
+The issue or confusion that keeps showing up:
+${nudge.nudgeText}
+
+Start a focused conversation that helps them understand what is actually unresolved, why it matters, and what one practical next question or decision is. Keep it concise and conversational. This is separate from the main stage chat, and the founder can save it to the archive when finished.`,
+    });
+    setAcademyConversationEntry(null);
+    setMarketIntelTrendEntry(null);
+    setChatRoomArchive(null);
+    setShowAcademy(false);
     setShowMarketIntel(false);
     setShowChatRoom(true);
   };
@@ -3866,6 +4076,7 @@ export default function FoundryApp() {
   const continueArchiveInChatRoom = (entry: any) => {
     markMeaningfulActivity();
     setAcademyConversationEntry(null);
+    setClaritySessionEntry(null);
     setChatRoomArchive(entry);
     setShowChatRoom(true);
   };
@@ -3982,6 +4193,27 @@ export default function FoundryApp() {
     return () => { cancelled = true; };
   }, [user]);
 
+  useEffect(() => {
+    const uid = (user as any)?.id;
+    if (!uid) {
+      setUserWorkspaces([]);
+      return;
+    }
+
+    let cancelled = false;
+    getWorkspacesForUser(uid)
+      .then((workspaces) => {
+        if (cancelled) return;
+        setUserWorkspaces(workspaces);
+        setUserTeamId((current) => current ?? workspaces[0]?.id ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setUserWorkspaces([]);
+      });
+
+    return () => { cancelled = true; };
+  }, [user, showCofounder]);
+
   const handleAcceptCofounderInvite = async (invite: CofounderEmailInvite) => {
     const uid = (user as any)?.id;
     if (!uid || !profile) return;
@@ -3991,6 +4223,7 @@ export default function FoundryApp() {
       await respondToEmailInvite(invite.id, 'accepted');
       setPendingCofounderInvites(prev => prev.filter(i => i.id !== invite.id));
       setUserTeamId(result.teamId ?? null);
+      getWorkspacesForUser(uid).then(setUserWorkspaces).catch(() => {});
       openCofounder();
     }
   };
@@ -4139,7 +4372,7 @@ export default function FoundryApp() {
           <div style={{ fontSize: 18, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>
             Access Restricted
           </div>
-          <div style={{ fontSize: 13, color: "#666", maxWidth: 380, lineHeight: 1.7, fontStyle: "italic" }}>
+          <div style={{ fontSize: 13, color: "var(--foundry-text-secondary)", maxWidth: 380, lineHeight: 1.7, fontStyle: "italic" }}>
             {getAccessBlockReason(accountAccess)}
           </div>
           <button
@@ -4147,7 +4380,7 @@ export default function FoundryApp() {
             style={{
               marginTop: 8, padding: "10px 24px", background: "transparent",
               border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10,
-              color: "#555", fontSize: 12, cursor: "pointer",
+              color: "var(--foundry-text-muted)", fontSize: 12, cursor: "pointer",
             }}
           >
             Sign Out
@@ -4243,6 +4476,7 @@ export default function FoundryApp() {
             activeNudge={activeNudge}
             onDismissNudge={handleDismissNudge}
             onActOnNudge={handleActOnNudge}
+            onOpenClaritySession={openClaritySession}
             financialData={financialData}
             financialSummary={financialSummary}
             onSaveExpense={handleSaveExpense}
@@ -4332,6 +4566,7 @@ export default function FoundryApp() {
             onLoadEarlierMessages={handleLoadEarlierMessages}
             hasEarlierMessagesByStage={hasEarlierMessagesByStage}
             loadingEarlierStage={loadingEarlierStage}
+            workspaces={userWorkspaces}
           />
         )}
       </div>
@@ -4479,7 +4714,9 @@ export default function FoundryApp() {
               initialArchive={chatRoomArchive}
               academyEntry={academyConversationEntry}
               marketIntelEntry={marketIntelTrendEntry}
+              clarityEntry={claritySessionEntry}
               universalMemoryContext={universalMemoryContext}
+              workspaces={userWorkspaces}
               onMarkAcademyLessonCompleted={handleMarkAcademyLessonCompleted}
               onBack={() => {
                 const returnToAcademy = Boolean(academyConversationEntry);
@@ -4488,6 +4725,7 @@ export default function FoundryApp() {
                 setChatRoomArchive(null);
                 setAcademyConversationEntry(null);
                 setMarketIntelTrendEntry(null);
+                setClaritySessionEntry(null);
                 if (returnToAcademy) {
                   setShowAcademy(true);
                 } else if (returnToMarketIntel) {
@@ -4516,7 +4754,11 @@ export default function FoundryApp() {
               profile={profile}
               onBack={() => { setShowCofounder(false); showCofounderRef.current = false; }}
               onOpenNav={() => setNavSidebarOpen(true)}
-              onTeamChanged={(id) => setUserTeamId(id)}
+              onTeamChanged={(id) => {
+                setUserTeamId(id);
+                const uid = (user as any)?.id;
+                if (uid) getWorkspacesForUser(uid).then(setUserWorkspaces).catch(() => {});
+              }}
             />
           </Suspense>
         </div>

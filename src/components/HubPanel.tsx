@@ -20,34 +20,34 @@ export default function HubPanel({ profile, currentStage, completedByStage, open
                             <Logo variant="flame" style={{ width: 16, height: 16, objectFit: "contain" }} />
                             <span style={{ fontSize: 15, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>Hub</span>
                         </div>
-                        <button onClick={onClose} style={{ background: "rgba(255,255,255,0.06)", border: "none", borderRadius: 6, padding: "6px 12px", color: "#666", fontSize: 11, cursor: "pointer" }}>✕</button>
+                        <button onClick={onClose} style={{ background: "rgba(255,255,255,0.06)", border: "none", borderRadius: 6, padding: "6px 12px", color: "var(--foundry-text-secondary)", fontSize: 11, cursor: "pointer" }}>✕</button>
                     </div>
                     <div style={{ fontSize: 16, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", lineHeight: 1.2 }}>{profile.businessName || (profile.idea?.slice(0, 28) + "...") || "Your Business"}</div>
-                    <div style={{ fontSize: 11, color: "#555", marginTop: 3 }}>{profile.strategyLabel}</div>
+                    <div style={{ fontSize: 11, color: "var(--foundry-text-muted)", marginTop: 3 }}>{profile.strategyLabel}</div>
                 </div>
                 <div style={{ padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                    <div style={{ fontSize: 10, color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Budget</div>
+                    <div style={{ fontSize: 10, color: "var(--foundry-text-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Budget</div>
                     <div style={{ fontSize: 22, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#4CAF8A" }}>${(profile.budget?.remaining || 0).toLocaleString()}</div>
-                    <div style={{ fontSize: 10, color: "#555", marginBottom: 8 }}>remaining of ${(profile.budget?.total || 0).toLocaleString()}</div>
+                    <div style={{ fontSize: 10, color: "var(--foundry-text-muted)", marginBottom: 8 }}>remaining of ${(profile.budget?.total || 0).toLocaleString()}</div>
                     <div style={{ height: 3, background: "rgba(255,255,255,0.06)", borderRadius: 2 }}>
                         <div style={{ height: "100%", width: `${profile.budget?.total ? (profile.budget.remaining / profile.budget.total) * 100 : 0}%`, background: "linear-gradient(90deg, #4CAF8A, #48BB78)", borderRadius: 2 }} />
                     </div>
                 </div>
                 <div style={{ padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                    <div style={{ fontSize: 10, color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 10 }}>Journey</div>
+                    <div style={{ fontSize: 10, color: "var(--foundry-text-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 10 }}>Journey</div>
                     <div style={{ display: "flex", gap: 4 }}>
                         {STAGES_DATA.map(s => {
                             const isDone = isStageDoneInJourney(s);
                             return <div key={s.id} style={{ flex: 1, height: 4, borderRadius: 2, background: isDone ? "linear-gradient(90deg, #E8622A, #F5A843)" : s.id === currentStage ? "rgba(232,98,42,0.4)" : "rgba(255,255,255,0.06)" }} />;
                         })}
                     </div>
-                    <div style={{ fontSize: 11, color: "#888", fontFamily: "'Lora', Georgia, serif", marginTop: 8 }}>Stage {currentStage} — {STAGES_DATA[currentStage - 1]?.label}</div>
+                    <div style={{ fontSize: 11, color: "rgba(240,237,232,0.62)", fontFamily: "'Lora', Georgia, serif", marginTop: 8 }}>Stage {currentStage} — {STAGES_DATA[currentStage - 1]?.label}</div>
                 </div>
                 {profile.decisions?.length > 0 && (
                     <div style={{ padding: "14px 16px" }}>
-                        <div style={{ fontSize: 10, color: "#555", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Recent Decisions</div>
+                        <div style={{ fontSize: 10, color: "var(--foundry-text-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>Recent Decisions</div>
                         {profile.decisions.slice(0, 3).map((d, i) => (
-                            <div key={i} style={{ fontSize: 11, color: "#777", padding: "5px 0", borderBottom: i < 2 ? "1px solid rgba(255,255,255,0.04)" : "none", lineHeight: 1.4 }}>
+                            <div key={i} style={{ fontSize: 11, color: "var(--foundry-text-muted)", padding: "5px 0", borderBottom: i < 2 ? "1px solid rgba(255,255,255,0.04)" : "none", lineHeight: 1.4 }}>
                                 — {typeof d === "string" ? d : d.text}
                             </div>
                         ))}

@@ -11,7 +11,7 @@ export default function StructuredSourcesPanel({ sources }: { sources: MarketRep
 
     return (
         <div>
-            <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(240,237,232,0.4)", marginBottom: 14 }}>
+            <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(240,237,232,0.58)", marginBottom: 14 }}>
                 {sources.length} source{sources.length === 1 ? "" : "s"} referenced in this report
             </div>
             <div>
@@ -26,7 +26,7 @@ export default function StructuredSourcesPanel({ sources }: { sources: MarketRep
                             borderTop: index === 0 ? "none" : "1px solid rgba(255,255,255,0.05)",
                         }}
                     >
-                        <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, color: "rgba(240,237,232,0.4)", textAlign: "right", lineHeight: 1.7 }}>
+                        <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, color: "rgba(240,237,232,0.58)", textAlign: "right", lineHeight: 1.7 }}>
                             {index + 1}.
                         </div>
                         <div>
@@ -47,7 +47,7 @@ export default function StructuredSourcesPanel({ sources }: { sources: MarketRep
                             >
                                 {source.title}
                             </a>
-                            <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, color: "rgba(240,237,232,0.5)", lineHeight: 1.6, marginTop: 4 }}>
+                            <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, color: "rgba(240,237,232,0.7)", lineHeight: 1.6, marginTop: 4 }}>
                                 {source.snippet || "Saved source reference."}
                             </div>
                         </div>

@@ -194,7 +194,7 @@ function ThemePills({ themes }: { themes?: string[] }) {
                     textTransform: "uppercase",
                     background: "rgba(255,255,255,0.06)",
                     border: "1px solid rgba(255,255,255,0.12)",
-                    color: "rgba(240,237,232,0.5)",
+                    color: "rgba(240,237,232,0.7)",
                     borderRadius: 3,
                     padding: "3px 7px",
                     lineHeight: 1.1,
@@ -209,7 +209,7 @@ function ThemePills({ themes }: { themes?: string[] }) {
                     textTransform: "uppercase",
                     background: "rgba(255,255,255,0.06)",
                     border: "1px solid rgba(255,255,255,0.12)",
-                    color: "rgba(240,237,232,0.5)",
+                    color: "rgba(240,237,232,0.7)",
                     borderRadius: 3,
                     padding: "3px 7px",
                     lineHeight: 1.1,
@@ -622,7 +622,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                         fontSize: "var(--foundry-app-header-title-font)", fontFamily: "'Lora', Georgia, serif",
                         fontWeight: 600, color: "#F0EDE8",
                     }}>Founder's Journal</div>
-                    <div style={{ fontSize: "var(--foundry-app-header-meta-font)", color: "#555" }}>
+                    <div style={{ fontSize: "var(--foundry-app-header-meta-font)", color: "var(--foundry-text-muted)" }}>
                         {typedEntries.length} {typedEntries.length === 1 ? "entry" : "entries"}
                     </div>
                 </div>
@@ -630,7 +630,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                     {typedEntries.length > 0 && (
                         <button onClick={handleExport} title="Export journal as Markdown" style={{
                             background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
-                            borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "rgba(240,237,232,0.5)",
+                            borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "rgba(240,237,232,0.7)",
                             fontSize: "var(--foundry-app-header-button-font)", cursor: "pointer",
                         }}>Export</button>
                     )}
@@ -655,7 +655,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                     return (
                         <div style={{ marginBottom: 14 }}>
                             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                                <span style={{ fontSize: 11, color: "rgba(240,237,232,0.4)", fontFamily: "'DM Sans', sans-serif" }}>
+                                <span style={{ fontSize: 11, color: "rgba(240,237,232,0.58)", fontFamily: "'DM Sans', sans-serif" }}>
                                     {calendarMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
                                 </span>
                                 {selectedDay && (
@@ -701,7 +701,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                 })()}
 
                 <div style={{ position: "relative", marginBottom: 14 }}>
-                    <span style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "rgba(240,237,232,0.3)", fontSize: 13 }}>⌕</span>
+                    <span style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "rgba(240,237,232,0.55)", fontSize: 13 }}>⌕</span>
                     <input
                         ref={searchInputRef}
                         value={searchTerm}
@@ -721,7 +721,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                         }}
                     />
                     {searchTerm && (
-                        <button onClick={() => setSearchTerm("")} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "transparent", border: "none", color: "rgba(240,237,232,0.4)", fontSize: 18, cursor: "pointer" }}>×</button>
+                        <button onClick={() => setSearchTerm("")} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "transparent", border: "none", color: "rgba(240,237,232,0.58)", fontSize: 18, cursor: "pointer" }}>×</button>
                     )}
                 </div>
 
@@ -739,19 +739,19 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                 <div style={{ fontSize: 15, color: "#F0EDE8", fontWeight: 600, fontFamily: "'Lora', Georgia, serif" }}>
                                     🔥 This Week's Reflection
                                 </div>
-                                <div style={{ marginTop: 3, fontSize: 12, color: "rgba(240,237,232,0.4)", fontFamily: "'DM Sans', sans-serif" }}>
+                                <div style={{ marginTop: 3, fontSize: 12, color: "rgba(240,237,232,0.58)", fontFamily: "'DM Sans', sans-serif" }}>
                                     {getWeekRangeLabel()}
                                 </div>
                             </div>
                             <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-                                <button onClick={regenerateWeeklyReflection} disabled={loadingWeekly || recentEntries.length < 2} style={{ background: "transparent", border: "none", color: "rgba(240,237,232,0.45)", fontSize: 16, cursor: loadingWeekly ? "default" : "pointer" }}>↻</button>
-                                <button onClick={() => setWeeklyExpanded(prev => !prev)} style={{ background: "transparent", border: "none", color: "rgba(240,237,232,0.45)", fontSize: 16, cursor: "pointer" }}>{weeklyExpanded ? "↑" : "↓"}</button>
+                                <button onClick={regenerateWeeklyReflection} disabled={loadingWeekly || recentEntries.length < 2} style={{ background: "transparent", border: "none", color: "rgba(240,237,232,0.62)", fontSize: 16, cursor: loadingWeekly ? "default" : "pointer" }}>↻</button>
+                                <button onClick={() => setWeeklyExpanded(prev => !prev)} style={{ background: "transparent", border: "none", color: "rgba(240,237,232,0.62)", fontSize: 16, cursor: "pointer" }}>{weeklyExpanded ? "↑" : "↓"}</button>
                             </div>
                         </div>
                         {weeklyExpanded && (
                             <div style={{ borderTop: "1px solid rgba(255,255,255,0.05)", padding: "14px 16px 16px" }}>
                                 {loadingWeekly ? (
-                                    <div style={{ display: "flex", alignItems: "center", gap: 8, color: "rgba(240,237,232,0.45)", fontSize: 13, fontFamily: "'DM Sans', sans-serif" }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 8, color: "rgba(240,237,232,0.62)", fontSize: 13, fontFamily: "'DM Sans', sans-serif" }}>
                                         <span style={{ display: "inline-flex", gap: 4 }}>
                                             {[0, 1, 2].map(index => (
                                                 <span key={index} style={{ width: 5, height: 5, borderRadius: "50%", background: "#E8622A", animation: "forgePulse 1.2s ease-in-out infinite", animationDelay: `${index * 0.18}s` }} />
@@ -771,7 +771,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                     if (moodEntries.length < 2) return null;
                                     return (
                                         <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                                            <span style={{ fontSize: 10, color: "rgba(240,237,232,0.35)", fontFamily: "'DM Sans', sans-serif" }}>Mood this week:</span>
+                                            <span style={{ fontSize: 10, color: "rgba(240,237,232,0.55)", fontFamily: "'DM Sans', sans-serif" }}>Mood this week:</span>
                                             <div style={{ display: "flex", gap: 2 }}>
                                                 {moodEntries.map((e, i) => (
                                                     <span key={i} title={new Date(e.createdAt).toLocaleDateString("en-US", { weekday: "short" })} style={{ fontSize: 14 }}>{e.mood}</span>
@@ -780,7 +780,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                         </div>
                                     );
                                 })()}
-                                <div style={{ marginTop: 8, fontSize: 11, color: "rgba(240,237,232,0.4)", fontFamily: "'DM Sans', sans-serif" }}>
+                                <div style={{ marginTop: 8, fontSize: 11, color: "rgba(240,237,232,0.58)", fontFamily: "'DM Sans', sans-serif" }}>
                                     Based on {recentEntries.length} entries this week
                                 </div>
                             </div>
@@ -790,7 +790,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
 
                 {recurringThemes.length > 0 && (
                     <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                        <span style={{ fontSize: 12, color: "rgba(240,237,232,0.45)", fontFamily: "'DM Sans', sans-serif" }}>Your recurring themes:</span>
+                        <span style={{ fontSize: 12, color: "rgba(240,237,232,0.62)", fontFamily: "'DM Sans', sans-serif" }}>Your recurring themes:</span>
                         {recurringThemes.map(([theme, count]) => {
                             const active = selectedTheme === theme;
                             return (
@@ -826,7 +826,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                             fontWeight: 700, color: "#F0EDE8", marginBottom: 10,
                         }}>Your journal is empty</div>
                         <div style={{
-                            fontSize: 13, color: "#555", fontFamily: "'Lora', Georgia, serif",
+                            fontSize: 13, color: "var(--foundry-text-muted)", fontFamily: "'Lora', Georgia, serif",
                             fontStyle: "italic", lineHeight: 1.7, maxWidth: 300, margin: "0 0 24px",
                         }}>
                             This is your private space. Write about wins, fears, decisions, or anything on your mind as you build.
@@ -878,7 +878,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                         <div style={{ fontSize: 15, color: "#F0EDE8", fontWeight: 600, lineHeight: 1.35 }}>
                                             {formatDate(entry.createdAt)}
                                         </div>
-                                        <div style={{ fontSize: 12, color: "rgba(240,237,232,0.4)", marginTop: 4, lineHeight: 1.3, fontFamily: "'DM Sans', sans-serif" }}>
+                                        <div style={{ fontSize: 12, color: "rgba(240,237,232,0.58)", marginTop: 4, lineHeight: 1.3, fontFamily: "'DM Sans', sans-serif" }}>
                                             {formatTime(entry.createdAt)}
                                             {entry.wordCount ? ` · ${entry.wordCount} words` : ""}
                                         </div>
@@ -966,7 +966,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                                 border: "none",
                                                 borderRadius: 8,
                                                 padding: "10px 12px",
-                                                color: "rgba(240,237,232,0.35)",
+                                                color: "rgba(240,237,232,0.55)",
                                                 fontSize: 12,
                                                 fontFamily: "'DM Sans', sans-serif",
                                                 fontStyle: "italic",
@@ -982,7 +982,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                             alignItems: "center",
                                             gap: 8,
                                             fontSize: 12,
-                                            color: "rgba(240,237,232,0.35)",
+                                            color: "rgba(240,237,232,0.55)",
                                             fontFamily: "'DM Sans', sans-serif",
                                             fontStyle: "italic",
                                         }}>
@@ -1257,7 +1257,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                             gap: 12,
                         }}>
                             <div style={{ minWidth: 0 }}>
-                                <div style={{ fontSize: 11, color: "rgba(240,237,232,0.35)", fontFamily: "'DM Sans', sans-serif", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 3 }}>
+                                <div style={{ fontSize: 11, color: "rgba(240,237,232,0.55)", fontFamily: "'DM Sans', sans-serif", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 3 }}>
                                     {editingEntry ? "Edit entry" : "New journal entry"}
                                 </div>
                                 <div style={{ fontSize: 15, color: "rgba(240,237,232,0.72)", fontFamily: "'Lora', Georgia, serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -1318,7 +1318,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
 
                             {/* Mood selector */}
                             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                                <span style={{ fontSize: 11, color: "rgba(240,237,232,0.35)", fontFamily: "'DM Sans', sans-serif" }}>How are you feeling?</span>
+                                <span style={{ fontSize: 11, color: "rgba(240,237,232,0.55)", fontFamily: "'DM Sans', sans-serif" }}>How are you feeling?</span>
                                 <div style={{ display: "flex", gap: 6 }}>
                                     {MOOD_OPTIONS.map(m => (
                                         <button
@@ -1415,7 +1415,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                         <div style={{ fontSize: 11, marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(240,237,232,0.32)" }}>Try writing about</div>
                                         <div style={{ display: "grid", gap: 8 }}>
                                             {writingPrompts.map(prompt => (
-                                                <div key={prompt} style={{ fontSize: 13, lineHeight: 1.5, color: "rgba(240,237,232,0.5)" }}>
+                                                <div key={prompt} style={{ fontSize: 13, lineHeight: 1.5, color: "rgba(240,237,232,0.7)" }}>
                                                     {prompt}
                                                 </div>
                                             ))}

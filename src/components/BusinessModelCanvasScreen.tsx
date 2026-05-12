@@ -122,7 +122,7 @@ export default function BusinessModelCanvasScreen({
                         </div>
                         <div className="foundry-module-card" style={{ minWidth: 260, padding: 14 }}>
                             <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                                <div style={{ fontSize: 11, color: "rgba(240,237,232,0.45)", textTransform: "uppercase", letterSpacing: "0.12em" }}>Weak spots</div>
+                                <div style={{ fontSize: 11, color: "rgba(240,237,232,0.62)", textTransform: "uppercase", letterSpacing: "0.12em" }}>Weak spots</div>
                                 <HelpTooltip content={weaknessLookup.size === 0
                                     ? "No obvious structural gaps right now."
                                     : Array.from(weaknessLookup.values()).slice(0, 4).map((item) => `${BUSINESS_MODEL_CANVAS_LABELS[item.section]}: ${item.message}`).join("\n")} />
@@ -179,14 +179,14 @@ export default function BusinessModelCanvasScreen({
                                             </span>
                                         ))}
                                         {entries.length === 0 && (
-                                            <div style={{ fontSize: 12, color: "rgba(240,237,232,0.45)", lineHeight: 1.6 }}>
+                                            <div style={{ fontSize: 12, color: "rgba(240,237,232,0.62)", lineHeight: 1.6 }}>
                                                 Still empty. Let Forge pressure-test this part of the model.
                                             </div>
                                         )}
                                     </div>
 
                                     <div style={{ marginTop: "auto", display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
-                                        <div style={{ fontSize: 11, color: "rgba(240,237,232,0.45)" }}>
+                                        <div style={{ fontSize: 11, color: "rgba(240,237,232,0.62)" }}>
                                             {weakness ? weakness.message : "Click to refine or clean up entries."}
                                         </div>
                                         <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", fontWeight: 600 }}>Open →</div>
@@ -204,7 +204,7 @@ export default function BusinessModelCanvasScreen({
                     <div className="foundry-modal-surface foundry-panel-in" style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "min(760px, calc(100vw - 28px))", maxHeight: "82vh", overflowY: "auto", padding: 18, zIndex: 82 }}>
                         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", marginBottom: 14, flexWrap: "wrap" }}>
                             <div style={{ flex: 1, minWidth: 200 }}>
-                                <div style={{ fontSize: 11, color: "rgba(240,237,232,0.45)", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 5 }}>Canvas Section</div>
+                                <div style={{ fontSize: 11, color: "rgba(240,237,232,0.62)", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 5 }}>Canvas Section</div>
                                 <div style={{ fontSize: isNarrow ? 22 : 28, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, lineHeight: 1.1 }}>{selectedLabel}</div>
                                 <div style={{ fontSize: 13, color: "rgba(240,237,232,0.6)", marginTop: 8, lineHeight: 1.7 }}>
                                     Edit what is here, delete what no longer fits, or push this section forward through Forge.

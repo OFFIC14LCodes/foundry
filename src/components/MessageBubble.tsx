@@ -138,7 +138,7 @@ function AnimatedForgeText({ text, renderWithBold, onStageRef, onGlossaryTap, on
     );
 }
 
-export default function MessageBubble({ msg, onStageRef, onGlossaryTap, onConceptTap, renderWithBold, userName = "You", onAction = null }) {
+export default function MessageBubble({ msg, onStageRef, onGlossaryTap, onConceptTap, renderWithBold, userName = "You", onAction = null, onApplyToContext = null }) {
     const isForge = msg.role === "forge" || msg.role === "assistant";
     const senderName = isForge ? "Forge" : userName;
 
@@ -203,7 +203,7 @@ export default function MessageBubble({ msg, onStageRef, onGlossaryTap, onConcep
                         <div style={{ whiteSpace: "pre-wrap" }}>{msg.text}</div>
                     )}
                 </div>
-                {isForge && <MessageActions text={msg.text} />}
+                {isForge && <MessageActions text={msg.text} onApplyToContext={msg.text && onApplyToContext ? () => onApplyToContext(msg) : undefined} />}
                 {isForge && Array.isArray(msg.actions) && msg.actions.length > 0 && (
                     <div
                         style={{

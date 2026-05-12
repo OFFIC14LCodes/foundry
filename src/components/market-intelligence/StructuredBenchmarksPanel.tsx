@@ -31,10 +31,10 @@ export default function StructuredBenchmarksPanel({
 
     return (
         <div>
-            <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(240,237,232,0.4)", marginBottom: 6 }}>
+            <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(240,237,232,0.58)", marginBottom: 6 }}>
                 Industry benchmarks — know your numbers
             </div>
-            <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, color: "rgba(240,237,232,0.4)", fontStyle: "italic", lineHeight: 1.6, marginBottom: 14 }}>
+            <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, color: "rgba(240,237,232,0.58)", fontStyle: "italic", lineHeight: 1.6, marginBottom: 14 }}>
                 These numbers define what healthy looks like in your market. Use them to pressure-test your own projections.
             </div>
             <div style={{ display: "grid", gap: 10 }}>
@@ -53,7 +53,7 @@ export default function StructuredBenchmarksPanel({
                         <div style={{ color: "#63B3ED", fontFamily: "'Playfair Display', Georgia, serif", fontSize: 24, fontWeight: 700, lineHeight: 1.1, marginBottom: 8 }}>
                             {formatBenchmarkValue(benchmark.value, benchmark.unit)}
                         </div>
-                        <div style={{ fontSize: 12, color: "rgba(240,237,232,0.5)", lineHeight: 1.6, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+                        <div style={{ fontSize: 12, color: "rgba(240,237,232,0.7)", lineHeight: 1.6, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
                             {benchmark.description || "Saved benchmark."}
                         </div>
                         {(onCreateAction || onAskForgeAboutAction) && (

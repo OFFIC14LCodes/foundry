@@ -754,7 +754,7 @@ Be the partner who has been watching the whole time.`;
         marginBottom: 12,
         marginTop: 0,
     };
-    const labelStyle: React.CSSProperties = { fontSize: 10, color: "#666", textTransform: "uppercase", letterSpacing: "0.07em" };
+    const labelStyle: React.CSSProperties = { fontSize: 10, color: "var(--foundry-text-secondary)", textTransform: "uppercase", letterSpacing: "0.07em" };
     const valueStyle: React.CSSProperties = { fontSize: 18, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, lineHeight: 1.15, marginBottom: 2 };
 
     // Vital sign card definitions
@@ -802,7 +802,7 @@ Be the partner who has been watching the whole time.`;
             {/* ── Header ──────────────────────────────────────────────────────── */}
             <div style={{ position: "sticky", top: 0, zIndex: 10, background: "rgba(8,8,9,0.95)", borderBottom: "1px solid var(--foundry-border-subtle)", padding: "14px 20px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", backdropFilter: "blur(12px)" }}>
                 <button className="foundry-btn foundry-btn--ghost" onClick={onOpenNav ?? onBack} style={{ padding: "6px 10px", fontSize: 12, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor" /><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor" /><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor" /></svg>
                 </button>
                 <div style={{ fontSize: 17, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: "#F0EDE8", flex: 1 }}>
                     Financial Dashboard
@@ -828,7 +828,7 @@ Be the partner who has been watching the whole time.`;
             {/* ── Body ────────────────────────────────────────────────────────── */}
             <div style={{ flex: 1, padding: "20px 20px 80px", maxWidth: 680, width: "100%", margin: "0 auto", boxSizing: "border-box" }}>
                 {loading ? (
-                    <div style={{ textAlign: "center", color: "#555", padding: 60, fontSize: 13 }}>Loading your financial data...</div>
+                    <div style={{ textAlign: "center", color: "var(--foundry-text-muted)", padding: 60, fontSize: 13 }}>Loading your financial data...</div>
                 ) : (
                     <>
                         {/* ── Forge Health Summary ───────────────────────────── */}
@@ -839,14 +839,14 @@ Be the partner who has been watching the whole time.`;
                                     <span style={{ fontSize: 10, color: "#E8622A", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", fontFamily: "'DM Sans', system-ui, sans-serif" }}>Forge</span>
                                 </div>
                                 {forgeHealthLoading ? (
-                                    <div style={{ fontSize: 13, color: "rgba(240,237,232,0.4)", fontStyle: "italic", fontFamily: "'DM Sans', system-ui, sans-serif" }}>Reading your numbers...</div>
+                                    <div style={{ fontSize: 13, color: "rgba(240,237,232,0.58)", fontStyle: "italic", fontFamily: "'DM Sans', system-ui, sans-serif" }}>Reading your numbers...</div>
                                 ) : (
                                     <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8", lineHeight: 1.7 }}>{forgeHealthSummary}</div>
                                 )}
                                 <button
                                     onClick={handleRefreshHealthSummary}
                                     title="Refresh"
-                                    style={{ position: "absolute", top: 12, right: 12, background: "none", border: "none", color: "rgba(240,237,232,0.3)", fontSize: 13, cursor: "pointer", padding: 4 }}
+                                    style={{ position: "absolute", top: 12, right: 12, background: "none", border: "none", color: "rgba(240,237,232,0.55)", fontSize: 13, cursor: "pointer", padding: 4 }}
                                 >
                                     ↻
                                 </button>
@@ -991,7 +991,7 @@ Be the partner who has been watching the whole time.`;
                                     </div>
                                     {summary.operatingView.monthlyExpenses > 0 && (
                                         <>
-                                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#666", marginBottom: 4 }}>
+                                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--foundry-text-secondary)", marginBottom: 4 }}>
                                                 <span>Revenue vs expenses</span>
                                                 <span>{Math.round((summary.operatingView.monthlyRevenue / summary.operatingView.monthlyExpenses) * 100)}%</span>
                                             </div>
@@ -1004,7 +1004,7 @@ Be the partner who has been watching the whole time.`;
                                 </>
                             ) : (
                                 <div style={{ textAlign: "center", padding: "20px 0" }}>
-                                    <div style={{ display: "inline-block", fontSize: 10, padding: "3px 8px", borderRadius: 20, background: "rgba(255,255,255,0.04)", color: "#666", marginBottom: 12 }}>Not enough data</div>
+                                    <div style={{ display: "inline-block", fontSize: 10, padding: "3px 8px", borderRadius: 20, background: "rgba(255,255,255,0.04)", color: "var(--foundry-text-secondary)", marginBottom: 12 }}>Not enough data</div>
                                     {summary?.breakEvenMessage && <HelpTooltip content={summary.breakEvenMessage} />}
                                 </div>
                             )}
@@ -1020,7 +1020,7 @@ Be the partner who has been watching the whole time.`;
                             </div>
                             {chartIsEmpty ? (
                                 <div style={{ textAlign: "center", padding: "28px 0 20px" }}>
-                                    <div style={{ fontSize: 32, color: "rgba(240,237,232,0.2)", marginBottom: 12 }}>▦</div>
+                                    <div style={{ fontSize: 32, color: "rgba(240,237,232,0.35)", marginBottom: 12 }}>▦</div>
                                     <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", color: "rgba(240,237,232,0.6)", marginBottom: 6 }}>No financial data yet</div>
                                     <div style={{ marginBottom: 16 }}>
                                         <HelpTooltip content="Add your first expense or revenue entry to see your monthly cash flow history here." />
@@ -1046,16 +1046,16 @@ Be the partner who has been watching the whole time.`;
                                                         <div title={`Cash in: ${formatCurrency(month.revenue)}`} style={{ flex: 1, height: `${revH}%`, background: "#4CAF8A", borderRadius: "3px 3px 0 0", minHeight: 2, transition: "height 0.3s" }} />
                                                         <div title={`Cash out: ${formatCurrency(month.expenses)}`} style={{ flex: 1, height: `${expH}%`, background: "#D96A55", borderRadius: "3px 3px 0 0", minHeight: 2, opacity: 0.8, transition: "height 0.3s" }} />
                                                     </div>
-                                                    <div style={{ fontSize: 9, color: "#555", letterSpacing: "0.04em" }}>{month.label}</div>
+                                                    <div style={{ fontSize: 9, color: "var(--foundry-text-muted)", letterSpacing: "0.04em" }}>{month.label}</div>
                                                 </div>
                                             );
                                         })}
                                     </div>
                                     <div style={{ display: "flex", gap: 14, marginTop: 10 }}>
-                                        <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, color: "#888" }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, color: "rgba(240,237,232,0.62)" }}>
                                             <div style={{ width: 10, height: 10, borderRadius: 2, background: "#4CAF8A" }} />Cash In
                                         </div>
-                                        <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, color: "#888" }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, color: "rgba(240,237,232,0.62)" }}>
                                             <div style={{ width: 10, height: 10, borderRadius: 2, background: "#D96A55" }} />Cash Out
                                         </div>
                                     </div>
@@ -1081,13 +1081,13 @@ Be the partner who has been watching the whole time.`;
                                             <div key={tx.id} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 10, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
                                                 <div style={{ flex: 1, minWidth: 0 }}>
                                                     <div style={{ fontSize: 12, color: "#F0EDE8", fontWeight: 600, marginBottom: 2 }}>{tx.merchantName || tx.name || "Transaction"}</div>
-                                                    <div style={{ fontSize: 10, color: "#666" }}>{formatCurrency(Math.abs(tx.amount))} · {dateStr}</div>
+                                                    <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)" }}>{formatCurrency(Math.abs(tx.amount))} · {dateStr}</div>
                                                 </div>
                                                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                                                     {[
                                                         { label: "Expense", handler: () => void handleAcceptAsExpense(tx), bg: "rgba(217,106,85,0.1)", border: "rgba(217,106,85,0.25)", color: "#D96A55" },
                                                         { label: "Revenue", handler: () => void handleAcceptAsRevenue(tx), bg: "rgba(76,175,138,0.12)", border: "rgba(76,175,138,0.3)", color: "#4CAF8A" },
-                                                        { label: "Ignore", handler: () => void handleIgnore(tx), bg: "none", border: "rgba(255,255,255,0.08)", color: "#666" },
+                                                        { label: "Ignore", handler: () => void handleIgnore(tx), bg: "none", border: "rgba(255,255,255,0.08)", color: "var(--foundry-text-secondary)" },
                                                     ].map((btn) => (
                                                         <button key={btn.label} onClick={btn.handler} disabled={isProcessing} style={{ background: btn.bg, border: `1px solid ${btn.border}`, borderRadius: 7, padding: "5px 9px", color: btn.color, fontSize: 10, cursor: isProcessing ? "default" : "pointer", opacity: isProcessing ? 0.5 : 1 }}>
                                                             {btn.label}
@@ -1130,7 +1130,7 @@ Be the partner who has been watching the whole time.`;
                                             <div key={entry.id} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 10, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                                                 <div style={{ flex: 1, minWidth: 0 }}>
                                                     <div style={{ fontSize: 12, color: "#F0EDE8", fontWeight: 600, marginBottom: 2 }}>{entry.description}</div>
-                                                    <div style={{ fontSize: 10, color: "#666" }}>{entry.date} · {entry.category} · {entry.type === "credit" ? "cash in" : "cash out"}</div>
+                                                    <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)" }}>{entry.date} · {entry.category} · {entry.type === "credit" ? "cash in" : "cash out"}</div>
                                                 </div>
                                                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                                                     <div style={{ fontSize: 12, color: entry.type === "credit" ? "#4CAF8A" : "#D96A55", fontWeight: 700 }}>{formatCurrency(entry.amount)}</div>
@@ -1142,7 +1142,7 @@ Be the partner who has been watching the whole time.`;
                                         );
                                     })}
                                     {unreconciledLedgerEntries.length > 5 && (
-                                        <div style={{ fontSize: 10, color: "#555", fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+                                        <div style={{ fontSize: 10, color: "var(--foundry-text-muted)", fontFamily: "'DM Sans', system-ui, sans-serif" }}>
                                             Showing 5 of {unreconciledLedgerEntries.length} unreconciled ledger rows.
                                         </div>
                                     )}
@@ -1157,7 +1157,7 @@ Be the partner who has been watching the whole time.`;
                                 <PlaidConnectButton onConnected={() => void handlePlaidConnected()} label="Connect Bank" />
                             </div>
                             {plaidItems.length === 0 && (
-                                    <HelpTooltip content="Connect a bank account to automatically import transactions. Imported transactions won't affect your model until reviewed." />
+                                <HelpTooltip content="Connect a bank account to automatically import transactions. Imported transactions won't affect your model until reviewed." />
                             )}
                             {plaidItems.length > 0 && (
                                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -1168,7 +1168,7 @@ Be the partner who has been watching the whole time.`;
                                             <div key={item.id} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 10, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
                                                 <div style={{ flex: 1, minWidth: 0 }}>
                                                     <div style={{ fontSize: 12, color: "#F0EDE8", fontWeight: 600, marginBottom: 2 }}>{item.institutionName || "Connected bank"}</div>
-                                                    <div style={{ fontSize: 10, color: "#666", marginTop: 2 }}>{linkedAccounts.length} linked account{linkedAccounts.length !== 1 ? "s" : ""}{item.lastSyncedAt ? ` · last synced ${new Date(item.lastSyncedAt).toLocaleDateString()}` : ""}</div>
+                                                    <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", marginTop: 2 }}>{linkedAccounts.length} linked account{linkedAccounts.length !== 1 ? "s" : ""}{item.lastSyncedAt ? ` · last synced ${new Date(item.lastSyncedAt).toLocaleDateString()}` : ""}</div>
                                                     {linkedAccounts.length > 0 && (
                                                         <div style={{ fontSize: 10, color: "#8B8680", marginTop: 4, lineHeight: 1.5 }}>
                                                             {linkedAccounts.slice(0, 3).map((a) => a.officialName || a.name || `Account ••${a.mask || a.last4 || ""}`).join(" · ")}
@@ -1209,7 +1209,7 @@ Be the partner who has been watching the whole time.`;
                                         <div key={inv.id} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 10, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                                             <div style={{ flex: 1, minWidth: 0 }}>
                                                 <div style={{ fontSize: 12, color: "#F0EDE8", fontWeight: 600, marginBottom: 2 }}>{inv.clientName}</div>
-                                                <div style={{ fontSize: 10, color: "#666" }}>
+                                                <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)" }}>
                                                     {formatCurrency(inv.amount)} · Due {inv.dueDate} ·{" "}
                                                     <span style={{ color: inv.status === "paid" ? "#4CAF8A" : inv.status === "sent" ? "#E8C42A" : "#888" }}>
                                                         {inv.status.toUpperCase()}
@@ -1219,7 +1219,7 @@ Be the partner who has been watching the whole time.`;
                                             <div style={{ display: "flex", gap: 6 }}>
                                                 {[
                                                     { label: "PDF", handler: () => handleDownloadInvoice(inv), style: { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#A8A4A0" } },
-                                                    { label: "Edit", handler: () => openEditInvoice(inv), style: { background: "none", border: "1px solid rgba(255,255,255,0.08)", color: "#888" } },
+                                                    { label: "Edit", handler: () => openEditInvoice(inv), style: { background: "none", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(240,237,232,0.62)" } },
                                                     { label: "×", handler: () => void handleDeleteInvoice(inv.id), style: { background: "none", border: "1px solid rgba(217,106,85,0.22)", color: "#D96A55" } },
                                                 ].map((btn) => (
                                                     <button key={btn.label} onClick={btn.handler} style={{ ...btn.style, borderRadius: 7, padding: "5px 9px", fontSize: 10, cursor: "pointer" }}>{btn.label}</button>
@@ -1291,12 +1291,12 @@ Be the partner who has been watching the whole time.`;
                                 <div style={{ fontSize: 13, color: "#C8C4BE", flex: 1 }}>{BUCKET_LABELS[row.bucketType]}</div>
                                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                                     <input type="number" min={0} max={100} value={row.allocationPercent} onChange={(e) => { const val = Math.max(0, Math.min(100, Number(e.target.value) || 0)); setBucketDraft((prev) => prev.map((r, i) => (i === idx ? { ...r, allocationPercent: val } : r))); }} style={{ width: 60, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 7, padding: "5px 8px", color: "#F0EDE8", fontSize: 13, textAlign: "right" }} />
-                                    <span style={{ fontSize: 12, color: "#666" }}>%</span>
+                                    <span style={{ fontSize: 12, color: "var(--foundry-text-secondary)" }}>%</span>
                                 </div>
                             </div>
                         ))}
                         <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-                            <button onClick={() => setEditingBuckets(false)} style={{ flex: 1, background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, padding: "10px", color: "#888", fontSize: 13, cursor: "pointer" }}>Cancel</button>
+                            <button onClick={() => setEditingBuckets(false)} style={{ flex: 1, background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, padding: "10px", color: "rgba(240,237,232,0.62)", fontSize: 13, cursor: "pointer" }}>Cancel</button>
                             <button onClick={() => void handleSaveBuckets()} disabled={savingBuckets} style={{ flex: 2, background: "linear-gradient(135deg, #4CAF8A, #3a9470)", border: "none", borderRadius: 9, padding: "10px", color: "#fff", fontSize: 13, fontWeight: 600, cursor: savingBuckets ? "default" : "pointer", opacity: savingBuckets ? 0.7 : 1 }}>
                                 {savingBuckets ? "Saving..." : "Save Allocations"}
                             </button>
@@ -1320,7 +1320,7 @@ Be the partner who has been watching the whole time.`;
                             { label: "Notes", field: "notes", type: "textarea", placeholder: "Payment terms, etc." },
                         ].map(({ label, field, type, placeholder }) => (
                             <div key={field} style={{ marginBottom: 12 }}>
-                                <div style={{ fontSize: 11, color: "#888", marginBottom: 4 }}>{label}</div>
+                                <div style={{ fontSize: 11, color: "rgba(240,237,232,0.62)", marginBottom: 4 }}>{label}</div>
                                 {type === "textarea" ? (
                                     <textarea rows={3} value={(invoiceDraft as any)[field] ?? ""} placeholder={placeholder} onChange={(e) => setInvoiceDraft((prev) => ({ ...prev, [field]: e.target.value }))} style={{ ...inputStyle, resize: "vertical" }} />
                                 ) : (
@@ -1329,7 +1329,7 @@ Be the partner who has been watching the whole time.`;
                             </div>
                         ))}
                         <div style={{ marginBottom: 16 }}>
-                            <div style={{ fontSize: 11, color: "#888", marginBottom: 4 }}>Status</div>
+                            <div style={{ fontSize: 11, color: "rgba(240,237,232,0.62)", marginBottom: 4 }}>Status</div>
                             <select value={invoiceDraft.status ?? "draft"} onChange={(e) => setInvoiceDraft((prev) => ({ ...prev, status: e.target.value as any }))} style={inputStyle}>
                                 <option value="draft">Draft</option>
                                 <option value="sent">Sent</option>
@@ -1337,7 +1337,7 @@ Be the partner who has been watching the whole time.`;
                             </select>
                         </div>
                         <div style={{ display: "flex", gap: 10 }}>
-                            <button onClick={() => setShowInvoiceModal(false)} style={{ flex: 1, background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, padding: "10px", color: "#888", fontSize: 13, cursor: "pointer" }}>Cancel</button>
+                            <button onClick={() => setShowInvoiceModal(false)} style={{ flex: 1, background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, padding: "10px", color: "rgba(240,237,232,0.62)", fontSize: 13, cursor: "pointer" }}>Cancel</button>
                             <button onClick={() => void handleSaveInvoice()} style={{ flex: 2, background: "linear-gradient(135deg, #4CAF8A, #3a9470)", border: "none", borderRadius: 9, padding: "10px", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
                                 {editingInvoice ? "Save Changes" : "Create Invoice"}
                             </button>
@@ -1353,7 +1353,7 @@ Be the partner who has been watching the whole time.`;
                         <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 10 }}>Unlink bank?</div>
                         <div style={{ marginBottom: 20 }}><HelpTooltip content="This removes the bank connection. Imported transactions that have already been accepted will remain." /></div>
                         <div style={{ display: "flex", gap: 10 }}>
-                            <button onClick={() => setDisconnectConfirmId(null)} style={{ flex: 1, background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, padding: "10px", color: "#888", fontSize: 13, cursor: "pointer" }}>Cancel</button>
+                            <button onClick={() => setDisconnectConfirmId(null)} style={{ flex: 1, background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, padding: "10px", color: "rgba(240,237,232,0.62)", fontSize: 13, cursor: "pointer" }}>Cancel</button>
                             <button onClick={() => void handleDisconnect(disconnectConfirmId)} style={{ flex: 2, background: "rgba(217,106,85,0.14)", border: "1px solid rgba(217,106,85,0.34)", borderRadius: 9, padding: "10px", color: "#D96A55", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Unlink Bank</button>
                         </div>
                     </div>
@@ -1368,7 +1368,7 @@ Be the partner who has been watching the whole time.`;
                         <div style={{ marginBottom: 14 }}><HelpTooltip content="Based on estimated taxable income from your ledger, this is your quarterly tax reserve." /></div>
                         <div style={{ textAlign: "center", marginBottom: 18 }}>
                             <div style={{ fontSize: 28, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: "#E8C42A" }}>{formatCurrency(quarterlyTax)}</div>
-                            <div style={{ fontSize: 11, color: "#666", marginTop: 4 }}>per quarter</div>
+                            <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)", marginTop: 4 }}>per quarter</div>
                         </div>
                         <div style={{ marginBottom: 20 }}><HelpTooltip content="Formula: taxable income × (15.3% self-employment + 22% federal) ÷ 4. Transfer this reserve before estimated tax deadlines (Apr, Jun, Sep, Jan). This is an estimate. Consult a CPA." /></div>
                         <button onClick={() => setShowTaxAsideModal(false)} style={{ width: "100%", background: "rgba(232,196,42,0.12)", border: "1px solid rgba(232,196,42,0.3)", borderRadius: 9, padding: "11px", color: "#E8C42A", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Got it</button>
@@ -1385,11 +1385,11 @@ Be the partner who has been watching the whole time.`;
                             <HelpTooltip content="Enter your current confirmed cash balance. This replaces the estimated figure and gives you accurate runway and burn calculations." />
                         </div>
                         <div style={{ marginBottom: 16 }}>
-                            <div style={{ fontSize: 11, color: "#888", marginBottom: 4 }}>Starting Cash ($)</div>
+                            <div style={{ fontSize: 11, color: "rgba(240,237,232,0.62)", marginBottom: 4 }}>Starting Cash ($)</div>
                             <input type="number" min={0} value={startingCashInput} onChange={(e) => setStartingCashInput(e.target.value)} placeholder="e.g. 12000" style={inputStyle} autoFocus />
                         </div>
                         <div style={{ display: "flex", gap: 10 }}>
-                            <button onClick={() => setShowStartingCashModal(false)} style={{ flex: 1, background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, padding: "10px", color: "#888", fontSize: 13, cursor: "pointer" }}>Cancel</button>
+                            <button onClick={() => setShowStartingCashModal(false)} style={{ flex: 1, background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, padding: "10px", color: "rgba(240,237,232,0.62)", fontSize: 13, cursor: "pointer" }}>Cancel</button>
                             <button onClick={() => void handleSaveStartingCash()} disabled={savingStartingCash} style={{ flex: 2, background: "rgba(232,98,42,0.15)", border: "1px solid rgba(232,98,42,0.4)", borderRadius: 9, padding: "10px", color: "#E8622A", fontSize: 13, fontWeight: 600, cursor: savingStartingCash ? "default" : "pointer", opacity: savingStartingCash ? 0.7 : 1 }}>
                                 {savingStartingCash ? "Saving..." : "Update Cash"}
                             </button>
@@ -1409,12 +1409,12 @@ Be the partner who has been watching the whole time.`;
                             { label: "Date", field: "receivedOn", type: "date", placeholder: "" },
                         ].map(({ label, field, type, placeholder }) => (
                             <div key={field} style={{ marginBottom: 12 }}>
-                                <div style={{ fontSize: 11, color: "#888", marginBottom: 4 }}>{label}</div>
+                                <div style={{ fontSize: 11, color: "rgba(240,237,232,0.62)", marginBottom: 4 }}>{label}</div>
                                 <input type={type} value={(quickRevDraft as any)[field] ?? ""} placeholder={placeholder} onChange={(e) => setQuickRevDraft((p) => ({ ...p, [field]: e.target.value }))} style={inputStyle} />
                             </div>
                         ))}
                         <div style={{ marginBottom: 16 }}>
-                            <div style={{ fontSize: 11, color: "#888", marginBottom: 4 }}>Frequency</div>
+                            <div style={{ fontSize: 11, color: "rgba(240,237,232,0.62)", marginBottom: 4 }}>Frequency</div>
                             <select value={quickRevDraft.frequency} onChange={(e) => setQuickRevDraft((p) => ({ ...p, frequency: e.target.value as any }))} style={inputStyle}>
                                 <option value="one_time">One-time</option>
                                 <option value="monthly">Monthly</option>
@@ -1422,7 +1422,7 @@ Be the partner who has been watching the whole time.`;
                             </select>
                         </div>
                         <div style={{ display: "flex", gap: 10 }}>
-                            <button onClick={() => setShowAddRevenueModal(false)} style={{ flex: 1, background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, padding: "10px", color: "#888", fontSize: 13, cursor: "pointer" }}>Cancel</button>
+                            <button onClick={() => setShowAddRevenueModal(false)} style={{ flex: 1, background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, padding: "10px", color: "rgba(240,237,232,0.62)", fontSize: 13, cursor: "pointer" }}>Cancel</button>
                             <button onClick={() => void handleSaveQuickRevenue()} disabled={savingQuick} style={{ flex: 2, background: "rgba(76,175,138,0.15)", border: "1px solid rgba(76,175,138,0.4)", borderRadius: 9, padding: "10px", color: "#4CAF8A", fontSize: 13, fontWeight: 600, cursor: savingQuick ? "default" : "pointer", opacity: savingQuick ? 0.7 : 1 }}>
                                 {savingQuick ? "Saving..." : "Add Revenue"}
                             </button>
@@ -1442,12 +1442,12 @@ Be the partner who has been watching the whole time.`;
                             { label: "Date", field: "incurredOn", type: "date", placeholder: "" },
                         ].map(({ label, field, type, placeholder }) => (
                             <div key={field} style={{ marginBottom: 12 }}>
-                                <div style={{ fontSize: 11, color: "#888", marginBottom: 4 }}>{label}</div>
+                                <div style={{ fontSize: 11, color: "rgba(240,237,232,0.62)", marginBottom: 4 }}>{label}</div>
                                 <input type={type} value={(quickExpDraft as any)[field] ?? ""} placeholder={placeholder} onChange={(e) => setQuickExpDraft((p) => ({ ...p, [field]: e.target.value }))} style={inputStyle} />
                             </div>
                         ))}
                         <div style={{ marginBottom: 16 }}>
-                            <div style={{ fontSize: 11, color: "#888", marginBottom: 4 }}>Frequency</div>
+                            <div style={{ fontSize: 11, color: "rgba(240,237,232,0.62)", marginBottom: 4 }}>Frequency</div>
                             <select value={quickExpDraft.frequency} onChange={(e) => setQuickExpDraft((p) => ({ ...p, frequency: e.target.value as any }))} style={inputStyle}>
                                 <option value="one_time">One-time</option>
                                 <option value="monthly">Monthly</option>
@@ -1455,7 +1455,7 @@ Be the partner who has been watching the whole time.`;
                             </select>
                         </div>
                         <div style={{ display: "flex", gap: 10 }}>
-                            <button onClick={() => setShowAddExpenseModal(false)} style={{ flex: 1, background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, padding: "10px", color: "#888", fontSize: 13, cursor: "pointer" }}>Cancel</button>
+                            <button onClick={() => setShowAddExpenseModal(false)} style={{ flex: 1, background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, padding: "10px", color: "rgba(240,237,232,0.62)", fontSize: 13, cursor: "pointer" }}>Cancel</button>
                             <button onClick={() => void handleSaveQuickExpense()} disabled={savingQuick} style={{ flex: 2, background: "rgba(217,106,85,0.14)", border: "1px solid rgba(217,106,85,0.34)", borderRadius: 9, padding: "10px", color: "#D96A55", fontSize: 13, fontWeight: 600, cursor: savingQuick ? "default" : "pointer", opacity: savingQuick ? 0.7 : 1 }}>
                                 {savingQuick ? "Saving..." : "Add Expense"}
                             </button>
@@ -1495,7 +1495,7 @@ Be the partner who has been watching the whole time.`;
                                 <div style={{ fontSize: 20, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 4 }}>
                                     Closing {closeMonthData.prevMonthLabel}
                                 </div>
-                                <div style={{ fontSize: 13, color: "#666", fontFamily: "'DM Sans', system-ui, sans-serif", marginBottom: 24 }}>
+                                <div style={{ fontSize: 13, color: "var(--foundry-text-secondary)", fontFamily: "'DM Sans', system-ui, sans-serif", marginBottom: 24 }}>
                                     How did the month go?
                                 </div>
 
@@ -1507,7 +1507,7 @@ Be the partner who has been watching the whole time.`;
                                     ].map((item) => (
                                         <div key={item.label} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "12px 10px", textAlign: "center" }}>
                                             <div style={{ fontSize: 18, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: item.color, marginBottom: 3 }}>{item.value}</div>
-                                            <div style={{ fontSize: 10, color: "#666", textTransform: "uppercase", letterSpacing: "0.07em" }}>{item.label}</div>
+                                            <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", textTransform: "uppercase", letterSpacing: "0.07em" }}>{item.label}</div>
                                         </div>
                                     ))}
                                 </div>
@@ -1519,7 +1519,7 @@ Be the partner who has been watching the whole time.`;
                                 )}
 
                                 <div style={{ marginBottom: 24 }}>
-                                    <div style={{ fontSize: 12, color: "#888", marginBottom: 8, fontFamily: "'DM Sans', system-ui, sans-serif" }}>Anything else worth noting about this month?</div>
+                                    <div style={{ fontSize: 12, color: "rgba(240,237,232,0.62)", marginBottom: 8, fontFamily: "'DM Sans', system-ui, sans-serif" }}>Anything else worth noting about this month?</div>
                                     <textarea
                                         rows={4}
                                         value={closeFounderNote}
@@ -1530,7 +1530,7 @@ Be the partner who has been watching the whole time.`;
                                 </div>
 
                                 <div style={{ display: "flex", gap: 10 }}>
-                                    <button onClick={() => setShowMonthlyClose(false)} style={{ flex: 1, background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, padding: "11px", color: "#888", fontSize: 13, cursor: "pointer" }}>Cancel</button>
+                                    <button onClick={() => setShowMonthlyClose(false)} style={{ flex: 1, background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, padding: "11px", color: "rgba(240,237,232,0.62)", fontSize: 13, cursor: "pointer" }}>Cancel</button>
                                     <button onClick={() => void handleAdvanceToStep2()} style={{ flex: 2, background: "rgba(232,98,42,0.15)", border: "1px solid rgba(232,98,42,0.4)", borderRadius: 9, padding: "11px", color: "#E8622A", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
                                         Next → Get Forge Insights
                                     </button>
@@ -1542,7 +1542,7 @@ Be the partner who has been watching the whole time.`;
                         {closeStep === 2 && (
                             <div>
                                 <div style={{ fontSize: 20, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 4 }}>Forge's Take</div>
-                                <div style={{ fontSize: 13, color: "#666", fontFamily: "'DM Sans', system-ui, sans-serif", marginBottom: 24 }}>Based on your {closeMonthData.prevMonthLabel} numbers</div>
+                                <div style={{ fontSize: 13, color: "var(--foundry-text-secondary)", fontFamily: "'DM Sans', system-ui, sans-serif", marginBottom: 24 }}>Based on your {closeMonthData.prevMonthLabel} numbers</div>
 
                                 <div style={{ background: "rgba(232,98,42,0.06)", border: "1px solid rgba(232,98,42,0.15)", borderRadius: 12, padding: "18px 18px 16px", marginBottom: 20, minHeight: 100 }}>
                                     <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
@@ -1550,7 +1550,7 @@ Be the partner who has been watching the whole time.`;
                                         <span style={{ fontSize: 10, color: "#E8622A", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", fontFamily: "'DM Sans', system-ui, sans-serif" }}>Forge</span>
                                     </div>
                                     {forgeInsightLoading && !forgeInsight ? (
-                                        <div style={{ fontSize: 13, color: "rgba(240,237,232,0.4)", fontStyle: "italic", fontFamily: "'DM Sans', system-ui, sans-serif" }}>Reading your month...</div>
+                                        <div style={{ fontSize: 13, color: "rgba(240,237,232,0.58)", fontStyle: "italic", fontFamily: "'DM Sans', system-ui, sans-serif" }}>Reading your month...</div>
                                     ) : (
                                         <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8", lineHeight: 1.7 }}>{forgeInsight}</div>
                                     )}
@@ -1567,7 +1567,7 @@ Be the partner who has been watching the whole time.`;
                                 )}
 
                                 <div style={{ display: "flex", gap: 10 }}>
-                                    <button onClick={() => setCloseStep(1)} style={{ flex: 1, background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, padding: "11px", color: "#888", fontSize: 13, cursor: "pointer" }}>← Back</button>
+                                    <button onClick={() => setCloseStep(1)} style={{ flex: 1, background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, padding: "11px", color: "rgba(240,237,232,0.62)", fontSize: 13, cursor: "pointer" }}>← Back</button>
                                     <button onClick={() => setCloseStep(3)} disabled={forgeInsightLoading} style={{ flex: 2, background: "rgba(232,98,42,0.15)", border: "1px solid rgba(232,98,42,0.4)", borderRadius: 9, padding: "11px", color: "#E8622A", fontSize: 13, fontWeight: 700, cursor: forgeInsightLoading ? "default" : "pointer", opacity: forgeInsightLoading ? 0.5 : 1 }}>
                                         Continue →
                                     </button>
@@ -1579,7 +1579,7 @@ Be the partner who has been watching the whole time.`;
                         {closeStep === 3 && (
                             <div>
                                 <div style={{ fontSize: 20, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 4 }}>Looking Ahead</div>
-                                <div style={{ fontSize: 13, color: "#666", fontFamily: "'DM Sans', system-ui, sans-serif", marginBottom: 24 }}>Set yourself up for {closeMonthData.nextMonthLabel}</div>
+                                <div style={{ fontSize: 13, color: "var(--foundry-text-secondary)", fontFamily: "'DM Sans', system-ui, sans-serif", marginBottom: 24 }}>Set yourself up for {closeMonthData.nextMonthLabel}</div>
 
                                 <div style={{ marginBottom: 20 }}>
                                     <div style={{ fontSize: 13, color: "#C8C4BE", fontFamily: "'DM Sans', system-ui, sans-serif", marginBottom: 8 }}>Revenue goal for {closeMonthData.nextMonthLabel}</div>
@@ -1587,7 +1587,7 @@ Be the partner who has been watching the whole time.`;
                                 </div>
 
                                 <div style={{ marginBottom: 20 }}>
-                                    <div style={{ fontSize: 13, color: "#C8C4BE", fontFamily: "'DM Sans', system-ui, sans-serif", marginBottom: 8 }}>Any planned expenses next month? <span style={{ fontSize: 11, color: "#555" }}>(optional)</span></div>
+                                    <div style={{ fontSize: 13, color: "#C8C4BE", fontFamily: "'DM Sans', system-ui, sans-serif", marginBottom: 8 }}>Any planned expenses next month? <span style={{ fontSize: 11, color: "var(--foundry-text-muted)" }}>(optional)</span></div>
                                     {nextMonthExpenses.map((exp, i) => (
                                         <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, marginBottom: 8 }}>
                                             <input type="text" value={exp.label} onChange={(e) => setNextMonthExpenses((prev) => prev.map((r, idx) => idx === i ? { ...r, label: e.target.value } : r))} placeholder={`Expense ${i + 1}`} style={inputStyle} />
@@ -1607,7 +1607,7 @@ Be the partner who has been watching the whole time.`;
                                 </div>
 
                                 <div style={{ display: "flex", gap: 10 }}>
-                                    <button onClick={() => setCloseStep(2)} style={{ flex: 1, background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, padding: "11px", color: "#888", fontSize: 13, cursor: "pointer" }}>← Back</button>
+                                    <button onClick={() => setCloseStep(2)} style={{ flex: 1, background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, padding: "11px", color: "rgba(240,237,232,0.62)", fontSize: 13, cursor: "pointer" }}>← Back</button>
                                     <button onClick={() => void handleFinishClose()} disabled={savingClose} style={{ flex: 2, background: "rgba(232,98,42,0.15)", border: "1px solid rgba(232,98,42,0.4)", borderRadius: 9, padding: "11px", color: "#E8622A", fontSize: 13, fontWeight: 700, cursor: savingClose ? "default" : "pointer", opacity: savingClose ? 0.7 : 1 }}>
                                         {savingClose ? "Saving..." : "Close the Month"}
                                     </button>

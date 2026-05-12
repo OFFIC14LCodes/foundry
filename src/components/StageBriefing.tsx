@@ -102,7 +102,7 @@ export default function StageBriefing({ stage, stageId, onStart }) {
                     <div
                         style={{
                             fontSize: 10,
-                            color: "#555",
+                            color: "var(--foundry-text-muted)",
                             letterSpacing: "0.12em",
                             textTransform: "uppercase",
                             marginBottom: 10,
@@ -116,7 +116,7 @@ export default function StageBriefing({ stage, stageId, onStart }) {
                             key={i}
                             style={{
                                 fontSize: 12,
-                                color: "#888",
+                                color: "rgba(240,237,232,0.62)",
                                 fontFamily: "'Lora', Georgia, serif",
                                 fontStyle: "italic",
                                 padding: "4px 0",

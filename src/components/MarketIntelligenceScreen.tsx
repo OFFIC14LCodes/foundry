@@ -566,7 +566,7 @@ export default function MarketIntelligenceScreen({
             {/* Header */}
             <div style={{ padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, position: "sticky", top: 0, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)", zIndex: 10, flexShrink: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-                    <button onClick={onOpenNav ?? onBack} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "#888", cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg></button>
+                    <button onClick={onOpenNav ?? onBack} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "rgba(240,237,232,0.62)", cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg></button>
                     <div style={{ minWidth: 0 }}>
                         <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
                             <div style={{ fontSize: "var(--foundry-app-header-title-font)", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Market Intelligence</div>
@@ -623,7 +623,7 @@ export default function MarketIntelligenceScreen({
                         <span style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, color: "#C8C4BE", fontWeight: 700 }}>
                             Schedule weekly refresh
                         </span>
-                        <span style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 11, color: "#666" }}>
+                        <span style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 11, color: "var(--foundry-text-secondary)" }}>
                             {scheduleEnabled ? `Next: ${formatScheduleDate(nextRefreshAt)}` : "Off"}
                         </span>
                     </label>
@@ -689,7 +689,7 @@ export default function MarketIntelligenceScreen({
                     <>
                         {isNarrow && reportHistory.length > 0 && (
                             <div style={{ marginBottom: 14 }}>
-                                <div style={{ fontSize: 12, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8, fontWeight: 600 }}>Saved Reports</div>
+                                <div style={{ fontSize: 12, color: "var(--foundry-text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8, fontWeight: 600 }}>Saved Reports</div>
                                 <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 6, WebkitOverflowScrolling: "touch" as any }}>
                                     {reportHistory.map((entry) => {
                                         const selected = currentReport?.date === entry.date;
@@ -719,7 +719,7 @@ export default function MarketIntelligenceScreen({
                                                     <span style={{ fontSize: 10, color: freshness.color, whiteSpace: "nowrap" }}>{freshness.label}</span>
                                                 </div>
                                                 {sourceCount > 0 && (
-                                                    <div style={{ display: "inline-flex", marginTop: 7, padding: "3px 7px", borderRadius: 999, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(240,237,232,0.5)", fontSize: 11, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+                                                    <div style={{ display: "inline-flex", marginTop: 7, padding: "3px 7px", borderRadius: 999, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(240,237,232,0.7)", fontSize: 11, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
                                                         {sourceCount} source{sourceCount === 1 ? "" : "s"}
                                                     </div>
                                                 )}
@@ -775,7 +775,7 @@ export default function MarketIntelligenceScreen({
 
                             {!isNarrow && reportHistory.length > 0 && (
                                 <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "16px 14px", position: "sticky", top: 78 }}>
-                                    <div style={{ fontSize: 12, color: "#555", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10, fontWeight: 600 }}>
+                                    <div style={{ fontSize: 12, color: "var(--foundry-text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10, fontWeight: 600 }}>
                                         Saved Reports
                                     </div>
                                     <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: "calc(100vh - 180px)", overflowY: "auto" }}>
@@ -829,7 +829,7 @@ export default function MarketIntelligenceScreen({
                                                         )}
                                                     </div>
                                                     {sourceCount > 0 && (
-                                                        <div style={{ display: "inline-flex", marginTop: 8, padding: "3px 7px", borderRadius: 999, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(240,237,232,0.5)", fontSize: 11, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+                                                        <div style={{ display: "inline-flex", marginTop: 8, padding: "3px 7px", borderRadius: 999, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(240,237,232,0.7)", fontSize: 11, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
                                                             {sourceCount} source{sourceCount === 1 ? "" : "s"}
                                                         </div>
                                                     )}

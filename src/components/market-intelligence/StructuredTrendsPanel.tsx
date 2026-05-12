@@ -27,7 +27,7 @@ function getImpactDisplay(impactLevel: string) {
     }
     return {
         label: "On the Horizon",
-        color: "rgba(240,237,232,0.4)",
+        color: "rgba(240,237,232,0.58)",
         border: "rgba(240,237,232,0.3)",
         background: "rgba(255,255,255,0.05)",
         tooltip: "Early signal worth monitoring as you scale",
@@ -38,8 +38,8 @@ function getTimeframeDisplay(timeframe: string) {
     const normalized = timeframe.trim().toLowerCase();
     if (normalized === "current") return { label: "Happening Now", color: "#4CAF8A" };
     if (normalized === "emerging") return { label: "Emerging", color: "#63B3ED" };
-    if (normalized === "future") return { label: "Future Signal", color: "rgba(240,237,232,0.4)" };
-    return { label: timeframe || "Unspecified", color: "rgba(240,237,232,0.4)" };
+    if (normalized === "future") return { label: "Future Signal", color: "rgba(240,237,232,0.58)" };
+    return { label: timeframe || "Unspecified", color: "rgba(240,237,232,0.58)" };
 }
 
 function formatFirstSeen(value?: string | null) {
@@ -68,7 +68,7 @@ export default function StructuredTrendsPanel({
 
     return (
         <div>
-            <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, color: "rgba(240,237,232,0.4)", fontStyle: "italic", lineHeight: 1.6, marginBottom: 14 }}>
+            <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, color: "rgba(240,237,232,0.58)", fontStyle: "italic", lineHeight: 1.6, marginBottom: 14 }}>
                 These trends are shaping your market right now. High Impact trends deserve your attention today.
             </div>
             <div style={{ display: "grid", gap: 10 }}>

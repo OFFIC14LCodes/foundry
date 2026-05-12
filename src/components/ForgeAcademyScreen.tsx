@@ -1173,7 +1173,7 @@ export default function ForgeAcademyScreen({
                     const cardNextUp = (
                         <AsideCard eyebrow="Next Up" title="When you want an obvious next move" description="These are the paths where the next step is obvious, so you can spend your energy learning instead of deciding what to click." tone="blue">
                             {nextSeriesUp.length === 0 ? (
-                                <div style={{ fontSize: 13, color: "#777", lineHeight: 1.7 }}>Start a lesson series and the next recommended step shows up here.</div>
+                                <div style={{ fontSize: 13, color: "var(--foundry-text-muted)", lineHeight: 1.7 }}>Start a lesson series and the next recommended step shows up here.</div>
                             ) : (
                                 <div style={{ display: "grid", gap: 10 }}>
                                     {nextSeriesUp.map(({ series, nextItem }) => (
@@ -1202,7 +1202,7 @@ export default function ForgeAcademyScreen({
                     const cardHistory = (
                         <AsideCard eyebrow="Learning History" title="Your trail through Academy" description="Not a passive log. More like a reminder of what has already started shifting how you think." tone="stone">
                             {recentHistory.length === 0 ? (
-                                <div style={{ fontSize: 13, color: "#777", lineHeight: 1.7 }}>Open one real lesson and the trail starts here.</div>
+                                <div style={{ fontSize: 13, color: "var(--foundry-text-muted)", lineHeight: 1.7 }}>Open one real lesson and the trail starts here.</div>
                             ) : (
                                 <div style={{ display: "grid", gap: 10 }}>
                                     {recentHistory.map((entry) => (
@@ -1982,7 +1982,7 @@ function PathStageCard({
                             ? <PathSeriesGroup key={`series-${block.id}`} block={block} progressByContentId={progressByContentId} busyKey={busyKey} onOpenLesson={onOpenLesson} onLaunchLesson={onLaunchLesson} />
                             : <PathLessonNode key={block.lesson.id} lesson={block.lesson} progress={progressByContentId.get(block.lesson.id) ?? null} busy={Boolean(busyKey?.startsWith("forge-") && busyKey?.endsWith(`-${block.lesson.id}`))} onOpen={() => onOpenLesson(block.lesson)} onLaunch={() => onLaunchLesson(block.lesson)} />
                     )) : (
-                        <div style={{ fontSize: 13, color: "#777", lineHeight: 1.7 }}>
+                        <div style={{ fontSize: 13, color: "var(--foundry-text-muted)", lineHeight: 1.7 }}>
                             No core lessons have been mapped to this stage yet.
                         </div>
                     )}
@@ -2968,7 +2968,7 @@ function ContentDetailModal({
                         </div>
                         {completed && <CompletionBadge label={getCompletionBadgeLabel(content)} />}
                     </div>
-                    <button onClick={onClose} style={{ background: "rgba(255,255,255,0.04)", border, borderRadius: 10, padding: "8px 12px", color: "#888", cursor: "pointer" }}>
+                    <button onClick={onClose} style={{ background: "rgba(255,255,255,0.04)", border, borderRadius: 10, padding: "8px 12px", color: "rgba(240,237,232,0.62)", cursor: "pointer" }}>
                         Close
                     </button>
                 </div>
@@ -3186,7 +3186,7 @@ function SeriesDetailModal({
                             {series.shortDescription}
                         </div>
                     </div>
-                    <button onClick={onClose} style={{ background: "rgba(255,255,255,0.04)", border, borderRadius: 10, padding: "8px 12px", color: "#888", cursor: "pointer" }}>
+                    <button onClick={onClose} style={{ background: "rgba(255,255,255,0.04)", border, borderRadius: 10, padding: "8px 12px", color: "rgba(240,237,232,0.62)", cursor: "pointer" }}>
                         Close
                     </button>
                 </div>

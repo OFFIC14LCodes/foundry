@@ -47,11 +47,11 @@ export default function VaultDocumentList(props: {
             <div style={{ padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
                 <div>
                     <div style={{ fontSize: 15, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>Vault Documents</div>
-                    <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>{filteredDocuments.length} visible</div>
+                    <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)", marginTop: 2 }}>{filteredDocuments.length} visible</div>
                 </div>
                 <button
                     onClick={onRefresh}
-                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "7px 10px", color: "#888", fontSize: 11, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}
+                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "7px 10px", color: "rgba(240,237,232,0.62)", fontSize: 11, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}
                 >
                     Refresh
                 </button>
@@ -59,7 +59,7 @@ export default function VaultDocumentList(props: {
 
             <div style={{ maxHeight: "calc(100vh - 280px)", overflowY: "auto", padding: 12 }}>
                 {loading && (
-                    <div style={{ padding: "22px 10px", color: "#666", fontSize: 12 }}>Loading vault documents...</div>
+                    <div style={{ padding: "22px 10px", color: "var(--foundry-text-secondary)", fontSize: 12 }}>Loading vault documents...</div>
                 )}
                 {!loading && error && (
                     <div style={{ padding: "18px 12px", color: "#D28B76", fontSize: 12, lineHeight: 1.6 }}>
@@ -70,7 +70,7 @@ export default function VaultDocumentList(props: {
                     <div style={{ padding: "28px 14px", textAlign: "center" }}>
                         <FolderOpen size={40} color="rgba(240,237,232,0.15)" style={{ marginBottom: 12 }} />
                         <div style={{ fontSize: 18, color: "rgba(240,237,232,0.7)", fontFamily: "'Lora', Georgia, serif", marginBottom: 8 }}>Your vault is empty</div>
-                        <div style={{ fontSize: 13, color: "rgba(240,237,232,0.4)", lineHeight: 1.6, fontFamily: "'DM Sans', system-ui, sans-serif", margin: "0 auto 16px", maxWidth: 330 }}>
+                        <div style={{ fontSize: 13, color: "rgba(240,237,232,0.58)", lineHeight: 1.6, fontFamily: "'DM Sans', system-ui, sans-serif", margin: "0 auto 16px", maxWidth: 330 }}>
                             Every document Forge generates lives here — organized, versioned, and ready when you need it. Start by telling Forge what you need.
                         </div>
                         <div style={{ display: "grid", gap: 8, maxWidth: 260, margin: "0 auto" }}>
@@ -93,7 +93,7 @@ export default function VaultDocumentList(props: {
                     <div style={{ padding: "28px 14px", textAlign: "center" }}>
                         <MagnifyingGlass size={24} color="#555" style={{ marginBottom: 10 }} />
                         <div style={{ fontSize: 14, color: "#D0CCC6", marginBottom: 4 }}>No matching documents</div>
-                        <div style={{ fontSize: 12, color: "#666", lineHeight: 1.6 }}>
+                        <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.6 }}>
                             {hasSearchOrFilter ? "Try widening your search, category, or status filters." : "No results right now."}
                         </div>
                     </div>
@@ -121,7 +121,7 @@ export default function VaultDocumentList(props: {
                             <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start", marginBottom: 6 }}>
                                 <div style={{ minWidth: 0 }}>
                                     <div style={{ fontSize: 13, color: "#F0EDE8", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.title}</div>
-                                    <div style={{ fontSize: 11, color: "#777", marginTop: 3 }}>
+                                    <div style={{ fontSize: 11, color: "var(--foundry-text-muted)", marginTop: 3 }}>
                                         {doc.docType}{doc.category ? ` · ${doc.category}` : ""}{doc.folderId ? ` · ${folderNameById[doc.folderId] || "Folder"}` : " · Unfiled"}
                                     </div>
                                 </div>
@@ -136,7 +136,7 @@ export default function VaultDocumentList(props: {
                                 </div>
                             </div>
                             <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
-                                <div style={{ fontSize: 10, color: "#555" }}>Updated {formatShortDate(doc.updatedAt)} · {doc.currentVersionId ? "Version ready" : "Legacy record without a linked vault version yet"}</div>
+                                <div style={{ fontSize: 10, color: "var(--foundry-text-muted)" }}>Updated {formatShortDate(doc.updatedAt)} · {doc.currentVersionId ? "Version ready" : "Legacy record without a linked vault version yet"}</div>
                                 {doc.status !== "archived" && (
                                     <span
                                         onClick={(event) => {

@@ -12,6 +12,23 @@ function keywordScore(content: string, positiveWords: string[], negativeWords: s
     return clamp(base + (positiveHits * 8) - (negativeHits * 7));
 }
 
+function getExecutionScore(currentStage: number, completedByStage: Record<number, string[]>) {
+    const reachedStage = clamp(Math.round(currentStage || 1), 1, STAGES_DATA.length);
+    const reachedStages = STAGES_DATA.slice(0, reachedStage);
+    const totalReachedMilestones = reachedStages.reduce((sum, stage) => sum + stage.milestones.length, 0);
+
+    if (!totalReachedMilestones) return 0;
+
+    const completedReachedMilestones = reachedStages.reduce((sum, stage) => {
+        if (stage.id < reachedStage) return sum + stage.milestones.length;
+
+        const completed = completedByStage[stage.id] || [];
+        return sum + Math.min(completed.length, stage.milestones.length);
+    }, 0);
+
+    return clamp((completedReachedMilestones / totalReachedMilestones) * 100);
+}
+
 export function getBusinessHealth(
     profile: any,
     completedByStage: Record<number, string[]>,
@@ -24,9 +41,7 @@ export function getBusinessHealth(
     } | null,
 ) {
     const currentStage = profile?.currentStage || 1;
-    const stageMilestones = Number.isFinite(currentStage) ? completedByStage[currentStage] || [] : [];
-    const currentStageTotal = STAGES_DATA[currentStage - 1]?.milestones?.length || 1;
-    const executionScore = clamp((stageMilestones.length / currentStageTotal) * 100);
+    const executionScore = getExecutionScore(currentStage, completedByStage);
 
     const totalBudget = Number(profile?.budget?.total || 0);
     const totalIncome = Number((financialSummary?.totalRevenue ?? profile?.budget?.totalIncome) || 0);

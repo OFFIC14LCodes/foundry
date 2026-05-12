@@ -58,11 +58,11 @@ export default function DocumentSignaturesPanel(props: {
             <div style={{ padding: "12px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
                 <div>
                     <div style={{ fontSize: 13, color: "#F0EDE8", fontWeight: 600 }}>Signatures</div>
-                    <div style={{ fontSize: 10, color: "#666", marginTop: 2 }}>Provider-agnostic request tracking with a mock lifecycle</div>
+                    <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", marginTop: 2 }}>Provider-agnostic request tracking with a mock lifecycle</div>
                 </div>
                 <button
                     onClick={onRefresh}
-                    style={{ padding: "7px 10px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, color: "#888", fontSize: 11, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}
+                    style={{ padding: "7px 10px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, color: "rgba(240,237,232,0.62)", fontSize: 11, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}
                 >
                     Refresh
                 </button>
@@ -76,7 +76,7 @@ export default function DocumentSignaturesPanel(props: {
                         padding: "12px 14px",
                         fontFamily: "'DM Sans', system-ui, sans-serif",
                         fontSize: 12,
-                        color: "rgba(240,237,232,0.5)",
+                        color: "rgba(240,237,232,0.7)",
                         fontStyle: "italic",
                         lineHeight: 1.6,
                     }}>
@@ -172,7 +172,7 @@ export default function DocumentSignaturesPanel(props: {
                                         {provider.id === "mock" ? "Available now" : provider.availableNow ? "Active" : "Not active"}
                                     </span>
                                 </div>
-                                <div style={{ fontSize: 11, color: "#666", lineHeight: 1.6 }}>{provider.message}</div>
+                                <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)", lineHeight: 1.6 }}>{provider.message}</div>
                             </div>
                         ))}
                     </div>
@@ -183,10 +183,10 @@ export default function DocumentSignaturesPanel(props: {
                         <div style={{ fontSize: 12, color: "#F0EDE8", fontWeight: 600 }}>Requests</div>
                     </div>
                     <div style={{ padding: 12, maxHeight: 250, overflowY: "auto" }}>
-                        {requestsLoading && <div style={{ fontSize: 12, color: "#666", padding: "8px 4px" }}>Loading signature requests...</div>}
+                        {requestsLoading && <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", padding: "8px 4px" }}>Loading signature requests...</div>}
                         {!requestsLoading && requestsError && <div style={{ fontSize: 12, color: "#D28B76", lineHeight: 1.6, padding: "8px 4px" }}>{requestsError}</div>}
                         {!requestsLoading && !requestsError && requests.length === 0 && (
-                            <div style={{ fontSize: 12, color: "#666", lineHeight: 1.6, padding: "8px 4px" }}>
+                            <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.6, padding: "8px 4px" }}>
                                 No signature requests yet. Create one above to start the mock lifecycle.
                             </div>
                         )}
@@ -203,15 +203,15 @@ export default function DocumentSignaturesPanel(props: {
                                     <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start", marginBottom: 5 }}>
                                         <div style={{ minWidth: 0 }}>
                                             <div style={{ fontSize: 12, color: "#F0EDE8", fontWeight: 600 }}>{request.signerName || "Unnamed signer"}</div>
-                                            <div style={{ fontSize: 10, color: "#777", marginTop: 2 }}>{request.signerEmail || "No email"} · {request.provider || "mock"}</div>
+                                            <div style={{ fontSize: 10, color: "var(--foundry-text-muted)", marginTop: 2 }}>{request.signerEmail || "No email"} · {request.provider || "mock"}</div>
                                         </div>
                                         <SignatureStatusBadge status={request.status} />
                                     </div>
-                                    <div style={{ fontSize: 10, color: "#666", lineHeight: 1.6 }}>
+                                    <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", lineHeight: 1.6 }}>
                                         {requestFile ? `File: ${requestFile.filename}` : "No file selected"}
                                         {requestVersion ? ` · Version ${requestVersion.versionNumber}` : ""}
                                     </div>
-                                    <div style={{ fontSize: 10, color: "#555", marginTop: 4, lineHeight: 1.6 }}>
+                                    <div style={{ fontSize: 10, color: "var(--foundry-text-muted)", marginTop: 4, lineHeight: 1.6 }}>
                                         {request.sentAt ? `Sent ${formatShortDate(request.sentAt)}` : "Not sent yet"}
                                         {request.completedAt ? ` · Completed ${formatShortDate(request.completedAt)}` : ""}
                                         {request.declinedAt ? ` · Declined ${formatShortDate(request.declinedAt)}` : ""}
@@ -225,7 +225,7 @@ export default function DocumentSignaturesPanel(props: {
                 <div style={{ border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, background: "rgba(255,255,255,0.016)", padding: 12 }}>
                     <div style={{ fontSize: 12, color: "#F0EDE8", fontWeight: 600, marginBottom: 8 }}>Request Detail</div>
                     {!selectedRequest ? (
-                        <div style={{ fontSize: 12, color: "#666", lineHeight: 1.6 }}>
+                        <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.6 }}>
                             Select a signature request to inspect its timeline and mock status controls.
                         </div>
                     ) : (
@@ -233,11 +233,11 @@ export default function DocumentSignaturesPanel(props: {
                             <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start" }}>
                                 <div style={{ minWidth: 0 }}>
                                     <div style={{ fontSize: 13, color: "#F0EDE8", fontWeight: 600 }}>{selectedRequest.signerName || "Unnamed signer"}</div>
-                                    <div style={{ fontSize: 11, color: "#777", marginTop: 2 }}>{selectedRequest.signerEmail || "No email"} · {selectedRequest.provider || "mock"}</div>
+                                    <div style={{ fontSize: 11, color: "var(--foundry-text-muted)", marginTop: 2 }}>{selectedRequest.signerEmail || "No email"} · {selectedRequest.provider || "mock"}</div>
                                 </div>
                                 <SignatureStatusBadge status={selectedRequest.status} />
                             </div>
-                            <div style={{ fontSize: 11, color: "#666", lineHeight: 1.7 }}>
+                            <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)", lineHeight: 1.7 }}>
                                 {selectedFile ? `Selected file: ${selectedFile.filename}` : "Selected file: none"}
                                 <br />
                                 {selectedVersion ? `Selected version: ${selectedVersion.versionNumber}` : "Selected version: current/latest"}
@@ -258,10 +258,10 @@ export default function DocumentSignaturesPanel(props: {
                             </div>
                             <div>
                                 <div style={{ fontSize: 11, color: "#F0EDE8", fontWeight: 600, marginBottom: 8 }}>Events</div>
-                                {eventsLoading && <div style={{ fontSize: 12, color: "#666" }}>Loading event timeline...</div>}
+                                {eventsLoading && <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)" }}>Loading event timeline...</div>}
                                 {!eventsLoading && eventsError && <div style={{ fontSize: 12, color: "#D28B76", lineHeight: 1.6 }}>{eventsError}</div>}
                                 {!eventsLoading && !eventsError && events.length === 0 && (
-                                    <div style={{ fontSize: 12, color: "#666", lineHeight: 1.6 }}>
+                                    <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.6 }}>
                                         No events yet for this request.
                                     </div>
                                 )}
@@ -271,9 +271,9 @@ export default function DocumentSignaturesPanel(props: {
                                             <div key={event.id} style={{ padding: "9px 10px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.018)" }}>
                                                 <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center", marginBottom: 3 }}>
                                                     <div style={{ fontSize: 11, color: "#F0EDE8", fontWeight: 600 }}>{event.eventType}</div>
-                                                    <div style={{ fontSize: 10, color: "#666" }}>{formatShortDate(event.occurredAt)}</div>
+                                                    <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)" }}>{formatShortDate(event.occurredAt)}</div>
                                                 </div>
-                                                <div style={{ fontSize: 10, color: "#777" }}>
+                                                <div style={{ fontSize: 10, color: "var(--foundry-text-muted)" }}>
                                                     {event.eventStatus ? SIGNATURE_STATUS_LABELS[event.eventStatus] : "No status payload"}
                                                 </div>
                                             </div>

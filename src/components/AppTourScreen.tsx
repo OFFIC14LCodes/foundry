@@ -410,7 +410,7 @@ function HubGuideSlide({ step }: { step: GuideStep }) {
                   {segments.map(seg => (
                     <div key={seg.label}>
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-                        <span style={{ fontSize: 10, color: "#888" }}>{seg.label}</span>
+                        <span style={{ fontSize: 10, color: "rgba(240,237,232,0.62)" }}>{seg.label}</span>
                         <span style={{ fontSize: 10, color: seg.color, fontWeight: 700 }}>{seg.value}</span>
                       </div>
                       <div style={{ height: 4, background: "rgba(255,255,255,0.05)", borderRadius: 999, overflow: "hidden" }}>
@@ -429,7 +429,7 @@ function HubGuideSlide({ step }: { step: GuideStep }) {
                 {budgetItems.map(item => (
                   <div key={item.label} style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 8, padding: "7px 4px", textAlign: "center" }}>
                     <div style={{ fontSize: 12, color: item.color, fontWeight: 700, fontFamily: "'Lora', Georgia, serif", lineHeight: 1 }}>{item.value}</div>
-                    <div style={{ fontSize: 9, color: "#555", marginTop: 3, textTransform: "uppercase", letterSpacing: "0.06em" }}>{item.label}</div>
+                    <div style={{ fontSize: 9, color: "var(--foundry-text-muted)", marginTop: 3, textTransform: "uppercase", letterSpacing: "0.06em" }}>{item.label}</div>
                   </div>
                 ))}
               </div>
@@ -678,7 +678,7 @@ const navSecondaryButton: CSSProperties = {
   background: "rgba(255,255,255,0.06)",
   border: "1px solid rgba(255,255,255,0.1)",
   borderRadius: 12,
-  color: "rgba(240,237,232,0.5)",
+  color: "rgba(240,237,232,0.7)",
   fontSize: 14,
   fontFamily: "'DM Sans', sans-serif",
   fontWeight: 500,
@@ -690,7 +690,7 @@ const navSecondaryButton: CSSProperties = {
 const navSkipButton: CSSProperties = {
   background: "transparent",
   border: "none",
-  color: "rgba(240,237,232,0.3)",
+  color: "rgba(240,237,232,0.55)",
   fontSize: 13,
   fontFamily: "'DM Sans', sans-serif",
   fontWeight: 500,

@@ -142,7 +142,7 @@ export default function StructuredCompetitorsPanel({
                                                     <span>{strength}</span>
                                                 </div>
                                             )) : (
-                                                <div style={{ color: "rgba(240,237,232,0.35)", fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12 }}>No strengths captured.</div>
+                                                <div style={{ color: "rgba(240,237,232,0.55)", fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12 }}>No strengths captured.</div>
                                             )}
                                         </div>
                                         <div>
@@ -155,10 +155,10 @@ export default function StructuredCompetitorsPanel({
                                                     <span>{weakness}</span>
                                                 </div>
                                             )) : (
-                                                <div style={{ color: "rgba(240,237,232,0.35)", fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12 }}>No weaknesses captured.</div>
+                                                <div style={{ color: "rgba(240,237,232,0.55)", fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12 }}>No weaknesses captured.</div>
                                             )}
                                             {competitor.pricingNotes && (
-                                                <div style={{ color: "rgba(240,237,232,0.45)", fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, lineHeight: 1.6, marginTop: 8 }}>
+                                                <div style={{ color: "rgba(240,237,232,0.62)", fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, lineHeight: 1.6, marginTop: 8 }}>
                                                     Pricing: {competitor.pricingNotes}
                                                 </div>
                                             )}

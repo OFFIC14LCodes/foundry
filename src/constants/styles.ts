@@ -13,9 +13,9 @@ export const DESIGN_TOKENS = {
     destructiveRed: "#D96A55",
     neutralData: "#8B8FA3",
     textPrimary: "rgba(255,255,255,0.94)",
-    textSecondary: "rgba(255,255,255,0.72)",
-    textMuted: "rgba(255,255,255,0.48)",
-    textDisabled: "rgba(255,255,255,0.32)",
+    textSecondary: "rgba(255,255,255,0.82)",
+    textMuted: "rgba(255,255,255,0.64)",
+    textDisabled: "rgba(255,255,255,0.42)",
   },
   radii: {
     control: "10px",

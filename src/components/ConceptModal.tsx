@@ -185,7 +185,7 @@ export default function ConceptModal({
                                 border: "none",
                                 borderRadius: 8,
                                 padding: "6px 12px",
-                                color: "#666",
+                                color: "var(--foundry-text-secondary)",
                                 fontSize: 11,
                                 cursor: "pointer",
                                 flexShrink: 0,
@@ -337,7 +337,7 @@ export default function ConceptModal({
                             borderRadius: 12,
                             textAlign: "center" as const,
                         }}>
-                            <div style={{ fontSize: 13, color: "#555", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", lineHeight: 1.7 }}>
+                            <div style={{ fontSize: 13, color: "var(--foundry-text-muted)", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", lineHeight: 1.7 }}>
                                 Deep content for this concept is being written. Check back as Foundry grows.
                             </div>
                         </div>

@@ -366,7 +366,7 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                     <div style={{ display: "flex", flexDirection: "column", gap: 10, marginLeft: 42, animation: "fadeSlideUp 0.5s ease" }}>
                         {currentStep.id === "stage_assessment" && (
                             <>
-                                <div style={{ fontSize: 12, color: "#888", padding: "6px 4px 2px", lineHeight: 1.5 }}>
+                                <div style={{ fontSize: 12, color: "rgba(240,237,232,0.62)", padding: "6px 4px 2px", lineHeight: 1.5 }}>
                                     Stage 1 is free. Stages 2–6 require a Starter or Pro plan.
                                 </div>
                                 {STAGE_ASSESSMENT_CARDS.map(card => (
@@ -381,7 +381,7 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                                                         : <span style={{ fontSize: 10, fontWeight: 600, color: "#E8622A", background: "rgba(232,98,42,0.1)", border: "1px solid rgba(232,98,42,0.3)", borderRadius: 4, padding: "1px 6px", letterSpacing: "0.04em" }}>PAID</span>
                                                     }
                                                 </div>
-                                                <div style={{ fontSize: 12, color: "#888" }}>{card.sub}</div>
+                                                <div style={{ fontSize: 12, color: "rgba(240,237,232,0.62)" }}>{card.sub}</div>
                                             </div>
                                         </div>
                                     </button>
@@ -394,7 +394,7 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                                     {(() => { const CardIcon = card.icon; return <CardIcon size={20} color="#C8C4BE" />; })()}
                                     <div>
                                         <div style={{ fontSize: 14, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 2 }}>{card.label}</div>
-                                        <div style={{ fontSize: 12, color: "#888" }}>{card.sub}</div>
+                                        <div style={{ fontSize: 12, color: "rgba(240,237,232,0.62)" }}>{card.sub}</div>
                                     </div>
                                 </div>
                             </button>
@@ -405,7 +405,7 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                                     {(() => { const CardIcon = card.icon; return <CardIcon size={24} color="#C8C4BE" />; })()}
                                     <div>
                                         <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 6 }}>{card.label}</div>
-                                        <div style={{ fontSize: 12, color: "#888", lineHeight: 1.6 }}>{card.desc}</div>
+                                        <div style={{ fontSize: 12, color: "rgba(240,237,232,0.62)", lineHeight: 1.6 }}>{card.desc}</div>
                                     </div>
                                 </div>
                             </button>

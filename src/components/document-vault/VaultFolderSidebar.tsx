@@ -42,7 +42,7 @@ export default function VaultFolderSidebar(props: {
                 background: "rgba(255,255,255,0.025)",
                 padding: 16,
             }}>
-                <div style={{ fontSize: 11, color: "#555", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>
+                <div style={{ fontSize: 11, color: "var(--foundry-text-muted)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>
                     Folders
                 </div>
                 <div style={{ display: "grid", gap: 8, marginBottom: 10 }}>
@@ -58,10 +58,10 @@ export default function VaultFolderSidebar(props: {
                     >
                         Unfiled
                     </button>
-                    {loading && <div style={{ fontSize: 12, color: "#666", padding: "6px 2px" }}>Loading folders...</div>}
+                    {loading && <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", padding: "6px 2px" }}>Loading folders...</div>}
                     {!loading && error && <div style={{ fontSize: 12, color: "#D28B76", lineHeight: 1.6 }}>{error}</div>}
                     {!loading && !error && folders.length === 0 && (
-                        <div style={{ fontSize: 12, color: "#666", lineHeight: 1.6, padding: "6px 2px" }}>
+                        <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.6, padding: "6px 2px" }}>
                             No folders yet. Create one to organize your vault.
                         </div>
                     )}
@@ -77,14 +77,14 @@ export default function VaultFolderSidebar(props: {
                                 <button
                                     onClick={() => onRenameFolder(folder)}
                                     disabled={folderActionId === folder.id}
-                                    style={{ padding: "5px 8px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, color: "#888", fontSize: 10, cursor: folderActionId === folder.id ? "wait" : "pointer", fontFamily: "'Lora', Georgia, serif" }}
+                                    style={{ padding: "5px 8px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, color: "rgba(240,237,232,0.62)", fontSize: 10, cursor: folderActionId === folder.id ? "wait" : "pointer", fontFamily: "'Lora', Georgia, serif" }}
                                 >
                                     Rename
                                 </button>
                                 <button
                                     onClick={() => onDeleteFolder(folder)}
                                     disabled={folderActionId === folder.id}
-                                    style={{ padding: "5px 8px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, color: "#888", fontSize: 10, cursor: folderActionId === folder.id ? "wait" : "pointer", fontFamily: "'Lora', Georgia, serif" }}
+                                    style={{ padding: "5px 8px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, color: "rgba(240,237,232,0.62)", fontSize: 10, cursor: folderActionId === folder.id ? "wait" : "pointer", fontFamily: "'Lora', Georgia, serif" }}
                                 >
                                     Delete
                                 </button>
@@ -115,11 +115,11 @@ export default function VaultFolderSidebar(props: {
                 background: "rgba(255,255,255,0.025)",
                 padding: 16,
             }}>
-                <div style={{ fontSize: 11, color: "#555", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>
+                <div style={{ fontSize: 11, color: "var(--foundry-text-muted)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>
                     Search & Filter
                 </div>
                 <div style={{ position: "relative", marginBottom: 10 }}>
-                    <div style={{ position: "absolute", left: 12, top: 12, fontSize: 14, color: "#555" }}>⌕</div>
+                    <div style={{ position: "absolute", left: 12, top: 12, fontSize: 14, color: "var(--foundry-text-muted)" }}>⌕</div>
                     <input
                         ref={searchInputRef}
                         value={search}

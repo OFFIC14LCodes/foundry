@@ -160,7 +160,7 @@ function AdminCard({
                     borderRadius: 10,
                     border: "1px solid rgba(255,255,255,0.07)",
                     background: "rgba(255,255,255,0.03)",
-                    color: "#555",
+                    color: "var(--foundry-text-muted)",
                     fontSize: 11,
                     fontWeight: 600,
                 }}
@@ -320,7 +320,7 @@ export default function AdminHubScreen({
                         </div>
 
                         {tokenUsageLoading ? (
-                            <div style={{ fontSize: 13, color: "#888" }}>Loading token usage...</div>
+                            <div style={{ fontSize: 13, color: "rgba(240,237,232,0.62)" }}>Loading token usage...</div>
                         ) : tokenUsageError ? (
                             <div style={{ display: "grid", gap: 12 }}>
                                 <div style={{ fontSize: 13, color: "#D28B76", lineHeight: 1.7 }}>{tokenUsageError}</div>
@@ -349,7 +349,7 @@ export default function AdminHubScreen({
                                     <ControlCard label="Cost · All time" hint={tokenUsageEstimateNote()} control={<ValuePill value={formatEstimatedCost(tokenUsageAllTime.estimatedCostUsd)} accent="#E8622A" />} />
                                     <ControlCard label="Messages counted" hint="Saved user and Forge messages included in the estimate." control={<ValuePill value={formatNumber(tokenUsage30d.messageCount)} accent="#F5A843" />} />
                                 </div>
-                                <div style={{ fontSize: 11, color: "#777", lineHeight: 1.7 }}>
+                                <div style={{ fontSize: 11, color: "var(--foundry-text-muted)", lineHeight: 1.7 }}>
                                     {tokenUsageEstimateNote()}
                                 </div>
                                 <div>
@@ -384,7 +384,7 @@ export default function AdminHubScreen({
                         </div>
 
                         {ttsUsageLoading ? (
-                            <div style={{ fontSize: 13, color: "#888" }}>Loading ElevenLabs usage...</div>
+                            <div style={{ fontSize: 13, color: "rgba(240,237,232,0.62)" }}>Loading ElevenLabs usage...</div>
                         ) : ttsUsageError ? (
                             <div style={{ display: "grid", gap: 12 }}>
                                 <div style={{ fontSize: 13, color: "#D28B76", lineHeight: 1.7 }}>{ttsUsageError}</div>
@@ -436,14 +436,14 @@ export default function AdminHubScreen({
                                     <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: 16 }}>
                                         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 10, flexWrap: "wrap" }}>
                                             <div style={{ fontSize: 13, color: "#F0EDE8", fontWeight: 600 }}>Usage this cycle</div>
-                                            <div style={{ fontSize: 11, color: "#888" }}>
+                                            <div style={{ fontSize: 11, color: "rgba(240,237,232,0.62)" }}>
                                                 Reset: {formatResetDate(ttsUsage.resetAtUnix)}
                                             </div>
                                         </div>
                                         <div style={{ height: 10, borderRadius: 999, background: "rgba(255,255,255,0.05)", overflow: "hidden", marginBottom: 8 }}>
                                             <div style={{ width: `${usagePercent}%`, height: "100%", background: "linear-gradient(90deg, #E8622A, #F5A843)" }} />
                                         </div>
-                                        <div style={{ fontSize: 11, color: "#888", lineHeight: 1.7 }}>
+                                        <div style={{ fontSize: 11, color: "rgba(240,237,232,0.62)", lineHeight: 1.7 }}>
                                             {usagePercent}% of the current credit allocation has been used. Voice slots: {ttsUsage.voiceSlotsUsed ?? 0}/{ttsUsage.voiceLimit ?? 0}.
                                         </div>
                                     </div>

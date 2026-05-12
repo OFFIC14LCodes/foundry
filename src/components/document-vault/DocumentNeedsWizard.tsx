@@ -67,7 +67,7 @@ export default function DocumentNeedsWizard(props: {
             <div style={{ padding: "14px 16px", display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
                 <div>
                     <div style={{ fontSize: 15, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>What documents do I need?</div>
-                    <div style={{ fontSize: 12, color: "#666", marginTop: 4, lineHeight: 1.6 }}>
+                    <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", marginTop: 4, lineHeight: 1.6 }}>
                         Foundry can help you identify common documents, but this does not replace legal or tax advice.
                     </div>
                 </div>
@@ -91,7 +91,7 @@ export default function DocumentNeedsWizard(props: {
                             <input value={needsNotes} onChange={(event) => setNeedsNotes(event.target.value)} placeholder="Optional notes: team size, launch timeline, funding target, client work, IP concerns..." style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 12, fontFamily: "'Lora', Georgia, serif", boxSizing: "border-box" }} />
                         </div>
                         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginTop: 12, flexWrap: "wrap" }}>
-                            <div style={{ fontSize: 11, color: "#666", lineHeight: 1.6 }}>
+                            <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)", lineHeight: 1.6 }}>
                                 Foundry will compare your goal, current stage, and vault contents against the document catalog.
                             </div>
                             <button onClick={onRun} disabled={needsLoading} style={{ padding: "10px 13px", background: needsLoading ? "rgba(255,255,255,0.06)" : "rgba(232,98,42,0.08)", border: needsLoading ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(232,98,42,0.18)", borderRadius: 10, color: needsLoading ? "#777" : "#E8622A", fontSize: 12, fontWeight: 600, cursor: needsLoading ? "wait" : "pointer", fontFamily: "'Lora', Georgia, serif" }}>
@@ -101,8 +101,8 @@ export default function DocumentNeedsWizard(props: {
                     </div>
 
                     {needsError && <div style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(232,98,42,0.06)", border: "1px solid rgba(232,98,42,0.18)", fontSize: 12, color: "#D8C9BC", lineHeight: 1.6 }}>{needsError}</div>}
-                    {needsLoading && <div style={{ padding: "18px 14px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.018)", fontSize: 12, color: "#666" }}>Forge is comparing your stage, goals, and vault contents...</div>}
-                    {!needsLoading && !visibleNeedsResult && !needsError && <div style={{ padding: "18px 14px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.018)", fontSize: 12, color: "#666", lineHeight: 1.6 }}>Use the wizard when you want a fast founder checklist before generating, uploading, or sending documents for signature.</div>}
+                    {needsLoading && <div style={{ padding: "18px 14px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.018)", fontSize: 12, color: "var(--foundry-text-secondary)" }}>Forge is comparing your stage, goals, and vault contents...</div>}
+                    {!needsLoading && !visibleNeedsResult && !needsError && <div style={{ padding: "18px 14px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.018)", fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.6 }}>Use the wizard when you want a fast founder checklist before generating, uploading, or sending documents for signature.</div>}
 
                     {!needsLoading && visibleNeedsResult && (
                         <div style={{ display: "grid", gap: 14 }}>
@@ -114,7 +114,7 @@ export default function DocumentNeedsWizard(props: {
                                     </span>
                                 </div>
                                 <div style={{ fontSize: 12, color: "#D0CCC6", lineHeight: 1.7, marginBottom: 6 }}>{visibleNeedsResult.summary}</div>
-                                <div style={{ fontSize: 11, color: "#666", lineHeight: 1.6 }}>{visibleNeedsResult.disclaimer}</div>
+                                <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)", lineHeight: 1.6 }}>{visibleNeedsResult.disclaimer}</div>
                             </div>
 
                             {([
@@ -133,7 +133,7 @@ export default function DocumentNeedsWizard(props: {
                                     </div>
                                     <div style={{ padding: 12 }}>
                                         {section.items.length === 0 ? (
-                                            <div style={{ fontSize: 12, color: "#666", lineHeight: 1.6 }}>No recommendations in this section right now. You may already have the main documents covered, or you can change the goal and run it again.</div>
+                                            <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.6 }}>No recommendations in this section right now. You may already have the main documents covered, or you can change the goal and run it again.</div>
                                         ) : section.items.map((item) => {
                                             const vaultMatch = findVaultMatch(item.documentName, item.existingDocumentId);
                                             const existsInVault = Boolean(vaultMatch);
@@ -142,7 +142,7 @@ export default function DocumentNeedsWizard(props: {
                                                 <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start", marginBottom: 5 }}>
                                                     <div style={{ minWidth: 0 }}>
                                                         <div style={{ fontSize: 13, color: "#F0EDE8", fontWeight: 600 }}>{item.documentName}</div>
-                                                        <div style={{ fontSize: 10, color: "#777", marginTop: 3 }}>{item.categoryName} · Suggested stage {item.suggestedStage}</div>
+                                                        <div style={{ fontSize: 10, color: "var(--foundry-text-muted)", marginTop: 3 }}>{item.categoryName} · Suggested stage {item.suggestedStage}</div>
                                                     </div>
                                                     <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
                                                         <span style={{ padding: "3px 8px", borderRadius: 999, fontSize: 10, fontWeight: 700, color: existsInVault ? "#4CAF8A" : "#E8622A", background: existsInVault ? "rgba(76,175,138,0.1)" : "rgba(232,98,42,0.1)", border: existsInVault ? "1px solid rgba(76,175,138,0.2)" : "1px solid rgba(232,98,42,0.2)" }}>
@@ -151,7 +151,7 @@ export default function DocumentNeedsWizard(props: {
                                                         <NeutralBadge label={RECOMMENDATION_ACTION_LABELS[item.recommendedAction]} />
                                                     </div>
                                                 </div>
-                                                <div style={{ fontSize: 11, color: "#666", lineHeight: 1.65, marginBottom: 10 }}>{item.whyItMatters}</div>
+                                                <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)", lineHeight: 1.65, marginBottom: 10 }}>{item.whyItMatters}</div>
                                                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                                                     {existsInVault && vaultMatch ? (
                                                         <>
@@ -161,9 +161,9 @@ export default function DocumentNeedsWizard(props: {
                                                     ) : (
                                                         <button onClick={() => onGenerate(item.categoryId, item.documentId)} style={{ padding: "7px 10px", background: "rgba(232,98,42,0.08)", border: "1px solid rgba(232,98,42,0.18)", borderRadius: 8, color: "#E8622A", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}>Generate this document</button>
                                                     )}
-                                                    {existsInVault && item.recommendedAction === "send_for_signature" && vaultMatch && <button onClick={() => onReview(vaultMatch.id)} style={{ padding: "7px 10px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, color: "#888", fontSize: 11, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}>Send for signature</button>}
-                                                    {!existsInVault && item.recommendedAction === "upload" && <span style={{ display: "inline-flex", alignItems: "center", padding: "7px 10px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)", color: "#888", fontSize: 11 }}>Upload if you already have it</span>}
-                                                    <button onClick={() => onDismiss(item.key)} style={{ padding: "7px 10px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 8, color: "#666", fontSize: 11, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}>Not needed</button>
+                                                    {existsInVault && item.recommendedAction === "send_for_signature" && vaultMatch && <button onClick={() => onReview(vaultMatch.id)} style={{ padding: "7px 10px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, color: "rgba(240,237,232,0.62)", fontSize: 11, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}>Send for signature</button>}
+                                                    {!existsInVault && item.recommendedAction === "upload" && <span style={{ display: "inline-flex", alignItems: "center", padding: "7px 10px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)", color: "rgba(240,237,232,0.62)", fontSize: 11 }}>Upload if you already have it</span>}
+                                                    <button onClick={() => onDismiss(item.key)} style={{ padding: "7px 10px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 8, color: "var(--foundry-text-secondary)", fontSize: 11, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}>Not needed</button>
                                                 </div>
                                             </div>
                                             );

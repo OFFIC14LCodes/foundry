@@ -122,24 +122,24 @@ export default function DailyBriefPanel({
                         <div style={{ fontSize: 22, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 6, lineHeight: 1.25 }}>
                             Daily Market Brief
                         </div>
-                        <div style={{ fontSize: 13, color: "#666", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", lineHeight: 1.75, maxWidth: 480, margin: 0 }}>
+                        <div style={{ fontSize: 13, color: "var(--foundry-text-secondary)", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", lineHeight: 1.75, maxWidth: 480, margin: 0 }}>
                             Forge generates a focused intelligence report on your market — trends, competitors, risks, and opportunities — tailored to your stage and business context.
                         </div>
                     </div>
 
                     <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "18px 20px", marginBottom: 20, animation: "fadeSlideUp 0.4s ease 0.05s both" }}>
-                        <div style={{ fontSize: 10, color: "#444", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>What you'll get</div>
+                        <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>What you'll get</div>
                         {["Market overview for your specific industry", "Key trends reshaping the space", "Competitive landscape at your stage", "Financial and funding signals", "Risks and opportunities right now", "What matters most — given your stage and strategy"].map((item, i) => (
                             <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8 }}>
                                 <div style={{ width: 14, height: 14, borderRadius: "50%", background: "rgba(99,179,237,0.12)", border: "1px solid rgba(99,179,237,0.22)", flexShrink: 0, marginTop: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
                                     <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#63B3ED" }} />
                                 </div>
-                                <span style={{ fontSize: 12, color: "#888", lineHeight: 1.5 }}>{item}</span>
+                                <span style={{ fontSize: 12, color: "rgba(240,237,232,0.62)", lineHeight: 1.5 }}>{item}</span>
                             </div>
                         ))}
                     </div>
 
-                    <div style={{ fontSize: 10, color: "#444", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", marginBottom: 18, lineHeight: 1.6, animation: "fadeSlideUp 0.4s ease 0.1s both" }}>
+                    <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", marginBottom: 18, lineHeight: 1.6, animation: "fadeSlideUp 0.4s ease 0.1s both" }}>
                         Based on Forge's knowledge of your industry — not a live data feed. Generated once per day, then available to Forge in your conversations.
                     </div>
 
@@ -157,7 +157,7 @@ export default function DailyBriefPanel({
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 14px", background: "rgba(245,168,67,0.05)", border: "1px solid rgba(245,168,67,0.15)", borderRadius: 10, marginBottom: 18, animation: "fadeSlideUp 0.3s ease both" }}>
                     <div>
                         <div style={{ fontSize: 11, color: "#F5A843", fontWeight: 600, marginBottom: 2 }}>Report from {formatReportDate(currentReport.date)}</div>
-                        <div style={{ fontSize: 10, color: "#555" }}>Generate a fresh report for today</div>
+                        <div style={{ fontSize: 10, color: "var(--foundry-text-muted)" }}>Generate a fresh report for today</div>
                     </div>
                     <button
                         onClick={onGenerate}
@@ -176,7 +176,7 @@ export default function DailyBriefPanel({
                             <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: "#63B3ED", animation: "forgePulse 1.4s infinite ease-in-out", animationDelay: `${i * 0.2}s` }} />
                         ))}
                     </div>
-                    <div style={{ fontSize: 13, color: "#555", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic" }}>
+                    <div style={{ fontSize: 13, color: "var(--foundry-text-muted)", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic" }}>
                         {loadingText}
                     </div>
                 </div>
@@ -188,7 +188,7 @@ export default function DailyBriefPanel({
                         <div style={{ fontSize: 20, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, lineHeight: 1.25, marginBottom: 4 }}>
                             {profileIndustry || "Market"} Intelligence
                         </div>
-                        <div style={{ fontSize: 11, color: "#555" }}>
+                        <div style={{ fontSize: 11, color: "var(--foundry-text-muted)" }}>
                             {generating ? "Writing..." : currentReportDate ? formatReportDate(currentReportDate) : "Today"}
                             {generating && <span style={{ marginLeft: 8, color: "#63B3ED" }}>● Live</span>}
                         </div>
@@ -235,12 +235,12 @@ export default function DailyBriefPanel({
                                                     >
                                                         {source.title}
                                                     </a>
-                                                    <span style={{ color: "rgba(240,237,232,0.4)" }}> - {source.url}</span>
+                                                    <span style={{ color: "rgba(240,237,232,0.58)" }}> - {source.url}</span>
                                                 </li>
                                             ))}
                                         </ol>
                                     ) : (
-                                        <div style={{ marginTop: 10, color: "rgba(240,237,232,0.4)", fontSize: 12, lineHeight: 1.6, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+                                        <div style={{ marginTop: 10, color: "rgba(240,237,232,0.58)", fontSize: 12, lineHeight: 1.6, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
                                             This report was generated from AI training data synthesis. Live source data was unavailable.
                                         </div>
                                     )
@@ -280,7 +280,7 @@ export default function DailyBriefPanel({
                                                 ))}
                                             </ol>
                                         ) : (
-                                            <div style={{ marginTop: 10, color: "rgba(240,237,232,0.4)", fontSize: 12, lineHeight: 1.6, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+                                            <div style={{ marginTop: 10, color: "rgba(240,237,232,0.58)", fontSize: 12, lineHeight: 1.6, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
                                                 Search query history is not available for this saved report.
                                             </div>
                                         )

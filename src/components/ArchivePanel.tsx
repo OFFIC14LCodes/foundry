@@ -368,14 +368,14 @@ export default function ArchivePanel({
                                 Stage {stageData.id} — {stageData.label}
                             </span>
                         )}
-                        <span style={{ fontSize: 10, color: "rgba(240,237,232,0.3)", fontFamily: "'DM Sans', sans-serif", marginLeft: "auto" }}>
+                        <span style={{ fontSize: 10, color: "rgba(240,237,232,0.55)", fontFamily: "'DM Sans', sans-serif", marginLeft: "auto" }}>
                             {displayDate(entry.date)}
                         </span>
                     </div>
                     <div style={{ fontSize: 15, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 5, lineHeight: 1.3 }}>
                         {getArchiveDisplayTitle(entry.title, entry.summary, fallback)}
                     </div>
-                    <div style={{ fontSize: 12, color: "rgba(240,237,232,0.45)", lineHeight: 1.7 }}>
+                    <div style={{ fontSize: 12, color: "rgba(240,237,232,0.62)", lineHeight: 1.7 }}>
                         {previewText(entry.summary)}
                     </div>
                 </button>
@@ -410,7 +410,7 @@ export default function ArchivePanel({
                                 {stageData && (
                                     <span style={{ fontSize: 9, fontFamily: "'DM Sans', sans-serif", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: stageData.color, background: `${stageData.color}15`, border: `1px solid ${stageData.color}28`, borderRadius: 5, padding: "2px 7px" }}>Stage {stageData.id} — {stageData.label}</span>
                                 )}
-                                <span style={{ fontSize: 10, color: "rgba(240,237,232,0.3)", fontFamily: "'DM Sans', sans-serif" }}>{displayDate(selectedEntry.date)}</span>
+                                <span style={{ fontSize: 10, color: "rgba(240,237,232,0.55)", fontFamily: "'DM Sans', sans-serif" }}>{displayDate(selectedEntry.date)}</span>
                             </div>
                             {/* Title / edit */}
                             {editingTitle ? (
@@ -425,7 +425,7 @@ export default function ArchivePanel({
                                     <button onClick={() => void handleSaveTitle()} disabled={savingTitle} style={{ padding: "8px 14px", background: "rgba(232,98,42,0.15)", border: "1px solid rgba(232,98,42,0.3)", borderRadius: 8, color: "#E8622A", fontSize: 12, cursor: "pointer" }}>
                                         {savingTitle ? "..." : "Save"}
                                     </button>
-                                    <button onClick={() => setEditingTitle(false)} style={{ padding: "8px 12px", background: "transparent", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, color: "#666", fontSize: 12, cursor: "pointer" }}>✕</button>
+                                    <button onClick={() => setEditingTitle(false)} style={{ padding: "8px 12px", background: "transparent", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, color: "var(--foundry-text-secondary)", fontSize: 12, cursor: "pointer" }}>✕</button>
                                 </div>
                             ) : (
                                 <div style={{ fontSize: 20, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", lineHeight: 1.2 }}>
@@ -435,9 +435,9 @@ export default function ArchivePanel({
                         </div>
                         <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
                             {!editingTitle && (
-                                <button onClick={() => setEditingTitle(true)} style={{ padding: "6px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, color: "#888", fontSize: 12, cursor: "pointer" }}>Edit</button>
+                                <button onClick={() => setEditingTitle(true)} style={{ padding: "6px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, color: "rgba(240,237,232,0.62)", fontSize: 12, cursor: "pointer" }}>Edit</button>
                             )}
-                            <button onClick={() => { setSelectedEntry(null); setEditingTitle(false); }} style={{ padding: "6px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, color: "#888", fontSize: 12, cursor: "pointer" }}>✕</button>
+                            <button onClick={() => { setSelectedEntry(null); setEditingTitle(false); }} style={{ padding: "6px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, color: "rgba(240,237,232,0.62)", fontSize: 12, cursor: "pointer" }}>✕</button>
                         </div>
                     </div>
 
@@ -461,13 +461,13 @@ export default function ArchivePanel({
                                 <div style={{ fontSize: 10, fontFamily: "'DM Sans', sans-serif", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(232,98,42,0.7)", marginBottom: 12 }}>Workspace Snapshot</div>
                                 {focus && (
                                     <div style={{ marginBottom: 12 }}>
-                                        <div style={{ fontSize: 10, fontFamily: "'DM Sans', sans-serif", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: 4 }}>Focus</div>
+                                        <div style={{ fontSize: 10, fontFamily: "'DM Sans', sans-serif", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.55)", marginBottom: 4 }}>Focus</div>
                                         <div style={{ fontSize: 13, color: "rgba(240,237,232,0.75)", lineHeight: 1.5 }}>{focus}</div>
                                     </div>
                                 )}
                                 {userNotes.length > 0 && (
                                     <div style={{ marginBottom: 12 }}>
-                                        <div style={{ fontSize: 10, fontFamily: "'DM Sans', sans-serif", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: 4 }}>Founder Notes</div>
+                                        <div style={{ fontSize: 10, fontFamily: "'DM Sans', sans-serif", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.55)", marginBottom: 4 }}>Founder Notes</div>
                                         <ul style={{ paddingLeft: 16, margin: 0 }}>
                                             {userNotes.map((note, i) => <li key={i} style={{ fontSize: 13, color: "rgba(240,237,232,0.7)", lineHeight: 1.6 }}>{note}</li>)}
                                         </ul>
@@ -475,7 +475,7 @@ export default function ArchivePanel({
                                 )}
                                 {nextSteps.length > 0 && (
                                     <div style={{ marginBottom: 12 }}>
-                                        <div style={{ fontSize: 10, fontFamily: "'DM Sans', sans-serif", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: 4 }}>Next Actions</div>
+                                        <div style={{ fontSize: 10, fontFamily: "'DM Sans', sans-serif", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.55)", marginBottom: 4 }}>Next Actions</div>
                                         <ul style={{ paddingLeft: 16, margin: 0 }}>
                                             {nextSteps.map((step, i) => <li key={i} style={{ fontSize: 13, color: "rgba(240,237,232,0.7)", lineHeight: 1.6 }}>{step}</li>)}
                                         </ul>
@@ -483,7 +483,7 @@ export default function ArchivePanel({
                                 )}
                                 {(decisions.length > 0 || openQuestions.length > 0) && (
                                     <div>
-                                        <div style={{ fontSize: 10, fontFamily: "'DM Sans', sans-serif", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", marginBottom: 4 }}>Open Threads</div>
+                                        <div style={{ fontSize: 10, fontFamily: "'DM Sans', sans-serif", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(255,255,255,0.55)", marginBottom: 4 }}>Open Threads</div>
                                         <ul style={{ paddingLeft: 16, margin: 0 }}>
                                             {[...decisions, ...openQuestions].map((item, i) => <li key={i} style={{ fontSize: 13, color: "rgba(240,237,232,0.7)", lineHeight: 1.6 }}>{item}</li>)}
                                         </ul>
@@ -520,7 +520,7 @@ export default function ArchivePanel({
             <div style={{ padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", gap: 12, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)", flexShrink: 0 }}>
                 <button
                     onClick={onOpenNav}
-                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "#888", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "rgba(240,237,232,0.62)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                 >
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg>
                 </button>
@@ -535,7 +535,7 @@ export default function ArchivePanel({
             {/* Scrollable list */}
             <div className="foundry-app-page__content" style={{ flex: 1, overflowY: "auto", padding: 16, maxWidth: 720, width: "100%", margin: "0 auto" }}>
                 {loading ? (
-                    <div style={{ textAlign: "center", padding: 48, color: "#555", fontSize: 13 }}>Loading archive…</div>
+                    <div style={{ textAlign: "center", padding: 48, color: "var(--foundry-text-muted)", fontSize: 13 }}>Loading archive…</div>
                 ) : (
                     <>
                         {/* Filter chips */}
@@ -576,13 +576,13 @@ export default function ArchivePanel({
                                 {filteredEntries.map(renderCard)}
                             </div>
                         ) : entries.length === 0 ? (
-                            <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "36px 24px", color: "#888", fontSize: 13, lineHeight: 1.7, textAlign: "center" }}>
+                            <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "36px 24px", color: "rgba(240,237,232,0.62)", fontSize: 13, lineHeight: 1.7, textAlign: "center" }}>
                                 <div style={{ fontSize: 30, marginBottom: 14 }}>📁</div>
                                 <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 16, color: "#F0EDE8", marginBottom: 8 }}>No saved archives yet.</div>
                                 <HelpTooltip content="Use Archive Chat in the Forge to store named snapshots of your conversations." />
                             </div>
                         ) : (
-                            <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "18px 16px", color: "#888", fontSize: 13 }}>
+                            <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "18px 16px", color: "rgba(240,237,232,0.62)", fontSize: 13 }}>
                                 No {filterOptions.find((o) => o.key === filter)?.label} archives yet.
                             </div>
                         )}
@@ -630,10 +630,10 @@ export default function ArchivePanel({
                             <div style={{ fontSize: 17, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", textAlign: "center", marginBottom: 8, lineHeight: 1.3 }}>
                                 Delete this archive?
                             </div>
-                            <div style={{ fontSize: 13, color: "rgba(240,237,232,0.45)", textAlign: "center", marginBottom: 6, fontFamily: "'DM Sans', sans-serif", lineHeight: 1.5 }}>
+                            <div style={{ fontSize: 13, color: "rgba(240,237,232,0.62)", textAlign: "center", marginBottom: 6, fontFamily: "'DM Sans', sans-serif", lineHeight: 1.5 }}>
                                 {title}
                             </div>
-                            <div style={{ fontSize: 12, color: "rgba(240,237,232,0.3)", textAlign: "center", marginBottom: 24, fontFamily: "'DM Sans', sans-serif" }}>
+                            <div style={{ fontSize: 12, color: "rgba(240,237,232,0.55)", textAlign: "center", marginBottom: 24, fontFamily: "'DM Sans', sans-serif" }}>
                                 This cannot be undone.
                             </div>
                             <div style={{ display: "flex", gap: 10 }}>
