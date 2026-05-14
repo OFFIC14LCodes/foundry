@@ -117,8 +117,7 @@ function renderArchiveSummary(summary: string) {
 
     for (let idx = 0; idx < lines.length; idx++) {
         const line = lines[idx];
-        const headingTwoMatch = line.match(/^##\s+(.*)$/);
-        const headingThreeMatch = line.match(/^###\s+(.*)$/);
+        const headingMatch = line.match(/^(#{1,6})\s+(.*)$/);
         const bulletMatch = line.match(/^[-*]\s+(.*)$/);
         const numberedMatch = line.match(/^(\d+)\.\s+(.*)$/);
 
@@ -127,21 +126,13 @@ function renderArchiveSummary(summary: string) {
             continue;
         }
 
-        if (headingTwoMatch) {
+        if (headingMatch) {
+            const level = headingMatch[1].length;
+            const fontSize = level <= 2 ? 16 : level === 3 ? 14 : 13;
             flushParagraph();
             blocks.push(
-                <div key={`h2-${blockIndex++}`} style={{ margin: blocks.length === 0 ? 0 : "14px 0 0 0", fontSize: 16, lineHeight: 1.35, fontWeight: 700, color: "#F0EDE8" }}>
-                    {renderInline(headingTwoMatch[1], `h2-${blockIndex}`)}
-                </div>
-            );
-            continue;
-        }
-
-        if (headingThreeMatch) {
-            flushParagraph();
-            blocks.push(
-                <div key={`h3-${blockIndex++}`} style={{ margin: blocks.length === 0 ? 0 : "12px 0 0 0", fontSize: 14, lineHeight: 1.4, fontWeight: 700, color: "#F0EDE8" }}>
-                    {renderInline(headingThreeMatch[1], `h3-${blockIndex}`)}
+                <div key={`h${level}-${blockIndex++}`} style={{ margin: blocks.length === 0 ? 0 : level <= 2 ? "14px 0 0 0" : "12px 0 0 0", fontSize, lineHeight: 1.4, fontWeight: 700, color: "#F0EDE8" }}>
+                    {renderInline(headingMatch[2], `h${level}-${blockIndex}`)}
                 </div>
             );
             continue;
@@ -662,7 +653,7 @@ export default function ArchivePanel({
                                     <div key={source.id} style={{ padding: "10px 12px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
                                         <div style={{ fontSize: 13, color: "rgba(240,237,232,0.78)", lineHeight: 1.4 }}>{source.sourceTitle || "Archived conversation"}</div>
                                         <div style={{ marginTop: 4, fontSize: 11, color: "rgba(240,237,232,0.45)", fontFamily: "'DM Sans', sans-serif" }}>
-                                            {source.sourceStageId ? `Stage ${source.sourceStageId} · ` : ""}{displayDateTime(source.appliedAt)}
+                                            {source.sourceStageId ? `${source.sourceType === "academy" ? "Academy Stage" : "Stage"} ${source.sourceStageId} · ` : ""}{displayDateTime(source.appliedAt)}
                                         </div>
                                     </div>
                                 ))}

@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect, useState, useCallback } from "react";
 import { cleanAIText } from "../lib/cleanAIText";
+import { sendForgeMessageFeedback, type ForgeMessageFeedbackContext } from "../lib/messageFeedback";
 
 // ── Bold segment parser ───────────────────────────────────────
 // Splits text on ** markers, toggling bold on each pair.
@@ -75,8 +76,7 @@ export function renderText(text: string) {
 
     while (i < lines.length) {
         const line = lines[i];
-        const headingTwoMatch = line.match(/^##\s+(.*)$/);
-        const headingThreeMatch = line.match(/^###\s+(.*)$/);
+        const headingMatch = line.match(/^(#{1,6})\s+(.*)$/);
 
         if (!line.trim()) {
             flushParagraph();
@@ -84,42 +84,23 @@ export function renderText(text: string) {
             continue;
         }
 
-        if (headingTwoMatch) {
+        if (headingMatch) {
+            const level = headingMatch[1].length;
+            const fontSize = level <= 2 ? 15.5 : level === 3 ? 13.5 : 13;
             flushParagraph();
             blocks.push(
                 <div
-                    key={`h2-${blocks.length}`}
+                    key={`h${level}-${blocks.length}`}
                     style={{
-                        margin: blocks.length === 0 ? 0 : "14px 0 0 0",
-                        fontSize: 15.5,
-                        lineHeight: 1.35,
-                        fontWeight: 700,
-                        color: "#F0EDE8",
-                        textAlign: "left",
-                    }}
-                >
-                    {renderInline(headingTwoMatch[1], `h2-${blocks.length}`)}
-                </div>
-            );
-            i++;
-            continue;
-        }
-
-        if (headingThreeMatch) {
-            flushParagraph();
-            blocks.push(
-                <div
-                    key={`h3-${blocks.length}`}
-                    style={{
-                        margin: blocks.length === 0 ? 0 : "12px 0 0 0",
-                        fontSize: 13.5,
+                        margin: blocks.length === 0 ? 0 : level <= 2 ? "14px 0 0 0" : "12px 0 0 0",
+                        fontSize,
                         lineHeight: 1.4,
                         fontWeight: 700,
                         color: "#F0EDE8",
                         textAlign: "left",
                     }}
                 >
-                    {renderInline(headingThreeMatch[1], `h3-${blocks.length}`)}
+                    {renderInline(headingMatch[2], `h${level}-${blocks.length}`)}
                 </div>
             );
             i++;
@@ -300,9 +281,18 @@ export function AnimatedChatText({ text, createdAt }: { text: string; createdAt?
     );
 }
 
-export function MessageActions({ text, onApplyToContext }: { text: string; onApplyToContext?: () => void }) {
+export function MessageActions({
+    text,
+    feedbackContext,
+    onApplyToContext,
+}: {
+    text: string;
+    feedbackContext?: ForgeMessageFeedbackContext;
+    onApplyToContext?: () => void;
+}) {
     const [reaction, setReaction] = useState<"up" | "down" | null>(null);
     const [copied, setCopied] = useState(false);
+    const [feedbackFailed, setFeedbackFailed] = useState(false);
 
     const handleCopy = useCallback(() => {
         const plain = getDisplayText(text);
@@ -313,7 +303,23 @@ export function MessageActions({ text, onApplyToContext }: { text: string; onApp
     }, [text]);
 
     const toggleReaction = (dir: "up" | "down") => {
-        setReaction(prev => prev === dir ? null : dir);
+        const nextReaction = reaction === dir ? null : dir;
+        setReaction(nextReaction);
+        setFeedbackFailed(false);
+        if (!nextReaction) return;
+        const messageText = getDisplayText(text).trim();
+        if (!messageText) return;
+        void sendForgeMessageFeedback({
+            reaction: nextReaction,
+            messageText,
+            context: {
+                ...(feedbackContext ?? {}),
+                pageUrl: window.location.href,
+            },
+        }).catch((error) => {
+            console.error("message feedback email error:", error);
+            setFeedbackFailed(true);
+        });
     };
 
     const btnBase: React.CSSProperties = {
@@ -394,6 +400,11 @@ export function MessageActions({ text, onApplyToContext }: { text: string; onApp
                         </svg>
                     </button>
                 </>
+            )}
+            {feedbackFailed && (
+                <span style={{ marginLeft: 4, fontSize: 10, color: "#D96A55", fontFamily: "'DM Sans', sans-serif" }}>
+                    Feedback email failed
+                </span>
             )}
         </div>
     );

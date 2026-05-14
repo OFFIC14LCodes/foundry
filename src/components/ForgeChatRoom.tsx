@@ -554,7 +554,7 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
                 sourceType: getBookTypeForChatRoom(activeAcademyEntry, activeTrendEntry, activeClarityEntry),
                 sourceLabel: activeAcademyEntry ? "Forge Academy" : activeTrendEntry ? "Market Intelligence" : activeClarityEntry ? "Quick Chat" : "Chat with Forge",
                 sourceRefId: activeAcademyEntry?.id || activeTrendEntry?.id || activeClarityEntry?.id || activeArchive?.id || null,
-                stageId: Number(profile.currentStage) || 1,
+                stageId: activeAcademyEntry?.stageIds?.[0] ?? (Number(profile.currentStage) || 1),
                 academyEntry: activeAcademyEntry,
                 marketEntry: activeTrendEntry,
                 workspace,
@@ -1313,6 +1313,12 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
                             {msg.role === "forge" && (
                                 <MessageActions
                                     text={msg.text}
+                                    feedbackContext={{
+                                        surface: activeAcademyEntry ? "Forge Academy" : activeTrendEntry ? "Market Intelligence" : activeClarityEntry ? "Clarity" : "Chat with Forge",
+                                        conversationTitle: chatTitle,
+                                        stageId: Number(profile.currentStage) || null,
+                                        messageId: msg.id,
+                                    }}
                                     onApplyToContext={msg.text.trim() ? () => {
                                         setPendingApplyText(msg.text);
                                         setContextCardOpen(true);

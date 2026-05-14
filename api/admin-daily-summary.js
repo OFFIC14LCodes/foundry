@@ -11,9 +11,9 @@
  *                             (onboarding@resend.dev) and update FROM_ADDRESS below.
  *                             Verify your domain at: resend.com/domains
  *
- *   ADMIN_CRON_SECRET       — any strong random string you generate. Vercel cron jobs send this
- *                             automatically as `Authorization: Bearer <value>`. Set the same value
- *                             in Vercel and it is never exposed to the client.
+ *   CRON_SECRET             — any strong random string you generate. Vercel cron jobs send this
+ *                             automatically as `Authorization: Bearer <value>`. ADMIN_CRON_SECRET
+ *                             is also accepted for older deployments.
  *
  *   SUPABASE_SERVICE_ROLE_KEY — from Supabase Dashboard → Settings → API → service_role key.
  *                             This bypasses RLS so the cron can read all user data.
@@ -26,9 +26,9 @@
  *   STRIPE_SECRET_KEY       — already set in Vercel from existing billing setup.
  */
 
-const { createClient } = require('@supabase/supabase-js');
-const Stripe = require('stripe');
-const { Resend } = require('resend');
+import { createClient } from '@supabase/supabase-js';
+import Stripe from 'stripe';
+import { Resend } from 'resend';
 
 // ── Config ────────────────────────────────────────────────────
 const TO_ADDRESS = process.env.RESEND_TO_ADDRESS || 'foundryandforge.app@gmail.com';
@@ -86,8 +86,8 @@ export default async function handler(req, res) {
   // Vercel automatically sends Authorization: Bearer <CRON_SECRET> for cron invocations.
   // Also allow manual calls with the same secret for testing.
   const authHeader = req.headers['authorization'] ?? '';
-  const secret = process.env.ADMIN_CRON_SECRET;
-  if (secret && authHeader !== `Bearer ${secret}`) {
+  const acceptedSecrets = [process.env.CRON_SECRET, process.env.ADMIN_CRON_SECRET].filter(Boolean);
+  if (acceptedSecrets.length > 0 && !acceptedSecrets.some((secret) => authHeader === `Bearer ${secret}`)) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
@@ -320,12 +320,15 @@ export default async function handler(req, res) {
   // ── Send email ────────────────────────────────────────────────
 
   try {
-    await resend.emails.send({
+    const result = await resend.emails.send({
       from: FROM_ADDRESS,
       to: TO_ADDRESS,
       subject: `Foundry Daily — ${now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: 'America/Chicago' })}`,
       html,
     });
+    if (result?.error) {
+      throw new Error(result.error.message || 'Resend could not send the email.');
+    }
     return res.status(200).json({ ok: true, date: dateLabel, totalUsers });
   } catch (err) {
     console.error('Resend error:', err);

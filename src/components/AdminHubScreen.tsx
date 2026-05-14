@@ -12,6 +12,7 @@ import {
 import AdminDashboard from "./AdminDashboard";
 import AdminAcademyManager from "./AdminAcademyManager";
 import AdminFounderAccounts from "./AdminFounderAccounts";
+import AdminOperationsScreen from "./AdminOperationsScreen";
 import HelpTooltip from "./HelpTooltip";
 
 interface Props {
@@ -22,6 +23,13 @@ interface Props {
 }
 
 const ADMIN_SECTIONS = [
+    {
+        title: "Admin Operations",
+        description: "Read-only founder search, account snapshots, access visibility, and activity metadata for safe support workflows.",
+        accent: "#4CAF8A",
+        cta: "Open Operations console",
+        action: "operations",
+    },
     {
         title: "Founder Accounts",
         description: "Browse all registered founders, view per-user stage progress, archive summaries, subscription status, and generate a Forge-powered account overview.",
@@ -177,7 +185,7 @@ export default function AdminHubScreen({
     notificationSettings,
     onNotificationSettingsChange,
 }: Props) {
-    const [activeView, setActiveView] = useState<"overview" | "dashboard" | "accounts" | "academy">("overview");
+    const [activeView, setActiveView] = useState<"overview" | "dashboard" | "accounts" | "academy" | "operations">("overview");
     const [ttsUsage, setTtsUsage] = useState<TtsUsageSnapshot | null>(null);
     const [ttsUsageLoading, setTtsUsageLoading] = useState(true);
     const [ttsUsageError, setTtsUsageError] = useState<string | null>(null);
@@ -231,6 +239,10 @@ export default function AdminHubScreen({
 
     if (activeView === "dashboard") {
         return <AdminDashboard userId={userId} onBack={() => setActiveView("overview")} />;
+    }
+
+    if (activeView === "operations") {
+        return <AdminOperationsScreen onBack={() => setActiveView("overview")} />;
     }
 
     if (activeView === "accounts") {
@@ -535,6 +547,7 @@ export default function AdminHubScreen({
                                 cta={section.cta}
                                 onClick={
                             section.action === "dashboard" ? () => setActiveView("dashboard") :
+                            section.action === "operations" ? () => setActiveView("operations") :
                             section.action === "accounts" ? () => setActiveView("accounts") :
                             section.action === "academy" ? () => setActiveView("academy") :
                             undefined

@@ -552,7 +552,17 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
                                             ? <AnimatedChatText text={msg.text} createdAt={msg.createdAt} />
                                             : renderText(msg.text)}
                                     </div>
-                                    {msg.role === "forge" && <MessageActions text={msg.text} />}
+                                    {msg.role === "forge" && (
+                                        <MessageActions
+                                            text={msg.text}
+                                            feedbackContext={{
+                                                surface: "Quick Chat",
+                                                conversationTitle: `Quick Chat · ${currentScreen}`,
+                                                stageId: Number(profile.currentStage) || null,
+                                                messageId: msg.id,
+                                            }}
+                                        />
+                                    )}
                                 </div>
                             </div>
                         ))}
