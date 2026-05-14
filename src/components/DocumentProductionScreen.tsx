@@ -1409,12 +1409,16 @@ export default function DocumentProductionScreen({
         );
 
         const genController = new AbortController();
-        const genTimeout = setTimeout(() => genController.abort(), 45000);
+        const genTimeout = setTimeout(() => genController.abort(), 90000);
+        let streamedDraft = "";
         try {
             const final = await streamForgeAPI(
                 [{ role: "user", content: userContent }],
                 systemPrompt,
-                (chunk) => setCurrentDoc(chunk),
+                (chunk) => {
+                    streamedDraft = chunk;
+                    setCurrentDoc(chunk);
+                },
                 DOC_MAX_TOKENS,
                 genController.signal
             );
@@ -1431,11 +1435,33 @@ export default function DocumentProductionScreen({
         } catch (err) {
             clearTimeout(genTimeout);
             const isTimeout = err instanceof Error && err.name === "AbortError";
-            setCurrentDoc(
-                isTimeout
-                    ? "# Generation Timed Out\n\nThis document is taking too long to generate. Please try again — complex documents sometimes need a second attempt."
-                    : "# Document Generation Failed\n\nSomething went wrong. Try again or adjust your request."
-            );
+            const interruptedDraft = streamedDraft.trim();
+            if (interruptedDraft) {
+                const safePartial = sanitizeDocumentMarkdown(interruptedDraft, {
+                    ...exportMeta,
+                    title: getDocTitle(interruptedDraft),
+                    legalDate: formatLegalDate(docInputs.documentDate || getIsoDate()),
+                });
+                const nextHistory = [{
+                    instruction: `${userContent}\n\n[Generation interrupted before Forge finished.]`,
+                    doc: safePartial,
+                }];
+                setCurrentDoc(safePartial);
+                setHistory(nextHistory);
+                await persistDocument(safePartial, nextHistory, null);
+                setStudioLaunchNotice(
+                    isTimeout
+                        ? "Forge timed out before finishing, but your partial draft was preserved and saved. You can copy, download, or refine it from here."
+                        : "Forge stopped before finishing, but your partial draft was preserved and saved. You can copy, download, or refine it from here."
+                );
+            } else {
+                setCurrentDoc("");
+                setStudioLaunchNotice(
+                    isTimeout
+                        ? "Forge timed out before any draft text came back. Your setup details are still here; go back and try again with a narrower request."
+                        : "Forge could not generate this document. Your setup details are still here; go back and try again or adjust your request."
+                );
+            }
         }
         setGenerating(false);
     };
@@ -1453,12 +1479,17 @@ export default function DocumentProductionScreen({
         const userContent = buildRefinementRequest(currentDoc, instruction);
 
         const refineController = new AbortController();
-        const refineTimeout = setTimeout(() => refineController.abort(), 45000);
+        const refineTimeout = setTimeout(() => refineController.abort(), 90000);
+        const previousDoc = currentDoc;
+        let streamedRevision = "";
         try {
             const final = await streamForgeAPI(
                 [{ role: "user", content: userContent }],
                 systemPrompt,
-                (chunk) => setCurrentDoc(chunk),
+                (chunk) => {
+                    streamedRevision = chunk;
+                    setCurrentDoc(chunk);
+                },
                 DOC_MAX_TOKENS,
                 refineController.signal
             );
@@ -1473,10 +1504,37 @@ export default function DocumentProductionScreen({
             setHistory(nextHistory);
             const savedId = currentDocumentIdRef.current;
             await persistDocument(safeFinal, nextHistory, savedId);
-        } catch {
+        } catch (err) {
             clearTimeout(refineTimeout);
-            const last = history[history.length - 1];
-            if (last) setCurrentDoc(last.doc);
+            const isTimeout = err instanceof Error && err.name === "AbortError";
+            const interruptedRevision = streamedRevision.trim();
+            if (interruptedRevision) {
+                const safePartial = sanitizeDocumentMarkdown(interruptedRevision, {
+                    ...exportMeta,
+                    title: getDocTitle(interruptedRevision),
+                    legalDate: formatLegalDate(docInputs.documentDate || getIsoDate()),
+                });
+                const nextHistory = [...history, {
+                    instruction: `${instruction}\n\n[Refinement interrupted before Forge finished.]`,
+                    doc: safePartial,
+                }];
+                setCurrentDoc(safePartial);
+                setHistory(nextHistory);
+                const savedId = currentDocumentIdRef.current;
+                await persistDocument(safePartial, nextHistory, savedId);
+                setStudioLaunchNotice(
+                    isTimeout
+                        ? "Forge timed out during refinement, but the partial revision was preserved and saved. Your previous version is still in refinement history."
+                        : "Forge stopped during refinement, but the partial revision was preserved and saved. Your previous version is still in refinement history."
+                );
+            } else {
+                setCurrentDoc(previousDoc);
+                setStudioLaunchNotice(
+                    isTimeout
+                        ? "Forge timed out before producing a revision. Your previous document was preserved."
+                        : "Forge could not complete the refinement. Your previous document was preserved."
+                );
+            }
         }
         setRefining(false);
     };

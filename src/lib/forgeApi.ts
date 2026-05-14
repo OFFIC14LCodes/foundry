@@ -6,7 +6,14 @@ import { applyLanguageGuidance, moderateMessageContent } from "./languageModerat
 
 type MessageContent = string | Array<Record<string, unknown>>;
 
-export async function callForgeAPI(messages: Array<{ role: string; content: MessageContent }>, systemPrompt: string, maxTokens = 1000): Promise<string> {
+export type ForgeApiUsage = { inputTokens: number; outputTokens: number };
+
+export async function callForgeAPI(
+    messages: Array<{ role: string; content: MessageContent }>,
+    systemPrompt: string,
+    maxTokens = 1000,
+    onUsage?: (usage: ForgeApiUsage) => void,
+): Promise<string> {
     const moderatedMessages = messages.map((message) => (
         message.role === "user"
             ? { ...message, content: moderateMessageContent(message.content) }
@@ -28,6 +35,9 @@ export async function callForgeAPI(messages: Array<{ role: string; content: Mess
         throw new Error(`API ${res.status}: ${errText.slice(0, 200)}`);
     }
     const data = await res.json();
+    if (onUsage && data.usage) {
+        onUsage({ inputTokens: data.usage.input_tokens ?? 0, outputTokens: data.usage.output_tokens ?? 0 });
+    }
     return data.content?.map((b: any) => b.text || "").join("") || "Something went wrong.";
 }
 
@@ -36,7 +46,8 @@ export async function streamForgeAPI(
     systemPrompt: string,
     onChunk: (text: string) => void,
     maxTokens = 2000,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    onUsage?: (usage: ForgeApiUsage) => void,
 ): Promise<string> {
     const moderatedMessages = messages.map((message) => (
         message.role === "user"
@@ -64,6 +75,8 @@ export async function streamForgeAPI(
     const decoder = new TextDecoder();
     let fullText = "";
     let buffer = "";
+    let inputTokens = 0;
+    let outputTokens = 0;
     while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -76,12 +89,19 @@ export async function streamForgeAPI(
             if (data === "[DONE]") continue;
             try {
                 const parsed = JSON.parse(data);
-                if (parsed.type === "content_block_delta" && parsed.delta?.type === "text_delta") {
+                if (parsed.type === "message_start" && parsed.message?.usage) {
+                    inputTokens = parsed.message.usage.input_tokens ?? 0;
+                } else if (parsed.type === "message_delta" && parsed.usage) {
+                    outputTokens = parsed.usage.output_tokens ?? 0;
+                } else if (parsed.type === "content_block_delta" && parsed.delta?.type === "text_delta") {
                     fullText += parsed.delta.text;
                     onChunk(fullText);
                 }
             } catch { /* skip malformed chunks */ }
         }
+    }
+    if (onUsage && (inputTokens > 0 || outputTokens > 0)) {
+        onUsage({ inputTokens, outputTokens });
     }
     return fullText || "Something went wrong.";
 }

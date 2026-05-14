@@ -152,6 +152,7 @@ export default function AuthScreen({
         fontFamily: "'Lora', Georgia, serif",
         boxSizing: "border-box",
     };
+    const authInputClassName = "foundry-auth-input";
 
     return (
         <div className="foundry-auth-shell" style={{
@@ -177,7 +178,7 @@ export default function AuthScreen({
                         height: "auto",
                     }}
                 />
-                <div style={{
+                <div className="foundry-auth-brand-title" style={{
                     fontSize: "clamp(26px, 7vw, 34px)",
                     color: "#F0EDE8",
                     fontFamily: "'Playfair Display', Georgia, serif",
@@ -185,7 +186,7 @@ export default function AuthScreen({
                     letterSpacing: "0.02em",
                     lineHeight: 1,
                 }}>Foundry</div>
-                <div style={{
+                <div className="foundry-auth-brand-tagline" style={{
                     fontSize: 11, color: "#E8622A", letterSpacing: "0.25em",
                     textTransform: "uppercase", marginTop: 8
                 }}>Build Something Real</div>
@@ -226,6 +227,7 @@ export default function AuthScreen({
                                     placeholder="New password"
                                     value={password}
                                     onChange={e => setPassword(e.target.value)}
+                                    className={authInputClassName}
                                     style={inputStyle}
                                 />
                                 <input
@@ -234,6 +236,7 @@ export default function AuthScreen({
                                     value={confirmPassword}
                                     onChange={e => setConfirmPassword(e.target.value)}
                                     onKeyDown={e => e.key === "Enter" && handleSetNewPassword()}
+                                    className={authInputClassName}
                                     style={{ ...inputStyle, marginBottom: 16 }}
                                 />
                                 {error && (
@@ -305,6 +308,7 @@ export default function AuthScreen({
                                     value={email}
                                     onChange={e => setEmail(e.target.value)}
                                     onKeyDown={e => e.key === "Enter" && handleForgotPassword()}
+                                    className={authInputClassName}
                                     style={{ ...inputStyle, marginBottom: 16 }}
                                 />
                                 {error && (
@@ -338,12 +342,12 @@ export default function AuthScreen({
                 {(mode === "login" || mode === "signup") && (
                     <>
                         {/* Mode toggle */}
-                        <div style={{
+                        <div className="foundry-auth-mode-toggle" style={{
                             display: "flex", background: "rgba(255,255,255,0.04)",
                             borderRadius: 10, padding: 3, marginBottom: 24
                         }}>
                             {(["login", "signup"] as const).map(m => (
-                                <button key={m} onClick={() => switchMode(m)}
+                                <button className="foundry-auth-mode-button" key={m} onClick={() => switchMode(m)}
                                     style={{
                                         flex: 1, padding: "8px", border: "none", borderRadius: 8,
                                         background: mode === m ? "rgba(232,98,42,0.15)" : "transparent",
@@ -368,7 +372,7 @@ export default function AuthScreen({
                         ) : (
                             <>
                                 {/* Google */}
-                                <button onClick={handleGoogle} className="foundry-btn foundry-btn--secondary" style={{
+                                <button onClick={handleGoogle} className="foundry-btn foundry-btn--secondary foundry-auth-google-button" style={{
                                     width: "100%", padding: "12px", marginBottom: 16,
                                     background: "rgba(255,255,255,0.05)",
                                     border: "1px solid rgba(255,255,255,0.1)",
@@ -390,7 +394,7 @@ export default function AuthScreen({
                                 </button>
 
                                 {/* Divider */}
-                                <div style={{
+                                <div className="foundry-auth-divider" style={{
                                     display: "flex", alignItems: "center", gap: 12, marginBottom: 16
                                 }}>
                                     <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.07)" }} />
@@ -403,6 +407,7 @@ export default function AuthScreen({
                                     <input
                                         type="text" placeholder="Your name" value={name}
                                         onChange={e => setName(e.target.value)}
+                                        className={authInputClassName}
                                         style={inputStyle}
                                     />
                                 )}
@@ -411,6 +416,7 @@ export default function AuthScreen({
                                 <input
                                     type="email" placeholder="Email address" value={email}
                                     onChange={e => setEmail(e.target.value)}
+                                    className={authInputClassName}
                                     style={inputStyle}
                                 />
 
@@ -419,12 +425,13 @@ export default function AuthScreen({
                                     type="password" placeholder="Password" value={password}
                                     onChange={e => setPassword(e.target.value)}
                                     onKeyDown={e => e.key === "Enter" && handleEmailAuth()}
+                                    className={authInputClassName}
                                     style={{ ...inputStyle, marginBottom: mode === "login" ? 6 : 16 }}
                                 />
 
                                 {/* Forgot password link — login only */}
                                 {mode === "login" && (
-                                    <div style={{ textAlign: "right", marginBottom: 16 }}>
+                                    <div className="foundry-auth-forgot-row" style={{ textAlign: "right", marginBottom: 16 }}>
                                         <button
                                             onClick={() => switchMode("forgot")}
                                             style={{
@@ -451,7 +458,7 @@ export default function AuthScreen({
                                 )}
 
                                 {/* Submit */}
-                                <button onClick={handleEmailAuth} disabled={loading} className="foundry-btn foundry-btn--primary" style={{
+                                <button onClick={handleEmailAuth} disabled={loading} className="foundry-btn foundry-btn--primary foundry-auth-submit-button" style={{
                                     width: "100%", padding: "13px",
                                     background: loading ? "rgba(232,98,42,0.4)" : "linear-gradient(135deg, #E8622A, #c9521e)",
                                     border: "none", borderRadius: 12, color: "#fff",

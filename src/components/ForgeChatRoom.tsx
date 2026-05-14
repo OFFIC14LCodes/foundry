@@ -4,9 +4,9 @@ import { callForgeAPI, streamForgeAPI } from "../lib/forgeApi";
 import { processFile, buildMessageContent, type AttachedFile } from "../lib/fileAttach";
 import { FORGE_SYSTEM_PROMPT } from "../constants/prompts";
 import { getLanguageWarning, moderateUserText } from "../lib/languageModeration";
-import { saveConversationSummary, updateConversationSummary, loadConversationSummaries } from "../db";
+import { saveConversationSummary, updateConversationSummary, loadConversationSummaries, recordTokenUsage } from "../db";
 import { applyFoundryBookCitations, buildFoundryBookContext } from "../lib/foundryBook";
-import { evaluateKnowledgeCheckLaunchAnswer, getAcademySessionSubtitle } from "../lib/academyCompletion";
+import { evaluateKnowledgeCheckLaunchAnswer, getAcademySessionSubtitle, type KnowledgeCheckTrackStatus } from "../lib/academyCompletion";
 import type { AcademyTopicLaunch } from "../lib/academy";
 import type { MarketTrend } from "../db";
 import ForgeAvatar from "./ForgeAvatar";
@@ -31,6 +31,8 @@ import {
     type ActiveForgeContext,
     type ForgeMemorySource,
 } from "../lib/forgeMemory";
+import { updateFounderBookFromArchive } from "../lib/founderBooks";
+import { buildVentureModeContext, getVentureModeLabel, isSideHustleMode } from "../lib/ventureMode";
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -57,7 +59,7 @@ interface ForgeChatRoomProps {
     onArchiveSaved?: (entry: any) => void;
     initialArchive?: any | null;
     academyEntry?: AcademyTopicLaunch | null;
-    onMarkAcademyLessonCompleted?: (contentId: string, options?: { knowledgeCheckedAt?: string; lastCheckResponse?: string | null; lastCheckFeedback?: string | null }) => Promise<void> | void;
+    onMarkAcademyLessonCompleted?: (contentId: string, options?: { knowledgeCheckedAt?: string; lastCheckResponse?: string | null; lastCheckFeedback?: string | null }) => Promise<unknown> | unknown;
     marketIntelEntry?: MarketTrend | null;
     clarityEntry?: ClaritySessionEntry | null;
     universalMemoryContext?: string;
@@ -89,14 +91,14 @@ function buildChatRoomContext(
 1. state what this lesson was really teaching
 2. explain why founders miss it
 3. show how it appears in real business situations
-4. only then connect it to the founder's current business if useful
-5. end with one practical application question`
+4. connect it to the founder's known business context using the memory sections below
+5. ask only one targeted gap question if the available context is not enough`
             : `This conversation is in LEARN mode. Forge should:
 1. teach the lesson cleanly
 2. explain why it matters
 3. expose the weak founder instinct underneath it
 4. give one practical mental model
-5. invite deeper exploration naturally`;
+5. connect the concept to the founder's known business context before asking for more information`;
 
     const now = new Date();
     const dateStr = now.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
@@ -112,8 +114,11 @@ function buildChatRoomContext(
     return {
         context: `
 Current date: ${dateStr}
-Founder: ${profile.name} | Business: ${profile.businessName || profile.idea || "Idea stage"} (${profile.industry || "Early Stage"})
+${buildVentureModeContext(profile)}
+
+Founder: ${profile.name} | Venture mode: ${getVentureModeLabel(profile)} | ${isSideHustleMode(profile) ? "Side hustle / offer" : "Business"}: ${profile.businessName || profile.idea || "Idea stage"} (${profile.industry || "Early Stage"})
 Strategy: ${profile.strategyLabel || profile.strategy} | Current Stage: ${profile.currentStage} | Experience: ${profile.experience || "Not specified"}
+Goal / constraints: ${profile.ventureGoal || "Not specified"} | Weekly hours: ${profile.weeklyHoursAvailable ?? "Unknown"} | Target monthly income: ${profile.targetMonthlyIncome ? `$${Number(profile.targetMonthlyIncome).toLocaleString()}` : "Unknown"}
 Budget: $${(profile.budget?.remaining || 0).toLocaleString()} remaining of $${(profile.budget?.total || 0).toLocaleString()}
 
 CONTEXT — FORGE CHAT ROOM:
@@ -125,7 +130,7 @@ That said, don't turn every exchange into a lesson. Match their energy. If they 
 
 Be the knowledgeable business partner they can talk to freely — about their business, about business in general, about an idea they have, about something that's worrying them, about something that excited them. This is a safe space to think out loud without worrying about what step they're on.
 ${archiveSummary ? `\n\nARCHIVE CONTEXT:\nThe founder is continuing a prior archived conversation titled "${archiveTitle || "Saved conversation"}". Use this summary as prior context for the current discussion. Build on it naturally and answer follow-up questions as a continuation, not as a fresh topic.\n\n${archiveSummary}` : ""}
-${academyEntry ? `\n\nACADEMY ENTRY CONTEXT:\nThe founder opened this conversation from Forge Academy.\nMode: ${academyMode}\nTopic: ${academyEntry.title}\nCategory: ${academyEntry.categoryTitle || "Forge Academy"}\nLearning goal: ${academyEntry.learningGoal || "Help the founder understand the topic deeply and practically."}\nWho this is for: ${academyEntry.whoThisIsFor || "A first-time founder who needs a more grounded understanding before the stakes get higher."}\nWhen this matters: ${academyEntry.whenThisMatters || "Before the founder drifts into weak assumptions or avoidable execution mistakes."}\nCommon mistake: ${academyEntry.commonMistake || "Founders often treat this as obvious until they are forced to make a real decision under pressure."}\nWhy this matters: ${academyEntry.whyThisMatters || "Teach the founder why this topic matters before they need it."}\nWhat to watch for: ${academyEntry.whatToWatchFor || "Surface the subtle mistakes and weak thinking patterns that matter here."}\nKnowledge check prompt: ${academyEntry.knowledgeCheckPrompt || "Not explicitly set"}\nExpected understanding points: ${academyEntry.knowledgeCheckExpectedPoints.join(" | ") || "Use broad founder judgment"}\nConcept tags: ${academyEntry.tags.join(", ") || "None"}\nRelevant stages: ${academyEntry.stageIds.length > 0 ? academyEntry.stageIds.join(", ") : "General"}\nSupporting context: ${academyEntry.forgeContext || "None provided"}\n\n${modeInstruction}` : ""}
+${academyEntry ? `\n\nACADEMY ENTRY CONTEXT:\nThe founder opened this conversation from Forge Academy.\nMode: ${academyMode}\nTopic: ${academyEntry.title}\nCategory: ${academyEntry.categoryTitle || "Forge Academy"}\nLearning goal: ${academyEntry.learningGoal || "Help the founder understand the topic deeply and practically."}\nWho this is for: ${academyEntry.whoThisIsFor || "A first-time founder who needs a more grounded understanding before the stakes get higher."}\nWhen this matters: ${academyEntry.whenThisMatters || "Before the founder drifts into weak assumptions or avoidable execution mistakes."}\nCommon mistake: ${academyEntry.commonMistake || "Founders often treat this as obvious until they are forced to make a real decision under pressure."}\nWhy this matters: ${academyEntry.whyThisMatters || "Teach the founder why this topic matters before they need it."}\nWhat to watch for: ${academyEntry.whatToWatchFor || "Surface the subtle mistakes and weak thinking patterns that matter here."}\nKnowledge check prompt: ${academyEntry.knowledgeCheckPrompt || "Not explicitly set"}\nExpected understanding points: ${academyEntry.knowledgeCheckExpectedPoints.join(" | ") || "Use broad founder judgment"}\nConcept tags: ${academyEntry.tags.join(", ") || "None"}\nRelevant stages: ${academyEntry.stageIds.length > 0 ? academyEntry.stageIds.join(", ") : "General"}\nSupporting context: ${academyEntry.forgeContext || "None provided"}\n\nAcademy personalization rule: use the business profile, archives, journal, financials, decisions, actions, canvas, and cofounder/workspace memory below before asking discovery questions. Do not ask broad questions like "tell me about your business" when the context already contains the answer. If information is missing, ask one narrow question about the missing piece.\n\n${modeInstruction}` : ""}
 ${marketIntelEntry ? `\n\nMARKET INTELLIGENCE CONTEXT:\nThe founder opened this conversation from Market Intelligence to explore a specific trend.\nTrend name: ${marketIntelEntry.name}\nImpact level: ${marketIntelEntry.impactLevel}\nTimeframe: ${marketIntelEntry.timeframe}\nDescription: ${marketIntelEntry.description}\n\nForge should help the founder understand this trend deeply and practically — what it means for their business, how to respond or position, and what concrete actions they could take. Ask probing questions to help them think it through. Keep it strategic and grounded.` : ""}
 ${clarityEntry ? `\n\nCLARITY SESSION CONTEXT:\nThe founder opened this as a quick Clarity chat from the Hub. This is separate from the main stage chat and should stay tightly focused on the recurring issue or confusion that prompted it.\nSession title: ${clarityEntry.title}\nRecurring issue: ${clarityEntry.nudgeText}\nSignal source: ${clarityEntry.signalSource || "Not specified"}\n\nForge should help the founder name what is unresolved, understand why it matters, and identify the next useful question, decision, or action. Keep it conversational and focused. The founder can archive this conversation from the chat room when finished.` : ""}
 ${pastConversationsSection}
@@ -150,6 +155,17 @@ function getChatRoomMemorySource(
     if (trendEntry) return "market_intelligence";
     if (clarityEntry) return "forge_chat";
     return "forge_chat";
+}
+
+function getBookTypeForChatRoom(
+    academyEntry: AcademyTopicLaunch | null,
+    trendEntry: MarketTrend | null,
+    clarityEntry: ClaritySessionEntry | null,
+) {
+    if (academyEntry) return "academy" as const;
+    if (trendEntry) return "market_intelligence" as const;
+    if (clarityEntry) return "quick_chat" as const;
+    return "chat_room" as const;
 }
 
 function summarizeMemoryContent(text: string) {
@@ -184,7 +200,9 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
     const [archiveTitleInput, setArchiveTitleInput] = useState("");
     const [savingArchive, setSavingArchive] = useState(false);
     const [archiveError, setArchiveError] = useState<string | null>(null);
-    const [academyLessonCompleted, setAcademyLessonCompleted] = useState(false);
+    const [academyLessonCompleted, setAcademyLessonCompleted] = useState(() => (
+        academyEntry?.progressStatus === "completed" || Boolean(academyEntry?.completedAt)
+    ));
     const [testingMode, setTestingMode] = useState(false);
     const [activeArchive, setActiveArchive] = useState<any | null>(initialArchive);
     const [activeAcademyEntry, setActiveAcademyEntry] = useState<AcademyTopicLaunch | null>(academyEntry);
@@ -229,7 +247,7 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
     useEffect(() => {
         setActiveAcademyEntry(academyEntry);
         academyBootstrappedRef.current = false;
-        setAcademyLessonCompleted(false);
+        setAcademyLessonCompleted(academyEntry?.progressStatus === "completed" || Boolean(academyEntry?.completedAt));
         setTestingMode(false);
 
         if (academyEntry) {
@@ -494,6 +512,13 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
                 "You write clean business conversation summaries. Return only valid JSON."
             );
             const parsed = parseArchiveSummaryPayload(raw, title);
+            const archiveSourceType = activeAcademyEntry ? "academy" : activeTrendEntry ? "chatroom" : activeClarityEntry ? "bubble" : "chatroom";
+            const archiveSourceMeta = {
+                archiveSourceType,
+                archiveSourceRefId: activeAcademyEntry?.id ?? activeTrendEntry?.id ?? activeClarityEntry?.id ?? undefined,
+                archiveSourceTitle: activeAcademyEntry?.title ?? activeTrendEntry?.name ?? activeClarityEntry?.title ?? undefined,
+                archiveSourceMetadata: activeAcademyEntry ?? undefined,
+            };
             const saved = activeArchive?.id
                 ? await updateConversationSummary(
                     userId,
@@ -505,6 +530,7 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
                         summary: parsed.summary,
                         messageCount: (activeArchive.messageCount || 0) + messages.length,
                         workspaceSnapshot: workspace,
+                        ...archiveSourceMeta,
                     }
                 )
                 : await saveConversationSummary(
@@ -514,13 +540,26 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
                     title,
                     parsed.summary,
                     messages.length,
-                    workspace
+                    workspace,
+                    archiveSourceMeta
                 );
 
             if (!saved) {
                 setArchiveError("Failed to save to database. Please try again.");
                 return;
             }
+            void updateFounderBookFromArchive({
+                userId,
+                archive: saved,
+                sourceType: getBookTypeForChatRoom(activeAcademyEntry, activeTrendEntry, activeClarityEntry),
+                sourceLabel: activeAcademyEntry ? "Forge Academy" : activeTrendEntry ? "Market Intelligence" : activeClarityEntry ? "Quick Chat" : "Chat with Forge",
+                sourceRefId: activeAcademyEntry?.id || activeTrendEntry?.id || activeClarityEntry?.id || activeArchive?.id || null,
+                stageId: Number(profile.currentStage) || 1,
+                academyEntry: activeAcademyEntry,
+                marketEntry: activeTrendEntry,
+                workspace,
+                transcript,
+            });
             const wasAcademyEntry = activeAcademyEntry;
             const wasCompleted = academyLessonCompleted;
             const wasTrendEntry = activeTrendEntry;
@@ -587,9 +626,16 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
 
         const now = new Date().toISOString();
         const userMsg: ChatMessage = { id: `u-${Date.now()}`, role: "user", text: displayText, createdAt: now };
-        const forgeMsg: ChatMessage = { id: `f-${Date.now()}`, role: "forge", text: "", createdAt: new Date().toISOString() };
-
         const history = [...messages, userMsg];
+
+        if (testingMode && activeAcademyEntry && !academyLessonCompleted) {
+            setMessages(history);
+            setLoading(true);
+            await autoEvaluateKnowledgeCheck(displayText, history);
+            return;
+        }
+
+        const forgeMsg: ChatMessage = { id: `f-${Date.now()}`, role: "forge", text: "", createdAt: new Date().toISOString() };
         setMessages([...history, forgeMsg]);
         setLoading(true);
 
@@ -625,7 +671,10 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
                 (chunk) => {
                     const { cleanText } = applyFoundryBookCitations(chunk, ctx.bookMatches);
                     setMessages(prev => prev.map(m => m.id === forgeMsg.id ? { ...m, text: cleanText } : m));
-                }
+                },
+                2000,
+                undefined,
+                (usage) => { void recordTokenUsage(userId, usage.inputTokens, usage.outputTokens); },
             );
         } catch {
             setMessages(prev => prev.map(m =>
@@ -634,10 +683,6 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
         }
 
         setLoading(false);
-
-        if (testingMode && text.trim()) {
-            void autoEvaluateKnowledgeCheck(text.trim());
-        }
     };
 
     const sendAcademyKickoff = async (entryOverride?: AcademyTopicLaunch | null) => {
@@ -655,7 +700,7 @@ Common mistake: ${entry.commonMistake || "Founders often miss the real issue und
 Why this matters: ${entry.whyThisMatters || "The founder needs stronger intuition here before they are under pressure."}
 What to watch for: ${entry.whatToWatchFor || "Surface the hidden traps and weak assumptions."}
 
-Start with a confident first lesson message that frames the topic, explains the stakes, names what founders usually get wrong, and gives one practical lens the founder can use right away.`;
+Start with a confident first lesson message that frames the topic, explains the stakes, names what founders usually get wrong, applies it to the founder's known business context, and gives one practical lens the founder can use right away. Do not ask the founder to re-explain their business unless a specific fact is genuinely missing.`;
 
         const forgeMsg: ChatMessage = { id: `f-${Date.now()}`, role: "forge", text: "", createdAt: new Date().toISOString() };
         const appendKickoff = messages.length > 0;
@@ -672,7 +717,7 @@ Start with a confident first lesson message that frames the topic, explains the 
                 false,
                 null,
                 null,
-                undefined,
+                pastSummaries,
                 null,
                 universalMemoryContext,
                 scopedMemoryContext,
@@ -848,8 +893,10 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
         }
     };
 
-    const sendBackToTeachingMessage = async (entry: AcademyTopicLaunch, feedback: string) => {
-        const teachingPrompt = `The founder just attempted the knowledge check for "${entry.title}" but their answer shows they haven't quite internalized the core concept yet. Do NOT announce that they failed a test. Instead, naturally pivot back into teaching mode. Use this evaluation feedback to identify what needs reinforcement: "${feedback}". Re-teach the most critical missing piece using a concrete example or analogy. Help them build the right mental model. End by inviting them to try expressing the concept again in their own words.`;
+    const sendTestingContinuationMessage = async (entry: AcademyTopicLaunch, feedback: string, trackStatus: KnowledgeCheckTrackStatus) => {
+        const teachingPrompt = trackStatus === "on_track"
+            ? `The founder is in the "Test to Complete" conversation for "${entry.title}". Their answer is close but not complete yet. Do NOT say they failed. Use this evaluation feedback: "${feedback}". Acknowledge what they got right, then ask one sharper follow-up question that forces the missing piece into the open. Keep the test conversational and continue until they demonstrate real understanding.`
+            : `The founder is in the "Test to Complete" conversation for "${entry.title}", but their answer shows they haven't internalized the core concept yet. Do NOT announce that they failed a test. Use this evaluation feedback to identify what needs reinforcement: "${feedback}". Re-teach the most critical missing piece using a concrete example or analogy, then ask one direct follow-up question so they can try again in their own words. Keep testing mode active.`;
         const forgeMsg: ChatMessage = { id: `f-${Date.now()}`, role: "forge", text: "", createdAt: new Date().toISOString() };
         setMessages((prev) => [...prev, forgeMsg]);
         setLoading(true);
@@ -865,34 +912,49 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
             );
         } catch {
             setMessages((prev) => prev.map((m) =>
-                m.id === forgeMsg.id ? { ...m, text: `Let's revisit the core concept here. ${feedback} Take another look at this, then try putting it in your own words again.` } : m
+                m.id === forgeMsg.id ? { ...m, text: `You're not done yet, but you're close enough to sharpen it. ${feedback} Put it in your own words again, but this time make the practical business move clear.` } : m
             ));
         } finally {
             setLoading(false);
         }
     };
 
-    const autoEvaluateKnowledgeCheck = async (userAnswer: string) => {
-        if (!activeAcademyEntry || !onMarkAcademyLessonCompleted || academyLessonCompleted) return;
+    const autoEvaluateKnowledgeCheck = async (userAnswer: string, history: ChatMessage[]) => {
+        if (!activeAcademyEntry || !onMarkAcademyLessonCompleted || academyLessonCompleted) {
+            setLoading(false);
+            return;
+        }
         try {
-            const evaluation = await evaluateKnowledgeCheckLaunchAnswer(activeAcademyEntry, userAnswer);
+            const testingTranscript = history
+                .slice(-10)
+                .map((message) => `${message.role === "forge" ? "Forge" : profile.name || "Founder"}: ${message.text}`)
+                .join("\n\n");
+            const evaluation = await evaluateKnowledgeCheckLaunchAnswer(activeAcademyEntry, `Latest answer:\n${userAnswer}\n\nTesting conversation so far:\n${testingTranscript}`);
             if (evaluation.passed) {
-                setTestingMode(false);
                 await Promise.resolve(onMarkAcademyLessonCompleted(activeAcademyEntry.id, {
                     knowledgeCheckedAt: new Date().toISOString(),
-                    lastCheckResponse: userAnswer,
+                    lastCheckResponse: testingTranscript || userAnswer,
                     lastCheckFeedback: evaluation.feedback,
                 }));
+                setTestingMode(false);
                 setAcademyLessonCompleted(true);
                 void sendLessonCompletionMessage(activeAcademyEntry);
-            } else if (evaluation.trackStatus === "off_track") {
-                setTestingMode(false);
-                void sendBackToTeachingMessage(activeAcademyEntry, evaluation.feedback);
+            } else {
+                setTestingMode(true);
+                void sendTestingContinuationMessage(activeAcademyEntry, evaluation.feedback, evaluation.trackStatus);
             }
-            // on_track: testingMode stays true, conversation continues naturally toward correct understanding
         } catch (error) {
             console.error("auto knowledge check error:", error);
-            setTestingMode(false);
+            setTestingMode(true);
+            if (activeAcademyEntry) {
+                void sendTestingContinuationMessage(
+                    activeAcademyEntry,
+                    "Forge could not evaluate that cleanly, so keep going with a clearer explanation.",
+                    "on_track",
+                );
+            } else {
+                setLoading(false);
+            }
         }
     };
 

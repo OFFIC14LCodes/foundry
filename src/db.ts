@@ -22,6 +22,7 @@ import {
     type MarketIntelligenceChangeType,
 } from "./lib/marketIntelligenceChanges";
 import type { ConversationWorkspaceSnapshot, WorkspaceSourceType } from "./lib/conversationWorkspace";
+import { normalizeVentureMode } from "./lib/ventureMode";
 
 // ─────────────────────────────────────────────────────────────
 // FOUNDRY DATABASE LAYER
@@ -93,6 +94,11 @@ export async function loadProfile(userId: string) {
         strategy: data.strategy,
         strategyLabel: data.strategy_label,
         experience: data.experience,
+        ventureMode: normalizeVentureMode(data.venture_mode),
+        ventureGoal: data.venture_goal ?? "",
+        weeklyHoursAvailable: data.weekly_hours_available ?? null,
+        targetMonthlyIncome: data.target_monthly_income ?? null,
+        transitionTimeline: data.transition_timeline ?? null,
         currentStage: data.current_stage ?? 1,
         budget: {
             total: data.exact_budget_amount ?? data.budget_total ?? 0,
@@ -129,6 +135,11 @@ export async function saveProfile(userId: string, profile: any) {
         strategy: profile.strategy,
         strategy_label: profile.strategyLabel,
         experience: profile.experience,
+        venture_mode: normalizeVentureMode(profile.ventureMode),
+        venture_goal: profile.ventureGoal ?? profile.sideHustleGoal ?? null,
+        weekly_hours_available: profile.weeklyHoursAvailable ?? null,
+        target_monthly_income: profile.targetMonthlyIncome ?? null,
+        transition_timeline: profile.transitionTimeline ?? null,
         current_stage: profile.currentStage ?? 1,
         setup_completed: profile.setupCompleted ?? false,
         budget_total: profile.budget?.total ?? 0,
@@ -499,6 +510,29 @@ export function saveMessages(userId: string, stageId: number, messages: any[]) {
     }, 500);
 }
 
+// Record actual token usage for chat-room sessions (Academy, Chat with Forge, etc.)
+// Uses a sentinel stage_id=0 thread so these show up in admin token counters
+// without polluting the per-stage message history.
+export async function recordTokenUsage(userId: string, inputTokens: number, outputTokens: number): Promise<void> {
+    if (conversationThreadsAvailable === false) return;
+    if (inputTokens <= 0 && outputTokens <= 0) return;
+    try {
+        const thread = await getOrCreateConversationThread(userId, 0);
+        if (!thread) return;
+        const now = new Date().toISOString();
+        const rows: Array<Record<string, unknown>> = [];
+        if (inputTokens > 0) rows.push({ thread_id: thread.id, user_id: userId, role: "user", content: "", token_count: inputTokens, created_at: now });
+        if (outputTokens > 0) rows.push({ thread_id: thread.id, user_id: userId, role: "forge", content: "", token_count: outputTokens, created_at: now });
+        if (rows.length === 0) return;
+        const { error } = await supabase.from("conversation_messages").insert(rows);
+        if (error && isMissingConversationThreadRelationError(error)) {
+            conversationThreadsAvailable = false;
+        }
+    } catch {
+        // best-effort — never throw
+    }
+}
+
 // ── JOURNAL ───────────────────────────────────────────────────
 
 export async function loadJournalEntries(userId: string) {
@@ -702,6 +736,10 @@ export async function loadConversationSummaries(userId: string) {
         createdAt: row.created_at,
         updatedAt: row.updated_at,
         workspaceSnapshot: row.workspace_snapshot ?? null,
+        archiveSourceType: row.archive_source_type ?? null,
+        archiveSourceRefId: row.archive_source_ref_id ?? null,
+        archiveSourceTitle: row.archive_source_title ?? null,
+        archiveSourceMetadata: row.archive_source_metadata ?? null,
     }));
 }
 
@@ -712,7 +750,13 @@ export async function saveConversationSummary(
     title: string,
     summary: string,
     messageCount: number,
-    workspaceSnapshot?: any
+    workspaceSnapshot?: any,
+    sourceMeta?: {
+        archiveSourceType?: string;
+        archiveSourceRefId?: string;
+        archiveSourceTitle?: string;
+        archiveSourceMetadata?: any;
+    }
 ) {
     if (dailyChatSummariesAvailable === false) return null;
 
@@ -726,6 +770,10 @@ export async function saveConversationSummary(
         updated_at: new Date().toISOString(),
     };
     if (workspaceSnapshot != null) insertData.workspace_snapshot = workspaceSnapshot;
+    if (sourceMeta?.archiveSourceType) insertData.archive_source_type = sourceMeta.archiveSourceType;
+    if (sourceMeta?.archiveSourceRefId) insertData.archive_source_ref_id = sourceMeta.archiveSourceRefId;
+    if (sourceMeta?.archiveSourceTitle) insertData.archive_source_title = sourceMeta.archiveSourceTitle;
+    if (sourceMeta?.archiveSourceMetadata != null) insertData.archive_source_metadata = sourceMeta.archiveSourceMetadata;
 
     const { data, error } = await supabase
         .from("daily_chat_summaries")
@@ -754,6 +802,10 @@ export async function saveConversationSummary(
         createdAt: data.created_at,
         updatedAt: data.updated_at,
         workspaceSnapshot: data.workspace_snapshot ?? null,
+        archiveSourceType: data.archive_source_type ?? null,
+        archiveSourceRefId: data.archive_source_ref_id ?? null,
+        archiveSourceTitle: data.archive_source_title ?? null,
+        archiveSourceMetadata: data.archive_source_metadata ?? null,
     };
 }
 
@@ -767,6 +819,10 @@ export async function updateConversationSummary(
         summary?: string;
         messageCount?: number;
         workspaceSnapshot?: any;
+        archiveSourceType?: string;
+        archiveSourceRefId?: string;
+        archiveSourceTitle?: string;
+        archiveSourceMetadata?: any;
     }
 ) {
     if (dailyChatSummariesAvailable === false) return null;
@@ -781,6 +837,10 @@ export async function updateConversationSummary(
     if (typeof updates.summary === "string") payload.summary = updates.summary;
     if (typeof updates.messageCount === "number") payload.message_count = updates.messageCount;
     if (updates.workspaceSnapshot != null) payload.workspace_snapshot = updates.workspaceSnapshot;
+    if (updates.archiveSourceType) payload.archive_source_type = updates.archiveSourceType;
+    if (updates.archiveSourceRefId) payload.archive_source_ref_id = updates.archiveSourceRefId;
+    if (updates.archiveSourceTitle) payload.archive_source_title = updates.archiveSourceTitle;
+    if (updates.archiveSourceMetadata != null) payload.archive_source_metadata = updates.archiveSourceMetadata;
 
     const { data, error } = await supabase
         .from("daily_chat_summaries")
@@ -811,6 +871,10 @@ export async function updateConversationSummary(
         createdAt: data.created_at,
         updatedAt: data.updated_at,
         workspaceSnapshot: data.workspace_snapshot ?? null,
+        archiveSourceType: data.archive_source_type ?? null,
+        archiveSourceRefId: data.archive_source_ref_id ?? null,
+        archiveSourceTitle: data.archive_source_title ?? null,
+        archiveSourceMetadata: data.archive_source_metadata ?? null,
     };
 }
 
@@ -834,6 +898,149 @@ export async function deleteConversationSummary(userId: string, summaryId: strin
 
     dailyChatSummariesAvailable = true;
     return true;
+}
+
+// ── FOUNDER BOOKS ───────────────────────────────────────────
+
+export type FounderBookType = "business" | "academy" | "quick_chat" | "market_intelligence" | "pitch_practice" | "chat_room";
+
+export type FounderBook = {
+    id: string;
+    userId: string;
+    bookType: FounderBookType;
+    title: string;
+    content: string;
+    metadata: Record<string, unknown>;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type FounderBookSource = {
+    id: string;
+    userId: string;
+    bookId: string;
+    archiveSummaryId: string | null;
+    sourceType: string;
+    sourceRefId: string | null;
+    sourceTitle: string | null;
+    sourceStageId: number | null;
+    sourceMetadata: Record<string, unknown>;
+    appliedAt: string;
+};
+
+function mapFounderBook(row: any): FounderBook {
+    return {
+        id: row.id,
+        userId: row.user_id,
+        bookType: row.book_type,
+        title: row.title,
+        content: row.content ?? "",
+        metadata: row.metadata ?? {},
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+    };
+}
+
+function mapFounderBookSource(row: any): FounderBookSource {
+    return {
+        id: row.id,
+        userId: row.user_id,
+        bookId: row.book_id,
+        archiveSummaryId: row.archive_summary_id ?? null,
+        sourceType: row.source_type,
+        sourceRefId: row.source_ref_id ?? null,
+        sourceTitle: row.source_title ?? null,
+        sourceStageId: row.source_stage_id ?? null,
+        sourceMetadata: row.source_metadata ?? {},
+        appliedAt: row.applied_at,
+    };
+}
+
+export async function loadFounderBooks(userId: string): Promise<FounderBook[]> {
+    const { data, error } = await supabase
+        .from("founder_books")
+        .select("*")
+        .eq("user_id", userId)
+        .order("updated_at", { ascending: false });
+    if (error) {
+        console.error("loadFounderBooks error:", error.message);
+        return [];
+    }
+    return (data ?? []).map(mapFounderBook);
+}
+
+export async function loadFounderBookSources(userId: string, bookId: string): Promise<FounderBookSource[]> {
+    const { data, error } = await supabase
+        .from("founder_book_sources")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("book_id", bookId)
+        .order("applied_at", { ascending: false });
+    if (error) {
+        console.error("loadFounderBookSources error:", error.message);
+        return [];
+    }
+    return (data ?? []).map(mapFounderBookSource);
+}
+
+export async function upsertFounderBook(
+    userId: string,
+    bookType: FounderBookType,
+    title: string,
+    content: string,
+    metadata: Record<string, unknown> = {}
+): Promise<FounderBook | null> {
+    const { data, error } = await supabase
+        .from("founder_books")
+        .upsert({
+            user_id: userId,
+            book_type: bookType,
+            title,
+            content,
+            metadata,
+            updated_at: new Date().toISOString(),
+        }, { onConflict: "user_id,book_type" })
+        .select("*")
+        .single();
+    if (error) {
+        console.error("upsertFounderBook error:", error.message);
+        return null;
+    }
+    return data ? mapFounderBook(data) : null;
+}
+
+export async function recordFounderBookSource(
+    userId: string,
+    bookId: string,
+    source: {
+        archiveSummaryId?: string | null;
+        sourceType: string;
+        sourceRefId?: string | null;
+        sourceTitle?: string | null;
+        sourceStageId?: number | null;
+        sourceMetadata?: Record<string, unknown>;
+    }
+): Promise<FounderBookSource | null> {
+    const { data, error } = await supabase
+        .from("founder_book_sources")
+        .upsert({
+            user_id: userId,
+            book_id: bookId,
+            archive_summary_id: source.archiveSummaryId ?? null,
+            source_type: source.sourceType,
+            source_ref_id: source.sourceRefId ?? null,
+            source_title: source.sourceTitle ?? null,
+            source_stage_id: source.sourceStageId ?? null,
+            source_metadata: source.sourceMetadata ?? {},
+            applied_at: new Date().toISOString(),
+        }, { onConflict: "book_id,archive_summary_id" })
+        .select("*")
+        .single();
+    if (error) {
+        console.error("recordFounderBookSource error:", error.message);
+        return null;
+    }
+    return data ? mapFounderBookSource(data) : null;
 }
 
 // ── PITCH PRACTICE SESSIONS ─────────────────────────────────

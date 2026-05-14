@@ -5,6 +5,8 @@ import { roleLabel } from "../../lib/roles";
 import { getReengagementThresholdCopy, type AppNotification, type UserNotificationPreferences } from "../../lib/notifications";
 import { REFUND_POLICY, SUPPORT_EMAIL } from "../../config/pricing";
 import { submitSettingsFeedback } from "../../lib/settingsFeedback";
+import { VENTURE_MODE_CARDS } from "../../constants/onboarding";
+import { normalizeVentureMode } from "../../lib/ventureMode";
 import {
     SettingsButton,
     SettingsCard,
@@ -36,7 +38,15 @@ type SettingsScreenProps = {
     onOpenManageSubscription: () => void;
     billingActionMessage: string | null;
     billingPortalLoading: boolean;
-    onProfileSave: (updates: { displayName: string; businessName: string; marketFocus: string }) => Promise<void>;
+    onProfileSave: (updates: {
+        displayName: string;
+        businessName: string;
+        marketFocus: string;
+        ventureMode: string;
+        ventureGoal: string;
+        weeklyHoursAvailable: number | null;
+        targetMonthlyIncome: number | null;
+    }) => Promise<void>;
     onLogout: () => void;
 };
 
@@ -66,6 +76,10 @@ export default function SettingsScreen({
     const [displayName, setDisplayName] = useState(profile?.name ?? "");
     const [businessName, setBusinessName] = useState(profile?.businessName ?? "");
     const [marketFocus, setMarketFocus] = useState(profile?.industry ?? "");
+    const [ventureMode, setVentureMode] = useState(normalizeVentureMode(profile?.ventureMode));
+    const [ventureGoal, setVentureGoal] = useState(profile?.ventureGoal ?? "");
+    const [weeklyHoursAvailable, setWeeklyHoursAvailable] = useState(profile?.weeklyHoursAvailable != null ? String(profile.weeklyHoursAvailable) : "");
+    const [targetMonthlyIncome, setTargetMonthlyIncome] = useState(profile?.targetMonthlyIncome != null ? String(profile.targetMonthlyIncome) : "");
     const [profileSaving, setProfileSaving] = useState(false);
     const [profileSaved, setProfileSaved] = useState(false);
     const [supportMessage, setSupportMessage] = useState("");
@@ -82,6 +96,10 @@ export default function SettingsScreen({
             displayName: displayName.trim(),
             businessName: businessName.trim(),
             marketFocus: marketFocus.trim(),
+            ventureMode,
+            ventureGoal: ventureGoal.trim(),
+            weeklyHoursAvailable: weeklyHoursAvailable.trim() ? Number(weeklyHoursAvailable) : null,
+            targetMonthlyIncome: targetMonthlyIncome.trim() ? Number(targetMonthlyIncome) : null,
         });
         setProfileSaving(false);
         setProfileSaved(true);
@@ -155,7 +173,7 @@ export default function SettingsScreen({
             <div style={{ display: "grid", gap: 18 }}>
                 <SettingsSection
                     title="Account Details"
-                    description="Core account identity and the business context Foundry uses across the workspace."
+                    description="Core account identity and the venture context Foundry uses across the workspace."
                 >
                     <SettingsCard>
                         <SettingsRow label="Signed-in email" value={email} />
@@ -184,12 +202,12 @@ export default function SettingsScreen({
                         />
                         <SettingsRow
                             label="Business name"
-                            hint="Your startup or company name used throughout Foundry."
+                            hint="Your startup, company, project, or side hustle name used throughout Foundry."
                             action={
                                 <input
                                     value={businessName}
                                     onChange={(e) => setBusinessName(e.target.value)}
-                                    placeholder="Enter business name"
+                                    placeholder="Enter name"
                                     style={{
                                         background: "rgba(255,255,255,0.04)",
                                         border: "1px solid rgba(255,255,255,0.1)",
@@ -206,7 +224,7 @@ export default function SettingsScreen({
                         />
                         <SettingsRow
                             label="Business / market"
-                            hint="Auto-filled from onboarding. Update this whenever your business focus or market changes."
+                            hint="Auto-filled from onboarding. Update this whenever your business, offer, side hustle, or market focus changes."
                             action={
                                 <input
                                     value={marketFocus}
@@ -221,6 +239,103 @@ export default function SettingsScreen({
                                         padding: "8px 12px",
                                         outline: "none",
                                         width: 260,
+                                        textAlign: "left",
+                                    }}
+                                />
+                            }
+                        />
+                        <SettingsRow
+                            label="Path"
+                            hint="This changes how Forge frames advice: company, side hustle, full-time transition, or exploration."
+                            action={
+                                <select
+                                    value={ventureMode}
+                                    onChange={(e) => setVentureMode(normalizeVentureMode(e.target.value))}
+                                    style={{
+                                        background: "rgba(255,255,255,0.04)",
+                                        border: "1px solid rgba(255,255,255,0.1)",
+                                        borderRadius: 8,
+                                        color: "#F0EDE8",
+                                        fontSize: 13,
+                                        padding: "8px 12px",
+                                        outline: "none",
+                                        width: 260,
+                                    }}
+                                >
+                                    {VENTURE_MODE_CARDS.map((card) => (
+                                        <option key={card.id} value={card.id} style={{ background: "#111214", color: "#F0EDE8" }}>
+                                            {card.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            }
+                        />
+                        <SettingsRow
+                            label="Goal / constraints"
+                            hint="Examples: $2,000/mo in 8 hours/week, validate before quitting, keep this part-time."
+                            action={
+                                <input
+                                    value={ventureGoal}
+                                    onChange={(e) => setVentureGoal(e.target.value)}
+                                    placeholder="What would make this a win?"
+                                    style={{
+                                        background: "rgba(255,255,255,0.04)",
+                                        border: "1px solid rgba(255,255,255,0.1)",
+                                        borderRadius: 8,
+                                        color: "#F0EDE8",
+                                        fontSize: 13,
+                                        padding: "8px 12px",
+                                        outline: "none",
+                                        width: 300,
+                                        textAlign: "left",
+                                    }}
+                                />
+                            }
+                        />
+                        <SettingsRow
+                            label="Weekly hours"
+                            hint="For side hustles, this helps Forge protect your schedule and calculate whether the work is worth it."
+                            action={
+                                <input
+                                    type="number"
+                                    min={0}
+                                    max={168}
+                                    value={weeklyHoursAvailable}
+                                    onChange={(e) => setWeeklyHoursAvailable(e.target.value)}
+                                    placeholder="8"
+                                    style={{
+                                        background: "rgba(255,255,255,0.04)",
+                                        border: "1px solid rgba(255,255,255,0.1)",
+                                        borderRadius: 8,
+                                        color: "#F0EDE8",
+                                        fontSize: 13,
+                                        padding: "8px 12px",
+                                        outline: "none",
+                                        width: 100,
+                                        textAlign: "left",
+                                    }}
+                                />
+                            }
+                        />
+                        <SettingsRow
+                            label="Target monthly income"
+                            hint="Used for side hustle and full-time transition planning."
+                            action={
+                                <input
+                                    type="number"
+                                    min={0}
+                                    value={targetMonthlyIncome}
+                                    onChange={(e) => setTargetMonthlyIncome(e.target.value)}
+                                    placeholder="2000"
+                                    style={{
+                                        background: "rgba(255,255,255,0.04)",
+                                        border: "1px solid rgba(255,255,255,0.1)",
+                                        borderRadius: 8,
+                                        color: "#F0EDE8",
+                                        fontSize: 13,
+                                        padding: "8px 12px",
+                                        outline: "none",
+                                        width: 140,
                                         textAlign: "left",
                                     }}
                                 />

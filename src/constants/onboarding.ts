@@ -2,12 +2,41 @@ import { Icons } from "../icons";
 
 export const ONBOARDING_STEPS = [
     { id: "name", cards: false },
+    { id: "venture_mode", cards: true },
     { id: "stage_assessment", cards: true },
     { id: "idea", cards: false },
     { id: "experience", cards: true },
     { id: "budget_exact", cards: false },
+    { id: "venture_goal", cards: false },
     { id: "strategy", cards: true },
     { id: "complete", cards: false },
+] as const;
+
+export const VENTURE_MODE_CARDS = [
+    {
+        id: "business",
+        icon: Icons.stages.plan,
+        label: "Build a business",
+        sub: "I want to create or grow a real company",
+    },
+    {
+        id: "side_hustle",
+        icon: Icons.stages.launch,
+        label: "Grow a side hustle",
+        sub: "I want useful extra income without necessarily creating a company",
+    },
+    {
+        id: "side_hustle_to_full_time",
+        icon: Icons.stages.grow,
+        label: "Make it my job",
+        sub: "I want to scale a side hustle into full-time work",
+    },
+    {
+        id: "exploring",
+        icon: Icons.onboarding.justIdea,
+        label: "Explore first",
+        sub: "I am not sure yet. I want to find the right income idea",
+    },
 ] as const;
 
 export const STAGE_ASSESSMENT_CARDS = [
@@ -100,6 +129,51 @@ export const STRATEGY_CARDS = [
         icon: Icons.onboarding.allIn,
         label: "All In",
         desc: "Move fast. Build bold. Invest aggressively in growth. You're not here to play it safe — you're here to build something significant.",
+    },
+] as const;
+
+export const SIDE_HUSTLE_STAGE_ASSESSMENT_CARDS = [
+    {
+        id: "side_stage_1",
+        icon: Icons.onboarding.justIdea,
+        label: "Just exploring",
+        sub: "I have an idea, skill, audience, or interest but no paid proof yet",
+        stage: 1,
+    },
+    {
+        id: "side_stage_2",
+        icon: Icons.stages.plan,
+        label: "Shaping the offer",
+        sub: "I know the direction and need to package it into something people can buy",
+        stage: 2,
+    },
+    {
+        id: "side_stage_3",
+        icon: Icons.stages.legal,
+        label: "Need to operate safely",
+        sub: "I need to understand taxes, risk, licenses, payment setup, or whether an entity is worth it",
+        stage: 3,
+    },
+    {
+        id: "side_stage_4",
+        icon: Icons.stages.finance,
+        label: "Tracking money and time",
+        sub: "I need the numbers: profit, costs, taxes, hours, and whether this is worth continuing",
+        stage: 4,
+    },
+    {
+        id: "side_stage_5",
+        icon: Icons.onboarding.readyToLaunch,
+        label: "Ready for paid customers",
+        sub: "I am ready to sell, launch, outreach, or get the next real buyer",
+        stage: 5,
+    },
+    {
+        id: "side_stage_6",
+        icon: Icons.onboarding.alreadyRunning,
+        label: "Already earning",
+        sub: "Money is coming in and I need systems, consistency, or a full-time transition plan",
+        stage: 6,
     },
 ] as const;
 

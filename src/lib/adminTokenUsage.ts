@@ -89,7 +89,7 @@ export async function loadAdminTokenUsageSummary(options: {
 
     let conversationQuery = supabase
         .from("conversation_messages")
-        .select("user_id, role, token_count, created_at");
+        .select("user_id, role, token_count, content, created_at");
     if (options.userId) conversationQuery = conversationQuery.eq("user_id", options.userId);
     if (since) conversationQuery = conversationQuery.gte("created_at", since);
 
@@ -128,7 +128,7 @@ export async function loadAdminTokenUsageByUser(windowDays = 30): Promise<Map<st
 
     const conversationQuery = supabase
         .from("conversation_messages")
-        .select("user_id, role, token_count, created_at")
+        .select("user_id, role, token_count, content, created_at")
         .gte("created_at", since!);
     const legacyQuery = supabase
         .from("messages")

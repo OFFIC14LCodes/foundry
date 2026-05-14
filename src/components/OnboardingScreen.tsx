@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { deliverMessage } from "../lib/deliverMessage";
 import {
     ONBOARDING_STEPS,
+    VENTURE_MODE_CARDS,
     STAGE_ASSESSMENT_CARDS,
+    SIDE_HUSTLE_STAGE_ASSESSMENT_CARDS,
     EXPERIENCE_CARDS,
     STRATEGY_CARDS,
 } from "../constants/onboarding";
@@ -10,6 +12,7 @@ import { FORGE_SYSTEM_PROMPT } from "../constants/prompts";
 import { STAGES_DATA } from "../constants/stages";
 import { formatCurrency, parseBudgetInput } from "../lib/budget";
 import { summarizeBusinessIdea } from "../lib/businessSummary";
+import { getVentureModeLabel, getVentureNoun, isSideHustleMode, normalizeVentureMode } from "../lib/ventureMode";
 import MessageBubble from "./MessageBubble";
 import ForgeAvatar from "./ForgeAvatar";
 import TypingDots from "./TypingDots";
@@ -33,6 +36,11 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
         exactBudgetAmount: 0,
         strategy: "",
         strategyLabel: "",
+        ventureMode: "business",
+        ventureGoal: "",
+        weeklyHoursAvailable: null,
+        targetMonthlyIncome: null,
+        transitionTimeline: null,
         detectedStage: 1,
         nameNeedsReview: false,
         ideaNeedsReview: false,
@@ -59,7 +67,7 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
         if (distFromBottom < 120) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
     }, [messages, loading, readyToEnter]);
 
-    const OPENER = `Hey. I'm **Forge** — your business partner inside Foundry.\n\nI'm not here to give you generic advice or walk you through a template. I'm here to help you build something **real** — from the first idea all the way to a business that runs without you losing sleep over it.\n\nBefore we get into it, I want to know a few things about you. Not a form. Just a conversation.\n\nWhat's your name?`;
+    const OPENER = `Hey. I'm **Forge** — your partner inside Foundry.\n\nI'm not here to give you generic advice or walk you through a template. I'm here to help you build something **real** — whether that becomes a business, a side hustle, a full-time income path, or an idea you're still shaping.\n\nBefore we get into it, I want to know a few things about you. Not a form. Just a conversation.\n\nWhat's your name?`;
 
     useEffect(() => {
         if (!started) {
@@ -73,6 +81,9 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
     const addForgeMsg = (text) => setMessages(m => [...m, { role: "forge", text }]);
     const addUserMsg = (text) => setMessages(m => [...m, { role: "user", text }]);
     const currentStep = ONBOARDING_STEPS[stepIndex];
+    const ventureStageCards = isSideHustleMode(profile) || profile.ventureMode === "exploring"
+        ? SIDE_HUSTLE_STAGE_ASSESSMENT_CARDS
+        : STAGE_ASSESSMENT_CARDS;
 
     const deriveMarketFocus = async (idea: string) => {
         const fallback = summarizeBusinessIdea("", idea, 4);
@@ -101,6 +112,24 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
     };
 
     const normalizeValue = (value: string) => value.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+
+    const parseWeeklyHours = (value: string) => {
+        const hoursMatch = value.match(/(\d{1,3})\s*(?:hours|hrs|hr|h)\b/i) || value.match(/\b(\d{1,3})\s*(?:\/|per)?\s*week\b/i);
+        if (!hoursMatch) return null;
+        const hours = Number(hoursMatch[1]);
+        return Number.isFinite(hours) ? Math.max(0, Math.min(168, hours)) : null;
+    };
+
+    const parseIncomeTarget = (value: string) => {
+        const moneyMatch =
+            value.match(/\$\s*(\d[\d,]*(?:\.\d+)?)\s*(k)?/i) ||
+            value.match(/(?:income|revenue|profit|make|earn|target|goal)\D{0,24}(\d[\d,]*(?:\.\d+)?)\s*(k)?/i) ||
+            value.match(/(\d[\d,]*(?:\.\d+)?)\s*(k)?\s*(?:\/|per)?\s*(?:month|mo|monthly)/i);
+        if (!moneyMatch) return null;
+        const raw = Number(moneyMatch[1].replace(/,/g, ""));
+        if (!Number.isFinite(raw)) return null;
+        return moneyMatch[2] ? raw * 1000 : raw;
+    };
 
     const NAME_JOKE_PATTERNS = [
         /\b(deez nuts|your mom|ur mom|big daddy|daddy|batman|superman|spiderman|iron man|optimum pride|optimus prime)\b/i,
@@ -152,67 +181,83 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                 setPlayfulRetryCount((prev) => ({ ...prev, name: 0 }));
                 p.nameNeedsReview = false;
                 p.name = value; setProfile(p);
-                const prompt = `Respond in 2 sentences only. First: greet "${value}" — warm, natural, one sentence. Second: tell them Foundry meets founders where they actually are, and you want to find the right starting point — they'll see some options now.`;
+                const prompt = `Respond in 2 sentences only. First: greet "${value}" — warm, natural, one sentence. Second: tell them Foundry meets builders where they actually are, and you want to understand what they're trying to build toward — they'll see some options now.`;
                 try {
                     const r = await callForgeAPI([{ role: "user", content: prompt }], FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", "Onboarding."));
                     await deliverMessage(r, setLoading, addForgeMsg, FAST_DELIVERY);
                 } catch {
-                    await deliverMessage(`${value} — good to meet you. Foundry works best when we start you in the right place — tell me where you are right now.`, setLoading, addForgeMsg, FAST_DELIVERY);
+                    await deliverMessage(`${value} — good to meet you. Foundry works best when we know what you're building toward first.`, setLoading, addForgeMsg, FAST_DELIVERY);
                 }
                 setStepIndex(1);
 
+            } else if (currentStep.id === "venture_mode") {
+                const card = VENTURE_MODE_CARDS.find(c => c.id === rawId);
+                p.ventureMode = normalizeVentureMode(rawId || value);
+                p.ventureGoal = card?.label || getVentureModeLabel(p);
+                setProfile(p);
+                const noun = getVentureNoun(p);
+                const prompt = `Respond in 2 sentences only. First: acknowledge that they chose "${card?.label || value}" and name what that means practically. Second: ask where they are right now with this ${noun}.`;
+                try {
+                    const r = await callForgeAPI([{ role: "user", content: prompt }], FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", `Onboarding. Builder: ${p.name}. Venture mode: ${getVentureModeLabel(p)}.`));
+                    await deliverMessage(r, setLoading, addForgeMsg, FAST_DELIVERY);
+                } catch {
+                    await deliverMessage(`${getVentureModeLabel(p)} — good. Now tell me where you are with it right now.`, setLoading, addForgeMsg, FAST_DELIVERY);
+                }
+                setStepIndex(2);
+
             } else if (currentStep.id === "stage_assessment") {
-                const card = STAGE_ASSESSMENT_CARDS.find(c => c.id === rawId);
+                const card = ventureStageCards.find(c => c.id === rawId);
                 const detectedStage = card?.stage || 1;
                 p.detectedStage = detectedStage; setProfile(p);
                 const stageLabel = STAGES_DATA[detectedStage - 1]?.label || "Idea";
-                const prompt = `Respond in 2 sentences only. First: acknowledge "${card?.label || value}" in a way that shows you understand where they are in the journey — be specific, not generic. Second: ask what their business idea or current business is.`;
+                const noun = getVentureNoun(p);
+                const prompt = `Respond in 2 sentences only. First: acknowledge "${card?.label || value}" in a way that shows you understand where they are in the journey — be specific, not generic. Second: ask what their ${noun} idea, offer, or current work is.`;
                 try {
-                    const r = await callForgeAPI([{ role: "user", content: prompt }], FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", `Onboarding. Founder: ${p.name}. Starting stage: ${detectedStage} (${stageLabel}).`));
+                    const r = await callForgeAPI([{ role: "user", content: prompt }], FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", `Onboarding. Builder: ${p.name}. Venture mode: ${getVentureModeLabel(p)}. Starting stage: ${detectedStage} (${stageLabel}).`));
                     await deliverMessage(r, setLoading, addForgeMsg, FAST_DELIVERY);
                 } catch {
-                    await deliverMessage(`Stage ${detectedStage} — ${stageLabel}. That's where we'll start.\n\nWhat's the business? Tell me what you're building.`, setLoading, addForgeMsg, FAST_DELIVERY);
+                    await deliverMessage(`Stage ${detectedStage} — ${stageLabel}. That's where we'll start.\n\nTell me what you're building or trying to earn from.`, setLoading, addForgeMsg, FAST_DELIVERY);
                 }
-                setStepIndex(2);
+                setStepIndex(3);
 
             } else if (currentStep.id === "idea") {
                 if (isLikelyJokeIdea(value)) {
                     if (playfulRetryCount.idea === 0) {
                         setPlayfulRetryCount((prev) => ({ ...prev, idea: 1 }));
-                        await deliverMessage(`Funny. Now give me the **real business** or idea you're actually trying to build so I can place you correctly.`, setLoading, addForgeMsg, FAST_DELIVERY);
+                        await deliverMessage(`Funny. Now give me the **real thing** you're actually trying to build or earn from so I can place you correctly.`, setLoading, addForgeMsg, FAST_DELIVERY);
                         return;
                     }
 
                     p.idea = "Still being clarified";
                     p.ideaNeedsReview = true;
                     setProfile(p);
-                    await deliverMessage(`Still not giving me the real version. That's fine — we'll keep moving and sort the business out once we're in chat. How much experience do you have in business or this industry?`, setLoading, addForgeMsg, FAST_DELIVERY);
-                    setStepIndex(3);
+                    await deliverMessage(`Still not giving me the real version. That's fine — we'll keep moving and sort it out once we're in chat. How much experience do you have with business, selling, or this kind of work?`, setLoading, addForgeMsg, FAST_DELIVERY);
+                    setStepIndex(4);
                     return;
                 }
 
                 setPlayfulRetryCount((prev) => ({ ...prev, idea: 0 }));
                 p.ideaNeedsReview = false;
                 p.idea = value; setProfile(p);
-                const prompt = `Respond in 2 sentences only. First: react to "${value}" specifically — one genuine observation about this type of business, not generic encouragement. Second: tell them you want to understand their background before going further, and that they'll see some options to pick from.`;
+                const prompt = `Respond in 2 sentences only. First: react to "${value}" specifically — one genuine observation about this type of ${getVentureNoun(p)}, not generic encouragement. Second: tell them you want to understand their background before going further, and that they'll see some options to pick from.`;
                 try {
-                    const r = await callForgeAPI([{ role: "user", content: prompt }], FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", `Onboarding. Founder: ${p.name}. Idea: ${p.idea}.`));
+                    const r = await callForgeAPI([{ role: "user", content: prompt }], FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", `Onboarding. Builder: ${p.name}. Venture mode: ${getVentureModeLabel(p)}. Idea: ${p.idea}.`));
                     await deliverMessage(r, setLoading, addForgeMsg, FAST_DELIVERY);
                 } catch {
                     await deliverMessage(`A meal prep business — there's real demand there, especially with how time-strapped people are. How much experience do you have in business or in this industry?`, setLoading, addForgeMsg, FAST_DELIVERY);
                 }
-                setStepIndex(3);
+                setStepIndex(4);
 
             } else if (currentStep.id === "experience") {
                 p.experience = value; setProfile(p);
-                const prompt = `Respond in 2 sentences only. First: acknowledge "${value}" in one specific sentence that shows you understand what that experience level means for building a business — not generic. Second: ask how much money they actually have available to invest right now, in a casual but direct way.`;
+                const prompt = `Respond in 2 sentences only. First: acknowledge "${value}" in one specific sentence that shows you understand what that experience level means for building ${getVentureNoun(p)} — not generic. Second: ask how much money they actually have available to invest right now, in a casual but direct way.`;
                 try {
-                    const r = await callForgeAPI([{ role: "user", content: prompt }], FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", `Onboarding. ${p.name}. Idea: ${p.idea}. Experience: ${p.experience}.`));
+                    const r = await callForgeAPI([{ role: "user", content: prompt }], FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", `Onboarding. ${p.name}. Venture mode: ${getVentureModeLabel(p)}. Idea: ${p.idea}. Experience: ${p.experience}.`));
                     await deliverMessage(r, setLoading, addForgeMsg, FAST_DELIVERY);
                 } catch {
                     await deliverMessage(`Got it — that combination of industry knowledge without formal business experience is actually common for strong founders. Now give me the real number: **how much money do you actually have available to invest right now?**`, setLoading, addForgeMsg, FAST_DELIVERY);
                 }
-                setStepIndex(4);
+                setStepIndex(5);
 
             } else if (currentStep.id === "budget_exact") {
             const parsedAmount = parseBudgetInput(value);
@@ -224,14 +269,28 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
             p.exactBudgetAmount = parsedAmount;
             setProfile(p);
 
-            const prompt = `Respond in 2 sentences only. First: acknowledge that "${formatCurrency(parsedAmount)}" is the working budget in a practical, founder-focused way. Second: tell them the last question is about how they want to approach building this, and they'll see options now.`;
+            const prompt = `Respond in 2 sentences only. First: acknowledge that "${formatCurrency(parsedAmount)}" is the working budget in a practical way. Second: ask what would make this a win over the next 6 to 12 months. For side hustles, ask for income target and weekly hours if possible.`;
             try {
-                const r = await callForgeAPI([{ role: "user", content: prompt }], FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", `Onboarding. ${p.name}. Idea: ${p.idea}. Exact budget amount: ${parsedAmount}.`));
+                const r = await callForgeAPI([{ role: "user", content: prompt }], FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", `Onboarding. ${p.name}. Venture mode: ${getVentureModeLabel(p)}. Idea: ${p.idea}. Exact budget amount: ${parsedAmount}.`));
                 await deliverMessage(r, setLoading, addForgeMsg, FAST_DELIVERY);
             } catch {
-                await deliverMessage(`${formatCurrency(parsedAmount)} is enough to plan around honestly. Good. Last question: how do you want to approach building this?`, setLoading, addForgeMsg, FAST_DELIVERY);
+                await deliverMessage(`${formatCurrency(parsedAmount)} is enough to plan around honestly. What would make this a win over the next 6 to 12 months?`, setLoading, addForgeMsg, FAST_DELIVERY);
             }
-            setStepIndex(5);
+            setStepIndex(6);
+
+            } else if (currentStep.id === "venture_goal") {
+                p.ventureGoal = value;
+                p.weeklyHoursAvailable = parseWeeklyHours(value);
+                p.targetMonthlyIncome = parseIncomeTarget(value);
+                setProfile(p);
+                const prompt = `Respond in 2 sentences only. First: acknowledge this goal/constraint specifically: "${value}". Second: tell them the last question is about how they want to approach building this, and they'll see options now.`;
+                try {
+                    const r = await callForgeAPI([{ role: "user", content: prompt }], FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", `Onboarding. ${p.name}. Venture mode: ${getVentureModeLabel(p)}. Goal: ${p.ventureGoal}. Weekly hours: ${p.weeklyHoursAvailable ?? "unknown"}. Target monthly income: ${p.targetMonthlyIncome ?? "unknown"}.`));
+                    await deliverMessage(r, setLoading, addForgeMsg, FAST_DELIVERY);
+                } catch {
+                    await deliverMessage(`That's the right kind of constraint to put on the table. Last question: how do you want to approach building this?`, setLoading, addForgeMsg, FAST_DELIVERY);
+                }
+                setStepIndex(7);
 
             } else if (currentStep.id === "strategy") {
                 const card = STRATEGY_CARDS.find(c => c.id === rawId);
@@ -241,10 +300,10 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                 setProfile(p);
 
                 const budgetLabel = p.exactBudgetAmount ? `${formatCurrency(p.exactBudgetAmount)} available` : "Budget still being clarified";
-                const context = `Founder: ${p.name} | Idea: ${p.idea} | Experience: ${p.experience} | Exact budget: ${budgetLabel} | Strategy: ${p.strategyLabel} | Starting Stage: ${p.detectedStage || 1} (${STAGES_DATA[(p.detectedStage || 1) - 1]?.label})`;
+                const context = `Builder: ${p.name} | Venture mode: ${getVentureModeLabel(p)} | Idea: ${p.idea} | Experience: ${p.experience} | Exact budget: ${budgetLabel} | Goal/constraints: ${p.ventureGoal || "not specified"} | Weekly hours: ${p.weeklyHoursAvailable ?? "unknown"} | Target monthly income: ${p.targetMonthlyIncome ?? "unknown"} | Strategy: ${p.strategyLabel} | Starting Stage: ${p.detectedStage || 1} (${STAGES_DATA[(p.detectedStage || 1) - 1]?.label})`;
                 const startStage = p.detectedStage || 1;
                 const startStageLabel = STAGES_DATA[startStage - 1]?.label || "Idea";
-                const prompt = `Onboarding is complete. Give a personalized opening assessment in 3-4 short paragraphs. Reference their specific idea, budget, experience level, strategy mode, and the fact that we're starting them at Stage ${startStage}: ${startStageLabel}. Be direct and specific — not generic. If there's real potential in what they're building, name it specifically. If there's a common pitfall for this type of idea or stage, call it out. Explain in one sentence why Stage ${startStage} is the right starting point for them given where they are. Use **bold** on 2-3 key words. End with just the word "Ready?" on its own line — nothing after it.`;
+                const prompt = `Onboarding is complete. Give a personalized opening assessment in 3-4 short paragraphs. Reference their specific idea, venture mode, goal/constraints, budget, experience level, strategy mode, and the fact that we're starting them at Stage ${startStage}: ${startStageLabel}. Be direct and specific — not generic. If this is a side hustle path, do not imply they must create a formal company; frame it as building a real income engine. If there's a common pitfall for this type of idea or stage, call it out. Explain in one sentence why Stage ${startStage} is the right starting point for them given where they are. Use **bold** on 2-3 key words. End with just the word "Ready?" on its own line — nothing after it.`;
 
                 try {
                     const r = await callForgeAPI([{ role: "user", content: prompt }], FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", context));
@@ -253,7 +312,7 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                     await deliverMessage(`Alright ${p.name} — we have what we need. Let's build something real.\n\nReady?`, setLoading, addForgeMsg, FAST_DELIVERY);
                 }
 
-                setStepIndex(7);
+                setStepIndex(8);
                 setCompletedProfile({
                     ...p,
                     businessName: "",
@@ -296,7 +355,8 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
         setResponsePending(true);
         setCardSelection(cardId);
         const label =
-            currentStep.id === "stage_assessment" ? STAGE_ASSESSMENT_CARDS.find(c => c.id === cardId)?.label || cardId
+            currentStep.id === "venture_mode" ? VENTURE_MODE_CARDS.find(c => c.id === cardId)?.label || cardId
+                : currentStep.id === "stage_assessment" ? ventureStageCards.find(c => c.id === cardId)?.label || cardId
                 : currentStep.id === "experience" ? EXPERIENCE_CARDS.find(c => c.id === cardId)?.label || cardId
                     : STRATEGY_CARDS.find(c => c.id === cardId)?.label || cardId;
         setCardSelection(null);
@@ -304,7 +364,7 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
     };
 
     const showCards = currentStep?.cards && !loading && !readyToEnter && !responsePending;
-    const showInput = !currentStep?.cards && stepIndex < 7 && !readyToEnter && !responsePending;
+    const showInput = !currentStep?.cards && stepIndex < ONBOARDING_STEPS.length - 1 && !readyToEnter && !responsePending;
 
     return (
         <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8", display: "flex", flexDirection: "column" }}>
@@ -315,7 +375,7 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                 </div>
                 {stepIndex > 0 && (
                     <div style={{ display: "flex", gap: 6 }}>
-                        {[0, 1, 2, 3, 4, 5].map(i => (
+                        {Array.from({ length: ONBOARDING_STEPS.length - 1 }, (_, i) => i).map(i => (
                             <div key={i} style={{ width: i < stepIndex ? 18 : 6, height: 6, borderRadius: 3, background: i < stepIndex ? "linear-gradient(90deg, #E8622A, #F5A843)" : "rgba(255,255,255,0.12)", transition: "all 0.4s ease" }} />
                         ))}
                     </div>
@@ -369,7 +429,7 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                                 <div style={{ fontSize: 12, color: "rgba(240,237,232,0.62)", padding: "6px 4px 2px", lineHeight: 1.5 }}>
                                     Stage 1 is free. Stages 2–6 require a Starter or Pro plan.
                                 </div>
-                                {STAGE_ASSESSMENT_CARDS.map(card => (
+                                {ventureStageCards.map(card => (
                                     <button key={card.id} onClick={() => handleCard(card.id)} style={{ background: cardSelection === card.id ? "rgba(232,98,42,0.15)" : "rgba(255,255,255,0.02)", border: cardSelection === card.id ? "1px solid rgba(232,98,42,0.6)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "14px 16px", cursor: "pointer", textAlign: "left", transition: "all 0.2s" }}>
                                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                                             {(() => { const CardIcon = card.icon; return <CardIcon size={20} color="#C8C4BE" />; })()}
@@ -388,6 +448,17 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                                 ))}
                             </>
                         )}
+                        {currentStep.id === "venture_mode" && VENTURE_MODE_CARDS.map(card => (
+                            <button key={card.id} onClick={() => handleCard(card.id)} style={{ background: cardSelection === card.id ? "rgba(232,98,42,0.15)" : "rgba(255,255,255,0.02)", border: cardSelection === card.id ? "1px solid rgba(232,98,42,0.6)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "14px 16px", cursor: "pointer", textAlign: "left", transition: "all 0.2s" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                    {(() => { const CardIcon = card.icon; return <CardIcon size={20} color="#C8C4BE" />; })()}
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontSize: 14, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 2 }}>{card.label}</div>
+                                        <div style={{ fontSize: 12, color: "rgba(240,237,232,0.62)", lineHeight: 1.45 }}>{card.sub}</div>
+                                    </div>
+                                </div>
+                            </button>
+                        ))}
                         {currentStep.id === "experience" && EXPERIENCE_CARDS.map(card => (
                             <button key={card.id} onClick={() => handleCard(card.id)} style={{ background: cardSelection === card.id ? "rgba(232,98,42,0.15)" : "rgba(255,255,255,0.02)", border: cardSelection === card.id ? "1px solid rgba(232,98,42,0.6)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "14px 16px", cursor: "pointer", textAlign: "left", transition: "all 0.2s" }}>
                                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -441,9 +512,11 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                                 currentStep?.id === "name"
                                     ? "Type your name..."
                                     : currentStep?.id === "idea"
-                                        ? "Tell me about your idea..."
+                                        ? "Tell me what you're building or trying to earn from..."
                                         : currentStep?.id === "budget_exact"
                                             ? "Enter your exact budget amount..."
+                                            : currentStep?.id === "venture_goal"
+                                                ? "Example: $2,000/month with 8 hours/week..."
                                             : "Type your response..."
                             }
                         />

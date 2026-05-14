@@ -1,3 +1,5 @@
+import { getVentureModeLabel, isSideHustleMode } from "./ventureMode";
+
 export const BUSINESS_MODEL_CANVAS_SECTIONS = [
     "customer_segments",
     "value_propositions",
@@ -244,18 +246,22 @@ export function buildBusinessModelCanvasSectionPrompt(
         .map((item) => `${BUSINESS_MODEL_CANVAS_LABELS[item.section]} (${item.message})`)
         .join(", ");
 
-    return `You are helping the founder refine their ${label} inside the Business Model Canvas for Stage 2.
+    const isSideHustle = isSideHustleMode(profile);
+    const canvasName = isSideHustle ? "Side Hustle Canvas" : "Business Model Canvas";
+    return `You are helping the founder refine their ${label} inside the ${canvasName} for Stage 2.
 
-Business: ${profile?.businessName || profile?.idea || "Still being clarified"}
+Venture mode: ${getVentureModeLabel(profile)}
+${isSideHustle ? "Side hustle / offer" : "Business"}: ${profile?.businessName || profile?.idea || "Still being clarified"}
 Industry: ${profile?.industry || "Early stage"}
 Strategy mode: ${profile?.strategyLabel || profile?.strategy || "Not specified"}
+Goal / constraints: ${profile?.ventureGoal || "Not specified"}
 
 Current ${label} entries:
 ${currentEntries}
 
 Other weak canvas areas: ${weakSections || "None obvious"}
 
-Improve clarity and specificity. Ask targeted questions that sharpen the business model rather than brainstorming wildly. Keep the founder focused on concrete choices, tradeoffs, and what would make this section stronger.`;
+Improve clarity and specificity. Ask targeted questions that sharpen the model rather than brainstorming wildly. Keep the founder focused on concrete choices, tradeoffs, and what would make this section stronger. ${isSideHustle ? "Do not force formal company assumptions; prioritize a sellable offer, buyer clarity, delivery simplicity, profit per hour, and low-risk validation." : ""}`;
 }
 
 export function buildBusinessModelCanvasExportHtml(canvas: BusinessModelCanvasRecord, profile: any) {
@@ -275,12 +281,15 @@ export function buildBusinessModelCanvasExportHtml(canvas: BusinessModelCanvasRe
 </section>`;
     }).join("");
 
+    const isSideHustle = isSideHustleMode(profile);
+    const canvasName = isSideHustle ? "Side Hustle Canvas" : "Business Model Canvas";
+
     return `<!doctype html>
 <html>
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Business Model Canvas</title>
+<title>${escapeHtml(canvasName)}</title>
 <style>
   @page { size: letter portrait; margin: 1in; }
   body { margin: 0; font-family: Georgia, "Times New Roman", serif; color: #201c18; background: #f7f2ea; }
@@ -301,8 +310,8 @@ export function buildBusinessModelCanvasExportHtml(canvas: BusinessModelCanvasRe
 <body>
   <main class="shell">
     <header class="header">
-      <div class="eyebrow">Foundry Stage 2 · Living Business Model Canvas</div>
-      <h1>${escapeHtml(profile?.businessName || profile?.idea || "Business Model Canvas")}</h1>
+      <div class="eyebrow">Foundry Stage 2 · Living ${escapeHtml(canvasName)}</div>
+      <h1>${escapeHtml(profile?.businessName || profile?.idea || canvasName)}</h1>
       <div class="meta">
         Version ${canvas.version} · Updated ${escapeHtml(updatedAt)}<br />
         Founder: ${escapeHtml(profile?.name || "Founder")} · Industry: ${escapeHtml(profile?.industry || "Early stage")} · Strategy: ${escapeHtml(profile?.strategyLabel || profile?.strategy || "Not specified")}

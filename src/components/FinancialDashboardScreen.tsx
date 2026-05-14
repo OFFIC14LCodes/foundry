@@ -797,7 +797,7 @@ Be the partner who has been watching the whole time.`;
     };
 
     return (
-        <div style={{ position: "fixed", inset: 0, background: "var(--foundry-bg-app)", color: "var(--foundry-text-primary)", zIndex: 1000, display: "flex", flexDirection: "column", overflowY: "auto" }}>
+        <div style={{ position: "fixed", inset: 0, background: "var(--foundry-bg-app)", color: "var(--foundry-text-primary)", zIndex: 130, display: "flex", flexDirection: "column", overflowY: "auto" }}>
 
             {/* ── Header ──────────────────────────────────────────────────────── */}
             <div style={{ position: "sticky", top: 0, zIndex: 10, background: "rgba(8,8,9,0.95)", borderBottom: "1px solid var(--foundry-border-subtle)", padding: "14px 20px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", backdropFilter: "blur(12px)" }}>

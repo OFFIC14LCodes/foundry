@@ -192,6 +192,8 @@ export type AcademyTopicLaunch = {
     id: string;
     title: string;
     sessionMode: AcademySessionMode;
+    progressStatus?: AcademyProgressStatus;
+    completedAt?: string | null;
     categoryTitle: string | null;
     stageIds: number[];
     learningGoal: string | null;
@@ -318,11 +320,17 @@ export function getAcademyProgressLabel(status: AcademyProgressStatus | null | u
     }
 }
 
-export function toAcademyTopicLaunch(content: AcademyContent, sessionMode: AcademySessionMode = "learn"): AcademyTopicLaunch {
+export function toAcademyTopicLaunch(
+    content: AcademyContent,
+    sessionMode: AcademySessionMode = "learn",
+    progress?: AcademyUserContentProgress | null,
+): AcademyTopicLaunch {
     return {
         id: content.id,
         title: content.title,
         sessionMode,
+        progressStatus: progress?.status ?? "not_started",
+        completedAt: progress?.completedAt ?? null,
         categoryTitle: content.category?.title ?? null,
         stageIds: content.stageIds,
         learningGoal: content.learningGoal,

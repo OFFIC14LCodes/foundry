@@ -1,9 +1,14 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, BookOpen } from "lucide-react";
 import {
     loadConversationSummaries,
     updateConversationSummary,
     deleteConversationSummary,
+    loadFounderBooks,
+    loadFounderBookSources,
+    type FounderBook,
+    type FounderBookSource,
+    type FounderBookType,
 } from "../db";
 import { STAGES_DATA } from "../constants/stages";
 import {
@@ -18,6 +23,7 @@ import HelpTooltip from "./HelpTooltip";
 // ─────────────────────────────────────────────────────────────
 type SourceType = "forge" | "chatroom" | "academy" | "bubble" | "pitchpractice";
 type FilterKey = "all" | SourceType;
+type ArchiveMode = "archives" | "books";
 
 const SOURCE_CONFIG: Record<SourceType, { label: string; color: string; bg: string; borderColor: string }> = {
     forge:    { label: "Forge Session",   color: "#E8622A", bg: "rgba(232,98,42,0.06)",   borderColor: "rgba(232,98,42,0.28)" },
@@ -27,7 +33,22 @@ const SOURCE_CONFIG: Record<SourceType, { label: string; color: string; bg: stri
     pitchpractice: { label: "Pitch Practice", color: "#D9B15D", bg: "rgba(217,177,93,0.08)", borderColor: "rgba(217,177,93,0.28)" },
 };
 
+const BOOK_CONFIG: Record<FounderBookType, { label: string; color: string; bg: string; borderColor: string }> = {
+    business: { label: "Business Book", color: "#E8622A", bg: "rgba(232,98,42,0.06)", borderColor: "rgba(232,98,42,0.28)" },
+    academy: { label: "Academy Book", color: "#9B8DE8", bg: "rgba(155,141,232,0.06)", borderColor: "rgba(155,141,232,0.28)" },
+    quick_chat: { label: "Quick Chat Book", color: "#63B3ED", bg: "rgba(99,179,237,0.06)", borderColor: "rgba(99,179,237,0.28)" },
+    market_intelligence: { label: "Market Intelligence Book", color: "#4CAF8A", bg: "rgba(76,175,138,0.06)", borderColor: "rgba(76,175,138,0.28)" },
+    pitch_practice: { label: "Pitch Practice Book", color: "#D9B15D", bg: "rgba(217,177,93,0.08)", borderColor: "rgba(217,177,93,0.28)" },
+    chat_room: { label: "Chat Room Book", color: "#F0EDE8", bg: "rgba(240,237,232,0.04)", borderColor: "rgba(240,237,232,0.18)" },
+};
+
 function getSourceType(entry: any): SourceType {
+    if (entry?.archiveSourceType) {
+        const stored = entry.archiveSourceType as string;
+        if (stored === "pitchpractice" || stored === "bubble" || stored === "chatroom" || stored === "academy" || stored === "forge") {
+            return stored as SourceType;
+        }
+    }
     const t = String(entry?.title || "");
     if (t.startsWith("Pitch Practice —")) return "pitchpractice";
     if (t.startsWith("Quick Chat")) return "bubble";
@@ -39,6 +60,15 @@ function getSourceType(entry: any): SourceType {
 function displayDate(dateLike?: string) {
     if (!dateLike) return "";
     return new Date(`${dateLike}T12:00:00`).toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+    });
+}
+
+function displayDateTime(dateLike?: string) {
+    if (!dateLike) return "";
+    return new Date(dateLike).toLocaleDateString("en-US", {
         month: "long",
         day: "numeric",
         year: "numeric",
@@ -192,7 +222,13 @@ export default function ArchivePanel({
 }: ArchivePanelProps) {
     const [entries, setEntries] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [booksLoading, setBooksLoading] = useState(true);
+    const [mode, setMode] = useState<ArchiveMode>("archives");
     const [filter, setFilter] = useState<FilterKey>("all");
+    const [books, setBooks] = useState<FounderBook[]>([]);
+    const [selectedBook, setSelectedBook] = useState<FounderBook | null>(null);
+    const [bookSources, setBookSources] = useState<FounderBookSource[]>([]);
+    const [bookSourcesLoading, setBookSourcesLoading] = useState(false);
     const [selectedEntry, setSelectedEntry] = useState<any | null>(null);
     const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -213,6 +249,34 @@ export default function ArchivePanel({
             setLoading(false);
         });
     }, [userId]);
+
+    useEffect(() => {
+        let cancelled = false;
+        setBooksLoading(true);
+        loadFounderBooks(userId).then((rows) => {
+            if (cancelled) return;
+            setBooks(
+                [...rows].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+            );
+            setBooksLoading(false);
+        });
+        return () => { cancelled = true; };
+    }, [userId]);
+
+    useEffect(() => {
+        if (!selectedBook?.id) {
+            setBookSources([]);
+            return;
+        }
+        let cancelled = false;
+        setBookSourcesLoading(true);
+        loadFounderBookSources(userId, selectedBook.id).then((rows) => {
+            if (cancelled) return;
+            setBookSources(rows);
+            setBookSourcesLoading(false);
+        });
+        return () => { cancelled = true; };
+    }, [userId, selectedBook?.id]);
 
     const hasType = (t: SourceType) => entries.some((e) => getSourceType(e) === t);
 
@@ -383,6 +447,45 @@ export default function ArchivePanel({
         );
     };
 
+    const renderBookCard = (book: FounderBook) => {
+        const cfg = BOOK_CONFIG[book.bookType] ?? BOOK_CONFIG.business;
+        const preview = getArchivePreviewText(book.content || "").replace(/\s+/g, " ").trim();
+        return (
+            <button
+                key={book.id}
+                onClick={() => setSelectedBook(book)}
+                style={{
+                    width: "100%",
+                    textAlign: "left",
+                    background: cfg.bg,
+                    border: `1px solid ${cfg.borderColor}`,
+                    borderLeft: `4px solid ${cfg.color}`,
+                    borderRadius: 14,
+                    padding: "16px",
+                    color: "#F0EDE8",
+                    cursor: "pointer",
+                    display: "block",
+                }}
+            >
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 9, fontFamily: "'DM Sans', sans-serif", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: cfg.color, background: `${cfg.color}18`, border: `1px solid ${cfg.color}30`, borderRadius: 5, padding: "2px 7px" }}>
+                        <BookOpen size={12} />
+                        {cfg.label}
+                    </span>
+                    <span style={{ fontSize: 10, color: "rgba(240,237,232,0.55)", fontFamily: "'DM Sans', sans-serif", marginLeft: "auto" }}>
+                        Updated {displayDateTime(book.updatedAt)}
+                    </span>
+                </div>
+                <div style={{ fontSize: 17, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 6, lineHeight: 1.25 }}>
+                    {book.title || cfg.label}
+                </div>
+                <div style={{ fontSize: 12, color: "rgba(240,237,232,0.62)", lineHeight: 1.7 }}>
+                    {preview ? (preview.length > 180 ? `${preview.slice(0, 180)}...` : preview) : "No book content yet."}
+                </div>
+            </button>
+        );
+    };
+
     // ── Detail modal ─────────────────────────────────────────
     const renderDetailModal = () => {
         if (!selectedEntry) return null;
@@ -513,6 +616,66 @@ export default function ArchivePanel({
         );
     };
 
+    const renderBookDetailModal = () => {
+        if (!selectedBook) return null;
+        const cfg = BOOK_CONFIG[selectedBook.bookType] ?? BOOK_CONFIG.business;
+        return (
+            <div
+                onClick={() => setSelectedBook(null)}
+                style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(4,4,5,0.84)", backdropFilter: "blur(12px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }}
+            >
+                <div
+                    onClick={(e) => e.stopPropagation()}
+                    style={{ width: "min(760px, 100%)", maxHeight: "85vh", overflowY: "auto", background: "#0E0E10", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, padding: "20px 18px 18px" }}
+                >
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
+                        <div style={{ minWidth: 0 }}>
+                            <div style={{ display: "flex", gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
+                                <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 9, fontFamily: "'DM Sans', sans-serif", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: cfg.color, background: `${cfg.color}18`, border: `1px solid ${cfg.color}30`, borderRadius: 5, padding: "2px 7px" }}>
+                                    <BookOpen size={12} />
+                                    {cfg.label}
+                                </span>
+                                <span style={{ fontSize: 10, color: "rgba(240,237,232,0.55)", fontFamily: "'DM Sans', sans-serif" }}>
+                                    Updated {displayDateTime(selectedBook.updatedAt)}
+                                </span>
+                            </div>
+                            <div style={{ fontSize: 22, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", lineHeight: 1.2 }}>
+                                {selectedBook.title || cfg.label}
+                            </div>
+                        </div>
+                        <button onClick={() => setSelectedBook(null)} style={{ padding: "6px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, color: "rgba(240,237,232,0.62)", fontSize: 12, cursor: "pointer", height: 32 }}>✕</button>
+                    </div>
+
+                    <div style={{ fontSize: 14, color: "rgba(240,237,232,0.72)", lineHeight: 1.8, borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 16 }}>
+                        {renderArchiveSummary(selectedBook.content)}
+                    </div>
+
+                    <div style={{ marginTop: 22, borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 16 }}>
+                        <div style={{ fontSize: 10, fontFamily: "'DM Sans', sans-serif", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(232,98,42,0.7)", marginBottom: 10 }}>
+                            Sources
+                        </div>
+                        {bookSourcesLoading ? (
+                            <div style={{ fontSize: 12, color: "rgba(240,237,232,0.5)" }}>Loading sources...</div>
+                        ) : bookSources.length > 0 ? (
+                            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                {bookSources.map((source) => (
+                                    <div key={source.id} style={{ padding: "10px 12px", borderRadius: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                                        <div style={{ fontSize: 13, color: "rgba(240,237,232,0.78)", lineHeight: 1.4 }}>{source.sourceTitle || "Archived conversation"}</div>
+                                        <div style={{ marginTop: 4, fontSize: 11, color: "rgba(240,237,232,0.45)", fontFamily: "'DM Sans', sans-serif" }}>
+                                            {source.sourceStageId ? `Stage ${source.sourceStageId} · ` : ""}{displayDateTime(source.appliedAt)}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div style={{ fontSize: 12, color: "rgba(240,237,232,0.5)" }}>No source history recorded yet.</div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     // ── Main render ──────────────────────────────────────────
     return (
         <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "#080809", display: "flex", flexDirection: "column" }}>
@@ -534,12 +697,40 @@ export default function ArchivePanel({
 
             {/* Scrollable list */}
             <div className="foundry-app-page__content" style={{ flex: 1, overflowY: "auto", padding: 16, maxWidth: 720, width: "100%", margin: "0 auto" }}>
-                {loading ? (
+                {(loading || booksLoading) ? (
                     <div style={{ textAlign: "center", padding: 48, color: "var(--foundry-text-muted)", fontSize: 13 }}>Loading archive…</div>
                 ) : (
                     <>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: 4 }}>
+                            {([
+                                { key: "archives" as ArchiveMode, label: "Archives" },
+                                { key: "books" as ArchiveMode, label: "Books" },
+                            ]).map((item) => {
+                                const active = mode === item.key;
+                                return (
+                                    <button
+                                        key={item.key}
+                                        onClick={() => setMode(item.key)}
+                                        style={{
+                                            border: "none",
+                                            borderRadius: 9,
+                                            background: active ? "rgba(232,98,42,0.16)" : "transparent",
+                                            color: active ? "#E8622A" : "rgba(240,237,232,0.58)",
+                                            padding: "9px 12px",
+                                            fontFamily: "'DM Sans', sans-serif",
+                                            fontSize: 12,
+                                            fontWeight: 700,
+                                            cursor: "pointer",
+                                        }}
+                                    >
+                                        {item.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
                         {/* Filter chips */}
-                        {entries.length > 0 && filterOptions.length > 1 && (
+                        {mode === "archives" && entries.length > 0 && filterOptions.length > 1 && (
                             <div style={{ display: "flex", gap: 6, overflowX: "auto", WebkitOverflowScrolling: "touch" as any, paddingBottom: 4, marginBottom: 16 }}>
                                 {filterOptions.map((opt) => {
                                     const active = filter === opt.key;
@@ -571,7 +762,19 @@ export default function ArchivePanel({
                         )}
 
                         {/* Cards */}
-                        {filteredEntries.length > 0 ? (
+                        {mode === "books" ? (
+                            books.length > 0 ? (
+                                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                                    {books.map(renderBookCard)}
+                                </div>
+                            ) : (
+                                <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "36px 24px", color: "rgba(240,237,232,0.62)", fontSize: 13, lineHeight: 1.7, textAlign: "center" }}>
+                                    <BookOpen size={30} style={{ marginBottom: 14, color: "rgba(240,237,232,0.45)" }} />
+                                    <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 16, color: "#F0EDE8", marginBottom: 8 }}>No books yet.</div>
+                                    <div>Archive a conversation with workspace notes and Forge will build the matching book here.</div>
+                                </div>
+                            )
+                        ) : filteredEntries.length > 0 ? (
                             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                                 {filteredEntries.map(renderCard)}
                             </div>
@@ -591,6 +794,7 @@ export default function ArchivePanel({
             </div>
 
             {renderDetailModal()}
+            {renderBookDetailModal()}
 
             {/* Delete confirmation overlay */}
             {confirmDeleteId && (() => {

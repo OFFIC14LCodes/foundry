@@ -12,6 +12,7 @@ import type { FoundryActionSuggestion } from "../lib/foundryActions";
 import { suggestActionFromCanvasWeakness } from "../lib/foundryActions";
 import ActionSuggestionCard from "./actions/ActionSuggestionCard";
 import HelpTooltip from "./HelpTooltip";
+import { isSideHustleMode } from "../lib/ventureMode";
 
 type Props = {
     profile: any;
@@ -57,6 +58,8 @@ export default function BusinessModelCanvasScreen({
     const selectedEntries = selectedSection ? canvas[selectedSection] || [] : [];
     const selectedLabel = selectedSection ? BUSINESS_MODEL_CANVAS_LABELS[selectedSection] : "";
     const selectedWeakness = selectedSection ? weaknessLookup.get(selectedSection) ?? null : null;
+    const canvasTitle = isSideHustleMode(profile) ? "Side Hustle Canvas" : "Business Model Canvas";
+    const canvasSubject = isSideHustleMode(profile) ? "your side hustle or offer" : "your business";
     const [actionNotice, setActionNotice] = useState<string | null>(null);
 
     const beginEdit = (entryId: string, text: string) => {
@@ -96,8 +99,8 @@ export default function BusinessModelCanvasScreen({
                 <Logo variant="flame" style={{ width: 42, height: 42, objectFit: "contain", flexShrink: 0 }} />
                 <div style={{ minWidth: 0 }}>
                     <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                        <div style={{ fontSize: isNarrow ? 20 : 30, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, lineHeight: 1 }}>Business Model Canvas</div>
-                        <HelpTooltip content={`Living Stage 2 model for ${profile?.businessName || profile?.idea || "your business"} · Version ${canvas.version}`} side="bottom" />
+                        <div style={{ fontSize: isNarrow ? 20 : 30, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, lineHeight: 1 }}>{canvasTitle}</div>
+                        <HelpTooltip content={`Living Stage 2 model for ${profile?.businessName || profile?.idea || canvasSubject} · Version ${canvas.version}`} side="bottom" />
                     </div>
                 </div>
                 <div style={{ marginLeft: "auto", display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -163,7 +166,7 @@ export default function BusinessModelCanvasScreen({
                                             <div style={{ fontSize: 11, color: weakness ? "var(--foundry-semantic-warning)" : "var(--foundry-text-muted)", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 5 }}>
                                                 {entries.length} {entries.length === 1 ? "entry" : "entries"}
                                             </div>
-                                            <div style={{ fontSize: 20, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, lineHeight: 1.15 }}>{BUSINESS_MODEL_CANVAS_LABELS[section]}</div>
+                                            <div style={{ fontSize: 20, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, lineHeight: 1.15, color: "var(--foundry-text-primary)" }}>{BUSINESS_MODEL_CANVAS_LABELS[section]}</div>
                                         </div>
                                         {weakness && (
                                             <div style={{ fontSize: 10, color: "var(--foundry-semantic-warning)", background: "rgba(217,177,93,0.1)", border: "1px solid rgba(217,177,93,0.22)", borderRadius: 999, padding: "5px 8px", whiteSpace: "nowrap" }}>

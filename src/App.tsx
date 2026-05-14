@@ -149,11 +149,14 @@ import {
   type UserNotificationPreferences,
 } from "./lib/notifications";
 import type { AcademyTopicLaunch } from "./lib/academy";
-import type { FoundryActionSuggestion } from "./lib/foundryActions";
-import { buildForgePromptForAction, buildRecentActionOutcomesContext, createFoundryAction, loadRecentActionOutcomesForForge } from "./lib/foundryActions";
+import type { FoundryAction, FoundryActionSuggestion } from "./lib/foundryActions";
+import { buildForgePromptForAction, buildRecentActionOutcomesContext, createFoundryAction, loadOpenFoundryActionsByUser, loadRecentActionOutcomesForForge } from "./lib/foundryActions";
 import { clearFoundryClientStorage, createEmptyMessagesByStage, createEmptyStageProgress } from "./lib/session";
 import type { DocumentScreenContext } from "./components/DocumentProductionScreen";
 import type { AcademyScreenContext } from "./components/ForgeAcademyScreen";
+import { updateFounderBookFromArchive } from "./lib/founderBooks";
+import type { ConversationWorkspaceSnapshot } from "./lib/conversationWorkspace";
+import { buildVentureModeContext, getBuilderNoun, getVentureModeLabel, getVentureNoun, isSideHustleMode } from "./lib/ventureMode";
 
 const JournalScreen = lazy(() => import("./JournalScreen"));
 const BriefingsScreen = lazy(() => import("./BriefingsScreen"));
@@ -251,19 +254,62 @@ function buildUniversalFounderMemory({
   activeStage,
   messagesByStage,
   recentSummaries = [],
+  conversationArchives = [],
   foundryDecisions = [],
   journalEntries = [],
+  financialSummary = null,
+  businessModelCanvas = null,
+  openActions = [],
   cofoundersContext = null,
 }: {
   profile: any;
   activeStage?: number;
   messagesByStage?: Record<number, any[]>;
   recentSummaries?: StageSummary[];
+  conversationArchives?: any[];
   foundryDecisions?: FounderDecision[];
   journalEntries?: any[];
+  financialSummary?: FinancialSummary | null;
+  businessModelCanvas?: BusinessModelCanvasRecord | null;
+  openActions?: FoundryAction[];
   cofoundersContext?: string | null;
 }) {
   const sections: string[] = [];
+  if (profile) {
+    sections.push(`PROFILE SNAPSHOT:
+Name: ${profile?.nameNeedsReview ? "Founder" : profile?.name || "Founder"}
+Builder type: ${getBuilderNoun(profile)}
+Venture mode: ${getVentureModeLabel(profile)}
+Project / business: ${profile?.ideaNeedsReview ? "Still being clarified" : profile?.businessName || profile?.idea || "Idea stage"}
+Industry: ${profile?.industry || "Early Stage"}
+Strategy: ${profile?.strategyLabel || profile?.strategy || "not specified"}
+Experience: ${profile?.experience || "not specified"}
+Goal / constraints: ${profile?.ventureGoal || "not specified"}
+Weekly hours available: ${profile?.weeklyHoursAvailable ?? "unknown"}
+Target monthly income: ${profile?.targetMonthlyIncome ? `$${Number(profile.targetMonthlyIncome).toLocaleString()}` : "unknown"}
+Current stage: ${activeStage || profile?.currentStage || "unknown"}`);
+  }
+
+  if (financialSummary) {
+    sections.push(`FINANCIAL SNAPSHOT:
+Available cash: $${Math.round(financialSummary.availableCash).toLocaleString()}
+Monthly burn: $${Math.round(financialSummary.monthlyBurn).toLocaleString()}
+Runway: ${financialSummary.runwayMonths != null ? `${financialSummary.runwayMonths.toFixed(1)} months` : "not enough recurring burn data yet"}
+Recurring revenue: ${financialSummary.recurringRevenueCount} item(s), $${Math.round(financialSummary.monthlyRecurringRevenue).toLocaleString()}/mo
+Recurring expenses: ${financialSummary.recurringExpenseCount} item(s), $${Math.round(financialSummary.monthlyRecurringExpenses).toLocaleString()}/mo
+Profit First: ${financialSummary.profitFirst.enabled ? "enabled" : "disabled"}`);
+  }
+
+  if (businessModelCanvas) {
+    sections.push(buildBusinessModelCanvasContext(businessModelCanvas));
+  }
+
+  const activeActions = [...(openActions ?? [])].slice(0, 8);
+  if (activeActions.length > 0) {
+    sections.push(`OPEN ACTION MEMORY:
+${activeActions.map((action) => `- [${action.priority}/${action.status}] ${action.title}: ${clipMemoryText(action.description, 220)}`).join("\n")}`);
+  }
+
   const sortedJournalEntries = [...(journalEntries ?? [])]
     .filter((entry) => entry?.content)
     .sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime());
@@ -308,6 +354,15 @@ ${recentStageMessages.map((message) => `- ${formatMemoryDate(message.createdAt)}
   if (recentArchives.length > 0) {
     sections.push(`RECENT SAVED CONVERSATION MEMORY:
 ${recentArchives.map((summary) => `- ${formatMemoryDate(summary.summaryDate)} · ${summary.title || "Saved conversation"}: ${clipMemoryText(summary.summary, 260)}`).join("\n")}`);
+  }
+
+  const recentChatArchives = [...(conversationArchives ?? [])]
+    .filter((entry) => entry?.summary)
+    .sort((a, b) => new Date(b.date ?? b.summaryDate ?? b.createdAt ?? 0).getTime() - new Date(a.date ?? a.summaryDate ?? a.createdAt ?? 0).getTime())
+    .slice(0, 6);
+  if (recentChatArchives.length > 0) {
+    sections.push(`RECENT ARCHIVED CHAT ROOM MEMORY:
+${recentChatArchives.map((entry) => `- ${formatMemoryDate(entry.date || entry.summaryDate || entry.createdAt)} · ${entry.title || "Saved chat"}: ${clipMemoryText(getArchiveDisplaySummary(entry.summary), 260)}`).join("\n")}`);
   }
 
   const recentDecisions = [...(foundryDecisions ?? [])].slice(0, 6);
@@ -507,7 +562,7 @@ ONBOARDING REVIEW NOTE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Some onboarding answers were likely jokes or placeholders and need to be re-confirmed naturally in conversation.
 ${profile?.nameNeedsReview ? `- The founder did not give a serious name during onboarding. Current placeholder name: ${profile.name || "Founder"}.` : ""}
-${profile?.ideaNeedsReview ? `- The founder did not give a serious business description during onboarding. Current placeholder business: ${profile.idea || "Still being clarified"}.` : ""}
+${profile?.ideaNeedsReview ? `- The founder did not give a serious project, offer, or business description during onboarding. Current placeholder: ${profile.idea || "Still being clarified"}.` : ""}
 Do not make this awkward or repetitive. Reassess naturally when it fits the conversation, then continue normally.` : "";
 
   const safeProfileName = profile?.nameNeedsReview ? "Founder" : profile.name;
@@ -533,8 +588,11 @@ Do not make this awkward or repetitive. Reassess naturally when it fits the conv
     recentSummaries: recentSummaries ?? [],
     foundryDecisions: foundryDecisions ?? [],
     journalEntries: journalEntries ?? [],
+    financialSummary,
+    businessModelCanvas,
     cofoundersContext,
   });
+  const ventureModeBlock = buildVentureModeContext(profile);
   const bmcBlock = businessModelCanvas
     ? buildBusinessModelCanvasContext(businessModelCanvas)
     : (activeStage === 2
@@ -558,8 +616,9 @@ If the conversation turns toward business model clarity, help the founder make c
 
   const context = `
 Current date & time: ${dateStr}, ${timeStr}
-Founder: ${safeProfileName} | Business: ${safeBusinessName} (${profile.industry || "Early Stage"})
+Founder: ${safeProfileName} | Venture mode: ${getVentureModeLabel(profile)} | ${isSideHustleMode(profile) ? "Side hustle / offer" : "Business"}: ${safeBusinessName} (${profile.industry || "Early Stage"})
 Strategy: ${profile.strategyLabel || profile.strategy} | Experience: ${profile.experience || "Not specified"}
+Goal / constraints: ${profile.ventureGoal || "Not specified"} | Weekly hours: ${profile.weeklyHoursAvailable ?? "Unknown"} | Target monthly income: ${profile.targetMonthlyIncome ? `$${Number(profile.targetMonthlyIncome).toLocaleString()}` : "Unknown"}
 Budget: $${(profile.budget?.remaining || 0).toLocaleString()} remaining of $${(profile.budget?.total || 0).toLocaleString()} | Spent: $${(profile.budget?.spent || 0).toLocaleString()} | Runway: ${profile.budget?.runway || "TBD"}
 
 CURRENT STAGE: ${activeStage} — ${stageData.label}
@@ -590,7 +649,7 @@ ${longitudinalBlock ? `${longitudinalBlock}` : ""}
 ${recentActionOutcomesBlock ? `${recentActionOutcomesBlock}
 
 ` : ""}
-${universalMemoryBlock ? `${universalMemoryBlock}\n\n` : ""}${forgeMemoryContext ? `${forgeMemoryContext}\n\n` : ""}${journalBlock ? `${journalBlock}\n\n` : ""}${bmcBlock ? `${bmcBlock}\n\n` : ""}STAGE REFERENCES: When referencing work from another stage, wrap it like [STAGE_REF:N]text[/STAGE_REF]. Use naturally when prior work is relevant — not on every mention.${onboardingReviewSection}${cofounderSection}${workspaceOperationsSection}${methodSection}
+${ventureModeBlock ? `${ventureModeBlock}\n\n` : ""}${universalMemoryBlock ? `${universalMemoryBlock}\n\n` : ""}${forgeMemoryContext ? `${forgeMemoryContext}\n\n` : ""}${journalBlock ? `${journalBlock}\n\n` : ""}${bmcBlock ? `${bmcBlock}\n\n` : ""}STAGE REFERENCES: When referencing work from another stage, wrap it like [STAGE_REF:N]text[/STAGE_REF]. Use naturally when prior work is relevant — not on every mention.${onboardingReviewSection}${cofounderSection}${workspaceOperationsSection}${methodSection}
   `.trim();
 
   return {
@@ -1023,6 +1082,8 @@ function ForgeScreen({
   hasEarlierMessagesByStage = {} as Record<number, boolean>,
   loadingEarlierStage = null as number | null,
   workspaces = [] as CofounderWorkspaceSummary[],
+  seedArchiveEntry = null as any | null,
+  seedArchiveNonce = 0,
 }) {
   const [activeStage, setActiveStage] = useState(pendingUpgradeStage || initialStage || profile.currentStage || 1);
   const [activeTab, setActiveTab] = useState("chat");
@@ -1050,6 +1111,7 @@ function ForgeScreen({
   const [archiveTitleInput, setArchiveTitleInput] = useState("");
   const [savingArchive, setSavingArchive] = useState(false);
   const [archiveSession, setArchiveSession] = useState<any | null>(null);
+  const [activeStageWorkspace, setActiveStageWorkspace] = useState<ConversationWorkspaceSnapshot | null>(null);
   const [editingSummaryTitle, setEditingSummaryTitle] = useState(false);
   const [summaryTitleInput, setSummaryTitleInput] = useState("");
   const [updatingSummaryTitle, setUpdatingSummaryTitle] = useState(false);
@@ -1110,6 +1172,24 @@ function ForgeScreen({
       setArchiveSession(null);
     }
   }, [activeStage, archiveSession?.stageId]);
+
+  useEffect(() => {
+    if (!archiveSession?.entry?.workspaceSnapshot) return;
+    setActiveStageWorkspace(archiveSession.entry.workspaceSnapshot);
+  }, [archiveSession?.entry?.id]);
+
+  useEffect(() => {
+    if (!seedArchiveEntry) return;
+    const targetStage = Number(seedArchiveEntry.stageId) || profile.currentStage || 1;
+    setActiveStage(targetStage);
+    setActiveTab("chat");
+    setArchiveSession({
+      entry: seedArchiveEntry,
+      stageId: targetStage,
+      initialMessageCount: (messagesByStage[targetStage] || []).length,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seedArchiveNonce]);
 
   const stage = STAGES_DATA[activeStage - 1];
   const StageIcon = stage.icon;
@@ -1191,6 +1271,7 @@ function ForgeScreen({
     setActiveTab("chat");
     setAdvanceReady(false);
     setBriefingDismissed(false);
+    setActiveStageWorkspace(null);
   }, [activeStage]);
 
   // Ensure activeStage matches pendingUpgradeStage when arriving from onboarding with a paid stage
@@ -1300,19 +1381,22 @@ function ForgeScreen({
       let greetingPrompt = "";
       const safeName = profile.nameNeedsReview ? "Founder" : profile.name;
       const safeIdea = profile.ideaNeedsReview ? "still being clarified" : profile.idea;
+      const ventureLabel = getVentureModeLabel(profile);
+      const ventureNoun = getVentureNoun(profile);
+      const ventureGoal = profile.ventureGoal || "not specified";
       const onboardingReviewNote = [
         profile.nameNeedsReview ? "Their real name was not confirmed during onboarding." : "",
-        profile.ideaNeedsReview ? "Their real business idea was not confirmed during onboarding." : "",
+        profile.ideaNeedsReview ? "Their real project, offer, or business idea was not confirmed during onboarding." : "",
       ].filter(Boolean).join(" ");
 
       if (isFirstVisit && pendingUpgradeStage && activeStage === pendingUpgradeStage) {
-        greetingPrompt = `${safeName} just finished onboarding and wants to start at Stage ${activeStage}: ${stageData.label}. Their idea: "${safeIdea}". Experience: ${profile.experience}. Budget: $${profile.budget?.total?.toLocaleString() || "unknown"}. Strategy: ${profile.strategyLabel}. ${onboardingReviewNote}
+        greetingPrompt = `${safeName} just finished onboarding and wants to start at Stage ${activeStage}: ${stageData.label}. Venture mode: ${ventureLabel}. Their ${ventureNoun}: "${safeIdea}". Goal/constraints: ${ventureGoal}. Experience: ${profile.experience}. Budget: $${profile.budget?.total?.toLocaleString() || "unknown"}. Strategy: ${profile.strategyLabel}. ${onboardingReviewNote}
 
-Write a 2-3 paragraph welcome. First: recap what they shared during onboarding — the idea, experience, budget, and strategy — in a natural, specific way, not a form readback. Second: briefly describe what Stage ${activeStage} is about and why it fits where they are. Third (short): let them know Stage ${activeStage} requires a Starter or Pro plan to access — they can upgrade now to jump straight in, or step back and explore Stage 1 for free first. Keep the tone warm and direct. Use **bold** on 2-3 key words. Do NOT end with a question — end after the payment note.`;
+Write a 2-3 paragraph welcome. First: recap what they shared during onboarding — venture mode, idea/offer, goal, experience, budget, and strategy — in a natural, specific way, not a form readback. If this is a side-hustle path, do not imply they must create a company. Second: briefly describe what Stage ${activeStage} is about and why it fits where they are. Third (short): let them know Stage ${activeStage} requires a Starter or Pro plan to access — they can upgrade now to jump straight in, or step back and explore Stage 1 for free first. Keep the tone warm and direct. Use **bold** on 2-3 key words. Do NOT end with a question — end after the payment note.`;
       } else if (isFirstVisit && activeStage === 1) {
-        greetingPrompt = `${safeName} just finished onboarding and is entering Stage 1 for the first time. Their idea: "${safeIdea}". Experience: ${profile.experience}. Budget: $${profile.budget?.total?.toLocaleString() || "unknown"}. Strategy: ${profile.strategyLabel}. ${onboardingReviewNote}
+        greetingPrompt = `${safeName} just finished onboarding and is entering Stage 1 for the first time. Venture mode: ${ventureLabel}. Their ${ventureNoun}: "${safeIdea}". Goal/constraints: ${ventureGoal}. Experience: ${profile.experience}. Budget: $${profile.budget?.total?.toLocaleString() || "unknown"}. Strategy: ${profile.strategyLabel}. ${onboardingReviewNote}
 
-Start with a short recap of what they told Foundry during onboarding: the business idea, their experience level, their budget, and their strategy. Make it sound natural and specific, not like a form readback. Then pivot immediately to Stage 1's core question: is the problem real. End with one sharp, concrete question that gets the conversation moving. Use **bold** on 2-3 key words. Keep it to 2-3 tight paragraphs.`;
+Start with a short recap of what they told Foundry during onboarding: venture mode, idea/offer, goal, experience level, budget, and strategy. Make it sound natural and specific, not like a form readback. Then pivot immediately to Stage 1's core question: is the problem real and will someone pay for relief. If this is a side hustle, frame it as proving a paid offer, not starting a company. End with one sharp, concrete question that gets the conversation moving. Use **bold** on 2-3 key words. Keep it to 2-3 tight paragraphs.`;
       } else if (isLongAbsence && activeStage > 0) {
         const hoursText = hoursSince ? `about ${Math.round(hoursSince)} hours` : "a while";
         greetingPrompt = `${safeName} is returning to Stage ${activeStage}: ${stageData.label} after ${hoursText} away. Welcome them back briefly and warmly — 1 sentence, not more. Reference where they are in this stage and what matters most right now. Then ask one sharp forward-moving question. 3-4 paragraphs max. Use **bold** on 2-3 key words. ${onboardingReviewNote}`;
@@ -1377,9 +1461,9 @@ Start with a short recap of what they told Foundry during onboarding: the busine
           isFirstVisit && activeStage === 1
             ? `${safeName} — welcome to Foundry.
 
-You came in with **${safeIdea || "a new business idea"}**, a ${profile.experience || "founder"} background, a budget of **$${profile.budget?.total?.toLocaleString() || "unknown"}**, and a **${profile.strategyLabel || profile.strategy || "focused"}** approach. That's enough to start pressure-testing this the right way.
+You came in on the **${ventureLabel}** path with **${safeIdea || "a new idea"}**, a ${profile.experience || "builder"} background, a budget of **$${profile.budget?.total?.toLocaleString() || "unknown"}**, and a **${profile.strategyLabel || profile.strategy || "focused"}** approach. That's enough to start pressure-testing this the right way.
 
-Stage 1 is about one thing: making sure a real person has a real problem worth solving.
+Stage 1 is about one thing: making sure a real person has a real problem worth solving and, if this is meant to earn money, a reason to pay.
 
 Who, specifically, is the first person you believe feels this problem often enough to want a better solution?`
             : isFirstVisit && pendingUpgradeStage && activeStage === pendingUpgradeStage
@@ -1461,7 +1545,8 @@ Where do you want to start?`;
       setSummaryModal(entry);
     }
 
-    if (isChatStyleArchive(entry)) {
+    const isAcademy = (entry.archiveSourceType === "academy") || isAcademyArchive(entry);
+    if (isAcademy || isChatStyleArchive(entry)) {
       setSummaryModal(null);
       setArchiveMenuOpenId(null);
       setSummaryModalMenuOpen(false);
@@ -1775,6 +1860,7 @@ Where do you want to start?`;
               title,
               summary: parsed.summary,
               messageCount: (archiveSession.entry.messageCount || 0) + archiveMessages.length,
+              workspaceSnapshot: activeStageWorkspace,
             }
           )
         : await saveConversationSummary(
@@ -1783,14 +1869,27 @@ Where do you want to start?`;
             new Date().toISOString().slice(0, 10),
             title,
             parsed.summary,
-            messages.length
+            messages.length,
+            activeStageWorkspace
           );
 
       if (!saved) return;
 
+      void updateFounderBookFromArchive({
+        userId,
+        archive: saved,
+        sourceType: "business",
+        sourceLabel: `Main Forge Stage ${activeStage}`,
+        sourceRefId: archiveSession?.entry?.id || `stage-${activeStage}`,
+        stageId: activeStage,
+        workspace: activeStageWorkspace,
+        transcript,
+      });
+
       updateArchiveEntryInState(saved);
       setSaveArchiveModalOpen(false);
       onUpdateMessages(activeStage, []);
+      setActiveStageWorkspace(null);
       setArchiveSession(null);
       setInput("");
       setAttachedFiles([]);
@@ -2700,6 +2799,8 @@ ${forgeReply}`;
                 title="Stage Workspace"
                 subtitle="Summary, Academy links, and next actions"
                 source={{ type: "forge", title: stage.label, stageId: activeStage, contextId: null }}
+                workspace={activeStageWorkspace}
+                onWorkspaceChange={setActiveStageWorkspace}
               />
             </div>
           </>
@@ -3082,11 +3183,15 @@ export default function FoundryApp() {
   const [recentSummaries, setRecentSummaries] = useState<StageSummary[]>([]);
   const [foundryDecisions, setFoundryDecisions] = useState<FounderDecision[]>([]);
   const [stageProgressDates, setStageProgressDates] = useState<Record<number, string>>({});
+  const [openFoundryActions, setOpenFoundryActions] = useState<FoundryAction[]>([]);
+  const [cofounderMemoryContext, setCofounderMemoryContext] = useState<string | null>(null);
   const [activeNudge, setActiveNudge] = useState<FounderNudge | null>(null);
   const [journalSeedPrompt, setJournalSeedPrompt] = useState<string | null>(null);
   const [forgeSeedPrompt, setForgeSeedPrompt] = useState<string | null>(null);
   const [forgeSeedStage, setForgeSeedStage] = useState<number | null>(null);
   const [forgeSeedNonce, setForgeSeedNonce] = useState(0);
+  const [forgeSeedArchiveEntry, setForgeSeedArchiveEntry] = useState<any | null>(null);
+  const [forgeSeedArchiveNonce, setForgeSeedArchiveNonce] = useState(0);
   const [founderSessionState, setFounderSessionState] = useState<FounderSessionState | null>(null);
   const [financialData, setFinancialData] = useState<FounderFinancialData | null>(null);
 
@@ -3168,6 +3273,8 @@ export default function FoundryApp() {
     setAcademyConversationEntry(null);
     setRecentSummaries([]);
     setFoundryDecisions([]);
+    setOpenFoundryActions([]);
+    setCofounderMemoryContext(null);
     setStageProgressDates({});
     setActiveNudge(null);
     setJournalSeedPrompt(null);
@@ -3215,7 +3322,7 @@ export default function FoundryApp() {
       const authEmail = ((user as any).email ?? null) as string | null;
       await ensureUserProfile(uid, user as any);
       await ensureOwnerProfileRole(uid, authEmail);
-      const [dbProfile, dbProgress, dbMessages, dbJournal, dbBriefings, dbMarket, dbNotificationPreferences, dbNotifications, dbBillingSubscription, dbRecentSummaries, dbFoundryDecisions, dbStageProgressDates, dbActiveNudge, dbFounderSessionState, dbBusinessModelCanvas] = await Promise.all([
+      const [dbProfile, dbProgress, dbMessages, dbJournal, dbBriefings, dbMarket, dbNotificationPreferences, dbNotifications, dbBillingSubscription, dbRecentSummaries, dbFoundryDecisions, dbStageProgressDates, dbActiveNudge, dbFounderSessionState, dbBusinessModelCanvas, dbOpenActions] = await Promise.all([
         loadProfile(uid),
         loadAllStageProgress(uid),
         loadAllMessages(uid),
@@ -3231,6 +3338,7 @@ export default function FoundryApp() {
         loadActiveNudge(uid),
         getFounderSessionState(uid),
         loadBusinessModelCanvas(uid),
+        loadOpenFoundryActionsByUser(uid),
       ]);
       const dbFinancialData = await loadFounderFinancialData(uid, dbProfile);
 
@@ -3266,6 +3374,7 @@ export default function FoundryApp() {
         setRecentSummaries(dbRecentSummaries);
         setFoundryDecisions(dbFoundryDecisions);
         setStageProgressDates(dbStageProgressDates);
+        setOpenFoundryActions(dbOpenActions);
         setFounderSessionState(dbFounderSessionState);
         setFinancialData(dbFinancialData);
         setBusinessModelCanvas(dbBusinessModelCanvas);
@@ -3316,6 +3425,7 @@ export default function FoundryApp() {
         setBillingSubscription(dbBillingSubscription);
         setFounderSessionState(dbFounderSessionState);
         setFinancialData(dbFinancialData);
+        setOpenFoundryActions(dbOpenActions);
         setScreen(getPersistedPostAuthScreen(false, dbFounderSessionState?.lastScreen ?? null));
         setIsFirstVisit(true);
       }
@@ -3834,9 +3944,26 @@ export default function FoundryApp() {
     markMeaningfulActivity(true);
   };
 
-  const handleProfileSave = async (updates: { displayName: string; businessName: string; marketFocus: string }) => {
+  const handleProfileSave = async (updates: {
+    displayName: string;
+    businessName: string;
+    marketFocus: string;
+    ventureMode: string;
+    ventureGoal: string;
+    weeklyHoursAvailable: number | null;
+    targetMonthlyIncome: number | null;
+  }) => {
     if (!user?.id) return;
-    const next = { ...profile, name: updates.displayName, businessName: updates.businessName, industry: updates.marketFocus };
+    const next = {
+      ...profile,
+      name: updates.displayName,
+      businessName: updates.businessName,
+      industry: updates.marketFocus,
+      ventureMode: updates.ventureMode,
+      ventureGoal: updates.ventureGoal,
+      weeklyHoursAvailable: Number.isFinite(updates.weeklyHoursAvailable) ? updates.weeklyHoursAvailable : null,
+      targetMonthlyIncome: Number.isFinite(updates.targetMonthlyIncome) ? updates.targetMonthlyIncome : null,
+    };
     setProfile(next);
     await saveProfile(user.id, next);
     markMeaningfulActivity(true);
@@ -3957,7 +4084,11 @@ export default function FoundryApp() {
     const activeUserId = (user as any)?.id as string | undefined;
     if (!activeUserId) return null;
     markMeaningfulActivity(true);
-    return createFoundryAction(activeUserId, suggestion);
+    const saved = await createFoundryAction(activeUserId, suggestion);
+    if (saved && ["suggested", "accepted", "in_progress"].includes(saved.status)) {
+      setOpenFoundryActions((prev) => [saved, ...prev.filter((action) => action.id !== saved.id)].slice(0, 20));
+    }
+    return saved;
   };
 
   const openAcademy = () => {
@@ -4062,7 +4193,7 @@ Start a focused conversation that helps them understand what is actually unresol
     const activeUserId = (user as any)?.id as string | undefined;
     if (!activeUserId) return;
 
-    await completeAcademyLesson({
+    const completed = await completeAcademyLesson({
       userId: activeUserId,
       contentId,
       contentTitle: academyConversationEntry?.id === contentId ? academyConversationEntry.title : null,
@@ -4071,13 +4202,27 @@ Start a focused conversation that helps them understand what is actually unresol
       completedAt: options?.knowledgeCheckedAt ?? new Date().toISOString(),
       source: "forge_chat",
     });
+    setAcademyConversationEntry((entry) => entry?.id === contentId
+      ? { ...entry, progressStatus: "completed", completedAt: completed.lessonProgress.completed_at }
+      : entry
+    );
+    return completed;
   };
 
   const continueArchiveInChatRoom = (entry: any) => {
     markMeaningfulActivity();
-    setAcademyConversationEntry(null);
-    setClaritySessionEntry(null);
-    setChatRoomArchive(entry);
+    const sourceType = entry.archiveSourceType ?? (
+      String(entry.title || "").startsWith("Academy —") ? "academy" : "chatroom"
+    );
+    if (sourceType === "academy" && entry.archiveSourceMetadata) {
+      setAcademyConversationEntry(entry.archiveSourceMetadata);
+      setChatRoomArchive(entry);
+      setClaritySessionEntry(null);
+    } else {
+      setAcademyConversationEntry(null);
+      setClaritySessionEntry(null);
+      setChatRoomArchive(entry);
+    }
     setShowChatRoom(true);
   };
 
@@ -4213,6 +4358,22 @@ Start a focused conversation that helps them understand what is actually unresol
 
     return () => { cancelled = true; };
   }, [user, showCofounder]);
+
+  useEffect(() => {
+    if (!userTeamId) {
+      setCofounderMemoryContext(null);
+      return;
+    }
+    let cancelled = false;
+    getRecentCofounderContext(userTeamId, 20)
+      .then((context) => {
+        if (!cancelled) setCofounderMemoryContext(context || null);
+      })
+      .catch(() => {
+        if (!cancelled) setCofounderMemoryContext(null);
+      });
+    return () => { cancelled = true; };
+  }, [userTeamId, showCofounder]);
 
   const handleAcceptCofounderInvite = async (invite: CofounderEmailInvite) => {
     const uid = (user as any)?.id;
@@ -4396,9 +4557,13 @@ Start a focused conversation that helps them understand what is actually unresol
     activeStage: profile.currentStage || 1,
     messagesByStage,
     recentSummaries,
+    conversationArchives: bubbleSummaries,
     foundryDecisions,
     journalEntries,
-    cofoundersContext: null,
+    financialSummary,
+    businessModelCanvas,
+    openActions: openFoundryActions,
+    cofoundersContext: cofounderMemoryContext,
   }) : "";
 
   if (billingRoute) {
@@ -4567,6 +4732,8 @@ Start a focused conversation that helps them understand what is actually unresol
             hasEarlierMessagesByStage={hasEarlierMessagesByStage}
             loadingEarlierStage={loadingEarlierStage}
             workspaces={userWorkspaces}
+            seedArchiveEntry={forgeSeedArchiveEntry}
+            seedArchiveNonce={forgeSeedArchiveNonce}
           />
         )}
       </div>
@@ -4586,7 +4753,23 @@ Start a focused conversation that helps them understand what is actually unresol
             onOpenNav={() => setNavSidebarOpen(true)}
             onContinueChatEntry={(entry) => {
               setShowArchivePanel(false);
-              continueArchiveInChatRoom(entry);
+              const sourceType = entry.archiveSourceType ?? (
+                String(entry.title || "").startsWith("Academy —") ? "academy" :
+                String(entry.title || "").startsWith("Pitch Practice —") ? "pitchpractice" :
+                String(entry.title || "").startsWith("Quick Chat") ? "bubble" :
+                String(entry.title || "").startsWith("Chat with Forge") ? "chatroom" :
+                "forge"
+              );
+              if (sourceType === "pitchpractice") {
+                closeAllFeatureScreens();
+                openPitchPractice();
+              } else if (sourceType === "forge") {
+                closeAllFeatureScreens();
+                setForgeSeedArchiveEntry(entry);
+                setForgeSeedArchiveNonce((n) => n + 1);
+              } else {
+                continueArchiveInChatRoom(entry);
+              }
             }}
           />
         </Suspense>

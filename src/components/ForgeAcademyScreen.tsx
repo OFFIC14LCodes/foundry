@@ -784,7 +784,7 @@ export default function ForgeAcademyScreen({
                 contentId: content.id,
                 metadata: { title: content.title, sessionMode },
             });
-            onLaunchForgeConversation(toAcademyTopicLaunch(content, sessionMode));
+            onLaunchForgeConversation(toAcademyTopicLaunch(content, sessionMode, completionAwareContentProgressById.get(content.id) ?? null));
         } catch (launchError) {
             console.error("academy launch forge error:", launchError);
         } finally {

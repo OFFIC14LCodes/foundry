@@ -5,7 +5,9 @@ import { processFile, buildMessageContent, type AttachedFile } from "../lib/file
 import { FORGE_SYSTEM_PROMPT } from "../constants/prompts";
 import { saveConversationSummary } from "../db";
 import { parseArchiveSummaryPayload } from "../lib/archiveSummary";
+import { updateFounderBookFromArchive } from "../lib/founderBooks";
 import { applyFoundryBookCitations, buildFoundryBookContext } from "../lib/foundryBook";
+import { buildVentureModeContext, getVentureModeLabel, isSideHustleMode } from "../lib/ventureMode";
 import ForgeAvatar from "./ForgeAvatar";
 import TypingDots from "./TypingDots";
 import Logo from "./Logo";
@@ -262,8 +264,11 @@ export default function ForgeBubble({ profile, userId, currentScreen, screenCont
             context: `
 Current date: ${dateStr}
 The founder is currently viewing ${screenLabel}.
-Founder: ${profile.name} | Business: ${profile.businessName || profile.idea || "Idea stage"} (${profile.industry || "Early Stage"})
+${buildVentureModeContext(profile)}
+
+Founder: ${profile.name} | Venture mode: ${getVentureModeLabel(profile)} | ${isSideHustleMode(profile) ? "Side hustle / offer" : "Business"}: ${profile.businessName || profile.idea || "Idea stage"} (${profile.industry || "Early Stage"})
 Strategy: ${profile.strategyLabel || profile.strategy} | Current Stage: ${profile.currentStage} | Experience: ${profile.experience || "Not specified"}
+Goal / constraints: ${profile.ventureGoal || "Not specified"} | Weekly hours: ${profile.weeklyHoursAvailable ?? "Unknown"} | Target monthly income: ${profile.targetMonthlyIncome ? `$${Number(profile.targetMonthlyIncome).toLocaleString()}` : "Unknown"}
 Budget: $${(profile.budget?.remaining || 0).toLocaleString()} remaining of $${(profile.budget?.total || 0).toLocaleString()} | Spent: $${(profile.budget?.spent || 0).toLocaleString()}
 
 You are in a quick-access floating chat bubble. The founder is asking a quick question or needs help with what they're looking at. Be helpful, warm, and concise — this is a quick-assist context, not a deep coaching session. You are still Forge — same personality, same expertise — just more conversational. You can help them understand what they see on the screen, navigate the app, or think through a quick question.${documentSection}
@@ -361,6 +366,17 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
             const prefixedTitle = title.startsWith("Quick Chat") ? title : `Quick Chat — ${title}`;
 
             const saved = await saveConversationSummary(userId, summaryStageId, dateKey, prefixedTitle, summary, msgsToArchive.length);
+            if (saved) {
+                void updateFounderBookFromArchive({
+                    userId,
+                    archive: saved,
+                    sourceType: "quick_chat",
+                    sourceLabel: "Quick Chat",
+                    sourceRefId: currentScreen || null,
+                    stageId: summaryStageId,
+                    transcript,
+                });
+            }
             if (saved && onBubbleSummaryAdded) {
                 onBubbleSummaryAdded(saved);
             }

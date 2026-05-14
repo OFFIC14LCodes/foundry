@@ -12,6 +12,7 @@ import Logo from "./Logo";
 import { MessageActions } from "./AnimatedChatText";
 import MicButton from "./MicButton";
 import HelpTooltip from "./HelpTooltip";
+import { updateFounderBookFromArchive } from "../lib/founderBooks";
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -649,8 +650,21 @@ export default function PitchPracticeScreen({
                 new Date().toISOString().slice(0, 10),
                 `Pitch Practice — ${scenarioLabel}`,
                 summaryText,
-                messages.length
+                messages.length,
+                undefined,
+                { archiveSourceType: "pitchpractice", archiveSourceRefId: scenario, archiveSourceTitle: scenarioLabel }
             );
+            if (saved) {
+                void updateFounderBookFromArchive({
+                    userId,
+                    archive: saved,
+                    sourceType: "pitch_practice",
+                    sourceLabel: "Pitch Practice",
+                    sourceRefId: scenario,
+                    stageId: Number(profile?.currentStage) || 1,
+                    transcript: messages.map((message) => `${message.role === "forge" ? "Forge" : profile?.name || "Founder"}: ${message.text}`).join("\n"),
+                });
+            }
             setArchiveSaved(!!saved);
         } catch {
             setArchiveSaved(false);
