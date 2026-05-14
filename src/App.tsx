@@ -148,7 +148,7 @@ import {
   type AppNotification,
   type UserNotificationPreferences,
 } from "./lib/notifications";
-import type { AcademyTopicLaunch } from "./lib/academy";
+import type { AcademyTopicLaunch, AcademyUserContentProgress } from "./lib/academy";
 import type { FoundryAction, FoundryActionSuggestion } from "./lib/foundryActions";
 import { buildForgePromptForAction, buildRecentActionOutcomesContext, createFoundryAction, loadOpenFoundryActionsByUser, loadRecentActionOutcomesForForge } from "./lib/foundryActions";
 import { clearFoundryClientStorage, createEmptyMessagesByStage, createEmptyStageProgress } from "./lib/session";
@@ -3177,6 +3177,7 @@ export default function FoundryApp() {
   const [bubbleSummaries, setBubbleSummaries] = useState<any[]>([]);
   const [chatRoomArchive, setChatRoomArchive] = useState<any | null>(null);
   const [academyConversationEntry, setAcademyConversationEntry] = useState<AcademyTopicLaunch | null>(null);
+  const [academyCompletionOverrides, setAcademyCompletionOverrides] = useState<Record<string, AcademyUserContentProgress>>({});
   const [marketIntelTrendEntry, setMarketIntelTrendEntry] = useState<MarketTrend | null>(null);
   const [claritySessionEntry, setClaritySessionEntry] = useState<{ id: string; title: string; nudgeText: string; prompt: string; signalSource?: string | null } | null>(null);
   const [archiveMutationTick, setArchiveMutationTick] = useState(0);
@@ -4202,6 +4203,22 @@ Start a focused conversation that helps them understand what is actually unresol
       completedAt: options?.knowledgeCheckedAt ?? new Date().toISOString(),
       source: "forge_chat",
     });
+    const completedAt = completed.lessonProgress.completed_at ?? options?.knowledgeCheckedAt ?? new Date().toISOString();
+    setAcademyCompletionOverrides((prev) => ({
+      ...prev,
+      [contentId]: {
+        userId: activeUserId,
+        contentId,
+        status: "completed",
+        completedAt,
+        knowledgeCheckedAt: completed.lessonProgress.knowledge_checked_at ?? completedAt,
+        lastCheckResponse: completed.lessonProgress.last_check_response ?? options?.lastCheckResponse ?? null,
+        lastCheckFeedback: completed.lessonProgress.last_check_feedback ?? options?.lastCheckFeedback ?? null,
+        lastOpenedAt: completed.contentProgress?.lastOpenedAt ?? completedAt,
+        lastForgeOpenedAt: completed.contentProgress?.lastForgeOpenedAt ?? completedAt,
+        updatedAt: completed.lessonProgress.updated_at ?? completedAt,
+      },
+    }));
     setAcademyConversationEntry((entry) => entry?.id === contentId
       ? { ...entry, progressStatus: "completed", completedAt: completed.lessonProgress.completed_at }
       : entry
@@ -4870,6 +4887,7 @@ Start a focused conversation that helps them understand what is actually unresol
             trialNotice={isFreeTier ? "Free preview includes Forge Academy Stage 1 lessons only. The rest of Academy unlocks with paid access." : null}
             onCreateAction={createActionSuggestion}
             onAskForgeAboutAction={askForgeAboutAction}
+            completionOverrides={academyCompletionOverrides}
           />
         </Suspense>
       )}

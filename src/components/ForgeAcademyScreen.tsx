@@ -56,6 +56,7 @@ type ForgeAcademyScreenProps = {
     trialNotice?: string | null;
     onCreateAction?: (suggestion: FoundryActionSuggestion) => Promise<unknown> | void;
     onAskForgeAboutAction?: (suggestion: FoundryActionSuggestion) => void;
+    completionOverrides?: Record<string, AcademyUserContentProgress>;
 };
 
 const surface = "rgba(255,255,255,0.03)";
@@ -167,6 +168,7 @@ export default function ForgeAcademyScreen({
     trialNotice = null,
     onCreateAction,
     onAskForgeAboutAction,
+    completionOverrides = {},
 }: ForgeAcademyScreenProps) {
     const [workspace, setWorkspace] = useState<AcademyWorkspace>({
         categories: [],
@@ -315,7 +317,7 @@ export default function ForgeAcademyScreen({
     const effectiveContentProgressById = useMemo(() => {
         const merged = new Map(contentProgressById);
         pathProgressRows.forEach((entry) => {
-            merged.set(entry.content_id, {
+            const nextProgress = {
                 userId: entry.user_id,
                 contentId: entry.content_id,
                 status: entry.status,
@@ -326,10 +328,16 @@ export default function ForgeAcademyScreen({
                 lastOpenedAt: entry.started_at ?? entry.updated_at,
                 lastForgeOpenedAt: null,
                 updatedAt: entry.updated_at ?? new Date().toISOString(),
-            });
+            };
+            merged.set(entry.content_id, chooseAcademyProgress(merged.get(entry.content_id), nextProgress));
+        });
+        Object.values(completionOverrides).forEach((entry) => {
+            if (entry?.contentId) {
+                merged.set(entry.contentId, entry);
+            }
         });
         return merged;
-    }, [contentProgressById, pathProgressRows]);
+    }, [completionOverrides, contentProgressById, pathProgressRows]);
     const completionAwareContentProgressById = effectiveContentProgressById;
 
     const filteredContent = useMemo(() => {
@@ -3475,6 +3483,26 @@ function mergeContentProgress(
     const copy = [...entries];
     copy[index] = next;
     return copy;
+}
+
+function chooseAcademyProgress(
+    current: AcademyUserContentProgress | undefined,
+    next: AcademyUserContentProgress,
+) {
+    if (!current) return next;
+    const rank: Record<AcademyUserContentProgress["status"], number> = {
+        not_started: 0,
+        in_progress: 1,
+        completed: 2,
+    };
+    const currentRank = rank[current.status] ?? 0;
+    const nextRank = rank[next.status] ?? 0;
+    if (nextRank !== currentRank) {
+        return nextRank > currentRank ? next : current;
+    }
+    const currentUpdated = current.updatedAt || current.completedAt || current.lastOpenedAt || "";
+    const nextUpdated = next.updatedAt || next.completedAt || next.lastOpenedAt || "";
+    return nextUpdated >= currentUpdated ? next : current;
 }
 
 function getSeriesItemTitle(item: AcademySeriesItem) {

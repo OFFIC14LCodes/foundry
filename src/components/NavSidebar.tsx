@@ -47,7 +47,7 @@ function NavItem({
             onClick={onClick}
             className="foundry-interactive"
             style={{
-                width: "100%",
+                width: isPrimary ? "calc(100% - 20px)" : "100%",
                 display: "flex",
                 alignItems: description ? "flex-start" : "center",
                 gap: 11,
