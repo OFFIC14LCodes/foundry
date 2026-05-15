@@ -69,6 +69,44 @@ const PLANNED_SURFACES = [
     "Founding Member Controls",
 ];
 
+const OPERATING_PATHS: Array<{
+    label: string;
+    detail: string;
+    target: Exclude<AdminView, "overview">;
+    accent: string;
+}> = [
+    {
+        label: "Support a founder",
+        detail: "Search accounts, open the founder drawer, inspect access, progress, notes, and recent activity.",
+        target: "operations",
+        accent: "var(--foundry-green)",
+    },
+    {
+        label: "Review feedback",
+        detail: "Triage message feedback, update status, and leave an internal review note.",
+        target: "operations",
+        accent: "var(--foundry-blue)",
+    },
+    {
+        label: "Audit admin actions",
+        detail: "Search immutable admin actions by actor, founder, action, entity, and date.",
+        target: "operations",
+        accent: "var(--foundry-amber)",
+    },
+    {
+        label: "Manage Academy content",
+        detail: "Edit learning structure and content without entering account support workflows.",
+        target: "academy",
+        accent: "var(--foundry-orange)",
+    },
+    {
+        label: "Generate account summaries",
+        detail: "Use the Founder Accounts view for broader account review and AI summaries.",
+        target: "accounts",
+        accent: "var(--foundry-red)",
+    },
+];
+
 export default function AdminHubScreen({
     userId,
     onBack,
@@ -243,18 +281,19 @@ export default function AdminHubScreen({
                             </div>
                         </section>
 
-                        <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: 10 }}>
-                            {PRIMARY_TOOLS.map((tool) => (
-                                <ToolCard
-                                    key={tool.view}
-                                    title={tool.title}
-                                    eyebrow={tool.eyebrow}
-                                    description={tool.description}
-                                    accent={tool.accent}
-                                    onClick={() => setActiveView(tool.view)}
-                                />
-                            ))}
-                        </section>
+                        <SectionPanel title="Operating Paths">
+                            <div style={{ display: "grid", gap: 8 }}>
+                                {OPERATING_PATHS.map((path) => (
+                                    <WorkflowRow
+                                        key={path.label}
+                                        label={path.label}
+                                        detail={path.detail}
+                                        accent={path.accent}
+                                        onClick={() => setActiveView(path.target)}
+                                    />
+                                ))}
+                            </div>
+                        </SectionPanel>
 
                         <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 12 }}>
                             <SectionPanel title="Forge Token Usage" action={<TextButton label="Refresh" onClick={() => void refreshTokenUsage()} />}>
@@ -361,56 +400,6 @@ export default function AdminHubScreen({
     );
 }
 
-function ToolCard({
-    title,
-    eyebrow,
-    description,
-    accent,
-    onClick,
-}: {
-    title: string;
-    eyebrow: string;
-    description: string;
-    accent: string;
-    onClick: () => void;
-}) {
-    return (
-        <button
-            type="button"
-            onClick={onClick}
-            className="foundry-interactive"
-            style={{
-                minHeight: 148,
-                display: "grid",
-                gap: 10,
-                alignContent: "space-between",
-                textAlign: "left",
-                background: "rgba(255,255,255,0.025)",
-                border: "1px solid rgba(255,255,255,0.075)",
-                borderRadius: 8,
-                padding: 14,
-                color: "inherit",
-                cursor: "pointer",
-            }}
-        >
-            <div>
-                <div className="foundry-font-ui" style={{ fontSize: 10, color: accent, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>
-                    {eyebrow}
-                </div>
-                <div style={{ fontSize: 17, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, lineHeight: 1.15, marginBottom: 8 }}>
-                    {title}
-                </div>
-                <div style={{ fontSize: 12, color: "var(--foundry-text-muted)", lineHeight: 1.55 }}>
-                    {description}
-                </div>
-            </div>
-            <div className="foundry-font-ui" style={{ fontSize: 10, color: accent, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                Open
-            </div>
-        </button>
-    );
-}
-
 function NavButton({
     title,
     eyebrow,
@@ -445,6 +434,47 @@ function NavButton({
                 <span className="foundry-font-ui" style={{ display: "block", fontSize: 9, color: "var(--foundry-text-muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>{eyebrow}</span>
             </span>
             <span style={{ width: 8, height: 8, borderRadius: 99, background: accent, flexShrink: 0 }} />
+        </button>
+    );
+}
+
+function WorkflowRow({
+    label,
+    detail,
+    accent,
+    onClick,
+}: {
+    label: string;
+    detail: string;
+    accent: string;
+    onClick: () => void;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            style={{
+                display: "grid",
+                gridTemplateColumns: "10px minmax(0, 1fr) max-content",
+                gap: 10,
+                alignItems: "center",
+                border: "1px solid rgba(255,255,255,0.07)",
+                background: "rgba(255,255,255,0.025)",
+                borderRadius: 8,
+                padding: "10px 11px",
+                color: "inherit",
+                cursor: "pointer",
+                textAlign: "left",
+            }}
+        >
+            <span style={{ width: 8, height: 8, borderRadius: 99, background: accent }} />
+            <span style={{ minWidth: 0 }}>
+                <span style={{ display: "block", fontSize: 13, color: "var(--foundry-text-primary)", fontWeight: 800, marginBottom: 3 }}>{label}</span>
+                <span style={{ display: "block", fontSize: 11, color: "var(--foundry-text-muted)", lineHeight: 1.45 }}>{detail}</span>
+            </span>
+            <span className="foundry-font-ui" style={{ color: accent, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                Open
+            </span>
         </button>
     );
 }

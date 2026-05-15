@@ -34,8 +34,19 @@ export async function loadAdminTtsUsage(): Promise<TtsUsageSnapshot> {
 
     if (!response.ok) {
         const detail = await response.text();
-        throw new Error(detail.slice(0, 200) || `Usage API ${response.status}`);
+        throw new Error(readUsageError(detail) || `Usage API ${response.status}`);
     }
 
     return response.json();
+}
+
+function readUsageError(detail: string) {
+    const text = detail.trim();
+    if (!text) return "";
+    try {
+        const parsed = JSON.parse(text) as { error?: string };
+        return parsed.error || text.slice(0, 200);
+    } catch {
+        return text.slice(0, 200);
+    }
 }
