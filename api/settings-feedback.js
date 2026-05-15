@@ -29,9 +29,6 @@ export default async function handler(req, res) {
       res.status(500).json({ error: "RESEND_API_KEY not set" });
       return;
     }
-    // DEBUG — remove after confirming key
-    res.status(500).json({ keyPrefix: resendKey.slice(0, 7), keyLength: resendKey.length });
-    return;
 
     const resend = new Resend(resendKey);
     const submittedAt = new Date().toLocaleString("en-US", {
@@ -74,8 +71,8 @@ export default async function handler(req, res) {
     });
 
     if (result?.error) {
-      res.status(500).json({ error: "Email delivery failed", detail: result.error });
-      return;
+      console.error("settings-feedback Resend error:", result.error);
+      throw createError(500, "Unable to send message — email delivery failed. Please try again.");
     }
 
     res.status(200).json({ ok: true });
