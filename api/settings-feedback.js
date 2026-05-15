@@ -24,11 +24,14 @@ export default async function handler(req, res) {
       return;
     }
 
-    const resendKey = process.env.RESEND_API_KEY;
+    const resendKey = (process.env.RESEND_API_KEY || "").trim();
     if (!resendKey) {
       res.status(500).json({ error: "RESEND_API_KEY not set" });
       return;
     }
+    // DEBUG — remove after confirming key
+    res.status(500).json({ keyPrefix: resendKey.slice(0, 7), keyLength: resendKey.length });
+    return;
 
     const resend = new Resend(resendKey);
     const submittedAt = new Date().toLocaleString("en-US", {
