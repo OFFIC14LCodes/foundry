@@ -76,7 +76,7 @@ export default async function handler(req, res) {
 
     const emailResult = await emailResp.json();
     if (!emailResp.ok) {
-      res.status(500).json({ error: "Email delivery failed", detail: emailResult, from: FROM_ADDRESS, to: SUPPORT_EMAIL });
+      res.status(500).json({ error: "Email delivery failed", detail: emailResult, from: FROM_ADDRESS, to: SUPPORT_EMAIL, fromEnv: process.env.RESEND_FROM_ADDRESS ?? "NOT SET" });
       return;
     }
 
