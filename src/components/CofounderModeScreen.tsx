@@ -1688,6 +1688,8 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                                                     : undefined
                                             }
                                             onLogDecision={msg.role === 'member' && !msg.failed ? () => openDecisionForm(msg) : undefined}
+                                            teamName={team?.name || null}
+                                            currentStage={Number(profile.currentStage) || null}
                                         />
                                     </div>
                                 );
@@ -1943,9 +1945,11 @@ interface ChatMessageProps {
     onMouseLeave: () => void;
     onRetry?: () => void;
     onLogDecision?: () => void;
+    teamName?: string | null;
+    currentStage?: number | null;
 }
 
-function ChatMessage({ msg, isOwn, isHovered, onMouseEnter, onMouseLeave, onRetry, onLogDecision }: ChatMessageProps) {
+function ChatMessage({ msg, isOwn, isHovered, onMouseEnter, onMouseLeave, onRetry, onLogDecision, teamName, currentStage }: ChatMessageProps) {
     const isForge = msg.role === 'forge';
     const color = isForge ? '#C8A96E' : (ROLE_COLORS[msg.sender_role] ?? '#888');
     const failed = msg.failed;
@@ -1978,7 +1982,17 @@ function ChatMessage({ msg, isOwn, isHovered, onMouseEnter, onMouseLeave, onRetr
                         {failed && (
                             <div style={{ fontSize: 11, color: 'rgba(232,98,42,0.6)', fontFamily: 'DM Sans, sans-serif', marginTop: 4 }}>Tap to retry</div>
                         )}
-                        {!failed && <MessageActions text={msg.content} />}
+                        {!failed && (
+                            <MessageActions
+                                text={msg.content}
+                                feedbackContext={{
+                                    surface: "Cofounder Mode",
+                                    conversationTitle: teamName ? `Cofounder chat - ${teamName}` : "Cofounder chat",
+                                    stageId: currentStage || null,
+                                    messageId: msg.id,
+                                }}
+                            />
+                        )}
                         {isHovered && (
                             <div style={{ fontSize: 11, color: '#333', fontFamily: 'DM Sans, sans-serif', marginTop: 2 }}>{formatTime(msg.created_at)}</div>
                         )}

@@ -3,6 +3,7 @@ import ForgeAvatar from "./ForgeAvatar";
 import TypingDots from "./TypingDots";
 import { cleanAIText } from "../lib/cleanAIText";
 import { MessageActions, parseBoldSegments } from "./AnimatedChatText";
+import type { ForgeMessageFeedbackContext } from "../lib/messageFeedback";
 
 function getAnimatedDisplayText(text) {
     return cleanAIText(text || "")
@@ -138,9 +139,14 @@ function AnimatedForgeText({ text, renderWithBold, onStageRef, onGlossaryTap, on
     );
 }
 
-export default function MessageBubble({ msg, onStageRef, onGlossaryTap, onConceptTap, renderWithBold, userName = "You", onAction = null, onApplyToContext = null }) {
+export default function MessageBubble({ msg, onStageRef, onGlossaryTap, onConceptTap, renderWithBold, userName = "You", onAction = null, onApplyToContext = null, feedbackContext = undefined }) {
     const isForge = msg.role === "forge" || msg.role === "assistant";
     const senderName = isForge ? "Forge" : userName;
+    const feedbackMessageId = feedbackContext?.messageId || msg.id;
+    const messageFeedbackContext: ForgeMessageFeedbackContext = {
+        ...(feedbackContext ?? {}),
+        messageId: feedbackMessageId ? String(feedbackMessageId) : undefined,
+    };
 
     return (
         <div
@@ -203,7 +209,7 @@ export default function MessageBubble({ msg, onStageRef, onGlossaryTap, onConcep
                         <div style={{ whiteSpace: "pre-wrap" }}>{msg.text}</div>
                     )}
                 </div>
-                {isForge && <MessageActions text={msg.text} onApplyToContext={msg.text && onApplyToContext ? () => onApplyToContext(msg) : undefined} />}
+                {isForge && <MessageActions text={msg.text} feedbackContext={messageFeedbackContext} onApplyToContext={msg.text && onApplyToContext ? () => onApplyToContext(msg) : undefined} />}
                 {isForge && Array.isArray(msg.actions) && msg.actions.length > 0 && (
                     <div
                         style={{

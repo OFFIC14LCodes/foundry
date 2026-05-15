@@ -403,6 +403,12 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                         msg={msg}
                         renderWithBold={renderWithBold}
                         userName={profile.name || "You"}
+                        feedbackContext={{
+                            surface: "Onboarding",
+                            conversationTitle: "Founder onboarding",
+                            stageId: null,
+                            messageId: msg.id ? String(msg.id) : undefined,
+                        }}
                     />
                 ))}
 

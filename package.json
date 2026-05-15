@@ -7,6 +7,7 @@
     "dev": "node dev/start-dev.mjs",
     "dev:vite": "vite",
     "dev:forge": "node dev/forge-server.mjs",
+    "smoke:admin-operations": "node dev/admin-operations-smoke.mjs",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"

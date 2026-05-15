@@ -1,6 +1,17 @@
 import { supabase } from '../supabase';
 import type { AccountAccess, AccessStatus, PlanType, SubscriptionStatus } from './accessGate';
 import type { UserRole } from './roles';
+import {
+    createFounderAdminNote,
+    createFounderChurnNote,
+    grantFounderCompAccess,
+    reactivateFounderAccess,
+    removeFounderCompAccess,
+    revokeFounderAccess,
+    suspendFounderAccess,
+    type AdminRetentionStatus,
+    type AdminWinbackStatus,
+} from './adminOperationsApi';
 
 // ─────────────────────────────────────────────────────────────
 // ADMIN DATABASE LAYER
@@ -226,44 +237,58 @@ async function upsertAccess(userId: string, updates: Partial<AccountAccess> & { 
 }
 
 export async function grantCompAccess(userId: string, isFamily: boolean, reason: string): Promise<boolean> {
-    return upsertAccess(userId, {
-        access_status: 'active',
-        plan_type: isFamily ? 'family_comp' : 'gifted',
-        subscription_status: isFamily ? 'comped' : 'gifted',
-        is_family_comp: isFamily,
-        comp_reason: reason || null,
-        suspended_at: null,
-        suspension_reason: null,
-    });
+    try {
+        await grantFounderCompAccess({
+            userId,
+            compType: isFamily ? 'family_comp' : 'gifted',
+            reason,
+            metadata: { source: 'legacy_admin_dashboard' },
+        });
+        return true;
+    } catch (error) {
+        console.error('grantCompAccess audited route error:', error);
+        return false;
+    }
 }
 
-export async function removeCompAccess(userId: string): Promise<boolean> {
-    return upsertAccess(userId, {
-        plan_type: 'free',
-        subscription_status: 'trial',
-        is_family_comp: false,
-        comp_reason: null,
-    });
+export async function removeCompAccess(userId: string, reason = 'Legacy admin dashboard removal'): Promise<boolean> {
+    try {
+        await removeFounderCompAccess(userId, reason, { source: 'legacy_admin_dashboard' });
+        return true;
+    } catch (error) {
+        console.error('removeCompAccess audited route error:', error);
+        return false;
+    }
 }
 
 export async function suspendUser(userId: string, reason: string): Promise<boolean> {
-    return upsertAccess(userId, {
-        access_status: 'suspended',
-        suspended_at: new Date().toISOString(),
-        suspension_reason: reason || 'No reason given',
-    });
+    try {
+        await suspendFounderAccess(userId, reason, { source: 'legacy_admin_dashboard' });
+        return true;
+    } catch (error) {
+        console.error('suspendUser audited route error:', error);
+        return false;
+    }
 }
 
-export async function reactivateUser(userId: string): Promise<boolean> {
-    return upsertAccess(userId, {
-        access_status: 'active',
-        suspended_at: null,
-        suspension_reason: null,
-    });
+export async function reactivateUser(userId: string, reason = 'Legacy admin dashboard reactivation'): Promise<boolean> {
+    try {
+        await reactivateFounderAccess(userId, reason, { source: 'legacy_admin_dashboard' });
+        return true;
+    } catch (error) {
+        console.error('reactivateUser audited route error:', error);
+        return false;
+    }
 }
 
-export async function revokeAccess(userId: string): Promise<boolean> {
-    return upsertAccess(userId, { access_status: 'revoked' });
+export async function revokeAccess(userId: string, reason = 'Legacy admin dashboard revocation', confirmation = 'REVOKE ACCESS'): Promise<boolean> {
+    try {
+        await revokeFounderAccess(userId, reason, confirmation, { source: 'legacy_admin_dashboard' });
+        return true;
+    } catch (error) {
+        console.error('revokeAccess audited route error:', error);
+        return false;
+    }
 }
 
 export async function updatePlanType(userId: string, planType: PlanType): Promise<boolean> {
@@ -284,26 +309,74 @@ export async function addAdminNote(
         lastContactedAt?: string;
     } = {}
 ): Promise<boolean> {
-    const { error } = await supabase.from('admin_notes').insert({
-        user_id: userId,
-        admin_id: adminId,
-        note,
-        retention_status: options.retentionStatus ?? null,
-        winback_status: options.winbackStatus ?? null,
-        cancellation_reason: options.cancellationReason ?? null,
-        last_discount_offered_at: options.lastDiscountOfferedAt ?? null,
-        last_contacted_at: options.lastContactedAt ?? null,
-    });
-    if (error) { console.error('addAdminNote error:', error.message); return false; }
-    return true;
+    try {
+        if (options.retentionStatus || options.winbackStatus || options.cancellationReason) {
+            await createFounderChurnNote({
+                userId,
+                note,
+                reason: 'Admin note created from legacy dashboard',
+                retentionStatus: normalizeLegacyRetentionStatus(options.retentionStatus),
+                winbackStatus: normalizeLegacyWinbackStatus(options.winbackStatus),
+                metadata: {
+                    source: 'legacy_admin_dashboard',
+                    legacy_admin_id: adminId,
+                    cancellation_reason: options.cancellationReason ?? null,
+                    last_discount_offered_at: options.lastDiscountOfferedAt ?? null,
+                    last_contacted_at: options.lastContactedAt ?? null,
+                },
+            });
+        } else {
+            await createFounderAdminNote(userId, note, 'retention', {
+                source: 'legacy_admin_dashboard',
+                legacy_admin_id: adminId,
+            });
+        }
+        return true;
+    } catch (error) {
+        console.error('addAdminNote audited route error:', error);
+        return false;
+    }
 }
 
 export async function loadAdminNotes(userId: string): Promise<AdminNote[]> {
-    const { data, error } = await supabase
-        .from('admin_notes')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-    if (error) console.error('loadAdminNotes error:', error.message);
-    return (data as AdminNote[]) ?? [];
+    const [supportNotesRes, legacyNotesRes] = await Promise.all([
+        supabase
+            .from('admin_support_notes')
+            .select('id,target_user_id,admin_id,note,note_type,metadata,created_at')
+            .eq('target_user_id', userId)
+            .in('note_type', ['retention', 'billing', 'support', 'general'])
+            .order('created_at', { ascending: false }),
+        supabase
+            .from('admin_notes')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false }),
+    ]);
+    if (supportNotesRes.error) console.error('loadAdminSupportNotes error:', supportNotesRes.error.message);
+    if (legacyNotesRes.error) console.error('loadAdminNotes legacy error:', legacyNotesRes.error.message);
+
+    const supportNotes: AdminNote[] = (supportNotesRes.data ?? []).map((note) => ({
+        id: note.id,
+        user_id: note.target_user_id,
+        admin_id: note.admin_id ?? null,
+        note: note.note,
+        retention_status: note.metadata?.retention_status ?? null,
+        winback_status: note.metadata?.winback_status ?? null,
+        cancellation_reason: note.metadata?.cancellation_reason ?? null,
+        last_discount_offered_at: note.metadata?.last_discount_offered_at ?? null,
+        last_contacted_at: note.metadata?.last_contacted_at ?? null,
+        created_at: note.created_at,
+    }));
+    const legacyNotes = (legacyNotesRes.data as AdminNote[] | null) ?? [];
+    return [...supportNotes, ...legacyNotes].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+}
+
+function normalizeLegacyRetentionStatus(value: string | undefined): AdminRetentionStatus {
+    if (value === 'at_risk' || value === 'win_back_candidate' || value === 'do_not_contact' || value === 'converted') return value;
+    return 'none';
+}
+
+function normalizeLegacyWinbackStatus(value: string | undefined): AdminWinbackStatus {
+    if (value === 'pending' || value === 'contacted' || value === 'offered_discount' || value === 'returned' || value === 'declined') return value;
+    return 'none';
 }

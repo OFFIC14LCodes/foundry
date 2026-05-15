@@ -3,16 +3,25 @@ import { Icons } from "../icons";
 import {
     createFounderAdminNote,
     createFounderNotification,
+    createFounderChurnNote,
+    fetchAdminAuditLog,
     fetchAdminFeedback,
     updateAdminFeedback,
+    grantFounderCompAccess,
     loadAdminOperationFounderAcademyProgress,
     loadAdminOperationFounderDetail,
     loadAdminOperationFounders,
+    reactivateFounderAccess,
+    removeFounderCompAccess,
     repairFounderAcademyProgress,
+    revokeFounderAccess,
     resetFounderAssessment,
+    suspendFounderAccess,
+    type AdminCompAccessType,
     type AdminAcademyRepairStatus,
     type AdminAcademyProgressLesson,
     type AdminAcademyProgressStage,
+    type AdminAuditLogEntry,
     type AdminFounderAcademyProgressResponse,
     type AdminActionPreview,
     type AdminArchivePreview,
@@ -23,8 +32,10 @@ import {
     type AdminFeedbackItem,
     type AdminFeedbackStatus,
     type AdminNotificationType,
+    type AdminRetentionStatus,
     type AdminSupportNote,
     type AdminSupportNoteType,
+    type AdminWinbackStatus,
     type UpdateAdminFeedbackPayload,
 } from "../lib/adminOperationsApi";
 
@@ -77,6 +88,38 @@ const FEEDBACK_REACTION_OPTIONS: Array<{ value: string; label: string }> = [
     { value: "up", label: "Thumbs up" },
 ];
 
+const AUDIT_ACTION_OPTIONS: Array<{ value: string; label: string }> = [
+    { value: "", label: "All actions" },
+    { value: "academy.progress.repair", label: "Academy progress repair" },
+    { value: "academy.assessment.reset", label: "Assessment reset" },
+    { value: "admin.feedback.update", label: "Feedback update" },
+    { value: "admin.access.grant_comp", label: "Grant comp access" },
+    { value: "admin.access.remove_comp", label: "Remove comp access" },
+    { value: "admin.access.suspend", label: "Suspend access" },
+    { value: "admin.access.reactivate", label: "Reactivate access" },
+    { value: "admin.access.revoke", label: "Revoke access" },
+    { value: "admin.notification.create", label: "Notification create" },
+    { value: "admin.note.create", label: "Support note create" },
+    { value: "admin.access.churn_note", label: "Churn note" },
+];
+
+const AUDIT_ENTITY_OPTIONS: Array<{ value: string; label: string }> = [
+    { value: "", label: "All entities" },
+    { value: "academy_content", label: "Academy content" },
+    { value: "message_feedback", label: "Message feedback" },
+    { value: "account_access", label: "Account access" },
+    { value: "notifications", label: "Notifications" },
+    { value: "admin_support_notes", label: "Support notes" },
+];
+
+type AccessAdminAction =
+    | { kind: "grant_comp"; label: string; compType: AdminCompAccessType }
+    | { kind: "remove_comp"; label: string }
+    | { kind: "suspend"; label: string }
+    | { kind: "reactivate"; label: string }
+    | { kind: "revoke"; label: string }
+    | { kind: "churn_note"; label: string };
+
 type AcademyRepairAction =
     | { kind: "progress"; status: AdminAcademyRepairStatus; label: string }
     | { kind: "reset_assessment"; label: string };
@@ -98,7 +141,7 @@ export default function AdminOperationsScreen({ onBack }: Props) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [selectedFounder, setSelectedFounder] = useState<AdminFounderListItem | null>(null);
-    const [activeTab, setActiveTab] = useState<"founders" | "feedback">("founders");
+    const [activeTab, setActiveTab] = useState<"founders" | "feedback" | "audit">("founders");
 
     const loadFounders = useCallback(async () => {
         setLoading(true);
@@ -190,6 +233,7 @@ export default function AdminOperationsScreen({ onBack }: Props) {
             <div style={{ display: "flex", gap: 2, padding: "0 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(8,8,9,0.97)", backdropFilter: "blur(12px)", flexShrink: 0 }}>
                 <TabButton label="Founders" active={activeTab === "founders"} onClick={() => { setActiveTab("founders"); setSelectedFounder(null); }} />
                 <TabButton label="Feedback Inbox" active={activeTab === "feedback"} onClick={() => { setActiveTab("feedback"); setSelectedFounder(null); }} />
+                <TabButton label="Audit Log" active={activeTab === "audit"} onClick={() => { setActiveTab("audit"); setSelectedFounder(null); }} />
             </div>
 
             {activeTab === "founders" ? (
@@ -260,8 +304,10 @@ export default function AdminOperationsScreen({ onBack }: Props) {
                     </div>
                 </div>
             </div>
-            ) : (
+            ) : activeTab === "feedback" ? (
                 <FeedbackInboxPanel />
+            ) : (
+                <AuditLogPanel />
             )}
 
             {activeTab === "founders" && selectedFounder && (
@@ -416,6 +462,16 @@ function FounderDetailDrawer({ founder, onClose }: { founder: AdminFounderListIt
     const [notifLoading, setNotifLoading] = useState(false);
     const [notifError, setNotifError] = useState<string | null>(null);
     const [notifSuccess, setNotifSuccess] = useState<string | null>(null);
+    const [pendingAccessAction, setPendingAccessAction] = useState<AccessAdminAction | null>(null);
+    const [accessReason, setAccessReason] = useState("");
+    const [accessConfirmation, setAccessConfirmation] = useState("");
+    const [accessExpiresAt, setAccessExpiresAt] = useState("");
+    const [churnNoteText, setChurnNoteText] = useState("");
+    const [retentionStatus, setRetentionStatus] = useState<AdminRetentionStatus>("none");
+    const [winbackStatus, setWinbackStatus] = useState<AdminWinbackStatus>("none");
+    const [accessLoading, setAccessLoading] = useState(false);
+    const [accessError, setAccessError] = useState<string | null>(null);
+    const [accessSuccess, setAccessSuccess] = useState<string | null>(null);
     const mountedRef = useRef(true);
 
     useEffect(() => {
@@ -576,6 +632,83 @@ function FounderDetailDrawer({ founder, onClose }: { founder: AdminFounderListIt
         }
     };
 
+    const beginAccessAction = useCallback((action: AccessAdminAction) => {
+        setPendingAccessAction(action);
+        setAccessReason("");
+        setAccessConfirmation("");
+        setAccessExpiresAt("");
+        setChurnNoteText("");
+        setRetentionStatus("none");
+        setWinbackStatus("none");
+        setAccessError(null);
+        setAccessSuccess(null);
+    }, []);
+
+    const closeAccessModal = () => {
+        if (accessLoading) return;
+        setPendingAccessAction(null);
+        setAccessReason("");
+        setAccessConfirmation("");
+        setAccessError(null);
+    };
+
+    const submitAccessAction = async () => {
+        if (!pendingAccessAction) return;
+        const reason = accessReason.trim();
+        setAccessLoading(true);
+        setAccessError(null);
+        setAccessSuccess(null);
+        try {
+            const metadata = { source: "admin_operations_billing_access" };
+            switch (pendingAccessAction.kind) {
+                case "grant_comp":
+                    await grantFounderCompAccess({
+                        userId: founder.user_id,
+                        compType: pendingAccessAction.compType,
+                        reason,
+                        expiresAt: accessExpiresAt || null,
+                        metadata,
+                    });
+                    break;
+                case "remove_comp":
+                    await removeFounderCompAccess(founder.user_id, reason, metadata);
+                    break;
+                case "suspend":
+                    await suspendFounderAccess(founder.user_id, reason, metadata);
+                    break;
+                case "reactivate":
+                    await reactivateFounderAccess(founder.user_id, reason, metadata);
+                    break;
+                case "revoke":
+                    await revokeFounderAccess(founder.user_id, reason, accessConfirmation, metadata);
+                    break;
+                case "churn_note":
+                    await createFounderChurnNote({
+                        userId: founder.user_id,
+                        note: churnNoteText.trim(),
+                        reason,
+                        retentionStatus,
+                        winbackStatus,
+                        metadata,
+                    });
+                    break;
+            }
+            if (!mountedRef.current) return;
+            setAccessSuccess(`${pendingAccessAction.label} completed and audit logged.`);
+            setPendingAccessAction(null);
+            setAccessReason("");
+            setAccessConfirmation("");
+            setAccessExpiresAt("");
+            setChurnNoteText("");
+            await loadDetail({ showLoading: false });
+        } catch (submitError) {
+            if (!mountedRef.current) return;
+            setAccessError(submitError instanceof Error ? submitError.message : "Unable to update access controls.");
+        } finally {
+            if (mountedRef.current) setAccessLoading(false);
+        }
+    };
+
     return (
         <div style={{ position: "fixed", inset: 0, zIndex: 220, background: "rgba(0,0,0,0.62)", display: "flex", justifyContent: "flex-end" }} onClick={onClose}>
             <div
@@ -603,7 +736,11 @@ function FounderDetailDrawer({ founder, onClose }: { founder: AdminFounderListIt
                 ) : detail ? (
                     <div style={{ display: "grid", gap: 14 }}>
                         <ProfileSnapshot detail={detail} />
-                        <AccessBilling detail={detail} />
+                        <BillingAccessOperations
+                            detail={detail}
+                            success={accessSuccess}
+                            onAction={beginAccessAction}
+                        />
                         <ActivityCounts counts={detail.counts} />
                         <AcademyProgressPanel
                             founderName={founder.display_name || founder.name || "Unnamed founder"}
@@ -662,6 +799,29 @@ function FounderDetailDrawer({ founder, onClose }: { founder: AdminFounderListIt
                     onSubmit={() => void submitRepair()}
                 />
             )}
+            {pendingAccessAction && (
+                <AccessActionModal
+                    founderName={founder.display_name || founder.name || "Unnamed founder"}
+                    founderEmail={founder.email}
+                    action={pendingAccessAction}
+                    reason={accessReason}
+                    confirmation={accessConfirmation}
+                    expiresAt={accessExpiresAt}
+                    churnNote={churnNoteText}
+                    retentionStatus={retentionStatus}
+                    winbackStatus={winbackStatus}
+                    loading={accessLoading}
+                    error={accessError}
+                    onReasonChange={setAccessReason}
+                    onConfirmationChange={setAccessConfirmation}
+                    onExpiresAtChange={setAccessExpiresAt}
+                    onChurnNoteChange={setChurnNoteText}
+                    onRetentionStatusChange={setRetentionStatus}
+                    onWinbackStatusChange={setWinbackStatus}
+                    onCancel={closeAccessModal}
+                    onSubmit={() => void submitAccessAction()}
+                />
+            )}
         </div>
     );
 }
@@ -686,23 +846,136 @@ function ProfileSnapshot({ detail }: { detail: AdminFounderDetailResponse }) {
     );
 }
 
-function AccessBilling({ detail }: { detail: AdminFounderDetailResponse }) {
+function BillingAccessOperations({
+    detail,
+    success,
+    onAction,
+}: {
+    detail: AdminFounderDetailResponse;
+    success: string | null;
+    onAction: (action: AccessAdminAction) => void;
+}) {
     const access = detail.account_access;
     const billing = detail.billing_subscription;
+    const isComped = Boolean(access?.is_family_comp || access?.subscription_status === "comped" || access?.subscription_status === "gifted" || access?.plan_type === "family_comp" || access?.plan_type === "gifted");
+    const isSuspended = access?.access_status === "suspended";
+    const isRevoked = access?.access_status === "revoked";
+    const churnNotes = detail.recent_admin_support_notes.filter((note) => note.note_type === "retention" || note.note_type === "billing");
+
     return (
-        <Section title="Access & Billing Summary">
-            <InfoGrid
-                items={[
-                    ["Access status", access?.access_status || "Unknown"],
-                    ["Plan type", access?.plan_type || "Unknown"],
-                    ["Subscription status", access?.subscription_status || "Unknown"],
-                    ["Comped", access?.is_family_comp ? "Yes" : "No"],
-                    ["Stripe status", billing?.stripe_status || "None"],
-                    ["Stripe subscription", billing?.has_stripe_subscription ? "Linked" : "Not linked"],
-                    ["Cancel at period end", billing?.cancel_at_period_end ? "Yes" : "No"],
-                    ["Current period end", formatDateTime(billing?.current_period_end || null)],
-                ]}
-            />
+        <Section title="Billing & Access">
+            <div style={{ display: "grid", gap: 12 }}>
+                {success && (
+                    <div className="foundry-control-surface" style={{ padding: 11, borderColor: "rgba(96, 195, 138, 0.35)" }}>
+                        <div style={{ fontSize: 12, color: "var(--foundry-green)", lineHeight: 1.55 }}>{success}</div>
+                    </div>
+                )}
+
+                <div className="foundry-control-surface" style={{ padding: 12 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 10 }}>
+                        <div>
+                            <div style={{ fontSize: 14, color: "var(--foundry-text-primary)", fontWeight: 800 }}>Access state</div>
+                            <div style={{ fontSize: 11, color: "var(--foundry-text-muted)", marginTop: 3, lineHeight: 1.55 }}>
+                                Foundry access controls are manual overrides. Stripe subscription state remains read-only here.
+                            </div>
+                        </div>
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                            <StatusPill label={access?.access_status || "unknown"} accent={accessAccent(access?.access_status)} />
+                            <StatusPill label={access?.subscription_status || "none"} accent={subscriptionAccent(access?.subscription_status)} />
+                            {isComped && <StatusPill label="manual override" accent="var(--foundry-amber)" />}
+                        </div>
+                    </div>
+                    <InfoGrid
+                        items={[
+                            ["Access status", access?.access_status || "Unknown"],
+                            ["Plan type", access?.plan_type || "Unknown"],
+                            ["Subscription status", access?.subscription_status || "Unknown"],
+                            ["Comp/family", access?.is_family_comp ? "Family comp" : isComped ? "Manual comp/gifted" : "No"],
+                            ["Comp reason", access?.comp_reason || "Not set"],
+                            ["Access ends", formatDateTime(access?.ends_at || null)],
+                            ["Suspended", formatDateTime(access?.suspended_at || null)],
+                            ["Suspension reason", access?.suspension_reason || "Not set"],
+                        ]}
+                    />
+                </div>
+
+                <div className="foundry-control-surface" style={{ padding: 12 }}>
+                    <div style={{ fontSize: 14, color: "var(--foundry-text-primary)", fontWeight: 800, marginBottom: 10 }}>Stripe subscription truth</div>
+                    <InfoGrid
+                        items={[
+                            ["Stripe status", billing?.stripe_status || "None"],
+                            ["Stripe customer", billing?.has_stripe_customer ? "Linked" : "Not linked"],
+                            ["Stripe subscription", billing?.has_stripe_subscription ? "Linked" : "Not linked"],
+                            ["Current period end", formatDateTime(billing?.current_period_end || null)],
+                            ["Cancel at period end", billing?.cancel_at_period_end ? "Yes" : "No"],
+                            ["Trial end", formatDateTime(billing?.trial_end || null)],
+                        ]}
+                    />
+                </div>
+
+                <div className="foundry-control-surface" style={{ padding: 12 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
+                        <div>
+                            <div style={{ fontSize: 14, color: "var(--foundry-text-primary)", fontWeight: 800 }}>Controlled access actions</div>
+                            <div style={{ fontSize: 11, color: "var(--foundry-text-muted)", marginTop: 3 }}>Every action requires a reason and writes an audit log entry.</div>
+                        </div>
+                    </div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                        {!isComped && (
+                            <>
+                                <button className="foundry-btn foundry-btn--secondary" type="button" onClick={() => onAction({ kind: "grant_comp", label: "Grant Comp Access", compType: "gifted" })} style={{ padding: "8px 12px", fontSize: 12 }}>
+                                    Grant Comp
+                                </button>
+                                <button className="foundry-btn foundry-btn--secondary" type="button" onClick={() => onAction({ kind: "grant_comp", label: "Grant Family Access", compType: "family_comp" })} style={{ padding: "8px 12px", fontSize: 12 }}>
+                                    Family Access
+                                </button>
+                            </>
+                        )}
+                        {isComped && (
+                            <button className="foundry-btn foundry-btn--secondary" type="button" onClick={() => onAction({ kind: "remove_comp", label: "Remove Comp Access" })} style={{ padding: "8px 12px", fontSize: 12 }}>
+                                Remove Comp
+                            </button>
+                        )}
+                        {!isSuspended && !isRevoked && (
+                            <button className="foundry-btn foundry-btn--secondary" type="button" onClick={() => onAction({ kind: "suspend", label: "Suspend Account" })} style={{ padding: "8px 12px", fontSize: 12 }}>
+                                Suspend
+                            </button>
+                        )}
+                        {(isSuspended || isRevoked) && (
+                            <button className="foundry-btn foundry-btn--secondary" type="button" onClick={() => onAction({ kind: "reactivate", label: "Reactivate Account" })} style={{ padding: "8px 12px", fontSize: 12 }}>
+                                Reactivate
+                            </button>
+                        )}
+                        {!isRevoked && (
+                            <button className="foundry-btn foundry-btn--secondary" type="button" onClick={() => onAction({ kind: "revoke", label: "Revoke Access" })} style={{ padding: "8px 12px", fontSize: 12, color: "var(--foundry-red)", borderColor: "rgba(191,74,57,0.32)" }}>
+                                Revoke
+                            </button>
+                        )}
+                        <button className="foundry-btn foundry-btn--ghost" type="button" onClick={() => onAction({ kind: "churn_note", label: "Add Churn / Win-back Note" })} style={{ padding: "8px 12px", fontSize: 12 }}>
+                            Churn Note
+                        </button>
+                    </div>
+                </div>
+
+                <div className="foundry-control-surface" style={{ padding: 12 }}>
+                    <div style={{ fontSize: 14, color: "var(--foundry-text-primary)", fontWeight: 800, marginBottom: 9 }}>Recent churn / win-back notes</div>
+                    {churnNotes.length === 0 ? (
+                        <div style={{ fontSize: 12, color: "var(--foundry-text-muted)", lineHeight: 1.6 }}>No retention or billing notes captured yet.</div>
+                    ) : (
+                        <div style={{ display: "grid", gap: 8 }}>
+                            {churnNotes.slice(0, 3).map((note) => (
+                                <PreviewRow
+                                    key={note.id}
+                                    title={note.note_type || "Retention note"}
+                                    meta={`${String(note.metadata?.retention_status || "no retention status")} - ${String(note.metadata?.winback_status || "no win-back status")}`}
+                                    date={note.created_at}
+                                    body={note.note}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
         </Section>
     );
 }
@@ -1060,6 +1333,191 @@ function InfoLine({ label, value }: { label: string; value: string }) {
         <div style={{ display: "grid", gridTemplateColumns: "96px minmax(0, 1fr)", gap: 8, fontSize: 12, lineHeight: 1.45 }}>
             <span className="foundry-font-ui" style={{ color: "var(--foundry-text-muted)", fontWeight: 800, textTransform: "uppercase", fontSize: 10 }}>{label}</span>
             <span style={{ color: "var(--foundry-text-primary)", overflowWrap: "anywhere" }}>{value}</span>
+        </div>
+    );
+}
+
+function AccessActionModal({
+    founderName,
+    founderEmail,
+    action,
+    reason,
+    confirmation,
+    expiresAt,
+    churnNote,
+    retentionStatus,
+    winbackStatus,
+    loading,
+    error,
+    onReasonChange,
+    onConfirmationChange,
+    onExpiresAtChange,
+    onChurnNoteChange,
+    onRetentionStatusChange,
+    onWinbackStatusChange,
+    onCancel,
+    onSubmit,
+}: {
+    founderName: string;
+    founderEmail: string | null;
+    action: AccessAdminAction;
+    reason: string;
+    confirmation: string;
+    expiresAt: string;
+    churnNote: string;
+    retentionStatus: AdminRetentionStatus;
+    winbackStatus: AdminWinbackStatus;
+    loading: boolean;
+    error: string | null;
+    onReasonChange: (value: string) => void;
+    onConfirmationChange: (value: string) => void;
+    onExpiresAtChange: (value: string) => void;
+    onChurnNoteChange: (value: string) => void;
+    onRetentionStatusChange: (value: AdminRetentionStatus) => void;
+    onWinbackStatusChange: (value: AdminWinbackStatus) => void;
+    onCancel: () => void;
+    onSubmit: () => void;
+}) {
+    const isDanger = action.kind === "revoke" || action.kind === "suspend";
+    const isRevoke = action.kind === "revoke";
+    const isGrant = action.kind === "grant_comp";
+    const isChurn = action.kind === "churn_note";
+    const reasonValid = reason.trim().length >= 8;
+    const churnValid = !isChurn || churnNote.trim().length >= 3;
+    const confirmationValid = !isRevoke || confirmation === "REVOKE ACCESS";
+    const canSubmit = reasonValid && churnValid && confirmationValid && !loading;
+
+    return (
+        <div
+            style={{ position: "fixed", inset: 0, zIndex: 330, background: "rgba(0,0,0,0.68)", display: "grid", placeItems: "center", padding: 18 }}
+            onClick={onCancel}
+        >
+            <div
+                className="foundry-modal-surface"
+                style={{ width: "min(560px, 100%)", padding: 18, borderColor: isDanger ? "rgba(191,74,57,0.35)" : undefined }}
+                onClick={(event) => event.stopPropagation()}
+            >
+                <div className="foundry-label" style={{ color: isDanger ? "var(--foundry-red)" : "var(--foundry-orange)", marginBottom: 10 }}>
+                    Audited Access Control
+                </div>
+                <div style={{ fontSize: 22, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, lineHeight: 1.15 }}>
+                    {action.label}
+                </div>
+                <div style={{ marginTop: 10, display: "grid", gap: 8 }}>
+                    <InfoLine label="Founder" value={`${founderName}${founderEmail ? ` (${founderEmail})` : ""}`} />
+                    <InfoLine label="Scope" value={isChurn ? "Internal retention note" : "Foundry account_access manual override"} />
+                    <InfoLine label="Stripe" value="Read-only. This action will not mutate Stripe subscriptions." />
+                </div>
+
+                <div className="foundry-control-surface" style={{ padding: 11, marginTop: 12 }}>
+                    <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.6 }}>
+                        This action will be audit logged with your admin account, reason, target founder, and before/after state when access changes.
+                    </div>
+                </div>
+
+                {isGrant && (
+                    <label style={{ display: "grid", gap: 6, marginTop: 14 }}>
+                        <span className="foundry-font-ui" style={{ fontSize: 10, color: "var(--foundry-text-muted)", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                            Optional expiration
+                        </span>
+                        <input
+                            type="date"
+                            value={expiresAt}
+                            disabled={loading}
+                            onChange={(event) => onExpiresAtChange(event.target.value)}
+                            style={{ ...inputStyle, minWidth: 0 }}
+                        />
+                    </label>
+                )}
+
+                {isChurn && (
+                    <>
+                        <label style={{ display: "grid", gap: 6, marginTop: 14 }}>
+                            <span className="foundry-font-ui" style={{ fontSize: 10, color: "var(--foundry-text-muted)", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                                Churn / win-back note
+                            </span>
+                            <textarea
+                                value={churnNote}
+                                disabled={loading}
+                                onChange={(event) => onChurnNoteChange(event.target.value)}
+                                placeholder="What happened, what was offered, and what should the admin team know next?"
+                                rows={3}
+                                style={{ ...inputStyle, minWidth: 0, resize: "vertical", lineHeight: 1.45 }}
+                            />
+                        </label>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 10 }}>
+                            <select value={retentionStatus} disabled={loading} onChange={(event) => onRetentionStatusChange(event.target.value as AdminRetentionStatus)} style={selectStyle}>
+                                <option value="none">No retention status</option>
+                                <option value="at_risk">At risk</option>
+                                <option value="win_back_candidate">Win-back candidate</option>
+                                <option value="do_not_contact">Do not contact</option>
+                                <option value="converted">Converted</option>
+                            </select>
+                            <select value={winbackStatus} disabled={loading} onChange={(event) => onWinbackStatusChange(event.target.value as AdminWinbackStatus)} style={selectStyle}>
+                                <option value="none">No win-back status</option>
+                                <option value="pending">Pending</option>
+                                <option value="contacted">Contacted</option>
+                                <option value="offered_discount">Offered discount</option>
+                                <option value="returned">Returned</option>
+                                <option value="declined">Declined</option>
+                            </select>
+                        </div>
+                    </>
+                )}
+
+                <label style={{ display: "grid", gap: 6, marginTop: 14 }}>
+                    <span className="foundry-font-ui" style={{ fontSize: 10, color: "var(--foundry-text-muted)", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                        Admin reason
+                    </span>
+                    <textarea
+                        value={reason}
+                        disabled={loading}
+                        onChange={(event) => onReasonChange(event.target.value)}
+                        placeholder="Required reason for the audit log"
+                        rows={3}
+                        style={{ ...inputStyle, minWidth: 0, resize: "vertical", lineHeight: 1.45 }}
+                    />
+                    <span style={{ fontSize: 10, color: reasonValid ? "var(--foundry-text-muted)" : "var(--foundry-amber)" }}>Minimum 8 characters.</span>
+                </label>
+
+                {isRevoke && (
+                    <label style={{ display: "grid", gap: 6, marginTop: 12 }}>
+                        <span className="foundry-font-ui" style={{ fontSize: 10, color: "var(--foundry-red)", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                            Type REVOKE ACCESS
+                        </span>
+                        <input
+                            value={confirmation}
+                            disabled={loading}
+                            onChange={(event) => onConfirmationChange(event.target.value)}
+                            placeholder="REVOKE ACCESS"
+                            style={{ ...inputStyle, minWidth: 0, borderColor: "rgba(191,74,57,0.28)" }}
+                        />
+                    </label>
+                )}
+
+                {error && <div style={{ marginTop: 12, fontSize: 12, color: "var(--foundry-red)", lineHeight: 1.55 }}>{error}</div>}
+
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
+                    <button className="foundry-btn foundry-btn--secondary" type="button" disabled={loading} onClick={onCancel} style={{ padding: "8px 12px", fontSize: 12 }}>
+                        Cancel
+                    </button>
+                    <button
+                        className="foundry-btn foundry-btn--primary"
+                        type="button"
+                        disabled={!canSubmit}
+                        onClick={onSubmit}
+                        style={{
+                            padding: "8px 12px",
+                            fontSize: 12,
+                            background: isDanger ? "linear-gradient(135deg, rgba(191,74,57,0.95), rgba(118,42,31,0.95))" : undefined,
+                            opacity: canSubmit ? 1 : 0.55,
+                            cursor: canSubmit ? "pointer" : "not-allowed",
+                        }}
+                    >
+                        {loading ? "Saving..." : "Confirm"}
+                    </button>
+                </div>
+            </div>
         </div>
     );
 }
@@ -1539,6 +1997,293 @@ function TabButton({ label, active, onClick }: { label: string; active: boolean;
             {label}
         </button>
     );
+}
+
+// ─── Audit Log ─────────────────────────────────────────────────────────────
+
+function AuditLogPanel() {
+    const [items, setItems] = useState<AdminAuditLogEntry[]>([]);
+    const [count, setCount] = useState(0);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [actionType, setActionType] = useState("");
+    const [entityType, setEntityType] = useState("");
+    const [searchInput, setSearchInput] = useState("");
+    const [submittedSearch, setSubmittedSearch] = useState("");
+    const [dateFrom, setDateFrom] = useState("");
+    const [dateTo, setDateTo] = useState("");
+    const [page, setPage] = useState(1);
+    const [expandedId, setExpandedId] = useState<string | null>(null);
+    const mountedRef = useRef(true);
+    const limit = 50;
+
+    useEffect(() => {
+        mountedRef.current = true;
+        return () => { mountedRef.current = false; };
+    }, []);
+
+    useEffect(() => {
+        const timer = window.setTimeout(() => {
+            setPage(1);
+            setSubmittedSearch(searchInput.trim());
+        }, 280);
+        return () => window.clearTimeout(timer);
+    }, [searchInput]);
+
+    const totalPages = Math.max(1, Math.ceil(count / limit));
+
+    const load = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const res = await fetchAdminAuditLog({
+                action_type: actionType || undefined,
+                entity_type: entityType || undefined,
+                search: submittedSearch || undefined,
+                date_from: dateFrom || undefined,
+                date_to: dateTo || undefined,
+                page,
+                limit,
+            });
+            if (!mountedRef.current) return;
+            setItems(res.items);
+            setCount(res.pagination.count);
+        } catch (e) {
+            if (!mountedRef.current) return;
+            setError(e instanceof Error ? e.message : "Unable to load audit log.");
+        } finally {
+            if (mountedRef.current) setLoading(false);
+        }
+    }, [actionType, dateFrom, dateTo, entityType, page, submittedSearch]);
+
+    useEffect(() => { void load(); }, [load]);
+
+    const resetFilters = () => {
+        setActionType("");
+        setEntityType("");
+        setSearchInput("");
+        setSubmittedSearch("");
+        setDateFrom("");
+        setDateTo("");
+        setPage(1);
+    };
+
+    return (
+        <div className="foundry-app-page__content" style={{ flex: 1, overflowY: "auto", padding: "20px 16px 32px" }}>
+            <div style={{ maxWidth: 1180, margin: "0 auto", display: "grid", gap: 16 }}>
+                <div className="foundry-command-panel foundry-panel-in" style={{ padding: 20 }}>
+                    <div className="foundry-label" style={{ color: "var(--foundry-orange)", marginBottom: 9 }}>Forensics</div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
+                        <div style={{ minWidth: 260, maxWidth: 720 }}>
+                            <div style={{ fontSize: 26, lineHeight: 1.1, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 8 }}>
+                                Admin Audit Log
+                            </div>
+                            <div style={{ fontSize: 13, color: "var(--foundry-text-muted)", lineHeight: 1.65 }}>
+                                Immutable admin action records with actor, founder, context, before/after state, and request metadata.
+                            </div>
+                        </div>
+                        <div className="foundry-control-surface" style={{ padding: "10px 12px", minWidth: 150 }}>
+                            <div style={{ fontSize: 19, fontWeight: 800, color: "var(--foundry-blue)", lineHeight: 1.1 }}>{formatNumber(count)}</div>
+                            <div className="foundry-font-ui" style={{ fontSize: 10, color: "var(--foundry-text-muted)", marginTop: 5, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase" }}>Matching events</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="foundry-toolbar" style={{ padding: 12, display: "grid", gridTemplateColumns: "minmax(220px, 1fr) repeat(5, max-content)", gap: 10, alignItems: "center", overflowX: "auto" }}>
+                    <input
+                        value={searchInput}
+                        onChange={(event) => setSearchInput(event.target.value)}
+                        placeholder="Search founder, admin, reason, action, or entity"
+                        style={inputStyle}
+                    />
+                    <select value={actionType} onChange={(e) => { setActionType(e.target.value); setPage(1); }} style={selectStyle}>
+                        {AUDIT_ACTION_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    </select>
+                    <select value={entityType} onChange={(e) => { setEntityType(e.target.value); setPage(1); }} style={selectStyle}>
+                        {AUDIT_ENTITY_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    </select>
+                    <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1); }} style={{ ...inputStyle, minWidth: 150 }} />
+                    <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1); }} style={{ ...inputStyle, minWidth: 150 }} />
+                    <button className="foundry-btn foundry-btn--ghost" type="button" onClick={resetFilters} disabled={loading} style={{ padding: "7px 10px", fontSize: 12 }}>
+                        Reset
+                    </button>
+                </div>
+
+                <div className="foundry-module-card" style={{ padding: 0, overflow: "hidden" }}>
+                    {loading ? (
+                        <PanelState title="Loading audit log" body="Fetching immutable admin action records." />
+                    ) : error ? (
+                        <PanelState
+                            title="Unable to load audit log"
+                            body={error}
+                            action={<button className="foundry-btn foundry-btn--secondary" onClick={() => void load()} style={{ padding: "8px 12px", fontSize: 12 }}>Retry</button>}
+                        />
+                    ) : items.length === 0 ? (
+                        <PanelState
+                            title="No audit events found"
+                            body={actionType || entityType || submittedSearch || dateFrom || dateTo ? "No records match the current filters." : "Admin actions will appear here after audited operations run."}
+                        />
+                    ) : (
+                        <AuditLogTable items={items} expandedId={expandedId} onToggle={(id) => setExpandedId((current) => current === id ? null : id)} />
+                    )}
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                    <div style={{ fontSize: 12, color: "var(--foundry-text-muted)" }}>
+                        Page {page} of {totalPages} - {formatNumber(count)} event{count === 1 ? "" : "s"}
+                    </div>
+                    <div style={{ display: "flex", gap: 8 }}>
+                        <button className="foundry-btn foundry-btn--secondary" type="button" disabled={page <= 1 || loading} onClick={() => setPage((p) => p - 1)} style={{ padding: "8px 12px", fontSize: 12 }}>Previous</button>
+                        <button className="foundry-btn foundry-btn--secondary" type="button" disabled={page >= totalPages || loading} onClick={() => setPage((p) => p + 1)} style={{ padding: "8px 12px", fontSize: 12 }}>Next</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function AuditLogTable({ items, expandedId, onToggle }: { items: AdminAuditLogEntry[]; expandedId: string | null; onToggle: (id: string) => void }) {
+    return (
+        <div style={{ overflowX: "auto" }}>
+            <div style={{ minWidth: 1060 }}>
+                <div
+                    className="foundry-font-ui"
+                    style={{ display: "grid", gridTemplateColumns: "148px 132px minmax(180px,1fr) minmax(180px,1fr) 132px 140px", gap: 10, padding: "10px 14px", borderBottom: "var(--foundry-border-subtle)", fontSize: 10, color: "var(--foundry-text-muted)", letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 800 }}
+                >
+                    <span>Time</span>
+                    <span>Category</span>
+                    <span>Action</span>
+                    <span>Founder</span>
+                    <span>Entity</span>
+                    <span>Actor</span>
+                </div>
+                {items.map((item) => (
+                    <div key={item.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.045)" }}>
+                        <button
+                            type="button"
+                            onClick={() => onToggle(item.id)}
+                            className="foundry-interactive"
+                            style={{
+                                width: "100%",
+                                display: "grid",
+                                gridTemplateColumns: "148px 132px minmax(180px,1fr) minmax(180px,1fr) 132px 140px",
+                                gap: 10,
+                                alignItems: "center",
+                                padding: "12px 14px",
+                                border: "none",
+                                background: expandedId === item.id ? "rgba(255,255,255,0.035)" : "transparent",
+                                color: "inherit",
+                                textAlign: "left",
+                                cursor: "pointer",
+                            }}
+                        >
+                            <div style={{ fontSize: 11, color: "var(--foundry-text-muted)", whiteSpace: "nowrap" }}>{formatDateTime(item.created_at)}</div>
+                            <AuditCategoryBadge category={auditCategory(item)} />
+                            <div style={{ minWidth: 0 }}>
+                                <div style={{ fontSize: 12, color: "var(--foundry-text-primary)", fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.action_type}</div>
+                                <div style={{ fontSize: 10, color: "var(--foundry-text-muted)", marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.reason || "No reason captured"}</div>
+                            </div>
+                            <AuditPersonSummary profile={item.target_profile} fallback={item.target_user_id} />
+                            <div style={{ minWidth: 0, fontSize: 11, color: "var(--foundry-text-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {item.entity_type || "entity"}{item.entity_id ? ` / ${item.entity_id}` : ""}
+                            </div>
+                            <AuditPersonSummary profile={item.admin_profile} fallback={item.admin_id} compact />
+                        </button>
+                        {expandedId === item.id && <AuditDetail item={item} />}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function AuditPersonSummary({ profile, fallback, compact = false }: { profile: AdminAuditLogEntry["admin_profile"]; fallback: string | null; compact?: boolean }) {
+    const name = profile?.name || profile?.email || fallback || "Unknown";
+    const meta = profile?.email && profile.name ? profile.email : profile?.business_name || profile?.role || fallback || "";
+    return (
+        <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: compact ? 11 : 12, color: "var(--foundry-text-primary)", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</div>
+            {meta && <div style={{ fontSize: 10, color: "var(--foundry-text-muted)", marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{meta}</div>}
+        </div>
+    );
+}
+
+function AuditDetail({ item }: { item: AdminAuditLogEntry }) {
+    return (
+        <div style={{ padding: "0 14px 14px" }}>
+            <div className="foundry-control-surface" style={{ padding: 14, display: "grid", gap: 14 }}>
+                <InfoGrid items={[
+                    ["Audit ID", item.id],
+                    ["Admin actor", formatAuditPerson(item.admin_profile, item.admin_id)],
+                    ["Target founder", formatAuditPerson(item.target_profile, item.target_user_id)],
+                    ["Action", item.action_type],
+                    ["Entity", `${item.entity_type || "Not set"}${item.entity_id ? ` / ${item.entity_id}` : ""}`],
+                    ["IP address", item.ip_address || "Not captured"],
+                    ["User agent", item.user_agent || "Not captured"],
+                    ["Created", item.created_at ? new Date(item.created_at).toLocaleString("en-US") : "Not available"],
+                ]} />
+                <div>
+                    <div className="foundry-label" style={{ marginBottom: 8 }}>Reason</div>
+                    <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.6, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8, padding: "10px 12px", overflowWrap: "anywhere" }}>
+                        {item.reason || "No reason captured."}
+                    </div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>
+                    <JsonBlock title="Before State" value={item.before_state} />
+                    <JsonBlock title="After State" value={item.after_state} />
+                    <JsonBlock title="Metadata" value={item.metadata} />
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function JsonBlock({ title, value }: { title: string; value: unknown }) {
+    return (
+        <div>
+            <div className="foundry-label" style={{ marginBottom: 8 }}>{title}</div>
+            <pre style={{ margin: 0, maxHeight: 280, overflow: "auto", background: "rgba(0,0,0,0.28)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: 12, color: "var(--foundry-text-secondary)", fontSize: 11, lineHeight: 1.55, fontFamily: "'DM Mono', 'SFMono-Regular', Consolas, monospace", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
+                {JSON.stringify(value ?? null, null, 2)}
+            </pre>
+        </div>
+    );
+}
+
+function AuditCategoryBadge({ category }: { category: string }) {
+    const accent = auditCategoryAccent(category);
+    return (
+        <span className="foundry-font-ui" style={{ justifySelf: "flex-start", fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: accent, background: "rgba(255,255,255,0.035)", border: `1px solid ${accent}`, borderRadius: 4, padding: "4px 7px" }}>
+            {category}
+        </span>
+    );
+}
+
+function auditCategory(item: AdminAuditLogEntry) {
+    const action = item.action_type || "";
+    const entity = item.entity_type || "";
+    if (action.includes("academy") || entity.includes("academy")) return "academy";
+    if (action.includes("feedback") || entity.includes("feedback")) return "feedback";
+    if (action.includes("access") || entity.includes("account_access")) return "access";
+    if (action.includes("notification") || entity.includes("notification")) return "notification";
+    if (action.includes("note") || entity.includes("support_notes")) return "notes";
+    return "admin";
+}
+
+function auditCategoryAccent(category: string) {
+    if (category === "academy") return "var(--foundry-orange)";
+    if (category === "feedback") return "var(--foundry-blue)";
+    if (category === "access") return "var(--foundry-red)";
+    if (category === "notification") return "var(--foundry-green)";
+    if (category === "notes") return "var(--foundry-amber)";
+    return "var(--foundry-text-muted)";
+}
+
+function formatAuditPerson(profile: AdminAuditLogEntry["admin_profile"], fallback: string | null) {
+    if (!profile) return fallback || "Unknown";
+    const parts = [profile.name || profile.email || profile.user_id];
+    if (profile.email && profile.name) parts.push(profile.email);
+    if (profile.business_name) parts.push(profile.business_name);
+    return parts.filter(Boolean).join(" / ");
 }
 
 // ─── Feedback Inbox ─────────────────────────────────────────────────────────

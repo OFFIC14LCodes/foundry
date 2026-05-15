@@ -1232,7 +1232,17 @@ export default function PitchPracticeScreen({
                         )}
                         <div style={{ display: "flex", flexDirection: "column", maxWidth: "78%" }}>
                             <PitchMessageBubble msg={msg} />
-                            {msg.role === "forge" && msg.text && <MessageActions text={msg.text} />}
+                            {msg.role === "forge" && msg.text && (
+                                <MessageActions
+                                    text={msg.text}
+                                    feedbackContext={{
+                                        surface: "Pitch Practice",
+                                        conversationTitle: `${scenarioLabelFor(scenario)} - ${mode} mode`,
+                                        stageId: null,
+                                        messageId: msg.id != null ? `pitch-${msg.id}` : `pitch-${i}`,
+                                    }}
+                                />
+                            )}
                         </div>
                     </div>
                 ))}

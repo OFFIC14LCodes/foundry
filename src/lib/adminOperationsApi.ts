@@ -237,6 +237,46 @@ export interface AdminAuditEntry {
     created_at: string | null;
 }
 
+export interface AdminAuditProfileSummary {
+    user_id: string;
+    email: string | null;
+    name: string | null;
+    business_name: string | null;
+    role: string | null;
+}
+
+export interface AdminAuditLogEntry extends AdminAuditEntry {
+    admin_profile: AdminAuditProfileSummary | null;
+    target_profile: AdminAuditProfileSummary | null;
+    before_state: Record<string, unknown> | null;
+    after_state: Record<string, unknown> | null;
+    ip_address: string | null;
+    user_agent: string | null;
+}
+
+export interface AdminAuditLogResponse {
+    items: AdminAuditLogEntry[];
+    pagination: {
+        limit: number;
+        offset: number;
+        page: number;
+        count: number;
+    };
+}
+
+export interface FetchAdminAuditLogOptions {
+    target_user_id?: string;
+    admin_id?: string;
+    action_type?: string;
+    entity_type?: string;
+    date_from?: string;
+    date_to?: string;
+    search?: string;
+    limit?: number;
+    offset?: number;
+    page?: number;
+}
+
 export interface LoadAdminFoundersOptions {
     search?: string;
     limit?: number;
@@ -317,6 +357,22 @@ export interface CreateFounderNotificationPayload {
     message: string;
     type?: AdminNotificationType;
     metadata?: Record<string, unknown>;
+}
+
+export type AdminCompAccessType = "gifted" | "family_comp";
+export type AdminRetentionStatus = "at_risk" | "win_back_candidate" | "do_not_contact" | "converted" | "none";
+export type AdminWinbackStatus = "pending" | "contacted" | "offered_discount" | "returned" | "declined" | "none";
+
+export interface AdminAccessMutationResponse {
+    ok: true;
+    access: AdminAccountAccessSummary;
+    billing_subscription: AdminBillingSummary | null;
+    founder: {
+        user_id: string;
+        email: string | null;
+        name: string | null;
+        business_name: string | null;
+    };
 }
 
 export async function loadAdminOperationFounders(options: LoadAdminFoundersOptions = {}): Promise<AdminFounderListResponse> {
@@ -422,6 +478,24 @@ export async function fetchAdminFeedback(
     return adminFetch<AdminFeedbackListResponse>(`/api/admin/feedback${query ? `?${query}` : ""}`);
 }
 
+export async function fetchAdminAuditLog(
+    options: FetchAdminAuditLogOptions = {},
+): Promise<AdminAuditLogResponse> {
+    const params = new URLSearchParams();
+    if (options.target_user_id) params.set("target_user_id", options.target_user_id);
+    if (options.admin_id) params.set("admin_id", options.admin_id);
+    if (options.action_type) params.set("action_type", options.action_type);
+    if (options.entity_type) params.set("entity_type", options.entity_type);
+    if (options.date_from) params.set("date_from", options.date_from);
+    if (options.date_to) params.set("date_to", options.date_to);
+    if (options.search?.trim()) params.set("search", options.search.trim());
+    if (options.limit) params.set("limit", String(options.limit));
+    if (options.offset != null) params.set("offset", String(options.offset));
+    if (options.page) params.set("page", String(options.page));
+    const query = params.toString();
+    return adminFetch<AdminAuditLogResponse>(`/api/admin/audit${query ? `?${query}` : ""}`);
+}
+
 export async function updateAdminFeedback(
     id: string,
     payload: UpdateAdminFeedbackPayload,
@@ -443,6 +517,63 @@ export async function createFounderNotification(
             body: payload as Record<string, unknown>,
         },
     );
+}
+
+export async function grantFounderCompAccess(input: {
+    userId: string;
+    compType: AdminCompAccessType;
+    reason: string;
+    expiresAt?: string | null;
+    metadata?: Record<string, unknown>;
+}): Promise<AdminAccessMutationResponse> {
+    return adminAccessPost("grant-comp", {
+        userId: input.userId,
+        compType: input.compType,
+        reason: input.reason,
+        expiresAt: input.expiresAt || null,
+        metadata: input.metadata || {},
+    });
+}
+
+export async function removeFounderCompAccess(userId: string, reason: string, metadata: Record<string, unknown> = {}): Promise<AdminAccessMutationResponse> {
+    return adminAccessPost("remove-comp", { userId, reason, metadata });
+}
+
+export async function suspendFounderAccess(userId: string, reason: string, metadata: Record<string, unknown> = {}): Promise<AdminAccessMutationResponse> {
+    return adminAccessPost("suspend", { userId, reason, metadata });
+}
+
+export async function reactivateFounderAccess(userId: string, reason: string, metadata: Record<string, unknown> = {}): Promise<AdminAccessMutationResponse> {
+    return adminAccessPost("reactivate", { userId, reason, metadata });
+}
+
+export async function revokeFounderAccess(userId: string, reason: string, confirmation: string, metadata: Record<string, unknown> = {}): Promise<AdminAccessMutationResponse> {
+    return adminAccessPost("revoke", { userId, reason, confirmation, metadata });
+}
+
+export async function createFounderChurnNote(input: {
+    userId: string;
+    note: string;
+    reason: string;
+    retentionStatus?: AdminRetentionStatus | null;
+    winbackStatus?: AdminWinbackStatus | null;
+    metadata?: Record<string, unknown>;
+}): Promise<{ ok: true; note: AdminSupportNote; access: AdminAccountAccessSummary | null; billing_subscription: AdminBillingSummary | null }> {
+    return adminAccessPost("churn-note", {
+        userId: input.userId,
+        note: input.note,
+        reason: input.reason,
+        retentionStatus: input.retentionStatus || null,
+        winbackStatus: input.winbackStatus || null,
+        metadata: input.metadata || {},
+    });
+}
+
+function adminAccessPost<T>(action: string, body: Record<string, unknown>): Promise<T> {
+    return adminFetch<T>(`/api/admin/access/${action}`, {
+        method: "POST",
+        body,
+    });
 }
 
 async function adminFetch<T>(url: string, options: { method?: string; body?: Record<string, unknown> } = {}): Promise<T> {

@@ -39,7 +39,8 @@ export default async function handler(req, res) {
       return;
     }
 
-    const surface = String(context.surface || "unknown");
+    const normalizedContext = normalizeFeedbackContext(context, profile);
+    const surface = String(normalizedContext.surface || "unknown");
     console.log(`[feedback] received: reaction=${reaction} surface=${surface} user=${user.id} chars=${messageText.length}`);
 
     const serviceClient = buildServiceClient();
@@ -48,7 +49,7 @@ export default async function handler(req, res) {
     // ── DB persistence (best-effort) ─────────────────────────────────────
     let dbOk = false;
     try {
-      await insertFeedbackRecord(serviceClient, user.id, reaction, messageText, context);
+      await insertFeedbackRecord(serviceClient, user.id, reaction, messageText, normalizedContext);
       dbOk = true;
       console.log(`[feedback] db insert ok: reaction=${reaction} user=${user.id}`);
     } catch (dbErr) {
@@ -62,7 +63,7 @@ export default async function handler(req, res) {
     if (!resendKey) {
       console.warn("[feedback] RESEND_API_KEY not set — email skipped. Feedback is still stored in the Feedback Inbox.");
     } else {
-      emailOk = await trySendEmail({ resendKey, reaction, messageText, context, user, profile });
+      emailOk = await trySendEmail({ resendKey, reaction, messageText, context: normalizedContext, user, profile });
     }
 
     console.log(`[feedback] done: db=${dbOk} email=${emailOk}`);
@@ -185,6 +186,43 @@ async function loadProfile(userId, serviceClient) {
     return null;
   }
   return data;
+}
+
+function normalizeFeedbackContext(context, profile) {
+  const pageUrl = String(context.pageUrl || "").slice(0, 500);
+  const inferredSurface = inferSurfaceFromPageUrl(pageUrl);
+  const rawStageId = Number(context.stageId ?? profile?.current_stage);
+  const stageId = Number.isInteger(rawStageId) && rawStageId > 0 ? rawStageId : null;
+  const conversationTitle = String(context.conversationTitle || "").trim()
+    || inferConversationTitle(context.surface || inferredSurface, stageId);
+
+  return {
+    ...context,
+    surface: String(context.surface || inferredSurface || "Unknown").trim(),
+    conversationTitle,
+    stageId,
+    messageId: String(context.messageId || "").trim(),
+    pageUrl,
+  };
+}
+
+function inferSurfaceFromPageUrl(pageUrl) {
+  const normalized = String(pageUrl || "").toLowerCase();
+  if (!normalized) return "";
+  if (normalized.includes("academy")) return "Forge Academy";
+  if (normalized.includes("market")) return "Market Intelligence";
+  if (normalized.includes("pitch")) return "Pitch Practice";
+  if (normalized.includes("cofounder")) return "Cofounder Mode";
+  if (normalized.includes("onboarding")) return "Onboarding";
+  return "Foundry";
+}
+
+function inferConversationTitle(surface, stageId) {
+  const cleanSurface = String(surface || "").trim();
+  if (cleanSurface && stageId) return `${cleanSurface} - Stage ${stageId}`;
+  if (cleanSurface) return cleanSurface;
+  if (stageId) return `Stage ${stageId}`;
+  return "Foundry conversation";
 }
 
 async function insertFeedbackRecord(serviceClient, userId, reaction, messageText, context) {

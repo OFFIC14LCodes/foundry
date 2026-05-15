@@ -267,6 +267,10 @@ function UserDetailPanel({
     };
 
     const doAction = async (action: string) => {
+        if (actionInput.trim().length < 8) {
+            setActionMsg('A reason of at least 8 characters is required. For full controls, use Admin Operations.');
+            return;
+        }
         setActionLoading(true);
         setActionMsg('');
         let ok = false;
@@ -278,16 +282,16 @@ function UserDetailPanel({
                 ok = await grantCompAccess(user.id, true, actionInput || 'Family access');
                 break;
             case 'remove_comp':
-                ok = await removeCompAccess(user.id);
+                ok = await removeCompAccess(user.id, actionInput);
                 break;
             case 'suspend':
                 ok = await suspendUser(user.id, actionInput);
                 break;
             case 'reactivate':
-                ok = await reactivateUser(user.id);
+                ok = await reactivateUser(user.id, actionInput);
                 break;
             case 'revoke':
-                ok = await revokeAccess(user.id);
+                ok = await revokeAccess(user.id, actionInput);
                 break;
         }
         setActionLoading(false);
@@ -424,6 +428,9 @@ function UserDetailPanel({
                 {/* Actions card */}
                 <div style={card}>
                     <div style={label}>Admin Actions</div>
+                    <div style={{ fontSize: 11, color: '#F5A843', lineHeight: 1.55, marginBottom: 10 }}>
+                        Legacy surface. These actions now use audited server routes, but Admin Operations is the primary control center.
+                    </div>
 
                     {/* Grant comp / family */}
                     {!isComped && (
@@ -435,7 +442,7 @@ function UserDetailPanel({
                             onToggle={() => setExpandedAction(expandedAction === 'grant_comp' ? null : 'grant_comp')}
                             input={actionInput}
                             onInputChange={setActionInput}
-                            inputPlaceholder="Reason (optional)"
+                            inputPlaceholder="Reason for comp access"
                             loading={actionLoading}
                             onConfirm={() => doAction('grant_comp')}
                             confirmLabel="Grant Comp"
@@ -450,7 +457,7 @@ function UserDetailPanel({
                             onToggle={() => setExpandedAction(expandedAction === 'grant_family' ? null : 'grant_family')}
                             input={actionInput}
                             onInputChange={setActionInput}
-                            inputPlaceholder="e.g. Partner, sibling (optional)"
+                            inputPlaceholder="Reason for family access"
                             loading={actionLoading}
                             onConfirm={() => doAction('grant_family')}
                             confirmLabel="Grant Family Access"
@@ -463,10 +470,12 @@ function UserDetailPanel({
                             color="#F5A843"
                             expanded={expandedAction === 'remove_comp'}
                             onToggle={() => setExpandedAction(expandedAction === 'remove_comp' ? null : 'remove_comp')}
+                            input={actionInput}
+                            onInputChange={setActionInput}
+                            inputPlaceholder="Reason for removing comp access"
                             loading={actionLoading}
                             onConfirm={() => doAction('remove_comp')}
                             confirmLabel="Remove Comp"
-                            noInput
                         />
                     )}
                     {isActive && !isSuspended && (
@@ -491,10 +500,12 @@ function UserDetailPanel({
                             color="#48BB78"
                             expanded={expandedAction === 'reactivate'}
                             onToggle={() => setExpandedAction(expandedAction === 'reactivate' ? null : 'reactivate')}
+                            input={actionInput}
+                            onInputChange={setActionInput}
+                            inputPlaceholder="Reason for reactivation"
                             loading={actionLoading}
                             onConfirm={() => doAction('reactivate')}
                             confirmLabel="Confirm Reactivate"
-                            noInput
                         />
                     )}
                     {!isRevoked && (
@@ -504,10 +515,12 @@ function UserDetailPanel({
                             color="#F54443"
                             expanded={expandedAction === 'revoke'}
                             onToggle={() => setExpandedAction(expandedAction === 'revoke' ? null : 'revoke')}
+                            input={actionInput}
+                            onInputChange={setActionInput}
+                            inputPlaceholder="Reason for revoking access"
                             loading={actionLoading}
                             onConfirm={() => doAction('revoke')}
                             confirmLabel="⚠ Permanently Revoke"
-                            noInput
                             destructive
                         />
                     )}
@@ -518,10 +531,12 @@ function UserDetailPanel({
                             color="#48BB78"
                             expanded={expandedAction === 'reactivate'}
                             onToggle={() => setExpandedAction(expandedAction === 'reactivate' ? null : 'reactivate')}
+                            input={actionInput}
+                            onInputChange={setActionInput}
+                            inputPlaceholder="Reason for restoring access"
                             loading={actionLoading}
                             onConfirm={() => doAction('reactivate')}
                             confirmLabel="Restore Access"
-                            noInput
                         />
                     )}
                 </div>
@@ -580,7 +595,7 @@ function UserDetailPanel({
 
 // Inline expandable action row
 function ActionItem({
-    id, label, color, expanded, onToggle,
+    label, color, expanded, onToggle,
     input, onInputChange, inputPlaceholder,
     loading, onConfirm, confirmLabel, noInput, destructive,
 }: {

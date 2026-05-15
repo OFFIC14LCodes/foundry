@@ -13,7 +13,6 @@ import AdminDashboard from "./AdminDashboard";
 import AdminAcademyManager from "./AdminAcademyManager";
 import AdminFounderAccounts from "./AdminFounderAccounts";
 import AdminOperationsScreen from "./AdminOperationsScreen";
-import HelpTooltip from "./HelpTooltip";
 
 interface Props {
     userId: string;
@@ -22,162 +21,53 @@ interface Props {
     onNotificationSettingsChange: (next: AdminNotificationSettings) => void;
 }
 
-const ADMIN_SECTIONS = [
+type AdminView = "overview" | "dashboard" | "accounts" | "academy" | "operations";
+
+const PRIMARY_TOOLS: Array<{
+    title: string;
+    eyebrow: string;
+    description: string;
+    accent: string;
+    view: Exclude<AdminView, "overview">;
+}> = [
     {
         title: "Admin Operations",
-        description: "Read-only founder search, account snapshots, access visibility, and activity metadata for safe support workflows.",
-        accent: "#4CAF8A",
-        cta: "Open Operations console",
-        action: "operations",
+        eyebrow: "Primary Console",
+        description: "Founder search, account snapshots, support notes, access controls, feedback, and audit log.",
+        accent: "var(--foundry-green)",
+        view: "operations",
     },
     {
         title: "Founder Accounts",
-        description: "Browse all registered founders, view per-user stage progress, archive summaries, subscription status, and generate a Forge-powered account overview.",
-        accent: "#E8622A",
-        cta: "Open Founder Accounts",
-        action: "accounts",
+        eyebrow: "Account Review",
+        description: "Registered founders, stage progress, archive summaries, subscription state, and AI account summaries.",
+        accent: "var(--foundry-orange)",
+        view: "accounts",
     },
     {
         title: "Forge Academy",
-        description: "Manage Academy categories, topic conversations, lesson series, and YouTube-backed learning content from one workspace.",
-        accent: "#F5A843",
-        cta: "Open Academy manager",
-        action: "academy",
+        eyebrow: "Content Ops",
+        description: "Academy categories, topic conversations, lesson series, and learning content.",
+        accent: "var(--foundry-amber)",
+        view: "academy",
     },
     {
         title: "User Management",
-        description: "Review accounts, inspect workspace history, and manage user operations directly from the Admin Hub as this control surface expands.",
-        accent: "#E8622A",
-        cta: "Open account controls",
-        action: "dashboard",
-    },
-    {
-        title: "Subscription Status",
-        description: "Track active, canceled, trial, and past-due states across the Foundry customer base.",
-        accent: "#63B3ED",
-        cta: "Billing visibility placeholder",
-    },
-    {
-        title: "Comped / Family Access",
-        description: "Manage manually granted accounts, family access, and gifted access rules in one place.",
-        accent: "#9B7FE8",
-        cta: "Grant free access",
-        action: "dashboard",
-    },
-    {
-        title: "Suspend / Reactivate",
-        description: "Handle restricted accounts safely with clear escalation and reactivation controls.",
-        accent: "#F5A843",
-        cta: "Open access controls",
-        action: "dashboard",
-    },
-    {
-        title: "Churn Tracking",
-        description: "Track win-back notes, retention state, and account health signals for founder support.",
-        accent: "#48BB78",
-        cta: "Retention workspace placeholder",
-    },
-    {
-        title: "Stripe / Webhooks",
-        description: "Monitor billing sync, Stripe lifecycle events, and webhook health as that layer expands.",
-        accent: "#38BDF8",
-        cta: "Payments ops placeholder",
-    },
-    {
-        title: "Founding Member Controls",
-        description: "Manage founding pricing, OG Founder status, and future early-access entitlements cleanly.",
-        accent: "#C8A96E",
-        cta: "Founding controls placeholder",
+        eyebrow: "Legacy Surface",
+        description: "Older account controls retained for operational continuity while Admin Operations becomes the main console.",
+        accent: "var(--foundry-blue)",
+        view: "dashboard",
     },
 ];
 
-function AdminCard({
-    title,
-    description,
-    accent,
-    cta,
-    onClick,
-}: {
-    title: string;
-    description: string;
-    accent: string;
-    cta: string;
-    onClick?: () => void;
-}) {
-    return (
-        <button
-            type="button"
-            onClick={onClick}
-            style={{
-                background: "rgba(255,255,255,0.02)",
-                border: "1px solid rgba(255,255,255,0.07)",
-                borderRadius: 18,
-                padding: 18,
-                minHeight: 170,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                width: "100%",
-                textAlign: "left",
-                cursor: onClick ? "pointer" : "default",
-                transition: "background 0.15s ease, border-color 0.15s ease",
-            }}
-            onMouseEnter={event => {
-                if (!onClick) return;
-                event.currentTarget.style.background = "rgba(255,255,255,0.04)";
-                event.currentTarget.style.borderColor = "rgba(255,255,255,0.12)";
-            }}
-            onMouseLeave={event => {
-                event.currentTarget.style.background = "rgba(255,255,255,0.02)";
-                event.currentTarget.style.borderColor = "rgba(255,255,255,0.07)";
-            }}
-        >
-            <div>
-                <div
-                    style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 12,
-                        marginBottom: 14,
-                        background: `${accent}16`,
-                        border: `1px solid ${accent}28`,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        color: accent,
-                        fontSize: 18,
-                        fontWeight: 700,
-                        fontFamily: "'Lora', Georgia, serif",
-                    }}
-                >
-                    •
-                </div>
-                <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ fontSize: 18, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
-                        {title}
-                    </div>
-                    <HelpTooltip content={description} />
-                </div>
-            </div>
-
-            <div
-                style={{
-                    marginTop: 18,
-                    alignSelf: "flex-start",
-                    padding: "8px 12px",
-                    borderRadius: 10,
-                    border: "1px solid rgba(255,255,255,0.07)",
-                    background: "rgba(255,255,255,0.03)",
-                    color: "var(--foundry-text-muted)",
-                    fontSize: 11,
-                    fontWeight: 600,
-                }}
-            >
-                {cta}
-            </div>
-        </button>
-    );
-}
+const PLANNED_SURFACES = [
+    "Subscription Status",
+    "Comped / Family Access",
+    "Suspend / Reactivate",
+    "Churn Tracking",
+    "Stripe / Webhooks",
+    "Founding Member Controls",
+];
 
 export default function AdminHubScreen({
     userId,
@@ -185,7 +75,7 @@ export default function AdminHubScreen({
     notificationSettings,
     onNotificationSettingsChange,
 }: Props) {
-    const [activeView, setActiveView] = useState<"overview" | "dashboard" | "accounts" | "academy" | "operations">("overview");
+    const [activeView, setActiveView] = useState<AdminView>("overview");
     const [ttsUsage, setTtsUsage] = useState<TtsUsageSnapshot | null>(null);
     const [ttsUsageLoading, setTtsUsageLoading] = useState(true);
     const [ttsUsageError, setTtsUsageError] = useState<string | null>(null);
@@ -232,11 +122,6 @@ export default function AdminHubScreen({
         void refreshTokenUsage();
     }, []);
 
-    const usagePercent = ttsUsage?.totalCredits
-        ? Math.min(100, Math.round((ttsUsage.usedCredits / ttsUsage.totalCredits) * 100))
-        : 0;
-    const ttsUsageLimited = Boolean(ttsUsage?.usageAccessLimited);
-
     if (activeView === "dashboard") {
         return <AdminDashboard userId={userId} onBack={() => setActiveView("overview")} />;
     }
@@ -253,14 +138,19 @@ export default function AdminHubScreen({
         return <AdminAcademyManager userId={userId} onBack={() => setActiveView("overview")} />;
     }
 
+    const usagePercent = ttsUsage?.totalCredits
+        ? Math.min(100, Math.round((ttsUsage.usedCredits / ttsUsage.totalCredits) * 100))
+        : 0;
+    const ttsUsageLimited = Boolean(ttsUsage?.usageAccessLimited);
+
     return (
         <div
             style={{
                 position: "fixed",
                 inset: 0,
                 zIndex: 180,
-                background: "#080809",
-                color: "#F0EDE8",
+                background: "var(--foundry-bg-app)",
+                color: "var(--foundry-text-primary)",
                 fontFamily: "'Lora', Georgia, serif",
                 display: "flex",
                 flexDirection: "column",
@@ -269,331 +159,372 @@ export default function AdminHubScreen({
             <div
                 style={{
                     padding: "max(14px, calc(10px + env(safe-area-inset-top))) 16px 12px",
-                    borderBottom: "1px solid rgba(255,255,255,0.07)",
+                    borderBottom: "var(--foundry-border-subtle)",
                     background: "rgba(8,8,9,0.97)",
                     backdropFilter: "blur(12px)",
                     display: "flex",
                     alignItems: "center",
-                    gap: 10,
+                    justifyContent: "space-between",
+                    gap: 12,
                     flexShrink: 0,
                 }}
             >
-                <button
-                    onClick={onBack}
-                    style={{
-                        background: "rgba(255,255,255,0.05)",
-                        border: "1px solid rgba(255,255,255,0.1)",
-                        borderRadius: 8,
-                        padding: "var(--foundry-app-header-button-padding)",
-                        color: "#C8C4BE",
-                        fontSize: "var(--foundry-app-header-button-font)",
-                        cursor: "pointer",
-                    }}
-                >
-                    ←
+                <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                    <button className="foundry-btn foundry-btn--ghost" onClick={onBack} style={{ padding: "var(--foundry-app-header-button-padding)", fontSize: "var(--foundry-app-header-button-font)" }}>
+                        Back
+                    </button>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                        <Icons.sidebar.admin size={"var(--foundry-app-header-icon-size)"} />
+                        <div style={{ minWidth: 0 }}>
+                            <div style={{ fontSize: "var(--foundry-app-header-title-font)", fontWeight: 700 }}>Admin Hub</div>
+                            <div style={{ fontSize: "var(--foundry-app-header-meta-font)", color: "var(--foundry-text-muted)" }}>Operations command center</div>
+                        </div>
+                    </div>
+                </div>
+                <button className="foundry-btn foundry-btn--secondary" onClick={() => setActiveView("operations")} style={{ padding: "8px 12px", fontSize: 12 }}>
+                    Open Operations
                 </button>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <Icons.sidebar.admin size={"var(--foundry-app-header-icon-size)"} />
-                    <span style={{ fontSize: "var(--foundry-app-header-title-font)", fontWeight: 600, color: "#F0EDE8" }}>Admin Hub</span>
-                </div>
             </div>
 
-            <div className="foundry-app-page__content" style={{ flex: 1, overflowY: "auto", padding: "20px 16px 32px" }}>
-                <div style={{ maxWidth: 1080, margin: "0 auto" }}>
-                    <div
-                        style={{
-                            background: "linear-gradient(180deg, rgba(232,98,42,0.08), rgba(255,255,255,0.02))",
-                            border: "1px solid rgba(232,98,42,0.16)",
-                            borderRadius: 22,
-                            padding: "22px 22px 20px",
-                            marginBottom: 18,
-                        }}
-                    >
-                        <div style={{ fontSize: 10, color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 10 }}>
-                            Internal Control Panel
-                        </div>
-                        <div style={{ fontSize: "clamp(30px, 5vw, 42px)", lineHeight: 1, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 12 }}>
-                            Foundry Admin Hub
-                        </div>
-                        <div style={{ fontSize: 14, color: "#A8A4A0", lineHeight: 1.75, maxWidth: 760 }}>
-                            This is the internal workspace for account operations, retention oversight, subscription handling, founding-member controls, and notification policy.
-                        </div>
-                    </div>
+            <div className="foundry-app-page__content" style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
+                <div style={{ maxWidth: 1240, margin: "0 auto", display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
+                    <aside style={{ flex: "0 0 280px", display: "grid", gap: 12, minWidth: 260 }}>
+                        <SectionPanel title="Navigate">
+                            <div style={{ display: "grid", gap: 8 }}>
+                                {PRIMARY_TOOLS.map((tool) => (
+                                    <NavButton
+                                        key={tool.view}
+                                        title={tool.title}
+                                        eyebrow={tool.eyebrow}
+                                        accent={tool.accent}
+                                        onClick={() => setActiveView(tool.view)}
+                                    />
+                                ))}
+                            </div>
+                        </SectionPanel>
 
-                    <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: 20, marginBottom: 18 }}>
-                        <div style={{ fontSize: 10, color: "#4CAF8A", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 10 }}>
-                            Forge Token Usage
-                        </div>
-                        <div style={{ fontSize: 24, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 10 }}>
-                            Estimated model cost
-                        </div>
-                        <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.75, maxWidth: 760, marginBottom: 18 }}>
-                            Saved message-token volume converted into a rough Claude Sonnet cost estimate for admin visibility.
-                        </div>
+                        <SectionPanel title="System State">
+                            <div style={{ display: "grid", gap: 8 }}>
+                                <SystemRow label="Admin Operations" value="Active" accent="var(--foundry-green)" />
+                                <SystemRow label="Audit Log" value="Read-only" accent="var(--foundry-blue)" />
+                                <SystemRow label="Mutations" value="Server audited" accent="var(--foundry-amber)" />
+                            </div>
+                        </SectionPanel>
 
-                        {tokenUsageLoading ? (
-                            <div style={{ fontSize: 13, color: "rgba(240,237,232,0.62)" }}>Loading token usage...</div>
-                        ) : tokenUsageError ? (
-                            <div style={{ display: "grid", gap: 12 }}>
-                                <div style={{ fontSize: 13, color: "#D28B76", lineHeight: 1.7 }}>{tokenUsageError}</div>
-                                <div>
-                                    <button
-                                        onClick={() => void refreshTokenUsage()}
-                                        style={{
-                                            padding: "9px 14px",
-                                            borderRadius: 10,
-                                            border: "1px solid rgba(255,255,255,0.08)",
-                                            background: "rgba(255,255,255,0.03)",
-                                            color: "#C8C4BE",
-                                            fontSize: 12,
-                                            cursor: "pointer",
-                                        }}
-                                    >
-                                        Retry
-                                    </button>
+                        <SectionPanel title="Planned Surfaces">
+                            <div style={{ display: "grid", gap: 6 }}>
+                                {PLANNED_SURFACES.map((surface) => (
+                                    <div key={surface} style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center", fontSize: 12, color: "var(--foundry-text-secondary)" }}>
+                                        <span>{surface}</span>
+                                        <span className="foundry-font-ui" style={{ fontSize: 9, color: "var(--foundry-text-muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Queued</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </SectionPanel>
+                    </aside>
+
+                    <main style={{ flex: "1 1 680px", minWidth: 0, display: "grid", gap: 14 }}>
+                        <section className="foundry-command-panel foundry-panel-in" style={{ padding: 18, borderRadius: 8 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", gap: 14, alignItems: "flex-start", flexWrap: "wrap" }}>
+                                <div style={{ minWidth: 260, maxWidth: 760 }}>
+                                    <div className="foundry-label" style={{ color: "var(--foundry-orange)", marginBottom: 8 }}>Internal Control Panel</div>
+                                    <div style={{ fontSize: 28, lineHeight: 1.08, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 8 }}>
+                                        Foundry Admin Hub
+                                    </div>
+                                    <div style={{ fontSize: 13, color: "var(--foundry-text-muted)", lineHeight: 1.65 }}>
+                                        Start with Admin Operations for support, access, feedback, and audit work. Use the other surfaces for specialized account and content review.
+                                    </div>
+                                </div>
+                                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                                    <MiniAction label="Founder Ops" onClick={() => setActiveView("operations")} accent="var(--foundry-green)" />
+                                    <MiniAction label="Academy" onClick={() => setActiveView("academy")} accent="var(--foundry-amber)" />
+                                    <MiniAction label="Accounts" onClick={() => setActiveView("accounts")} accent="var(--foundry-orange)" />
                                 </div>
                             </div>
-                        ) : tokenUsage30d && tokenUsageAllTime ? (
-                            <div style={{ display: "grid", gap: 14 }}>
-                                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
-                                    <ControlCard label="Cost · Last 30 days" hint={tokenUsageEstimateNote()} control={<ValuePill value={formatEstimatedCost(tokenUsage30d.estimatedCostUsd)} accent="#4CAF8A" />} />
-                                    <ControlCard label="Tokens · Last 30 days" hint="Saved message-token estimate across all founders in the last 30 days." control={<ValuePill value={formatTokenCount(tokenUsage30d.totalTokens)} accent="#63B3ED" />} />
-                                    <ControlCard label="Cost · All time" hint={tokenUsageEstimateNote()} control={<ValuePill value={formatEstimatedCost(tokenUsageAllTime.estimatedCostUsd)} accent="#E8622A" />} />
-                                    <ControlCard label="Messages counted" hint="Saved user and Forge messages included in the estimate." control={<ValuePill value={formatNumber(tokenUsage30d.messageCount)} accent="#F5A843" />} />
-                                </div>
-                                <div style={{ fontSize: 11, color: "var(--foundry-text-muted)", lineHeight: 1.7 }}>
-                                    {tokenUsageEstimateNote()}
-                                </div>
-                                <div>
-                                    <button
-                                        onClick={() => void refreshTokenUsage()}
-                                        style={{
-                                            padding: "9px 14px",
-                                            borderRadius: 10,
-                                            border: "1px solid rgba(255,255,255,0.08)",
-                                            background: "rgba(255,255,255,0.03)",
-                                            color: "#C8C4BE",
-                                            fontSize: 12,
-                                            cursor: "pointer",
-                                        }}
-                                    >
-                                        Refresh Token Usage
-                                    </button>
-                                </div>
-                            </div>
-                        ) : null}
-                    </div>
+                        </section>
 
-                    <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: 20, marginBottom: 18 }}>
-                        <div style={{ fontSize: 10, color: "#F5A843", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 10 }}>
-                            Voice Usage
-                        </div>
-                        <div style={{ fontSize: 24, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 10 }}>
-                            ElevenLabs credits
-                        </div>
-                        <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.75, maxWidth: 720, marginBottom: 18 }}>
-                            Internal visibility for the owner account only. Voice generation charges route through the configured ElevenLabs workspace and the active voice is shown here.
-                        </div>
+                        <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: 10 }}>
+                            {PRIMARY_TOOLS.map((tool) => (
+                                <ToolCard
+                                    key={tool.view}
+                                    title={tool.title}
+                                    eyebrow={tool.eyebrow}
+                                    description={tool.description}
+                                    accent={tool.accent}
+                                    onClick={() => setActiveView(tool.view)}
+                                />
+                            ))}
+                        </section>
 
-                        {ttsUsageLoading ? (
-                            <div style={{ fontSize: 13, color: "rgba(240,237,232,0.62)" }}>Loading ElevenLabs usage...</div>
-                        ) : ttsUsageError ? (
-                            <div style={{ display: "grid", gap: 12 }}>
-                                <div style={{ fontSize: 13, color: "#D28B76", lineHeight: 1.7 }}>{ttsUsageError}</div>
-                                <div>
-                                    <button
-                                        onClick={() => void refreshTtsUsage()}
-                                        style={{
-                                            padding: "9px 14px",
-                                            borderRadius: 10,
-                                            border: "1px solid rgba(255,255,255,0.08)",
-                                            background: "rgba(255,255,255,0.03)",
-                                            color: "#C8C4BE",
-                                            fontSize: 12,
-                                            cursor: "pointer",
-                                        }}
-                                    >
-                                        Retry
-                                    </button>
-                                </div>
-                            </div>
-                        ) : ttsUsage ? (
-                            <div style={{ display: "grid", gap: 14 }}>
-                                {ttsUsageLimited && (
-                                    <div style={{
-                                        background: "rgba(245,168,67,0.08)",
-                                        border: "1px solid rgba(245,168,67,0.18)",
-                                        borderRadius: 16,
-                                        padding: 14,
-                                        display: "grid",
-                                        gap: 6,
-                                    }}>
-                                        <div style={{ fontSize: 12, color: "#F5A843", fontWeight: 700 }}>
-                                            Voice is configured. Usage visibility is limited.
+                        <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 12 }}>
+                            <SectionPanel title="Forge Token Usage" action={<TextButton label="Refresh" onClick={() => void refreshTokenUsage()} />}>
+                                {tokenUsageLoading ? (
+                                    <InlineState>Loading token usage...</InlineState>
+                                ) : tokenUsageError ? (
+                                    <InlineState tone="error">{tokenUsageError}</InlineState>
+                                ) : tokenUsage30d && tokenUsageAllTime ? (
+                                    <div style={{ display: "grid", gap: 10 }}>
+                                        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 }}>
+                                            <MetricTile label="30d Cost" value={formatEstimatedCost(tokenUsage30d.estimatedCostUsd)} accent="var(--foundry-green)" />
+                                            <MetricTile label="30d Tokens" value={formatTokenCount(tokenUsage30d.totalTokens)} accent="var(--foundry-blue)" />
+                                            <MetricTile label="All-Time Cost" value={formatEstimatedCost(tokenUsageAllTime.estimatedCostUsd)} accent="var(--foundry-orange)" />
+                                            <MetricTile label="Messages" value={formatNumber(tokenUsage30d.messageCount)} accent="var(--foundry-amber)" />
                                         </div>
-                                        <div style={{ fontSize: 12, color: "#C8C4BE", lineHeight: 1.7 }}>
-                                            {ttsUsage.usageAccessMessage || "The current ElevenLabs API key can generate voice, but it cannot read usage details."}
+                                        <div style={{ fontSize: 11, color: "var(--foundry-text-muted)", lineHeight: 1.6 }}>
+                                            {tokenUsageEstimateNote()}
                                         </div>
                                     </div>
+                                ) : (
+                                    <InlineState>No token usage returned.</InlineState>
                                 )}
+                            </SectionPanel>
 
-                                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
-                                    <ControlCard label="Current voice" hint="Resolved server-side for TTS playback." control={<ValuePill value={ttsUsage.currentVoiceName || "Not set"} accent="#F5A843" />} />
-                                    <ControlCard label={ttsUsageLimited ? "Connection" : "Plan / status"} hint={ttsUsageLimited ? "Voice generation is configured, but usage metrics are blocked by API-key permissions." : "Current ElevenLabs subscription state."} control={<ValuePill value={ttsUsageLimited ? ttsUsage.status : `${ttsUsage.tier} · ${ttsUsage.status}`} accent="#63B3ED" />} />
-                                    <ControlCard label="Credits remaining" hint={ttsUsageLimited ? "Unavailable until the API key includes usage-read permissions." : "Remaining monthly credits in the active cycle."} control={<ValuePill value={ttsUsageLimited ? "Unavailable" : formatNumber(ttsUsage.remainingCredits)} accent="#4CAF8A" />} />
-                                    <ControlCard label="Credits used" hint={ttsUsageLimited ? "Unavailable until the API key includes usage-read permissions." : "Credits consumed this billing cycle."} control={<ValuePill value={ttsUsageLimited ? "Unavailable" : `${formatNumber(ttsUsage.usedCredits)} / ${formatNumber(ttsUsage.totalCredits)}`} accent="#E8622A" />} />
-                                </div>
-
-                                {!ttsUsageLimited && (
-                                    <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: 16 }}>
-                                        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 10, flexWrap: "wrap" }}>
-                                            <div style={{ fontSize: 13, color: "#F0EDE8", fontWeight: 600 }}>Usage this cycle</div>
-                                            <div style={{ fontSize: 11, color: "rgba(240,237,232,0.62)" }}>
-                                                Reset: {formatResetDate(ttsUsage.resetAtUnix)}
+                            <SectionPanel title="Voice Usage" action={<TextButton label="Refresh" onClick={() => void refreshTtsUsage()} />}>
+                                {ttsUsageLoading ? (
+                                    <InlineState>Loading ElevenLabs usage...</InlineState>
+                                ) : ttsUsageError ? (
+                                    <InlineState tone="error">{ttsUsageError}</InlineState>
+                                ) : ttsUsage ? (
+                                    <div style={{ display: "grid", gap: 10 }}>
+                                        {ttsUsageLimited ? (
+                                            <InlineState tone="warn">{ttsUsage.usageAccessMessage || "Voice is configured. Usage metrics are unavailable."}</InlineState>
+                                        ) : (
+                                            <div>
+                                                <div style={{ display: "flex", justifyContent: "space-between", gap: 10, fontSize: 11, color: "var(--foundry-text-muted)", marginBottom: 7 }}>
+                                                    <span>Cycle usage</span>
+                                                    <span>{usagePercent}% · reset {formatResetDate(ttsUsage.resetAtUnix)}</span>
+                                                </div>
+                                                <div style={{ height: 8, borderRadius: 999, background: "rgba(255,255,255,0.05)", overflow: "hidden" }}>
+                                                    <div style={{ width: `${usagePercent}%`, height: "100%", background: "linear-gradient(90deg, var(--foundry-orange), var(--foundry-amber))" }} />
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div style={{ height: 10, borderRadius: 999, background: "rgba(255,255,255,0.05)", overflow: "hidden", marginBottom: 8 }}>
-                                            <div style={{ width: `${usagePercent}%`, height: "100%", background: "linear-gradient(90deg, #E8622A, #F5A843)" }} />
-                                        </div>
-                                        <div style={{ fontSize: 11, color: "rgba(240,237,232,0.62)", lineHeight: 1.7 }}>
-                                            {usagePercent}% of the current credit allocation has been used. Voice slots: {ttsUsage.voiceSlotsUsed ?? 0}/{ttsUsage.voiceLimit ?? 0}.
+                                        )}
+                                        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 }}>
+                                            <MetricTile label="Voice" value={ttsUsage.currentVoiceName || "Not set"} accent="var(--foundry-amber)" />
+                                            <MetricTile label={ttsUsageLimited ? "Connection" : "Status"} value={ttsUsageLimited ? ttsUsage.status : `${ttsUsage.tier} · ${ttsUsage.status}`} accent="var(--foundry-blue)" />
+                                            <MetricTile label="Remaining" value={ttsUsageLimited ? "Unavailable" : formatNumber(ttsUsage.remainingCredits)} accent="var(--foundry-green)" />
+                                            <MetricTile label="Used" value={ttsUsageLimited ? "Unavailable" : `${formatNumber(ttsUsage.usedCredits)} / ${formatNumber(ttsUsage.totalCredits)}`} accent="var(--foundry-orange)" />
                                         </div>
                                     </div>
+                                ) : (
+                                    <InlineState>No voice usage returned.</InlineState>
                                 )}
+                            </SectionPanel>
+                        </section>
 
-                                <div>
-                                    <button
-                                        onClick={() => void refreshTtsUsage()}
-                                        style={{
-                                            padding: "9px 14px",
-                                            borderRadius: 10,
-                                            border: "1px solid rgba(255,255,255,0.08)",
-                                            background: "rgba(255,255,255,0.03)",
-                                            color: "#C8C4BE",
-                                            fontSize: 12,
-                                            cursor: "pointer",
-                                        }}
-                                    >
-                                        Refresh Usage
-                                    </button>
-                                </div>
+                        <SectionPanel title="Notification Controls">
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 10 }}>
+                                <ControlCard
+                                    label="Re-engagement"
+                                    control={
+                                        <ToggleButton
+                                            enabled={notificationSettings.reengagementEnabled}
+                                            onClick={() => onNotificationSettingsChange({
+                                                ...notificationSettings,
+                                                reengagementEnabled: !notificationSettings.reengagementEnabled,
+                                            })}
+                                        />
+                                    }
+                                />
+                                <ControlCard
+                                    label="Inactive Days"
+                                    control={
+                                        <NumberInput
+                                            value={notificationSettings.reengagementDelayDays}
+                                            min={1}
+                                            onChange={(value) => onNotificationSettingsChange({
+                                                ...notificationSettings,
+                                                reengagementDelayDays: value,
+                                            })}
+                                        />
+                                    }
+                                />
+                                <ControlCard
+                                    label="Max Reminders"
+                                    control={
+                                        <NumberInput
+                                            value={notificationSettings.maxRemindersPerUser}
+                                            min={1}
+                                            onChange={(value) => onNotificationSettingsChange({
+                                                ...notificationSettings,
+                                                maxRemindersPerUser: value,
+                                            })}
+                                        />
+                                    }
+                                />
                             </div>
-                        ) : null}
-                    </div>
-
-                    <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: 20, marginBottom: 18 }}>
-                        <div style={{ fontSize: 10, color: "#63B3ED", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 10 }}>
-                            Notification Controls
-                        </div>
-                        <div style={{ fontSize: 24, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 10 }}>
-                            Global notification behavior
-                        </div>
-                        <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 18 }}>
-                            <HelpTooltip content="These controls govern when Foundry can trigger re-engagement reminders across the product. User-level preferences are still respected before anything is sent." />
-                        </div>
-
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
-                            <ControlCard
-                                label="Re-engagement system"
-                                hint="Master switch for inactivity reminders."
-                                control={
-                                    <ToggleButton
-                                        enabled={notificationSettings.reengagementEnabled}
-                                        onClick={() => onNotificationSettingsChange({
-                                            ...notificationSettings,
-                                            reengagementEnabled: !notificationSettings.reengagementEnabled,
-                                        })}
-                                    />
-                                }
-                            />
-                            <ControlCard
-                                label="Inactivity threshold"
-                                hint="Number of inactive days before a user becomes eligible."
-                                control={
-                                    <NumberInput
-                                        value={notificationSettings.reengagementDelayDays}
-                                        min={1}
-                                        onChange={(value) => onNotificationSettingsChange({
-                                            ...notificationSettings,
-                                            reengagementDelayDays: value,
-                                        })}
-                                    />
-                                }
-                            />
-                            <ControlCard
-                                label="Max reminders per user"
-                                hint="Maximum reminders in the active cooldown window."
-                                control={
-                                    <NumberInput
-                                        value={notificationSettings.maxRemindersPerUser}
-                                        min={1}
-                                        onChange={(value) => onNotificationSettingsChange({
-                                            ...notificationSettings,
-                                            maxRemindersPerUser: value,
-                                        })}
-                                    />
-                                }
-                            />
-                        </div>
-                    </div>
-
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: 14 }}>
-                        {ADMIN_SECTIONS.map((section) => (
-                            <AdminCard
-                                key={section.title}
-                                title={section.title}
-                                description={section.description}
-                                accent={section.accent}
-                                cta={section.cta}
-                                onClick={
-                            section.action === "dashboard" ? () => setActiveView("dashboard") :
-                            section.action === "operations" ? () => setActiveView("operations") :
-                            section.action === "accounts" ? () => setActiveView("accounts") :
-                            section.action === "academy" ? () => setActiveView("academy") :
-                            undefined
-                        }
-                            />
-                        ))}
-                    </div>
+                        </SectionPanel>
+                    </main>
                 </div>
             </div>
         </div>
     );
 }
 
-function ValuePill({ value, accent }: { value: string; accent: string }) {
-    return (
-        <div
-            style={{
-                alignSelf: "flex-start",
-                padding: "10px 12px",
-                borderRadius: 12,
-                border: `1px solid ${accent}28`,
-                background: `${accent}14`,
-                color: accent,
-                fontSize: 12,
-                fontWeight: 700,
-            }}
-        >
-            {value}
-        </div>
-    );
-}
-
-function ControlCard({
-    label,
-    hint,
-    control,
+function ToolCard({
+    title,
+    eyebrow,
+    description,
+    accent,
+    onClick,
 }: {
-    label: string;
-    hint: string;
-    control: ReactNode;
+    title: string;
+    eyebrow: string;
+    description: string;
+    accent: string;
+    onClick: () => void;
 }) {
     return (
-        <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: 16 }}>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                <div style={{ fontSize: 13, color: "#F0EDE8", fontWeight: 600 }}>{label}</div>
-                <HelpTooltip content={hint} />
+        <button
+            type="button"
+            onClick={onClick}
+            className="foundry-interactive"
+            style={{
+                minHeight: 148,
+                display: "grid",
+                gap: 10,
+                alignContent: "space-between",
+                textAlign: "left",
+                background: "rgba(255,255,255,0.025)",
+                border: "1px solid rgba(255,255,255,0.075)",
+                borderRadius: 8,
+                padding: 14,
+                color: "inherit",
+                cursor: "pointer",
+            }}
+        >
+            <div>
+                <div className="foundry-font-ui" style={{ fontSize: 10, color: accent, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>
+                    {eyebrow}
+                </div>
+                <div style={{ fontSize: 17, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, lineHeight: 1.15, marginBottom: 8 }}>
+                    {title}
+                </div>
+                <div style={{ fontSize: 12, color: "var(--foundry-text-muted)", lineHeight: 1.55 }}>
+                    {description}
+                </div>
+            </div>
+            <div className="foundry-font-ui" style={{ fontSize: 10, color: accent, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                Open
+            </div>
+        </button>
+    );
+}
+
+function NavButton({
+    title,
+    eyebrow,
+    accent,
+    onClick,
+}: {
+    title: string;
+    eyebrow: string;
+    accent: string;
+    onClick: () => void;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 10,
+                border: "1px solid rgba(255,255,255,0.075)",
+                background: "rgba(255,255,255,0.025)",
+                borderRadius: 8,
+                padding: "10px 11px",
+                color: "inherit",
+                cursor: "pointer",
+                textAlign: "left",
+            }}
+        >
+            <span style={{ minWidth: 0 }}>
+                <span style={{ display: "block", fontSize: 12, color: "var(--foundry-text-primary)", fontWeight: 700, marginBottom: 2 }}>{title}</span>
+                <span className="foundry-font-ui" style={{ display: "block", fontSize: 9, color: "var(--foundry-text-muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>{eyebrow}</span>
+            </span>
+            <span style={{ width: 8, height: 8, borderRadius: 99, background: accent, flexShrink: 0 }} />
+        </button>
+    );
+}
+
+function SectionPanel({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
+    return (
+        <section style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 8, padding: 14 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                <div className="foundry-label">{title}</div>
+                {action}
+            </div>
+            {children}
+        </section>
+    );
+}
+
+function SystemRow({ label, value, accent }: { label: string; value: string; accent: string }) {
+    return (
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", fontSize: 12 }}>
+            <span style={{ color: "var(--foundry-text-secondary)" }}>{label}</span>
+            <span className="foundry-font-ui" style={{ color: accent, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em" }}>{value}</span>
+        </div>
+    );
+}
+
+function MiniAction({ label, accent, onClick }: { label: string; accent: string; onClick: () => void }) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className="foundry-btn foundry-btn--secondary"
+            style={{ padding: "8px 11px", fontSize: 12, color: accent }}
+        >
+            {label}
+        </button>
+    );
+}
+
+function TextButton({ label, onClick }: { label: string; onClick: () => void }) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className="foundry-font-ui"
+            style={{
+                background: "transparent",
+                border: "none",
+                color: "var(--foundry-text-muted)",
+                cursor: "pointer",
+                fontSize: 10,
+                fontWeight: 800,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                padding: 0,
+            }}
+        >
+            {label}
+        </button>
+    );
+}
+
+function MetricTile({ label, value, accent }: { label: string; value: string; accent: string }) {
+    return (
+        <div style={{ border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.025)", borderRadius: 8, padding: 10, minWidth: 0 }}>
+            <div style={{ fontSize: 14, color: accent, fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{value}</div>
+            <div className="foundry-font-ui" style={{ fontSize: 9, color: "var(--foundry-text-muted)", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", marginTop: 5 }}>{label}</div>
+        </div>
+    );
+}
+
+function InlineState({ children, tone = "muted" }: { children: ReactNode; tone?: "muted" | "error" | "warn" }) {
+    const color = tone === "error" ? "var(--foundry-red)" : tone === "warn" ? "var(--foundry-amber)" : "var(--foundry-text-muted)";
+    return <div style={{ fontSize: 12, color, lineHeight: 1.6 }}>{children}</div>;
+}
+
+function ControlCard({ label, control }: { label: string; control: ReactNode }) {
+    return (
+        <div style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 8, padding: 12 }}>
+            <div className="foundry-font-ui" style={{ fontSize: 10, color: "var(--foundry-text-muted)", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
+                {label}
             </div>
             {control}
         </div>
@@ -603,16 +534,17 @@ function ControlCard({
 function ToggleButton({ enabled, onClick }: { enabled: boolean; onClick: () => void }) {
     return (
         <button
+            type="button"
             onClick={onClick}
             style={{
-                minWidth: 72,
-                padding: "10px 14px",
+                minWidth: 82,
+                padding: "9px 12px",
                 borderRadius: 999,
                 border: enabled ? "1px solid rgba(76,175,138,0.32)" : "1px solid rgba(255,255,255,0.08)",
                 background: enabled ? "rgba(76,175,138,0.14)" : "rgba(255,255,255,0.03)",
-                color: enabled ? "#4CAF8A" : "#888",
+                color: enabled ? "var(--foundry-green)" : "var(--foundry-text-muted)",
                 fontSize: 11,
-                fontWeight: 700,
+                fontWeight: 800,
                 cursor: "pointer",
             }}
         >
@@ -637,13 +569,14 @@ function NumberInput({
             value={value}
             onChange={(event) => onChange(Math.max(min, Number(event.target.value) || min))}
             style={{
-                width: 110,
+                width: 100,
                 background: "rgba(255,255,255,0.04)",
                 border: "1px solid rgba(255,255,255,0.1)",
-                borderRadius: 10,
-                padding: "10px 12px",
-                color: "#F0EDE8",
+                borderRadius: 8,
+                padding: "9px 11px",
+                color: "var(--foundry-text-primary)",
                 fontSize: 12,
+                outline: "none",
             }}
         />
     );

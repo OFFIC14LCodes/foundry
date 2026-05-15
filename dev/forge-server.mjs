@@ -8,6 +8,8 @@ import cofounderInviteHandler from "../api/cofounder-invite.js";
 import messageFeedbackHandler from "../api/message-feedback.js";
 import adminFoundersHandler from "../api/admin/founders/[[...path]].js";
 import adminFeedbackHandler from "../api/admin/feedback/[[...path]].js";
+import adminAccessHandler from "../api/admin/access/[[...path]].js";
+import adminAuditHandler from "../api/admin/audit.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -56,7 +58,9 @@ const server = http.createServer(async (req, res) => {
     pathname !== "/api/admin/founders" &&
     !pathname.startsWith("/api/admin/founders/") &&
     pathname !== "/api/admin/feedback" &&
-    !pathname.startsWith("/api/admin/feedback/")
+    !pathname.startsWith("/api/admin/feedback/") &&
+    !pathname.startsWith("/api/admin/access/") &&
+    pathname !== "/api/admin/audit"
   ) {
     res.writeHead(404, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Not found" }));
@@ -117,6 +121,30 @@ const server = http.createServer(async (req, res) => {
       const statusCode = typeof error?.statusCode === "number" ? error.statusCode : 500;
       res.writeHead(statusCode, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: error instanceof Error ? error.message : "Unable to handle admin feedback request" }));
+    }
+    return;
+  }
+
+  if (pathname === "/api/admin/audit") {
+    try {
+      await adminAuditHandler(req, res);
+    } catch (error) {
+      const statusCode = typeof error?.statusCode === "number" ? error.statusCode : 500;
+      res.writeHead(statusCode, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: error instanceof Error ? error.message : "Unable to handle admin audit request" }));
+    }
+    return;
+  }
+
+  if (pathname.startsWith("/api/admin/access/")) {
+    try {
+      const bodyText = req.method === "POST" ? await readBody(req) : "";
+      req.body = bodyText ? JSON.parse(bodyText) : {};
+      await adminAccessHandler(req, res);
+    } catch (error) {
+      const statusCode = typeof error?.statusCode === "number" ? error.statusCode : 500;
+      res.writeHead(statusCode, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: error instanceof Error ? error.message : "Unable to handle admin access request" }));
     }
     return;
   }

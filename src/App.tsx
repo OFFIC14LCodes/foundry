@@ -2703,6 +2703,12 @@ ${forgeReply}`;
                   onConceptTap={(name: string) => setConceptModal({ name })}
                   renderWithBold={(t, sr, gt, ct) => renderWithBold(t, sr, gt, ct, glossaryTerms, profile.glossaryLearned || [])}
                   userName={profile?.name || "You"}
+                  feedbackContext={{
+                    surface: "Main Forge",
+                    conversationTitle: `Stage ${activeStage} - ${STAGES_DATA[activeStage - 1]?.label || "Foundry"}`,
+                    stageId: Number(activeStage) || null,
+                    messageId: item.id ? String(item.id) : undefined,
+                  }}
                   onApplyToContext={(message: any) => {
                     setPendingApplyMessage(message);
                     setContextCardOpen(true);
