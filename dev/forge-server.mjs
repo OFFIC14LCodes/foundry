@@ -6,14 +6,8 @@ import { getElevenLabsUsage, synthesizeSpeech, verifyAdminRequest } from "../api
 import settingsFeedbackHandler from "../api/settings-feedback.js";
 import cofounderInviteHandler from "../api/cofounder-invite.js";
 import messageFeedbackHandler from "../api/message-feedback.js";
-import adminFoundersHandler from "../api/admin/founders/index.js";
-import adminFounderDetailHandler from "../api/admin/founders/[userId].js";
-import adminFounderAcademyProgressHandler from "../api/admin/founders/[userId]/academy-progress.js";
-import adminFounderResetAssessmentHandler from "../api/admin/founders/[userId]/reset-assessment.js";
-import adminFounderNotesHandler from "../api/admin/founders/[userId]/notes.js";
-import adminFounderNotificationsHandler from "../api/admin/founders/[userId]/notifications.js";
-import adminFeedbackHandler from "../api/admin/feedback/index.js";
-import adminFeedbackItemHandler from "../api/admin/feedback/[id].js";
+import adminFoundersHandler from "../api/admin/founders/[[...path]].js";
+import adminFeedbackHandler from "../api/admin/feedback/[[...path]].js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -116,10 +110,9 @@ const server = http.createServer(async (req, res) => {
 
   if (pathname === "/api/admin/feedback" || pathname.startsWith("/api/admin/feedback/")) {
     try {
-      const handler = pathname === "/api/admin/feedback"
-        ? adminFeedbackHandler
-        : adminFeedbackItemHandler;
-      await handler(req, res);
+      const bodyText = req.method === "POST" || req.method === "PATCH" ? await readBody(req) : "";
+      req.body = bodyText ? JSON.parse(bodyText) : {};
+      await adminFeedbackHandler(req, res);
     } catch (error) {
       const statusCode = typeof error?.statusCode === "number" ? error.statusCode : 500;
       res.writeHead(statusCode, { "Content-Type": "application/json" });
@@ -130,24 +123,13 @@ const server = http.createServer(async (req, res) => {
 
   if (pathname === "/api/admin/founders" || pathname.startsWith("/api/admin/founders/")) {
     try {
-      const handler = pathname === "/api/admin/founders"
-        ? adminFoundersHandler
-        : pathname.endsWith("/academy-progress")
-          ? adminFounderAcademyProgressHandler
-          : pathname.endsWith("/reset-assessment")
-            ? adminFounderResetAssessmentHandler
-            : pathname.endsWith("/notes")
-              ? adminFounderNotesHandler
-              : pathname.endsWith("/notifications")
-                ? adminFounderNotificationsHandler
-                : adminFounderDetailHandler;
-      await handler(req, res);
+      const bodyText = req.method === "POST" ? await readBody(req) : "";
+      req.body = bodyText ? JSON.parse(bodyText) : {};
+      await adminFoundersHandler(req, res);
     } catch (error) {
       const statusCode = typeof error?.statusCode === "number" ? error.statusCode : 500;
       res.writeHead(statusCode, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({
-        error: error instanceof Error ? error.message : "Unable to handle admin founder request",
-      }));
+      res.end(JSON.stringify({ error: error instanceof Error ? error.message : "Unable to handle admin founder request" }));
     }
     return;
   }
