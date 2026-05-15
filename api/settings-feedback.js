@@ -71,8 +71,8 @@ export default async function handler(req, res) {
     });
 
     if (result?.error) {
-      console.error("settings-feedback Resend error:", result.error);
-      throw createError(500, "Unable to send message — email delivery failed. Please try again.");
+      res.status(500).json({ error: "Email delivery failed", detail: result.error });
+      return;
     }
 
     res.status(200).json({ ok: true });
