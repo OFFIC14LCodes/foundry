@@ -1,8 +1,20 @@
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 
-const SUPPORT_EMAIL = process.env.RESEND_TO_ADDRESS || "foundryandforge.app@gmail.com";
-const FROM_ADDRESS = process.env.RESEND_FROM_ADDRESS || "Foundry <onboarding@resend.dev>";
+// ── Email config ───────────────────────────────────────────────────────────
+// Priority: FEEDBACK_TO_EMAIL → RESEND_TO_ADDRESS → hardcoded fallback.
+// IMPORTANT: When using onboarding@resend.dev (the Resend test sender), Resend
+// will ONLY deliver to the Resend account owner's own verified email address.
+// To send to any address, verify a custom domain at resend.com/domains and set
+// FEEDBACK_FROM_EMAIL (or RESEND_FROM_ADDRESS) to "Foundry <no-reply@yourdomain.com>".
+const SUPPORT_EMAIL =
+  process.env.RESEND_TO_ADDRESS ||
+  "foundryandforge.app@gmail.com";
+
+const FROM_ADDRESS =
+  process.env.RESEND_FROM_ADDRESS ||
+  "Foundry <onboarding@resend.dev>";
+
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export default async function handler(req, res) {
@@ -27,23 +39,45 @@ export default async function handler(req, res) {
       return;
     }
 
+    const surface = String(context.surface || "unknown");
+    console.log(`[feedback] received: reaction=${reaction} surface=${surface} user=${user.id} chars=${messageText.length}`);
+
     const serviceClient = buildServiceClient();
     const profile = await loadProfile(user.id, serviceClient);
 
-    // DB persistence — best-effort, never fails the response
+    // ── DB persistence (best-effort) ─────────────────────────────────────
+    let dbOk = false;
     try {
       await insertFeedbackRecord(serviceClient, user.id, reaction, messageText, context);
+      dbOk = true;
+      console.log(`[feedback] db insert ok: reaction=${reaction} user=${user.id}`);
     } catch (dbErr) {
-      console.warn("message-feedback: DB insert failed (best-effort):", dbErr?.message);
+      console.warn(`[feedback] db insert failed (best-effort): ${dbErr?.message}`);
     }
 
-    // Email — existing behavior preserved
+    // ── Email (best-effort — Feedback Inbox is the primary review queue) ─
+    let emailOk = false;
     const resendKey = process.env.RESEND_API_KEY;
+
     if (!resendKey) {
-      res.status(500).json({ error: "RESEND_API_KEY not set" });
-      return;
+      console.warn("[feedback] RESEND_API_KEY not set — email skipped. Feedback is still stored in the Feedback Inbox.");
+    } else {
+      emailOk = await trySendEmail({ resendKey, reaction, messageText, context, user, profile });
     }
 
+    console.log(`[feedback] done: db=${dbOk} email=${emailOk}`);
+    res.status(200).json({ ok: true, db: dbOk, email: emailOk });
+  } catch (error) {
+    const statusCode = error?.statusCode || 500;
+    console.error("[feedback] handler error:", error);
+    res.status(statusCode).json({
+      error: error instanceof Error ? error.message : "Unable to submit message feedback",
+    });
+  }
+}
+
+async function trySendEmail({ resendKey, reaction, messageText, context, user, profile }) {
+  try {
     const resend = new Resend(resendKey);
     const submittedAt = new Date().toLocaleString("en-US", {
       month: "long",
@@ -58,6 +92,8 @@ export default async function handler(req, res) {
     const profileName = profile?.name || user.user_metadata?.name || user.email || "Foundry user";
     const subject = `Forge ${reactionLabel} from ${profileName}`;
     const pageUrl = String(context.pageUrl || "").slice(0, 500);
+
+    console.log(`[feedback] sending email: from="${FROM_ADDRESS}" to="${SUPPORT_EMAIL}" subject="${subject}"`);
 
     const html = `
       <div style="font-family: Georgia, serif; color: #1b1b1d; line-height: 1.65;">
@@ -87,16 +123,21 @@ export default async function handler(req, res) {
     });
 
     if (result?.error) {
-      throw createError(500, result.error.message || "Resend could not send the email.");
+      const errCode = result.error.statusCode || result.error.name || "unknown";
+      const errMsg = result.error.message || JSON.stringify(result.error);
+      console.error(`[feedback] Resend rejected email: code=${errCode} message="${errMsg}"`);
+      if (FROM_ADDRESS.includes("onboarding@resend.dev")) {
+        console.error("[feedback] Sender is onboarding@resend.dev (Resend test domain). This domain can only deliver to the Resend account owner's verified email. Set FEEDBACK_FROM_EMAIL or RESEND_FROM_ADDRESS to a verified custom domain sender to reach any address.");
+      }
+      return false;
     }
 
-    res.status(200).json({ ok: true });
-  } catch (error) {
-    const statusCode = error?.statusCode || 500;
-    console.error("message-feedback error:", error);
-    res.status(statusCode).json({
-      error: error instanceof Error ? error.message : "Unable to send message feedback",
-    });
+    const emailId = result?.data?.id || "n/a";
+    console.log(`[feedback] email sent ok: id=${emailId} to="${SUPPORT_EMAIL}"`);
+    return true;
+  } catch (emailErr) {
+    console.error(`[feedback] email send threw: ${emailErr?.message}`);
+    return false;
   }
 }
 
@@ -140,7 +181,7 @@ async function loadProfile(userId, serviceClient) {
     .eq("id", userId)
     .maybeSingle();
   if (error) {
-    console.warn("message-feedback profile lookup failed:", error.message);
+    console.warn(`[feedback] profile lookup failed: ${error.message}`);
     return null;
   }
   return data;

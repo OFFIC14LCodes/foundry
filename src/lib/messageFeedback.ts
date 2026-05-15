@@ -32,6 +32,6 @@ export async function sendForgeMessageFeedback(input: {
 
     if (!response.ok) {
         const text = await response.text();
-        throw new Error(`Feedback email failed: ${text.slice(0, 180)}`);
+        throw new Error(`Feedback submission failed: ${text.slice(0, 180)}`);
     }
 }
