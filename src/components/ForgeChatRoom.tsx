@@ -218,17 +218,69 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
     const [pendingApplyText, setPendingApplyText] = useState<string | null>(null);
     const [applyStatus, setApplyStatus] = useState<string | null>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
+    const contextCardRef = useRef<HTMLDivElement>(null);
+    const shouldKeepScrollPinnedRef = useRef(true);
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const academyBootstrappedRef = useRef(false);
     const trendBootstrappedRef = useRef(false);
     const clarityBootstrappedRef = useRef(false);
 
+    const scrollToBottom = (behavior: ScrollBehavior = "auto") => {
+        const el = scrollRef.current;
+        if (!el) return;
+        el.scrollTo({ top: el.scrollHeight, behavior });
+    };
+
     useEffect(() => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-        }
+        const el = scrollRef.current;
+        if (!el) return;
+
+        const updatePinnedState = () => {
+            const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+            shouldKeepScrollPinnedRef.current = distanceFromBottom < 180;
+        };
+
+        updatePinnedState();
+        el.addEventListener("scroll", updatePinnedState, { passive: true });
+        return () => el.removeEventListener("scroll", updatePinnedState);
+    }, []);
+
+    useEffect(() => {
+        if (shouldKeepScrollPinnedRef.current) scrollToBottom("smooth");
     }, [messages, loading]);
+
+    useEffect(() => {
+        const el = scrollRef.current;
+        if (!el) return;
+
+        const preserveBottomOnResize = () => {
+            if (!shouldKeepScrollPinnedRef.current) return;
+            window.requestAnimationFrame(() => scrollToBottom("auto"));
+        };
+
+        window.addEventListener("resize", preserveBottomOnResize);
+        window.addEventListener("orientationchange", preserveBottomOnResize);
+
+        const resizeObserver = typeof ResizeObserver !== "undefined"
+            ? new ResizeObserver(preserveBottomOnResize)
+            : null;
+        resizeObserver?.observe(el);
+
+        return () => {
+            window.removeEventListener("resize", preserveBottomOnResize);
+            window.removeEventListener("orientationchange", preserveBottomOnResize);
+            resizeObserver?.disconnect();
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!contextCardOpen) return;
+        const timer = window.setTimeout(() => {
+            contextCardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 20);
+        return () => window.clearTimeout(timer);
+    }, [contextCardOpen, pendingApplyText]);
 
     useEffect(() => {
         setTimeout(() => inputRef.current?.focus(), 150);
@@ -472,6 +524,12 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
         setApplyStatus(context.scope === "workspace"
             ? "Saved as shared workspace memory."
             : "Saved privately to your Forge memory.");
+    };
+
+    const openContextApplyCard = (text: string | null = null) => {
+        setApplyStatus(null);
+        setPendingApplyText(text);
+        setContextCardOpen(true);
     };
 
     const openSaveArchiveModal = () => {
@@ -1035,10 +1093,7 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
                 </div>
                 <button
                     className="forge-context-apply-button"
-                    onClick={() => {
-                        setPendingApplyText(null);
-                        setContextCardOpen(true);
-                    }}
+                    onClick={() => openContextApplyCard(null)}
                 >
                     Apply this to...
                 </button>
@@ -1174,28 +1229,30 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
                 )}
 
                 {contextCardOpen && (
-                    <ForgeContextApplyCard
-                        workspaces={workspaces}
-                        source={contextSource}
-                        suggestedReason={activeAcademyEntry
-                            ? "This Academy conversation may produce a takeaway that belongs to a specific business context."
-                            : "Save only the takeaway you choose. Private contexts stay private unless you attach them to a workspace."}
-                        onSelectPersonal={() => void saveContextMemory({ scope: "personal" })}
-                        onSelectWorkspace={(workspaceId) => {
-                            const selected = workspaces.find((workspace) => workspace.id === workspaceId);
-                            void saveContextMemory({
-                                scope: "workspace",
-                                workspaceId,
-                                workspaceName: selected?.business_name ?? "Workspace",
-                            });
-                        }}
-                        onSubmitCustom={(label) => void saveContextMemory({ scope: "custom", customLabel: label })}
-                        onDismiss={() => {
-                            setContextCardOpen(false);
-                            setContextCardDismissed(true);
-                            setPendingApplyText(null);
-                        }}
-                    />
+                    <div ref={contextCardRef}>
+                        <ForgeContextApplyCard
+                            workspaces={workspaces}
+                            source={contextSource}
+                            suggestedReason={activeAcademyEntry
+                                ? "This Academy conversation may produce a takeaway that belongs to a specific business context."
+                                : "Save only the takeaway you choose. Private contexts stay private unless you attach them to a workspace."}
+                            onSelectPersonal={() => void saveContextMemory({ scope: "personal" })}
+                            onSelectWorkspace={(workspaceId) => {
+                                const selected = workspaces.find((workspace) => workspace.id === workspaceId);
+                                void saveContextMemory({
+                                    scope: "workspace",
+                                    workspaceId,
+                                    workspaceName: selected?.business_name ?? "Workspace",
+                                });
+                            }}
+                            onSubmitCustom={(label) => void saveContextMemory({ scope: "custom", customLabel: label })}
+                            onDismiss={() => {
+                                setContextCardOpen(false);
+                                setContextCardDismissed(true);
+                                setPendingApplyText(null);
+                            }}
+                        />
+                    </div>
                 )}
 
                 {applyStatus && (
@@ -1320,8 +1377,7 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
                                         messageId: msg.id,
                                     }}
                                     onApplyToContext={msg.text.trim() ? () => {
-                                        setPendingApplyText(msg.text);
-                                        setContextCardOpen(true);
+                                        openContextApplyCard(msg.text);
                                     } : undefined}
                                 />
                             )}

@@ -1217,6 +1217,8 @@ function ForgeScreen({
 
   const scrollRef = useRef(null);
   const bottomAnchorRef = useRef<HTMLDivElement | null>(null);
+  const contextCardRef = useRef<HTMLDivElement | null>(null);
+  const shouldKeepScrollPinnedRef = useRef(true);
 
   const buildUpgradeActions = (stageNumber: number) => ([
     {
@@ -1235,14 +1237,67 @@ function ForgeScreen({
     },
   ]);
 
+  const scrollForgeToBottom = (behavior: ScrollBehavior = "auto") => {
+    const el = scrollRef.current as HTMLDivElement | null;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior });
+  };
+
   useEffect(() => {
-    const el = scrollRef.current;
+    const el = scrollRef.current as HTMLDivElement | null;
+    if (!el || activeTab !== "chat") return;
+
+    const updatePinnedState = () => {
+      const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+      shouldKeepScrollPinnedRef.current = distFromBottom < 180;
+    };
+
+    updatePinnedState();
+    el.addEventListener("scroll", updatePinnedState, { passive: true });
+    return () => el.removeEventListener("scroll", updatePinnedState);
+  }, [activeTab, activeStage]);
+
+  useEffect(() => {
+    const el = scrollRef.current as HTMLDivElement | null;
     if (!el) return;
     const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    if (distFromBottom < 120) {
-      el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    if (distFromBottom < 120 || shouldKeepScrollPinnedRef.current) {
+      scrollForgeToBottom("smooth");
     }
   }, [messages, loading]);
+
+  useEffect(() => {
+    if (activeTab !== "chat") return;
+    const el = scrollRef.current as HTMLDivElement | null;
+    if (!el) return;
+
+    const preserveBottomOnResize = () => {
+      if (!shouldKeepScrollPinnedRef.current) return;
+      window.requestAnimationFrame(() => scrollForgeToBottom("auto"));
+    };
+
+    window.addEventListener("resize", preserveBottomOnResize);
+    window.addEventListener("orientationchange", preserveBottomOnResize);
+
+    const resizeObserver = typeof ResizeObserver !== "undefined"
+      ? new ResizeObserver(preserveBottomOnResize)
+      : null;
+    resizeObserver?.observe(el);
+
+    return () => {
+      window.removeEventListener("resize", preserveBottomOnResize);
+      window.removeEventListener("orientationchange", preserveBottomOnResize);
+      resizeObserver?.disconnect();
+    };
+  }, [activeTab, activeStage]);
+
+  useEffect(() => {
+    if (!contextCardOpen) return;
+    const timer = window.setTimeout(() => {
+      contextCardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 20);
+    return () => window.clearTimeout(timer);
+  }, [contextCardOpen, pendingApplyMessage?.id]);
 
   useLayoutEffect(() => {
     const shouldShowBriefing = messages.length === 0 && stageSummaries.length === 0 && !loading && !briefingDismissed;
@@ -2134,6 +2189,13 @@ ${forgeReply}`;
       : "Saved privately to your Forge memory.");
   };
 
+  const openContextApplyCard = (message: any | null = null) => {
+    setApplyStatus(null);
+    setPendingApplyMessage(message);
+    setContextCardOpen(true);
+    setActiveTab("chat");
+  };
+
   return (
     <div
       style={{
@@ -2381,10 +2443,7 @@ ${forgeReply}`;
           </div>
           <button
             className="forge-context-apply-button"
-            onClick={() => {
-              setPendingApplyMessage(null);
-              setContextCardOpen(true);
-            }}
+            onClick={() => openContextApplyCard(null)}
           >
             Apply this to...
           </button>
@@ -2494,15 +2553,10 @@ ${forgeReply}`;
               style={{
                 overflowY: "auto",
                 WebkitOverflowScrolling: "touch",
-                padding: "16px",
-                display: "flex",
-                flexDirection: "column",
-                gap: 14,
-                maxWidth: "var(--foundry-forge-chat-width)",
                 width: "100%",
-                margin: "0 auto",
               }}
             >
+              <div className="forge-screen__content-inner">
             {stageRefModal !== null && (
               <StageRefModal
                 stageId={stageRefModal}
@@ -2577,25 +2631,27 @@ ${forgeReply}`;
             )}
 
             {contextCardOpen && (
-              <ForgeContextApplyCard
-                workspaces={workspaces}
-                source="stage_chat"
-                suggestedReason="Save only the takeaway you choose. Personal memories stay private; workspace memories are shared with that workspace."
-                onSelectPersonal={() => void saveStageContextMemory({ scope: "personal" })}
-                onSelectWorkspace={(workspaceId) => {
-                  const selected = workspaces.find((workspace) => workspace.id === workspaceId);
-                  void saveStageContextMemory({
-                    scope: "workspace",
-                    workspaceId,
-                    workspaceName: selected?.business_name ?? "Workspace",
-                  });
-                }}
-                onSubmitCustom={(label) => void saveStageContextMemory({ scope: "custom", customLabel: label })}
-                onDismiss={() => {
-                  setContextCardOpen(false);
-                  setPendingApplyMessage(null);
-                }}
-              />
+              <div ref={contextCardRef}>
+                <ForgeContextApplyCard
+                  workspaces={workspaces}
+                  source="stage_chat"
+                  suggestedReason="Save only the takeaway you choose. Personal memories stay private; workspace memories are shared with that workspace."
+                  onSelectPersonal={() => void saveStageContextMemory({ scope: "personal" })}
+                  onSelectWorkspace={(workspaceId) => {
+                    const selected = workspaces.find((workspace) => workspace.id === workspaceId);
+                    void saveStageContextMemory({
+                      scope: "workspace",
+                      workspaceId,
+                      workspaceName: selected?.business_name ?? "Workspace",
+                    });
+                  }}
+                  onSubmitCustom={(label) => void saveStageContextMemory({ scope: "custom", customLabel: label })}
+                  onDismiss={() => {
+                    setContextCardOpen(false);
+                    setPendingApplyMessage(null);
+                  }}
+                />
+              </div>
             )}
 
             {applyStatus && (
@@ -2709,10 +2765,7 @@ ${forgeReply}`;
                     stageId: Number(activeStage) || null,
                     messageId: item.id ? String(item.id) : undefined,
                   }}
-                  onApplyToContext={(message: any) => {
-                    setPendingApplyMessage(message);
-                    setContextCardOpen(true);
-                  }}
+                  onApplyToContext={(message: any) => openContextApplyCard(message)}
                   onAction={(action: any) => {
                     if (action.type === "upgrade") {
                       if (onRequestUpgrade) onRequestUpgrade(action.stage || activeStage);
@@ -2797,6 +2850,7 @@ ${forgeReply}`;
             )}
 
             <div ref={bottomAnchorRef} style={{ height: 80 }} />
+              </div>
             </div>
             <div className="forge-stage-workspace-panel">
               <ForgeConversationWorkspace
