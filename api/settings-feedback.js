@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 
-const SUPPORT_EMAIL = "foundryandforge.app@gmail.com";
+const SUPPORT_EMAIL = process.env.RESEND_TO_ADDRESS || "foundryandforge.app@gmail.com";
 const FROM_ADDRESS = process.env.RESEND_FROM_ADDRESS || "Foundry <onboarding@resend.dev>";
 
 export default async function handler(req, res) {
@@ -71,7 +71,8 @@ export default async function handler(req, res) {
     });
 
     if (result?.error) {
-      throw createError(500, result.error.message || "Resend could not send the email.");
+      console.error("settings-feedback Resend error:", result.error);
+      throw createError(500, "Unable to send message — email delivery failed. Please try again.");
     }
 
     res.status(200).json({ ok: true });
