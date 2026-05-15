@@ -3,7 +3,7 @@ import {
   requireAdminApiContext,
   requireUuid,
   sendAdminApiError,
-} from "../_lib/admin.js";
+} from "../../_lib/admin.js";
 
 const MAX_LIMIT = 100;
 
