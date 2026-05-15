@@ -1,5 +1,3 @@
-import { Resend } from "resend";
-
 const SUPPORT_EMAIL = process.env.RESEND_TO_ADDRESS || "foundryandforge.app@gmail.com";
 const FROM_ADDRESS = process.env.RESEND_FROM_ADDRESS || "Foundry <onboarding@resend.dev>";
 
@@ -30,7 +28,6 @@ export default async function handler(req, res) {
       return;
     }
 
-    const resend = new Resend(resendKey);
     const submittedAt = new Date().toLocaleString("en-US", {
       month: "long",
       day: "numeric",
@@ -62,16 +59,24 @@ export default async function handler(req, res) {
       </div>
     `;
 
-    const result = await resend.emails.send({
-      from: FROM_ADDRESS,
-      to: SUPPORT_EMAIL,
-      replyTo: user?.email || undefined,
-      subject,
-      html,
+    const emailResp = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${resendKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: FROM_ADDRESS,
+        to: SUPPORT_EMAIL,
+        reply_to: user?.email || undefined,
+        subject,
+        html,
+      }),
     });
 
-    if (result?.error) {
-      res.status(500).json({ error: "Email delivery failed", detail: result.error });
+    const emailResult = await emailResp.json();
+    if (!emailResp.ok) {
+      res.status(500).json({ error: "Email delivery failed", detail: emailResult, from: FROM_ADDRESS, to: SUPPORT_EMAIL });
       return;
     }
 
