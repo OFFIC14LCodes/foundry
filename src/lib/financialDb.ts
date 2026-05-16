@@ -10,7 +10,6 @@ import {
     type FounderProfitBucket,
     type FounderRevenue,
     type LedgerEntry,
-    type PlaidItem,
     type PlaidReviewTransaction,
     type ProfitBucketType,
 } from "./financialModeling";
@@ -269,21 +268,6 @@ function mapBucket(row: any): FounderProfitBucket {
     };
 }
 
-function mapPlaidItem(row: any): PlaidItem {
-    return {
-        id: row.id,
-        userId: row.user_id,
-        plaidItemId: row.plaid_item_id,
-        institutionId: row.institution_id ?? null,
-        institutionName: row.institution_name ?? null,
-        status: row.status ?? null,
-        syncCursor: row.sync_cursor ?? null,
-        lastSyncedAt: row.last_synced_at ?? null,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-    };
-}
-
 function mapPlaidReviewTransaction(row: any): PlaidReviewTransaction {
     return {
         id: row.id,
@@ -366,14 +350,12 @@ async function migrateLegacyExpenses(userId: string, profile: any) {
 }
 
 export async function loadFounderFinancialData(userId: string, profile?: any): Promise<FounderFinancialData> {
-    const [accountsResult, expensesResult, revenueResult, settingsResult, bucketsResult, plaidItemsResult, plaidTransactionsResult, ledgerEntries] = await Promise.all([
+    const [accountsResult, expensesResult, revenueResult, settingsResult, bucketsResult, ledgerEntries] = await Promise.all([
         supabase.from("founder_financial_accounts").select("*").eq("user_id", userId).order("created_at", { ascending: true }),
         supabase.from("founder_expenses").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
         supabase.from("founder_revenue").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
         supabase.from("founder_financial_settings").select("*").eq("user_id", userId).maybeSingle(),
         supabase.from("founder_profit_buckets").select("*").eq("user_id", userId).order("display_order", { ascending: true }),
-        supabase.from("plaid_items").select("id, user_id, plaid_item_id, institution_id, institution_name, status, sync_cursor, last_synced_at, created_at, updated_at").eq("user_id", userId).order("created_at", { ascending: false }),
-        supabase.from("plaid_transactions").select("*").eq("user_id", userId).eq("review_status", "pending").order("posted_date", { ascending: false }).order("imported_at", { ascending: false }),
         loadLedgerEntries(userId),
     ]);
 
@@ -382,8 +364,6 @@ export async function loadFounderFinancialData(userId: string, profile?: any): P
     if (settingsResult.error) console.error("loadFounderFinancialData settings error:", settingsResult.error.message);
     if (accountsResult.error) console.error("loadFounderFinancialData accounts error:", accountsResult.error.message);
     if (bucketsResult.error) console.error("loadFounderFinancialData buckets error:", bucketsResult.error.message);
-    if (plaidItemsResult.error) console.error("loadFounderFinancialData plaid items error:", plaidItemsResult.error.message);
-    if (plaidTransactionsResult.error) console.error("loadFounderFinancialData plaid transactions error:", plaidTransactionsResult.error.message);
 
     let expenses = (expensesResult.data ?? []).map(mapExpense);
     let usedLegacyExpenses = false;
@@ -410,8 +390,8 @@ export async function loadFounderFinancialData(userId: string, profile?: any): P
         revenue: (revenueResult.data ?? []).map(mapRevenue),
         settings: settingsResult.data ? mapSettings(settingsResult.data) : null,
         profitBuckets: buckets,
-        plaidItems: (plaidItemsResult.data ?? []).map(mapPlaidItem),
-        pendingPlaidTransactions: (plaidTransactionsResult.data ?? []).map(mapPlaidReviewTransaction),
+        plaidItems: [],
+        pendingPlaidTransactions: [],
         ledgerEntries,
         usedLegacyExpenses,
     };

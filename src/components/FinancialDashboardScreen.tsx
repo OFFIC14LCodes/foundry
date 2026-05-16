@@ -3,14 +3,10 @@ import {
     getFinancialSummary,
     type FinancialSummary,
     type FounderFinancialData,
-    type PlaidReviewTransaction,
     type ProfitBucketType,
 } from "../lib/financialModeling";
 import {
-    acceptPlaidTransactionAsExpense,
-    acceptPlaidTransactionAsRevenue,
     deleteInvoiceFromDb,
-    ignorePlaidTransaction,
     loadFounderFinancialData,
     loadInvoicesFromDb,
     markLedgerEntryReconciled,
@@ -24,8 +20,6 @@ import {
 } from "../lib/financialDb";
 import { callForgeAPI, streamForgeAPI } from "../lib/forgeApi";
 import { saveJournalEntry } from "../db";
-import { disconnectPlaidItem, syncPlaidTransactions } from "../lib/plaid";
-import PlaidConnectButton from "./PlaidConnectButton";
 import { printStyledPdf } from "../lib/documentExport";
 import { formatCurrency } from "../lib/budget";
 import HelpTooltip from "./HelpTooltip";
@@ -54,7 +48,6 @@ interface Props {
     profile: any;
     onBack: () => void;
     onOpenNav?: () => void;
-    onPlaidConnected?: () => void;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -129,7 +122,7 @@ function buildInvoiceMarkdown(invoice: FounderInvoice, businessName: string): st
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function FinancialDashboardScreen({ userId, profile, onBack, onOpenNav, onPlaidConnected }: Props) {
+export default function FinancialDashboardScreen({ userId, profile, onBack, onOpenNav }: Props) {
     const [financialData, setFinancialData] = useState<FounderFinancialData | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -138,10 +131,6 @@ export default function FinancialDashboardScreen({ userId, profile, onBack, onOp
     const [bucketDraft, setBucketDraft] = useState<BucketDraftRow[]>([]);
     const [savingBuckets, setSavingBuckets] = useState(false);
 
-    // Plaid
-    const [syncingItemId, setSyncingItemId] = useState<string | null>(null);
-    const [disconnectConfirmId, setDisconnectConfirmId] = useState<string | null>(null);
-    const [processingTxId, setProcessingTxId] = useState<string | null>(null);
     const [reconcilingLedgerId, setReconcilingLedgerId] = useState<string | null>(null);
 
     // Invoices
@@ -369,7 +358,7 @@ Profit First enabled: ${summary.profitFirst.enabled ? "yes" : "no"}`;
     }, [financialData]);
 
     const unreconciledLedgerEntries = useMemo(
-        () => (financialData?.ledgerEntries ?? []).filter((entry) => entry.source === "plaid" && !entry.reconciledAt),
+        () => (financialData?.ledgerEntries ?? []).filter((entry) => !entry.reconciledAt),
         [financialData],
     );
 
@@ -481,47 +470,6 @@ Profit First enabled: ${summary.profitFirst.enabled ? "yes" : "no"}`;
         } finally {
             setSavingBuckets(false);
         }
-    };
-
-    // ── Plaid handlers ─────────────────────────────────────────────────────────
-
-    const handlePlaidConnected = async () => {
-        await reload();
-        onPlaidConnected?.();
-    };
-
-    const handleSync = async (plaidItemId: string) => {
-        setSyncingItemId(plaidItemId);
-        try { await syncPlaidTransactions(plaidItemId); await reload(); }
-        catch (err) { console.error("syncPlaidTransactions error:", err); }
-        finally { setSyncingItemId(null); }
-    };
-
-    const handleDisconnect = async (plaidItemId: string) => {
-        try { await disconnectPlaidItem(plaidItemId); await reload(); }
-        catch (err) { console.error("disconnectPlaidItem error:", err); }
-        finally { setDisconnectConfirmId(null); }
-    };
-
-    const handleAcceptAsExpense = async (tx: PlaidReviewTransaction) => {
-        setProcessingTxId(tx.id);
-        try { await acceptPlaidTransactionAsExpense(userId, tx); await reload(); }
-        catch (err) { console.error("acceptPlaidTransactionAsExpense error:", err); }
-        finally { setProcessingTxId(null); }
-    };
-
-    const handleAcceptAsRevenue = async (tx: PlaidReviewTransaction) => {
-        setProcessingTxId(tx.id);
-        try { await acceptPlaidTransactionAsRevenue(userId, tx); await reload(); }
-        catch (err) { console.error("acceptPlaidTransactionAsRevenue error:", err); }
-        finally { setProcessingTxId(null); }
-    };
-
-    const handleIgnore = async (tx: PlaidReviewTransaction) => {
-        setProcessingTxId(tx.id);
-        try { await ignorePlaidTransaction(userId, tx.id); await reload(); }
-        catch (err) { console.error("ignorePlaidTransaction error:", err); }
-        finally { setProcessingTxId(null); }
     };
 
     const handleConfirmLedgerReconciled = async (ledgerEntryId: string) => {
@@ -732,11 +680,7 @@ Be the partner who has been watching the whole time.`;
     // Render
     // ─────────────────────────────────────────────────────────────────────────
 
-    const plaidItems = financialData?.plaidItems ?? [];
-    const plaidAccounts = (financialData?.accounts ?? []).filter((a) => a.isExternalFeed);
-    const pendingTxs = financialData?.pendingPlaidTransactions ?? [];
     const buckets = summary?.profitFirst?.buckets ?? [];
-    const hasPendingTxs = plaidItems.length > 0 && pendingTxs.length > 0;
     const isEstimated = summary?.usesEstimatedInputs ?? false;
 
     const cardStyle: React.CSSProperties = {
@@ -1068,40 +1012,7 @@ Be the partner who has been watching the whole time.`;
                             )}
                         </div>
 
-                        {/* ── Section 5: Pending Bank Transactions ──────────── */}
-                        {hasPendingTxs && (
-                            <div style={cardStyle}>
-                                <p style={sectionHeadingStyle}>Pending Bank Transactions</p>
-                                <div style={{ marginBottom: 10 }}><HelpTooltip content="These won't affect your financials until you categorize them." /></div>
-                                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                                    {pendingTxs.map((tx) => {
-                                        const isProcessing = processingTxId === tx.id;
-                                        const dateStr = tx.postedDate || tx.authorizedDate || "";
-                                        return (
-                                            <div key={tx.id} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 10, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
-                                                <div style={{ flex: 1, minWidth: 0 }}>
-                                                    <div style={{ fontSize: 12, color: "#F0EDE8", fontWeight: 600, marginBottom: 2 }}>{tx.merchantName || tx.name || "Transaction"}</div>
-                                                    <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)" }}>{formatCurrency(Math.abs(tx.amount))} · {dateStr}</div>
-                                                </div>
-                                                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                                                    {[
-                                                        { label: "Expense", handler: () => void handleAcceptAsExpense(tx), bg: "rgba(217,106,85,0.1)", border: "rgba(217,106,85,0.25)", color: "#D96A55" },
-                                                        { label: "Revenue", handler: () => void handleAcceptAsRevenue(tx), bg: "rgba(76,175,138,0.12)", border: "rgba(76,175,138,0.3)", color: "#4CAF8A" },
-                                                        { label: "Ignore", handler: () => void handleIgnore(tx), bg: "none", border: "rgba(255,255,255,0.08)", color: "var(--foundry-text-secondary)" },
-                                                    ].map((btn) => (
-                                                        <button key={btn.label} onClick={btn.handler} disabled={isProcessing} style={{ background: btn.bg, border: `1px solid ${btn.border}`, borderRadius: 7, padding: "5px 9px", color: btn.color, fontSize: 10, cursor: isProcessing ? "default" : "pointer", opacity: isProcessing ? 0.5 : 1 }}>
-                                                            {btn.label}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* ── Section 6: Bank Reconciliation ───────────────── */}
+                        {/* ── Section 5: Bank Reconciliation ───────────────── */}
                         <div style={cardStyle}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, gap: 10 }}>
                                 <p style={{ ...sectionHeadingStyle, marginBottom: 0 }}>Bank Reconciliation</p>
@@ -1117,7 +1028,7 @@ Be the partner who has been watching the whole time.`;
                                     {unreconciledLedgerEntries.length} unreconciled
                                 </div>
                             </div>
-                            <div style={{ marginBottom: 10 }}><HelpTooltip content="Accepted Plaid transactions create ledger rows. Confirm them here once the bank record and ledger entry agree." /></div>
+                            <div style={{ marginBottom: 10 }}><HelpTooltip content="Manual ledger rows can be marked reconciled after you compare them against your bank records." /></div>
                             {unreconciledLedgerEntries.length === 0 ? (
                                 <div style={{ background: "rgba(76,175,138,0.06)", border: "1px solid rgba(76,175,138,0.16)", borderRadius: 10, padding: "12px 14px", color: "#4CAF8A", fontSize: 12, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
                                     No unmatched accepted bank entries.
@@ -1154,41 +1065,13 @@ Be the partner who has been watching the whole time.`;
                         <div style={cardStyle}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
                                 <p style={{ ...sectionHeadingStyle, marginBottom: 0 }}>Bank Connection</p>
-                                <PlaidConnectButton onConnected={() => void handlePlaidConnected()} label="Connect Bank" />
-                            </div>
-                            {plaidItems.length === 0 && (
-                                <HelpTooltip content="Connect a bank account to automatically import transactions. Imported transactions won't affect your model until reviewed." />
-                            )}
-                            {plaidItems.length > 0 && (
-                                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                                    {plaidItems.map((item) => {
-                                        const linkedAccounts = plaidAccounts.filter((a) => a.providerItemId === item.plaidItemId);
-                                        const isSyncing = syncingItemId === item.plaidItemId;
-                                        return (
-                                            <div key={item.id} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 10, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
-                                                <div style={{ flex: 1, minWidth: 0 }}>
-                                                    <div style={{ fontSize: 12, color: "#F0EDE8", fontWeight: 600, marginBottom: 2 }}>{item.institutionName || "Connected bank"}</div>
-                                                    <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", marginTop: 2 }}>{linkedAccounts.length} linked account{linkedAccounts.length !== 1 ? "s" : ""}{item.lastSyncedAt ? ` · last synced ${new Date(item.lastSyncedAt).toLocaleDateString()}` : ""}</div>
-                                                    {linkedAccounts.length > 0 && (
-                                                        <div style={{ fontSize: 10, color: "#8B8680", marginTop: 4, lineHeight: 1.5 }}>
-                                                            {linkedAccounts.slice(0, 3).map((a) => a.officialName || a.name || `Account ••${a.mask || a.last4 || ""}`).join(" · ")}
-                                                            {linkedAccounts.length > 3 ? " · ..." : ""}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
-                                                    <button onClick={() => void handleSync(item.plaidItemId)} disabled={isSyncing} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "7px 11px", color: "#F0EDE8", fontSize: 11, cursor: isSyncing ? "default" : "pointer", opacity: isSyncing ? 0.6 : 1 }}>
-                                                        {isSyncing ? "Syncing..." : "Sync"}
-                                                    </button>
-                                                    <button onClick={() => setDisconnectConfirmId(item.plaidItemId)} disabled={isSyncing} style={{ background: "rgba(217,106,85,0.1)", border: "1px solid rgba(217,106,85,0.25)", borderRadius: 8, padding: "7px 11px", color: "#D96A55", fontSize: 11, cursor: isSyncing ? "default" : "pointer" }}>
-                                                        Unlink
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
+                                <div style={{ background: "rgba(99,179,237,0.1)", border: "1px solid rgba(99,179,237,0.22)", borderRadius: 999, padding: "5px 10px", color: "#8FC8F6", fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                                    Coming Soon
                                 </div>
-                            )}
+                            </div>
+                            <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 10, padding: "12px 14px", color: "#A8A4A0", fontSize: 12, lineHeight: 1.6 }}>
+                                Plaid bank account linking will be added after launch. For now, Foundry keeps financial tracking local with manual revenue, expense, invoice, bucket, and reconciliation tools.
+                            </div>
                         </div>
 
                         {/* ── Section 7: Invoices ───────────────────────────── */}
@@ -1341,20 +1224,6 @@ Be the partner who has been watching the whole time.`;
                             <button onClick={() => void handleSaveInvoice()} style={{ flex: 2, background: "linear-gradient(135deg, #4CAF8A, #3a9470)", border: "none", borderRadius: 9, padding: "10px", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
                                 {editingInvoice ? "Save Changes" : "Create Invoice"}
                             </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* ── Disconnect Confirm ────────────────────────────────────────── */}
-            {disconnectConfirmId && (
-                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setDisconnectConfirmId(null)}>
-                    <div style={{ background: "rgb(16,16,18)", border: "1px solid rgba(217,106,85,0.3)", borderRadius: 16, padding: 24, width: "100%", maxWidth: 380, boxSizing: "border-box" }} onClick={(e) => e.stopPropagation()}>
-                        <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 10 }}>Unlink bank?</div>
-                        <div style={{ marginBottom: 20 }}><HelpTooltip content="This removes the bank connection. Imported transactions that have already been accepted will remain." /></div>
-                        <div style={{ display: "flex", gap: 10 }}>
-                            <button onClick={() => setDisconnectConfirmId(null)} style={{ flex: 1, background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, padding: "10px", color: "rgba(240,237,232,0.62)", fontSize: 13, cursor: "pointer" }}>Cancel</button>
-                            <button onClick={() => void handleDisconnect(disconnectConfirmId)} style={{ flex: 2, background: "rgba(217,106,85,0.14)", border: "1px solid rgba(217,106,85,0.34)", borderRadius: 9, padding: "10px", color: "#D96A55", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Unlink Bank</button>
                         </div>
                     </div>
                 </div>

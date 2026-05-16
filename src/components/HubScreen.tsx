@@ -9,7 +9,6 @@ import { formatCurrency, getBudgetRangeLabel, parseBudgetInput } from "../lib/bu
 import { getBusinessHealth } from "../lib/businessHealth";
 import { summarizeBusinessIdea } from "../lib/businessSummary";
 import MicButton from "./MicButton";
-import PlaidConnectButton from "./PlaidConnectButton";
 
 function HubFocusCard({
     eyebrow,
@@ -178,12 +177,6 @@ export default function HubScreen({
     onSaveRevenue,
     onDeleteRevenue,
     onSaveFinancialSettings,
-    onPlaidConnected,
-    onSyncPlaidTransactions,
-    onDisconnectPlaidItem,
-    onAcceptPlaidTransactionAsExpense,
-    onAcceptPlaidTransactionAsRevenue,
-    onIgnorePlaidTransaction,
     onOpenFinancialDashboard,
     onGetHealthScore,
 }) {
@@ -212,8 +205,6 @@ export default function HubScreen({
     const [budgetEditRange, setBudgetEditRange] = useState(profile.budgetRange || "");
     const [resetConfirmationCode, setResetConfirmationCode] = useState("");
     const [resetError, setResetError] = useState<string | null>(null);
-    const [syncingPlaidItemId, setSyncingPlaidItemId] = useState<string | null>(null);
-    const [plaidActionId, setPlaidActionId] = useState<string | null>(null);
 
     useEffect(() => {
         const timer = setTimeout(() => setMounted(true), 100);
@@ -257,9 +248,6 @@ export default function HubScreen({
     const revenueCategoryOptions = ["sales", "services", "subscription", "consulting", "other"];
     const normalizedExpenses = financialData?.expenses || [];
     const normalizedRevenue = financialData?.revenue || [];
-    const plaidItems = financialData?.plaidItems || [];
-    const pendingPlaidTransactions = financialData?.pendingPlaidTransactions || [];
-    const plaidAccounts = (financialData?.accounts || []).filter((account: any) => account.provider === "plaid");
     const formatFinancialDate = (value?: string | null) => {
         if (!value) return "";
         const parsed = /^\d{4}-\d{2}-\d{2}$/.test(value)
@@ -327,56 +315,6 @@ export default function HubScreen({
 
     const deleteIncome = async (id: string) => {
         await onDeleteRevenue?.(id);
-    };
-
-    const handleSyncPlaid = async (plaidItemId: string) => {
-        setSyncingPlaidItemId(plaidItemId);
-        try {
-            await onSyncPlaidTransactions?.(plaidItemId);
-        } finally {
-            setSyncingPlaidItemId(null);
-        }
-    };
-
-    const handleDisconnectPlaid = async (plaidItemId: string, institutionName?: string | null) => {
-        const confirmed = window.confirm(
-            `Disconnect ${institutionName || "this bank connection"}? Imported transactions still waiting for review from this bank will be removed, but transactions you already approved into your financial model will stay.`,
-        );
-        if (!confirmed) return;
-
-        setSyncingPlaidItemId(plaidItemId);
-        try {
-            await onDisconnectPlaidItem?.(plaidItemId);
-        } finally {
-            setSyncingPlaidItemId(null);
-        }
-    };
-
-    const handleAcceptImportedExpense = async (transaction: any) => {
-        setPlaidActionId(transaction.id);
-        try {
-            await onAcceptPlaidTransactionAsExpense?.(transaction);
-        } finally {
-            setPlaidActionId(null);
-        }
-    };
-
-    const handleAcceptImportedRevenue = async (transaction: any) => {
-        setPlaidActionId(transaction.id);
-        try {
-            await onAcceptPlaidTransactionAsRevenue?.(transaction);
-        } finally {
-            setPlaidActionId(null);
-        }
-    };
-
-    const handleIgnoreImportedTransaction = async (transactionId: string) => {
-        setPlaidActionId(transactionId);
-        try {
-            await onIgnorePlaidTransaction?.(transactionId);
-        } finally {
-            setPlaidActionId(null);
-        }
     };
 
     const openBudgetModal = () => {
@@ -989,70 +927,15 @@ export default function HubScreen({
                     <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: 12, marginBottom: 12 }}>
                         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 8, flexWrap: "wrap" }}>
                             <div>
-                                <div style={{ fontSize: 13, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>Connect Bank</div>
+                                <div style={{ fontSize: 13, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>Bank Connections</div>
                                 <div style={{ fontSize: 11, color: "#A8A4A0", lineHeight: 1.6, marginTop: 4 }}>
-                                    Imported transactions need review. These will not affect your financial model until approved.
+                                    Plaid bank linking is coming soon. For launch, keep this local by entering revenue and expenses manually.
                                 </div>
                             </div>
-                            <PlaidConnectButton onConnected={onPlaidConnected} />
-                        </div>
-                        {plaidItems.length > 0 && (
-                            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 10 }}>
-                                {plaidItems.map((item) => (
-                                    <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 10, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                            <div style={{ fontSize: 12, color: "#F0EDE8", fontWeight: 600 }}>{item.institutionName || "Connected bank"}</div>
-                                            <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", marginTop: 2 }}>
-                                                {plaidAccounts.filter((account: any) => account.providerItemId === item.plaidItemId).length} linked accounts
-                                                {item.lastSyncedAt ? ` · last synced ${formatFinancialDate(item.lastSyncedAt)}` : ""}
-                                            </div>
-                                            {plaidAccounts.filter((account: any) => account.providerItemId === item.plaidItemId).length > 0 && (
-                                                <div style={{ fontSize: 10, color: "#8B8680", marginTop: 4, lineHeight: 1.5 }}>
-                                                    {plaidAccounts
-                                                        .filter((account: any) => account.providerItemId === item.plaidItemId)
-                                                        .slice(0, 3)
-                                                        .map((account: any) => account.officialName || account.name || `Account ••${account.mask || account.last4 || ""}`)
-                                                        .join(" · ")}
-                                                    {plaidAccounts.filter((account: any) => account.providerItemId === item.plaidItemId).length > 3 ? " · ..." : ""}
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
-                                            <button
-                                                onClick={() => handleSyncPlaid(item.plaidItemId)}
-                                                disabled={syncingPlaidItemId === item.plaidItemId}
-                                                style={{
-                                                    background: "rgba(255,255,255,0.04)",
-                                                    border: "1px solid rgba(255,255,255,0.08)",
-                                                    borderRadius: 8,
-                                                    padding: "8px 12px",
-                                                    color: "#F0EDE8",
-                                                    fontSize: 11,
-                                                    cursor: syncingPlaidItemId === item.plaidItemId ? "default" : "pointer",
-                                                }}
-                                            >
-                                                {syncingPlaidItemId === item.plaidItemId ? "Working..." : "Sync Transactions"}
-                                            </button>
-                                            <button
-                                                onClick={() => handleDisconnectPlaid(item.plaidItemId, item.institutionName)}
-                                                disabled={syncingPlaidItemId === item.plaidItemId}
-                                                style={{
-                                                    background: "rgba(217,106,85,0.1)",
-                                                    border: "1px solid rgba(217,106,85,0.25)",
-                                                    borderRadius: 8,
-                                                    padding: "8px 12px",
-                                                    color: "#D96A55",
-                                                    fontSize: 11,
-                                                    cursor: syncingPlaidItemId === item.plaidItemId ? "default" : "pointer",
-                                                }}
-                                            >
-                                                Unlink Bank
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
+                            <div style={{ background: "rgba(99,179,237,0.1)", border: "1px solid rgba(99,179,237,0.22)", borderRadius: 999, padding: "6px 10px", color: "#8FC8F6", fontSize: 10, fontFamily: "'DM Sans', system-ui, sans-serif", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                                Coming Soon
                             </div>
-                        )}
+                        </div>
                     </div>
 
                     <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: 12, marginBottom: 12 }}>
@@ -1122,33 +1005,12 @@ export default function HubScreen({
                         <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: 12 }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                                 <div style={{ fontSize: 12, color: "#F0EDE8", fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>Imported Transactions</div>
-                                <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)" }}>{pendingPlaidTransactions.length} pending</div>
+                                <div style={{ fontSize: 10, color: "#8FC8F6", fontWeight: 700 }}>Coming soon</div>
                             </div>
                             <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", lineHeight: 1.5, marginBottom: 8 }}>
-                                These will not affect your financial model until you approve them.
+                                Bank imports will arrive after launch. Until then, use manual revenue and expense entries so the model stays fully local.
                             </div>
-                            {pendingPlaidTransactions.length === 0 ? (
-                                <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)", lineHeight: 1.6 }}>No imported transactions are waiting for review right now.</div>
-                            ) : pendingPlaidTransactions.slice(0, 8).map((transaction: any) => (
-                                <div key={transaction.id} style={{ padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                                    <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start" }}>
-                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                            <div style={{ fontSize: 12, color: "#C8C4BE" }}>{transaction.merchantName || transaction.name || "Imported transaction"}</div>
-                                            <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", marginTop: 2 }}>
-                                                {formatFinancialDate(transaction.postedDate || transaction.authorizedDate)}{transaction.currency ? ` · ${transaction.currency}` : ""}
-                                            </div>
-                                        </div>
-                                        <div style={{ fontSize: 12, color: Number(transaction.amount || 0) >= 0 ? "#D96A55" : "#4CAF8A", fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>
-                                            {Number(transaction.amount || 0) >= 0 ? "-" : "+"}{formatCurrency(Math.abs(Number(transaction.amount || 0)))}
-                                        </div>
-                                    </div>
-                                    <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
-                                        <button onClick={() => handleAcceptImportedExpense(transaction)} disabled={plaidActionId === transaction.id} style={{ background: "rgba(217,106,85,0.1)", border: "1px solid rgba(217,106,85,0.25)", borderRadius: 8, padding: "5px 10px", color: "#D96A55", fontSize: 11, cursor: plaidActionId === transaction.id ? "default" : "pointer" }}>Accept as Expense</button>
-                                        <button onClick={() => handleAcceptImportedRevenue(transaction)} disabled={plaidActionId === transaction.id} style={{ background: "rgba(76,175,138,0.1)", border: "1px solid rgba(76,175,138,0.25)", borderRadius: 8, padding: "5px 10px", color: "#4CAF8A", fontSize: 11, cursor: plaidActionId === transaction.id ? "default" : "pointer" }}>Accept as Revenue</button>
-                                        <button onClick={() => handleIgnoreImportedTransaction(transaction.id)} disabled={plaidActionId === transaction.id} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "5px 10px", color: "#A8A4A0", fontSize: 11, cursor: plaidActionId === transaction.id ? "default" : "pointer" }}>Ignore</button>
-                                    </div>
-                                </div>
-                            ))}
+                            <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)", lineHeight: 1.6 }}>No imported transaction review is available yet.</div>
                         </div>
 
                         <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: 12 }}>

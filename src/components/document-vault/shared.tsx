@@ -70,7 +70,7 @@ export const RECOMMENDATION_ACTION_LABELS: Record<"generate" | "review_existing"
     generate: "Generate next",
     review_existing: "Review existing",
     upload: "Upload if ready",
-    send_for_signature: "Send for signature",
+    send_for_signature: "Prepare to sign",
 };
 
 export function formatShortDate(value?: string | null) {

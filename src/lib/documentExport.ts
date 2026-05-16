@@ -15,6 +15,8 @@ interface MarkdownRenderOptions {
 
 const BODY_FONT = "Georgia, 'Times New Roman', serif";
 const UI_FONT = "'DM Sans', 'Aptos', 'Segoe UI', Arial, sans-serif";
+const SIGNATURE_FONT = "'Segoe Script', 'Brush Script MT', 'Lucida Handwriting', cursive";
+const TYPED_SIGNATURE_PREFIX = "FOUNDRY_TYPED_SIGNATURE:";
 
 export const DOCUMENT_PREVIEW_CSS = `
 .foundry-document {
@@ -152,6 +154,18 @@ export const DOCUMENT_PREVIEW_CSS = `
 .foundry-document .signature-line span:last-child {
     min-height: 30px;
     border-bottom: 1px solid #2f2924;
+}
+.foundry-document .typed-signature {
+    display: inline-block;
+    min-width: 220px;
+    padding: 0 8px 2px;
+    border-bottom: 1px solid #2f2924;
+    color: #111;
+    font-family: ${SIGNATURE_FONT};
+    font-size: 26px;
+    font-weight: 400;
+    line-height: 1.15;
+    letter-spacing: 0;
 }
 .foundry-document .office-use-block {
     margin: 24px 0;
@@ -361,13 +375,30 @@ function headingClass(value: string) {
 }
 
 function isSignatureLine(value: string) {
-    return /_{4,}|-{4,}/.test(value) && /(signature|printed name|name|title|date|by:|its:)/i.test(value);
+    return (/_{4,}|-{4,}/.test(value) || value.includes(TYPED_SIGNATURE_PREFIX))
+        && /(signature|printed name|name|title|date|by:|its:)/i.test(value);
+}
+
+function typedSignatureValue(value: string) {
+    const markerIndex = value.indexOf(TYPED_SIGNATURE_PREFIX);
+    if (markerIndex < 0) return null;
+    const encoded = value.slice(markerIndex + TYPED_SIGNATURE_PREFIX.length).trim();
+    try {
+        return decodeURIComponent(encoded);
+    } catch {
+        return encoded;
+    }
 }
 
 function renderSignatureLine(value: string) {
+    const signature = typedSignatureValue(value);
     const cleaned = value.replace(/[*_`]/g, "").replace(/[-_]{4,}/g, "____________").trim();
-    const [label] = cleaned.split("____________");
-    return `<div class="signature-line"><span>${renderInlineMarkdown(label.trim() || "Signature")}</span><span></span></div>`;
+    const [rawLabel] = cleaned.split("____________");
+    const label = (rawLabel || "").replace(new RegExp(`${TYPED_SIGNATURE_PREFIX}.*$`), "").trim() || "Signature";
+    if (signature) {
+        return `<div class="signature-line"><span>${renderInlineMarkdown(label)}</span><span><span class="typed-signature">${escapeHtml(signature)}</span></span></div>`;
+    }
+    return `<div class="signature-line"><span>${renderInlineMarkdown(label)}</span><span></span></div>`;
 }
 
 function escapeRegExp(value: string) {
@@ -435,6 +466,47 @@ export function sanitizeDocumentMarkdown(markdown: string, meta: DocumentExportM
     return normalizeSignatureAndNotaryFormatting(cleaned, meta);
 }
 
+export function applyTypedSignatureToMarkdown(markdown: string, signerName: string, signatureDate?: string | null) {
+    const name = signerName.trim();
+    if (!name) return markdown;
+
+    const marker = `${TYPED_SIGNATURE_PREFIX}${encodeURIComponent(name)}`;
+    const lines = (markdown || "").replace(/\r\n/g, "\n").split("\n");
+    const hasSignatureMarker = lines.some((line) => line.includes(TYPED_SIGNATURE_PREFIX));
+    const nextLines = lines.map((line) => (
+        hasSignatureMarker && line.includes(TYPED_SIGNATURE_PREFIX)
+            ? line.replace(new RegExp(`${TYPED_SIGNATURE_PREFIX}\\S+`), marker)
+            : line
+    ));
+
+    if (!hasSignatureMarker) {
+        const signatureLineIndex = nextLines.findIndex((line) => {
+            const trimmed = line.trim();
+            return isSignatureLine(trimmed) && /(signature|signed by|by:)/i.test(trimmed);
+        });
+
+        if (signatureLineIndex >= 0) {
+            nextLines[signatureLineIndex] = nextLines[signatureLineIndex].replace(/_{4,}|-{4,}/, marker);
+        } else {
+            nextLines.push("", "## Signature", "", `Signature: ${marker}`);
+        }
+    }
+
+    const printedNameIndex = nextLines.findIndex((line) => /^printed name\s*:/i.test(line.trim()) && /_{4,}|-{4,}/.test(line));
+    if (printedNameIndex >= 0) {
+        nextLines[printedNameIndex] = nextLines[printedNameIndex].replace(/_{4,}|-{4,}/, name);
+    }
+
+    if (signatureDate) {
+        const dateLineIndex = nextLines.findIndex((line) => /^date\s*:/i.test(line.trim()) && /_{4,}|-{4,}/.test(line));
+        if (dateLineIndex >= 0) {
+            nextLines[dateLineIndex] = nextLines[dateLineIndex].replace(/_{4,}|-{4,}/, signatureDate);
+        }
+    }
+
+    return nextLines.join("\n");
+}
+
 export function buildOfficialTitleBlockHtml(meta: DocumentExportMeta) {
     const title = getSimplifiedOfficialTitle(meta);
     return `<header class="foundry-title-block">
@@ -453,21 +525,6 @@ export function markdownToDocumentHtml(markdown: string, options: MarkdownRender
     let inOfficeUseBlock = false;
     let inSignatureBlock = false;
     let inNotaryBlock = false;
-
-    const closeOpenBlocks = () => {
-        if (inOfficeUseBlock) {
-            html.push("</div>");
-            inOfficeUseBlock = false;
-        }
-        if (inSignatureBlock) {
-            html.push("</div>");
-            inSignatureBlock = false;
-        }
-        if (inNotaryBlock) {
-            html.push("</div>");
-            inNotaryBlock = false;
-        }
-    };
 
     const closeSectionBlocks = () => {
         if (inOfficeUseBlock) {
@@ -686,8 +743,9 @@ function xmlEscape(value: string) {
         .replace(/"/g, "&quot;");
 }
 
-function docxRun(text: string, options: { bold?: boolean; italic?: boolean; color?: string; size?: number } = {}) {
+function docxRun(text: string, options: { bold?: boolean; italic?: boolean; color?: string; size?: number; fontFamily?: string } = {}) {
     const props = [
+        options.fontFamily ? `<w:rFonts w:ascii="${xmlEscape(options.fontFamily)}" w:hAnsi="${xmlEscape(options.fontFamily)}" w:cs="${xmlEscape(options.fontFamily)}"/>` : "",
         options.bold ? "<w:b/>" : "",
         options.italic ? "<w:i/>" : "",
         options.color ? `<w:color w:val="${options.color}"/>` : "",
@@ -765,8 +823,16 @@ function markdownToDocxBody(markdown: string) {
         } else if (trimmed.startsWith("> ")) {
             body.push(docxParagraph(docxRuns(trimmed.slice(2), { size: 22, color: "3A342E" }), '<w:spacing w:before="120" w:after="120"/><w:ind w:left="360"/><w:pBdr><w:left w:val="single" w:sz="12" w:color="E8622A"/></w:pBdr>'));
         } else if (isSignatureLine(trimmed)) {
-            const cleaned = trimmed.replace(/[*_`]/g, "").replace(/[-_]{4,}/g, "").trim();
-            body.push(docxParagraph(docxRuns(cleaned, { size: 21 }), '<w:spacing w:before="180" w:after="80"/><w:pBdr><w:bottom w:val="single" w:sz="6" w:color="2F2924"/></w:pBdr>'));
+            const signature = typedSignatureValue(trimmed);
+            const cleaned = trimmed
+                .replace(new RegExp(`${TYPED_SIGNATURE_PREFIX}\\S+`), "")
+                .replace(/[*_`]/g, "")
+                .replace(/[-_]{4,}/g, "")
+                .trim();
+            const runs = signature
+                ? docxRuns(`${cleaned} `, { size: 21 }) + docxRun(signature, { size: 34, fontFamily: "Segoe Script", color: "111111" })
+                : docxRuns(cleaned, { size: 21 });
+            body.push(docxParagraph(runs, '<w:spacing w:before="180" w:after="80"/><w:pBdr><w:bottom w:val="single" w:sz="6" w:color="2F2924"/></w:pBdr>'));
         } else if (/^---+$/.test(trimmed)) {
             body.push(docxParagraph("", '<w:pBdr><w:bottom w:val="single" w:sz="4" w:color="D8D1C8"/></w:pBdr><w:spacing w:before="180" w:after="180"/>'));
         } else {

@@ -55,7 +55,7 @@ export default function DocumentFilesPanel(props: {
                 {!loading && error && <div style={{ fontSize: 12, color: "#D28B76", lineHeight: 1.6, padding: "8px 4px" }}>{error}</div>}
                 {!loading && !error && files.length === 0 && (
                     <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.6, padding: "14px 4px" }}>
-                        No files saved yet. Upload an attachment or save a DOCX/HTML artifact from the preview panel so this document is ready for sharing and future signature workflows.
+                        No files saved yet. Upload an attachment or save a DOCX/HTML artifact from the preview panel so this document is ready for sharing.
                     </div>
                 )}
                 {!loading && !error && files.map((file) => (

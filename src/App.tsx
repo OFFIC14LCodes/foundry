@@ -112,7 +112,6 @@ import {
   getFinancialSummary,
   type FinancialSummary,
   type FounderFinancialData,
-  type PlaidReviewTransaction,
 } from "./lib/financialModeling";
 import {
   buildBusinessModelCanvasContext,
@@ -123,17 +122,13 @@ import {
   type BusinessModelCanvasSectionKey,
 } from "./lib/businessModelCanvas";
 import {
-  acceptPlaidTransactionAsExpense,
-  acceptPlaidTransactionAsRevenue,
   deleteExpense,
   deleteRevenue,
-  ignorePlaidTransaction,
   loadFounderFinancialData,
   saveExpense,
   saveFinancialSettings,
   saveRevenue,
 } from "./lib/financialDb";
-import { disconnectPlaidItem, syncPlaidTransactions } from "./lib/plaid";
 import { getPendingCofounderInviteToken } from "./lib/cofounderInviteRoute";
 import {
   applyBusinessModelCanvasPatch,
@@ -3725,54 +3720,6 @@ export default function FoundryApp() {
     return saved;
   };
 
-  const handlePlaidConnected = async () => {
-    await refreshFinancialData();
-    markMeaningfulActivity(true);
-  };
-
-  const handleSyncPlaidTransactions = async (plaidItemId: string) => {
-    if (!plaidItemId) return null;
-    const result = await syncPlaidTransactions(plaidItemId);
-    await refreshFinancialData();
-    markMeaningfulActivity(true);
-    return result;
-  };
-
-  const handleDisconnectPlaidItem = async (plaidItemId: string) => {
-    if (!plaidItemId) return null;
-    const result = await disconnectPlaidItem(plaidItemId);
-    await refreshFinancialData();
-    markMeaningfulActivity(true);
-    return result;
-  };
-
-  const handleAcceptPlaidTransactionAsExpense = async (transaction: PlaidReviewTransaction) => {
-    if (!user?.id) return null;
-    const accepted = await acceptPlaidTransactionAsExpense(user.id, transaction);
-    if (!accepted) return null;
-    await refreshFinancialData();
-    markMeaningfulActivity(true);
-    return accepted;
-  };
-
-  const handleAcceptPlaidTransactionAsRevenue = async (transaction: PlaidReviewTransaction) => {
-    if (!user?.id) return null;
-    const accepted = await acceptPlaidTransactionAsRevenue(user.id, transaction);
-    if (!accepted) return null;
-    await refreshFinancialData();
-    markMeaningfulActivity(true);
-    return accepted;
-  };
-
-  const handleIgnorePlaidTransaction = async (transactionId: string) => {
-    if (!user?.id) return false;
-    const ok = await ignorePlaidTransaction(user.id, transactionId);
-    if (!ok) return false;
-    await refreshFinancialData();
-    markMeaningfulActivity(true);
-    return true;
-  };
-
   const handleBusinessModelCanvasUpdated = (nextCanvas: BusinessModelCanvasRecord) => {
     setBusinessModelCanvas(nextCanvas);
     markMeaningfulActivity(true);
@@ -4726,12 +4673,6 @@ Start a focused conversation that helps them understand what is actually unresol
             onSaveRevenue={handleSaveRevenue}
             onDeleteRevenue={handleDeleteRevenue}
             onSaveFinancialSettings={handleSaveFinancialSettings}
-            onPlaidConnected={handlePlaidConnected}
-            onSyncPlaidTransactions={handleSyncPlaidTransactions}
-            onDisconnectPlaidItem={handleDisconnectPlaidItem}
-            onAcceptPlaidTransactionAsExpense={handleAcceptPlaidTransactionAsExpense}
-            onAcceptPlaidTransactionAsRevenue={handleAcceptPlaidTransactionAsRevenue}
-            onIgnorePlaidTransaction={handleIgnorePlaidTransaction}
             onOpenFinancialDashboard={openFinancialDashboard}
           />
         )}
@@ -4742,7 +4683,6 @@ Start a focused conversation that helps them understand what is actually unresol
               profile={profile}
               onBack={() => setShowFinancialDashboard(false)}
               onOpenNav={() => setNavSidebarOpen(true)}
-              onPlaidConnected={handlePlaidConnected}
             />
           </Suspense>
         )}

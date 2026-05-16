@@ -43,6 +43,7 @@ import {
 import DocumentFieldsForm from "./DocumentFieldsForm";
 import {
     DOCUMENT_PREVIEW_CSS,
+    applyTypedSignatureToMarkdown,
     buildOfficialTitleBlockHtml,
     downloadStyledDocx,
     downloadStyledHtml,
@@ -255,6 +256,68 @@ function ChipRow({ options, selected, onSelect }: { options: string[]; selected:
     );
 }
 
+function TypedSignaturePanel({
+    value,
+    onChange,
+}: {
+    value: string;
+    onChange: (value: string) => void;
+}) {
+    return (
+        <div style={{
+            border: "1px solid rgba(99,179,237,0.16)",
+            background: "rgba(99,179,237,0.06)",
+            borderRadius: 12,
+            padding: "12px 14px",
+            marginBottom: 12,
+        }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline", marginBottom: 8 }}>
+                <div>
+                    <div style={{ fontSize: 12, color: "#F0EDE8", fontWeight: 700 }}>Typed Signature</div>
+                    <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", lineHeight: 1.5, marginTop: 2 }}>
+                        Local only. This fills the document signature line in a handwriting-style font for preview and export.
+                    </div>
+                </div>
+                <div style={{ fontSize: 10, color: "#8FC8F6", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", whiteSpace: "nowrap" }}>
+                    Coming soon: e-sign
+                </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 10, alignItems: "center" }}>
+                <input
+                    value={value}
+                    onChange={(event) => onChange(event.target.value)}
+                    placeholder="Type legal name to sign"
+                    style={{
+                        minWidth: 0,
+                        width: "100%",
+                        background: "rgba(255,255,255,0.045)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        borderRadius: 10,
+                        padding: "9px 11px",
+                        color: "#F0EDE8",
+                        fontSize: 13,
+                        outline: "none",
+                        boxSizing: "border-box",
+                    }}
+                />
+                <div style={{
+                    minWidth: 132,
+                    padding: "4px 10px 7px",
+                    borderBottom: "1px solid rgba(240,237,232,0.5)",
+                    color: value.trim() ? "#F0EDE8" : "rgba(240,237,232,0.28)",
+                    fontFamily: "'Segoe Script', 'Brush Script MT', 'Lucida Handwriting', cursive",
+                    fontSize: 21,
+                    lineHeight: 1.15,
+                    whiteSpace: "nowrap",
+                    textAlign: "center",
+                }}>
+                    {value.trim() || "Signature"}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 // ─────────────────────────────────────────────────────────────
 // Shared header component
 // ─────────────────────────────────────────────────────────────
@@ -392,6 +455,7 @@ export default function DocumentProductionScreen({
     const [docInputs, setDocInputs] = useState<Record<string, any>>({});
     const [showValidation, setShowValidation] = useState(false);
     const [autoFillCurrentDate, setAutoFillCurrentDate] = useState(true);
+    const [typedSignatureName, setTypedSignatureName] = useState("");
 
     // ── Studio state ─────────────────────────────────────────
     const [currentDoc, setCurrentDoc] = useState("");
@@ -1074,7 +1138,7 @@ export default function DocumentProductionScreen({
     };
 
     const handleSaveVaultArtifact = async (fileKind: "generated_docx" | "generated_html") => {
-        if (!effectiveSelectedVaultDocument || !latestVaultContent) return;
+        if (!effectiveSelectedVaultDocument || !signedLatestVaultContent) return;
 
         setArtifactSavingKind(fileKind);
         setVaultFilesError(null);
@@ -1083,7 +1147,7 @@ export default function DocumentProductionScreen({
                 userId,
                 effectiveSelectedVaultDocument.id,
                 selectedVaultVersion?.id ?? effectiveSelectedVaultDocument.currentVersionId ?? null,
-                latestVaultContent,
+                signedLatestVaultContent,
                 fileKind,
                 {
                     exportMeta: latestVaultMeta,
@@ -1556,7 +1620,10 @@ export default function DocumentProductionScreen({
     };
 
     const handleCopy = async () => {
-        const ok = await copyToClipboard(currentDoc);
+        const copyText = typedSignatureName.trim()
+            ? signedCurrentDoc.replace(/FOUNDRY_TYPED_SIGNATURE:\S+/g, typedSignatureName.trim())
+            : currentDoc;
+        const ok = await copyToClipboard(copyText);
         if (ok) { setCopied(true); setTimeout(() => setCopied(false), 2000); }
     };
 
@@ -1586,6 +1653,10 @@ export default function DocumentProductionScreen({
         legalDate: formatLegalDate(effectiveDocumentDate),
         state: docState || undefined,
     };
+    const signatureDateLabel = formatLongDate(docInputs.signatureDate || effectiveDocumentDate);
+    const signedCurrentDoc = typedSignatureName.trim()
+        ? applyTypedSignatureToMarkdown(currentDoc, typedSignatureName, signatureDateLabel)
+        : currentDoc;
     const saveLabel = saveStatus === "saving"
         ? "Saving..."
         : saveStatus === "saved"
@@ -1645,6 +1716,9 @@ export default function DocumentProductionScreen({
         optionalFuture: needsResult.optionalFuture.filter((item) => !dismissedRecommendationKeys.includes(item.key)),
     } : null;
     const latestVaultContent = selectedVaultVersion?.content ?? "";
+    const signedLatestVaultContent = typedSignatureName.trim() && latestVaultContent
+        ? applyTypedSignatureToMarkdown(latestVaultContent, typedSignatureName, signatureDateLabel)
+        : latestVaultContent;
     const latestVaultMeta: DocumentExportMeta = {
         title: selectedVaultVersion?.title || effectiveSelectedVaultDocument?.title || "Document",
         businessName: businessName || String(selectedVaultMetadata.businessName || "") || profile.businessName || profile.idea || "",
@@ -1729,7 +1803,7 @@ export default function DocumentProductionScreen({
                     onOpenNav={onOpenNav}
                     backLabel="Hub"
                     title="Document Vault"
-                    subtitle="Generated documents, version history, and future signing workflows"
+                    subtitle="Generated documents, version history, and local typed signatures"
                 />
                 <ModeTabs mode={surfaceMode} onChange={setSurfaceMode} />
 
@@ -1882,6 +1956,10 @@ export default function DocumentProductionScreen({
                                         )}
                                         {latestVaultContent ? (
                                             <>
+                                                <TypedSignaturePanel
+                                                    value={typedSignatureName}
+                                                    onChange={setTypedSignatureName}
+                                                />
                                                 <div style={{
                                                     maxHeight: 430,
                                                     overflowY: "auto",
@@ -1890,23 +1968,23 @@ export default function DocumentProductionScreen({
                                                     padding: "28px 28px 24px",
                                                     boxShadow: "0 4px 30px rgba(0,0,0,0.35)",
                                                 }}>
-                                                    <DocPreview content={latestVaultContent} meta={latestVaultMeta} />
+                                                    <DocPreview content={signedLatestVaultContent} meta={latestVaultMeta} />
                                                 </div>
                                                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
                                                     <button
-                                                        onClick={() => printStyledPdf(latestVaultContent, latestVaultMeta)}
+                                                        onClick={() => printStyledPdf(signedLatestVaultContent, latestVaultMeta)}
                                                         style={{ padding: "9px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#C8C4BE", fontSize: 12, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}
                                                     >
                                                         Download PDF
                                                     </button>
                                                     <button
-                                                        onClick={() => downloadStyledDocx(latestVaultContent, latestVaultMeta)}
+                                                        onClick={() => downloadStyledDocx(signedLatestVaultContent, latestVaultMeta)}
                                                         style={{ padding: "9px 12px", background: "rgba(232,98,42,0.08)", border: "1px solid rgba(232,98,42,0.18)", borderRadius: 10, color: "#E8622A", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}
                                                     >
                                                         Download DOCX
                                                     </button>
                                                     <button
-                                                        onClick={() => downloadStyledHtml(latestVaultContent, latestVaultMeta)}
+                                                        onClick={() => downloadStyledHtml(signedLatestVaultContent, latestVaultMeta)}
                                                         style={{ padding: "9px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#C8C4BE", fontSize: 12, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}
                                                     >
                                                         Styled HTML
@@ -2505,6 +2583,12 @@ export default function DocumentProductionScreen({
 
                         {currentDoc && (
                             <div style={{ maxWidth: 680, margin: "0 auto" }}>
+                                {!generating && (
+                                    <TypedSignaturePanel
+                                        value={typedSignatureName}
+                                        onChange={setTypedSignatureName}
+                                    />
+                                )}
                                 {/* Paper */}
                                 <div style={{
                                     background: "#F8F5F0", borderRadius: 12,
@@ -2520,7 +2604,7 @@ export default function DocumentProductionScreen({
                                         </div>
                                     )}
 
-                                    <DocPreview content={currentDoc} meta={exportMeta} />
+                                    <DocPreview content={signedCurrentDoc} meta={exportMeta} />
 
                                 </div>
 
@@ -2534,7 +2618,7 @@ export default function DocumentProductionScreen({
                                             {copied ? "✓ Copied" : "Copy"}
                                         </button>
                                         <button
-                                            onClick={() => printStyledPdf(currentDoc, exportMeta)}
+                                            onClick={() => printStyledPdf(signedCurrentDoc, exportMeta)}
                                             disabled={!canExportOfficialDocument}
                                             title={!canExportOfficialDocument ? "Legal Business Name is required before export." : undefined}
                                             style={{ flex: 1, minWidth: 110, padding: "10px 14px", background: canExportOfficialDocument ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: canExportOfficialDocument ? "#C8C4BE" : "#555", fontSize: 12, cursor: canExportOfficialDocument ? "pointer" : "not-allowed", fontFamily: "'Lora', Georgia, serif" }}
@@ -2542,7 +2626,7 @@ export default function DocumentProductionScreen({
                                             Download PDF
                                         </button>
                                         <button
-                                            onClick={() => downloadStyledDocx(currentDoc, exportMeta)}
+                                            onClick={() => downloadStyledDocx(signedCurrentDoc, exportMeta)}
                                             disabled={!canExportOfficialDocument}
                                             title={!canExportOfficialDocument ? "Legal Business Name is required before export." : undefined}
                                             style={{ flex: 1, minWidth: 120, padding: "10px 14px", background: canExportOfficialDocument ? "rgba(232,98,42,0.08)" : "rgba(255,255,255,0.025)", border: canExportOfficialDocument ? "1px solid rgba(232,98,42,0.2)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: canExportOfficialDocument ? "#E8622A" : "#555", fontSize: 12, cursor: canExportOfficialDocument ? "pointer" : "not-allowed", fontWeight: 600, fontFamily: "'Lora', Georgia, serif" }}
@@ -2550,7 +2634,7 @@ export default function DocumentProductionScreen({
                                             Download DOCX
                                         </button>
                                         <button
-                                            onClick={() => downloadStyledHtml(currentDoc, exportMeta)}
+                                            onClick={() => downloadStyledHtml(signedCurrentDoc, exportMeta)}
                                             disabled={!canExportOfficialDocument}
                                             title={!canExportOfficialDocument ? "Legal Business Name is required before export." : undefined}
                                             style={{ flex: 1, minWidth: 110, padding: "10px 14px", background: canExportOfficialDocument ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: canExportOfficialDocument ? "#C8C4BE" : "#555", fontSize: 12, cursor: canExportOfficialDocument ? "pointer" : "not-allowed", fontFamily: "'Lora', Georgia, serif" }}
