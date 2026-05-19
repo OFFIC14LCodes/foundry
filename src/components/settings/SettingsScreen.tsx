@@ -202,12 +202,12 @@ export default function SettingsScreen({
                         />
                         <SettingsRow
                             label="Business name"
-                            hint="Your startup, company, project, or side hustle name used throughout Foundry."
+                            hint="This is where you officially declare or update the startup, company, project, or side hustle name Forge should use."
                             action={
                                 <input
                                     value={businessName}
                                     onChange={(e) => setBusinessName(e.target.value)}
-                                    placeholder="Enter name"
+                                    placeholder="Enter name when ready"
                                     style={{
                                         background: "rgba(255,255,255,0.04)",
                                         border: "1px solid rgba(255,255,255,0.1)",
@@ -224,7 +224,7 @@ export default function SettingsScreen({
                         />
                         <SettingsRow
                             label="Business / market"
-                            hint="Auto-filled from onboarding. Update this whenever your business, offer, side hustle, or market focus changes."
+                            hint="Use this to declare the market, audience, or business direction once Forge helps you clarify it."
                             action={
                                 <input
                                     value={marketFocus}

@@ -14,6 +14,8 @@ type ParsedBriefingSection = {
     lines: string[];
 };
 
+const briefingBodyFont = "'Lora', Georgia, serif";
+
 function renderInline(text: string) {
     const parts = text.split(/\*\*(.+?)\*\*/g);
     return parts.map((part, i) =>
@@ -49,7 +51,7 @@ function SectionContent({ lines }: { lines: string[] }) {
     const flushParagraph = () => {
         if (paragraphLines.length === 0) return;
         blocks.push(
-            <div key={`p-${blocks.length}`} style={{ fontSize: 14, color: "rgba(240,237,232,0.8)", lineHeight: 1.7, fontFamily: "'DM Sans', sans-serif" }}>
+            <div key={`p-${blocks.length}`} style={{ fontSize: 15, color: "rgba(240,237,232,0.82)", lineHeight: 1.75, fontFamily: briefingBodyFont }}>
                 {renderInline(paragraphLines.join(" "))}
             </div>
         );
@@ -65,7 +67,7 @@ function SectionContent({ lines }: { lines: string[] }) {
         if (line.startsWith("- ") || line.startsWith("* ")) {
             flushParagraph();
             blocks.push(
-                <div key={`b-${blocks.length}`} style={{ display: "flex", gap: 8, paddingLeft: 8, fontSize: 14, color: "rgba(240,237,232,0.8)", lineHeight: 1.7, fontFamily: "'DM Sans', sans-serif" }}>
+                <div key={`b-${blocks.length}`} style={{ display: "flex", gap: 8, paddingLeft: 8, fontSize: 14.5, color: "rgba(240,237,232,0.82)", lineHeight: 1.75, fontFamily: briefingBodyFont }}>
                     <span style={{ color: "#E8622A", flexShrink: 0 }}>•</span>
                     <span>{renderInline(line.slice(2))}</span>
                 </div>
@@ -105,7 +107,7 @@ function BriefingText({ text }: { text: string }) {
                                 padding: highlighted ? 12 : 0,
                             }}
                         >
-                            <div style={{ fontSize: 15, color: "#F0EDE8", fontWeight: 600, fontFamily: "'Lora', Georgia, serif", marginBottom: 8 }}>
+                            <div style={{ fontSize: 16, color: "#F0EDE8", fontWeight: 700, fontFamily: briefingBodyFont, marginBottom: 8, lineHeight: 1.35 }}>
                                 {section.title}
                             </div>
                             <SectionContent lines={section.lines} />

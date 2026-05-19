@@ -156,6 +156,17 @@ function isTestingClarificationRequest(text: string) {
         && /\b(wrong|incorrect|miss|missing|failed|fail|didn't pass|did not pass|correct me|correction)\b/.test(normalized);
 }
 
+function isAcademyEvaluationCompleteEnough(evaluation: {
+    passed: boolean;
+    trackStatus: KnowledgeCheckTrackStatus;
+    demonstratedUnderstanding: string[];
+    missingUnderstanding: string[];
+}) {
+    if (evaluation.passed || evaluation.trackStatus === "passed") return true;
+    if (evaluation.trackStatus !== "on_track") return false;
+    return evaluation.demonstratedUnderstanding.length > 0 && evaluation.missingUnderstanding.length <= 1;
+}
+
 function conversationLooksBusinessSpecific(text: string) {
     return /\b(our business|my business|pricing|launch|customers?|market|offer|brand|documents?|financials?|cofounder|workspace|revenue|runway|sales|positioning|product|plan)\b/i.test(text);
 }
@@ -1084,7 +1095,7 @@ Re-teach only the most critical missing piece. If you correct them, quote the ex
                 .map((message) => `${message.role === "forge" ? "Forge" : profile.name || "Founder"}: ${message.text}`)
                 .join("\n\n");
             const evaluation = await evaluateKnowledgeCheckLaunchAnswer(activeAcademyEntry, `Latest answer:\n${userAnswer}\n\nTesting conversation so far:\n${testingTranscript}`);
-            if (evaluation.passed) {
+            if (isAcademyEvaluationCompleteEnough(evaluation)) {
                 await Promise.resolve(onMarkAcademyLessonCompleted(activeAcademyEntry.id, {
                     knowledgeCheckedAt: new Date().toISOString(),
                     lastCheckResponse: testingTranscript || userAnswer,

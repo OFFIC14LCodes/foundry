@@ -190,7 +190,7 @@ Founder answer:
 ${answer}
 
 Return valid JSON only with exactly these keys:
-"trackStatus": exactly one of "passed", "on_track", or "off_track". Use "passed" if the founder clearly demonstrates the core understanding. Use "on_track" if they show partial understanding or are heading in the right direction but need refinement. Use "off_track" only if they fundamentally miss the point or show no real grasp of the lesson.
+"trackStatus": exactly one of "passed", "on_track", or "off_track". Use "passed" if the founder demonstrates the core concept, even if their wording is imperfect or they miss a minor nuance. Use "on_track" only if they are directionally right but have not yet stated the core concept clearly enough. Use "off_track" only if they fundamentally miss the point or show no real grasp of the lesson.
 "passed": true only if trackStatus is "passed", false otherwise
 "feedback": short feedback in 2-4 sentences. If passed, explain what landed well. If on_track, explain what's right and what still needs sharpening. If off_track, explain what core concept they're missing.
 "demonstratedUnderstanding": an array of 1-4 short strings naming the specific lesson ideas the founder did demonstrate.
@@ -200,7 +200,9 @@ Return valid JSON only with exactly these keys:
 Evaluation rules:
 - Judge understanding, not phrasing. Do not require the founder to use the lesson's exact words.
 - Pass answers that accurately connect the lesson to the founder's own behavior, systems, decisions, or business execution.
-- Do not mark an answer incomplete just because it could be sharper. Mark it incomplete only when a required concept is actually absent or materially confused.
+- Err on completion when the founder clearly gets the concept. Forge Academy is checking useful understanding, not mastery.
+- Do not mark an answer incomplete just because it could be sharper, more polished, or more comprehensive. Mark it incomplete only when the core concept is actually absent or materially confused.
+- Minor missing details should be captured in feedback while still passing the answer.
 - If the answer is incomplete, the feedback must identify the exact missing idea rather than restarting the lesson.`
         }],
         "You evaluate founder understanding for Forge Academy. Be strict enough to protect quality, but encouraging and direct. Return only valid JSON."
@@ -270,7 +272,7 @@ Founder answer:
 ${answer}
 
 Return valid JSON only with exactly these keys:
-"trackStatus": exactly one of "passed", "on_track", or "off_track". Use "passed" if the founder clearly demonstrates the core understanding. Use "on_track" if they show partial understanding or are heading in the right direction but need refinement. Use "off_track" only if they fundamentally miss the point or show no real grasp of the lesson.
+"trackStatus": exactly one of "passed", "on_track", or "off_track". Use "passed" if the founder demonstrates the core concept, even if their wording is imperfect or they miss a minor nuance. Use "on_track" only if they are directionally right but have not yet stated the core concept clearly enough. Use "off_track" only if they fundamentally miss the point or show no real grasp of the lesson.
 "passed": true only if trackStatus is "passed", false otherwise
 "feedback": short feedback in 2-4 sentences. If passed, explain what landed well. If on_track, explain what's right and what still needs sharpening. If off_track, explain what core concept they're missing.
 "demonstratedUnderstanding": an array of 1-4 short strings naming the specific lesson ideas the founder did demonstrate.
@@ -280,7 +282,9 @@ Return valid JSON only with exactly these keys:
 Evaluation rules:
 - Judge understanding, not phrasing. Do not require the founder to use the lesson's exact words.
 - Pass answers that accurately connect the lesson to the founder's own behavior, systems, decisions, or business execution.
-- Do not mark an answer incomplete just because it could be sharper. Mark it incomplete only when a required concept is actually absent or materially confused.
+- Err on completion when the founder clearly gets the concept. Forge Academy is checking useful understanding, not mastery.
+- Do not mark an answer incomplete just because it could be sharper, more polished, or more comprehensive. Mark it incomplete only when the core concept is actually absent or materially confused.
+- Minor missing details should be captured in feedback while still passing the answer.
 - If the answer is incomplete, the feedback must identify the exact missing idea rather than restarting the lesson.`
         }],
         "You evaluate founder understanding for Forge Academy. Be strict enough to protect quality, but encouraging and direct. Return only valid JSON."

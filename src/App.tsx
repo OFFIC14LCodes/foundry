@@ -151,7 +151,7 @@ import type { DocumentScreenContext } from "./components/DocumentProductionScree
 import type { AcademyScreenContext } from "./components/ForgeAcademyScreen";
 import { updateFounderBookFromArchive } from "./lib/founderBooks";
 import type { ConversationWorkspaceSnapshot } from "./lib/conversationWorkspace";
-import { buildVentureModeContext, getBuilderNoun, getVentureModeLabel, getVentureNoun, isSideHustleMode } from "./lib/ventureMode";
+import { buildVentureModeContext, getBuilderNoun, getVentureModeLabel, getVentureNoun, isSideHustleMode, normalizeVentureMode } from "./lib/ventureMode";
 
 const JournalScreen = lazy(() => import("./JournalScreen"));
 const BriefingsScreen = lazy(() => import("./BriefingsScreen"));
@@ -550,18 +550,21 @@ The founder selected a shared workspace context. These are shared workspace arti
 ${workspaceOperationsContext}
 [/COFOUNDER_CONTEXT]` : "";
 
-  const onboardingReviewSection = profile?.nameNeedsReview || profile?.ideaNeedsReview ? `
+  const exploringWithoutIdea = isExploringWithoutDeclaredIdea(profile);
+  const onboardingReviewSection = profile?.nameNeedsReview || profile?.ideaNeedsReview || exploringWithoutIdea ? `
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ONBOARDING REVIEW NOTE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Some onboarding answers were likely jokes or placeholders and need to be re-confirmed naturally in conversation.
+${exploringWithoutIdea ? "The founder entered Foundry without a declared business idea yet. This is intentional, not a bad onboarding answer." : "Some onboarding answers were likely jokes or placeholders and need to be re-confirmed naturally in conversation."}
 ${profile?.nameNeedsReview ? `- The founder did not give a serious name during onboarding. Current placeholder name: ${profile.name || "Founder"}.` : ""}
 ${profile?.ideaNeedsReview ? `- The founder did not give a serious project, offer, or business description during onboarding. Current placeholder: ${profile.idea || "Still being clarified"}.` : ""}
+- If they have no idea yet, help them formulate one by exploring problems, skills, audiences, constraints, and monetizable opportunities.
+- Tell them naturally that once they choose a direction, they can officially declare or edit the business/project name and market inside Settings.
 Do not make this awkward or repetitive. Reassess naturally when it fits the conversation, then continue normally.` : "";
 
   const safeProfileName = profile?.nameNeedsReview ? "Founder" : profile.name;
-  const safeBusinessName = profile?.ideaNeedsReview ? "Still being clarified" : (profile.businessName || profile.idea || "Idea stage");
+  const safeBusinessName = profile?.ideaNeedsReview || exploringWithoutIdea ? "Still being clarified" : (profile.businessName || profile.idea || "Idea stage");
 
   const longitudinalBlock = (recentSummaries || foundryDecisions || stageProgressDates)
     ? buildLongitudinalContext(
@@ -678,6 +681,17 @@ function ScreenLoadingFallback({
         {message}
       </div>
     </div>
+  );
+}
+
+function isExploringWithoutDeclaredIdea(profile: { idea?: unknown; businessName?: unknown; ventureMode?: unknown } | null | undefined) {
+  const idea = String(profile?.idea ?? "").trim().toLowerCase();
+  const businessName = String(profile?.businessName ?? "").trim();
+  return !businessName && (
+    normalizeVentureMode(profile?.ventureMode) === "exploring"
+    || !idea
+    || idea === "still being clarified"
+    || idea === "idea stage"
   );
 }
 
@@ -1430,16 +1444,22 @@ function ForgeScreen({
 
       let greetingPrompt = "";
       const safeName = profile.nameNeedsReview ? "Founder" : profile.name;
-      const safeIdea = profile.ideaNeedsReview ? "still being clarified" : profile.idea;
+      const exploringWithoutIdea = isExploringWithoutDeclaredIdea(profile);
+      const safeIdea = profile.ideaNeedsReview || exploringWithoutIdea ? "still being clarified" : profile.idea;
       const ventureLabel = getVentureModeLabel(profile);
       const ventureNoun = getVentureNoun(profile);
       const ventureGoal = profile.ventureGoal || "not specified";
       const onboardingReviewNote = [
         profile.nameNeedsReview ? "Their real name was not confirmed during onboarding." : "",
         profile.ideaNeedsReview ? "Their real project, offer, or business idea was not confirmed during onboarding." : "",
+        exploringWithoutIdea ? "They do not have a declared business idea yet. Treat that as a valid exploration path, not a flaw." : "",
       ].filter(Boolean).join(" ");
 
-      if (isFirstVisit && pendingUpgradeStage && activeStage === pendingUpgradeStage) {
+      if (isFirstVisit && exploringWithoutIdea) {
+        greetingPrompt = `${safeName} just finished onboarding and entered Foundry without a declared business idea yet. Venture mode: ${ventureLabel}. Goal/constraints: ${ventureGoal}. Experience: ${profile.experience}. Budget: $${profile.budget?.total?.toLocaleString() || "unknown"}. Strategy: ${profile.strategyLabel}. ${onboardingReviewNote}
+
+Write a 2-3 paragraph welcome that makes them feel fully welcome even without an idea. Explain that Stage 1 is exactly where Forge helps formulate a business idea by looking for problems they understand, skills they have, people they can reach, and opportunities worth testing. Tell them that once a direction becomes clear, they can officially declare or edit their business/project name and market inside Settings. End with one sharp question that starts idea exploration. Use **bold** on 2-3 key words.`;
+      } else if (isFirstVisit && pendingUpgradeStage && activeStage === pendingUpgradeStage) {
         greetingPrompt = `${safeName} just finished onboarding and wants to start at Stage ${activeStage}: ${stageData.label}. Venture mode: ${ventureLabel}. Their ${ventureNoun}: "${safeIdea}". Goal/constraints: ${ventureGoal}. Experience: ${profile.experience}. Budget: $${profile.budget?.total?.toLocaleString() || "unknown"}. Strategy: ${profile.strategyLabel}. ${onboardingReviewNote}
 
 Write a 2-3 paragraph welcome. First: recap what they shared during onboarding — venture mode, idea/offer, goal, experience, budget, and strategy — in a natural, specific way, not a form readback. If this is a side-hustle path, do not imply they must create a company. Second: briefly describe what Stage ${activeStage} is about and why it fits where they are. Third (short): let them know Stage ${activeStage} requires a Starter or Pro plan to access — they can upgrade now to jump straight in, or step back and explore Stage 1 for free first. Keep the tone warm and direct. Use **bold** on 2-3 key words. Do NOT end with a question — end after the payment note.`;

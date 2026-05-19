@@ -157,6 +157,26 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
         return IDEA_JOKE_PATTERNS.some((pattern) => pattern.test(normalized));
     };
 
+    const isNoIdeaYetResponse = (value: string, rawId: string | null = null) => {
+        if (rawId === "no_idea_yet") return true;
+        const normalized = normalizeValue(value);
+        return [
+            "i dont know",
+            "i do not know",
+            "dont know",
+            "do not know",
+            "not sure",
+            "no idea",
+            "i dont have an idea",
+            "i do not have an idea",
+            "i dont have one",
+            "i do not have one",
+            "still figuring it out",
+            "still exploring",
+            "help me find one",
+        ].some((phrase) => normalized.includes(phrase));
+    };
+
     const processInput = async (value, rawId = null) => {
         addUserMsg(value);
         const p = { ...profile };
@@ -211,16 +231,28 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                 p.detectedStage = detectedStage; setProfile(p);
                 const stageLabel = STAGES_DATA[detectedStage - 1]?.label || "Idea";
                 const noun = getVentureNoun(p);
-                const prompt = `Respond in 2 sentences only. First: acknowledge "${card?.label || value}" in a way that shows you understand where they are in the journey — be specific, not generic. Second: ask what their ${noun} idea, offer, or current work is.`;
+                const prompt = `Respond in 2 sentences only. First: acknowledge "${card?.label || value}" in a way that shows you understand where they are in the journey — be specific, not generic. Second: ask what their ${noun} idea, offer, or current work is, and make it clear that "I don't have an idea yet" is a completely valid answer.`;
                 try {
                     const r = await callForgeAPI([{ role: "user", content: prompt }], FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", `Onboarding. Builder: ${p.name}. Venture mode: ${getVentureModeLabel(p)}. Starting stage: ${detectedStage} (${stageLabel}).`));
                     await deliverMessage(r, setLoading, addForgeMsg, FAST_DELIVERY);
                 } catch {
-                    await deliverMessage(`Stage ${detectedStage} — ${stageLabel}. That's where we'll start.\n\nTell me what you're building or trying to earn from.`, setLoading, addForgeMsg, FAST_DELIVERY);
+                    await deliverMessage(`Stage ${detectedStage} — ${stageLabel}. That's where we'll start.\n\nTell me what you're building or trying to earn from. And if you don't have an idea yet, say that — that's a valid place to start.`, setLoading, addForgeMsg, FAST_DELIVERY);
                 }
                 setStepIndex(3);
 
             } else if (currentStep.id === "idea") {
+                if (isNoIdeaYetResponse(value, rawId)) {
+                    p.idea = "Still being clarified";
+                    p.industry = "Still being clarified";
+                    p.ideaNeedsReview = false;
+                    p.ventureMode = "exploring";
+                    p.ventureGoal = p.ventureGoal || "Find and validate the right business idea";
+                    setProfile(p);
+                    await deliverMessage(`That's completely fine. Foundry can start before the idea is fully formed — we'll use Stage 1 to help you find a real problem, a real audience, and a direction worth testing.\n\nBefore we do that, I want to understand your background. How much experience do you have with business, selling, or this kind of work?`, setLoading, addForgeMsg, FAST_DELIVERY);
+                    setStepIndex(4);
+                    return;
+                }
+
                 if (isLikelyJokeIdea(value)) {
                     if (playfulRetryCount.idea === 0) {
                         setPlayfulRetryCount((prev) => ({ ...prev, idea: 1 }));
@@ -303,7 +335,10 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                 const context = `Builder: ${p.name} | Venture mode: ${getVentureModeLabel(p)} | Idea: ${p.idea} | Experience: ${p.experience} | Exact budget: ${budgetLabel} | Goal/constraints: ${p.ventureGoal || "not specified"} | Weekly hours: ${p.weeklyHoursAvailable ?? "unknown"} | Target monthly income: ${p.targetMonthlyIncome ?? "unknown"} | Strategy: ${p.strategyLabel} | Starting Stage: ${p.detectedStage || 1} (${STAGES_DATA[(p.detectedStage || 1) - 1]?.label})`;
                 const startStage = p.detectedStage || 1;
                 const startStageLabel = STAGES_DATA[startStage - 1]?.label || "Idea";
-                const prompt = `Onboarding is complete. Give a personalized opening assessment in 3-4 short paragraphs. Reference their specific idea, venture mode, goal/constraints, budget, experience level, strategy mode, and the fact that we're starting them at Stage ${startStage}: ${startStageLabel}. Be direct and specific — not generic. If this is a side hustle path, do not imply they must create a formal company; frame it as building a real income engine. If there's a common pitfall for this type of idea or stage, call it out. Explain in one sentence why Stage ${startStage} is the right starting point for them given where they are. Use **bold** on 2-3 key words. End with just the word "Ready?" on its own line — nothing after it.`;
+                const isExploringWithoutIdea = p.idea === "Still being clarified";
+                const prompt = isExploringWithoutIdea
+                    ? `Onboarding is complete. Give a personalized opening assessment in 3-4 short paragraphs. The builder does not have a business idea yet, and that should feel welcomed, not treated as a problem. Reference their venture mode, goal/constraints, budget, experience level, strategy mode, and the fact that we're starting them at Stage ${startStage}: ${startStageLabel}. Explain that Forge will help them formulate a business idea by looking for problems, skills, audiences, and monetizable opportunities. Tell them briefly that once they choose a direction, they can officially declare or edit the business/project name and market inside Settings. Use **bold** on 2-3 key words. End with just the word "Ready?" on its own line — nothing after it.`
+                    : `Onboarding is complete. Give a personalized opening assessment in 3-4 short paragraphs. Reference their specific idea, venture mode, goal/constraints, budget, experience level, strategy mode, and the fact that we're starting them at Stage ${startStage}: ${startStageLabel}. Be direct and specific — not generic. If this is a side hustle path, do not imply they must create a formal company; frame it as building a real income engine. If there's a common pitfall for this type of idea or stage, call it out. Explain in one sentence why Stage ${startStage} is the right starting point for them given where they are. Use **bold** on 2-3 key words. End with just the word "Ready?" on its own line — nothing after it.`;
 
                 try {
                     const r = await callForgeAPI([{ role: "user", content: prompt }], FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", context));
@@ -518,7 +553,7 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                                 currentStep?.id === "name"
                                     ? "Type your name..."
                                     : currentStep?.id === "idea"
-                                        ? "Tell me what you're building or trying to earn from..."
+                                        ? "Describe the idea, or type: I don't have an idea yet"
                                         : currentStep?.id === "budget_exact"
                                             ? "Enter your exact budget amount..."
                                             : currentStep?.id === "venture_goal"
@@ -526,6 +561,31 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                                             : "Type your response..."
                             }
                         />
+                        {currentStep?.id === "idea" && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (loading || responsePending) return;
+                                    setInput("");
+                                    setResponsePending(true);
+                                    void processInput("I don't have an idea yet", "no_idea_yet");
+                                }}
+                                style={{
+                                    marginTop: 10,
+                                    width: "100%",
+                                    background: "rgba(255,255,255,0.035)",
+                                    border: "1px solid rgba(255,255,255,0.08)",
+                                    borderRadius: 10,
+                                    color: "rgba(240,237,232,0.72)",
+                                    padding: "10px 12px",
+                                    fontSize: 12,
+                                    fontFamily: "'DM Sans', system-ui, sans-serif",
+                                    cursor: loading || responsePending ? "default" : "pointer",
+                                }}
+                            >
+                                I don't have an idea yet
+                            </button>
+                        )}
                     </div>
                 </div>
             )}
