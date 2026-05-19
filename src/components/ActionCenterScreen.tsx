@@ -14,6 +14,8 @@ import {
     type FoundryActionPriority,
     type FoundryActionSourceModule,
     type FoundryActionStatus,
+    type FoundryActionSuggestion,
+    type FoundryActionType,
 } from "../lib/foundryActions";
 
 type Props = {
@@ -21,10 +23,24 @@ type Props = {
     onBack: () => void;
     onOpenNav?: () => void;
     onAskForge: (prompt: string) => void;
+    onCreateAction: (suggestion: FoundryActionSuggestion) => Promise<FoundryAction | null | unknown> | FoundryAction | null | unknown;
 };
 
 const statusOptions: Array<FoundryActionStatus | "all"> = ["all", "suggested", "accepted", "in_progress", "completed", "dismissed"];
 const priorityOptions: Array<FoundryActionPriority | "all"> = ["all", "critical", "high", "medium", "low"];
+const manualPriorityOptions: FoundryActionPriority[] = ["medium", "high", "critical", "low"];
+const manualActionTypeOptions: Array<{ value: FoundryActionType; label: string }> = [
+    { value: "task", label: "Task" },
+    { value: "forge_followup", label: "Forge follow-up" },
+    { value: "market_followup", label: "Market follow-up" },
+    { value: "canvas_update", label: "Canvas update" },
+    { value: "document_create", label: "Create document" },
+    { value: "document_review", label: "Review document" },
+    { value: "finance_review", label: "Finance review" },
+    { value: "journal_reflection", label: "Journal reflection" },
+    { value: "academy_apply", label: "Apply lesson" },
+    { value: "stage_gate", label: "Stage gate" },
+];
 const moduleOptions: Array<FoundryActionSourceModule | "all"> = [
     "all",
     "forge",
@@ -84,10 +100,17 @@ function getPrimaryActionLabel(status: FoundryActionStatus) {
     return "Done";
 }
 
-export default function ActionCenterScreen({ userId, onBack, onOpenNav, onAskForge }: Props) {
+export default function ActionCenterScreen({ userId, onBack, onOpenNav, onAskForge, onCreateAction }: Props) {
     const [actions, setActions] = useState<FoundryAction[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [manualTitle, setManualTitle] = useState("");
+    const [manualDescription, setManualDescription] = useState("");
+    const [manualPriority, setManualPriority] = useState<FoundryActionPriority>("medium");
+    const [manualActionType, setManualActionType] = useState<FoundryActionType>("task");
+    const [manualDueDate, setManualDueDate] = useState("");
+    const [manualSaving, setManualSaving] = useState(false);
+    const [manualNotice, setManualNotice] = useState<string | null>(null);
     const [pendingOutcomeActionId, setPendingOutcomeActionId] = useState<string | null>(null);
     const [outcomeNotes, setOutcomeNotes] = useState("");
     const [statusFilter, setStatusFilter] = useState<FoundryActionStatus | "all">("all");
@@ -150,6 +173,54 @@ export default function ActionCenterScreen({ userId, onBack, onOpenNav, onAskFor
         setActions((prev) => prev.map((action) => action.id === next.id ? next : action));
     };
 
+    const addLocal = (next: FoundryAction | null) => {
+        if (!next) return;
+        setActions((prev) => [next, ...prev.filter((action) => action.id !== next.id)]);
+    };
+
+    const saveManualAction = async () => {
+        const title = manualTitle.trim();
+        const description = manualDescription.trim();
+        if (!title) {
+            setManualNotice("Add a title before saving the action.");
+            return;
+        }
+        setManualSaving(true);
+        setManualNotice(null);
+        try {
+            const saved = await Promise.resolve(onCreateAction({
+                title,
+                description,
+                sourceModule: "forge",
+                sourceType: "manual",
+                sourceId: null,
+                actionType: manualActionType,
+                priority: manualPriority,
+                dueDate: manualDueDate || null,
+                metadata: {
+                    manuallyCreated: true,
+                    createdFrom: "action_center",
+                },
+            }));
+            if (saved && typeof saved === "object" && "id" in saved) {
+                addLocal(saved as FoundryAction);
+                setManualTitle("");
+                setManualDescription("");
+                setManualPriority("medium");
+                setManualActionType("task");
+                setManualDueDate("");
+                setStatusFilter("all");
+                setManualNotice("Action added.");
+            } else {
+                setManualNotice("Action could not be added. Try again.");
+            }
+        } catch {
+            setManualNotice("Action could not be added. Try again.");
+        } finally {
+            setManualSaving(false);
+        }
+    };
+
     const completeAction = async (action: FoundryAction) => {
         const completed = await completeFoundryAction(userId, action.id);
         updateLocal(completed);
@@ -188,6 +259,30 @@ export default function ActionCenterScreen({ userId, onBack, onOpenNav, onAskFor
                         <Metric label="In motion" value={counts.inProgress} />
                         <Metric label="Completed" value={counts.completed} />
                         <Metric label="Dismissed" value={counts.dismissed} />
+                    </div>
+
+                    <div className="foundry-module-card" style={{ padding: 16, display: "grid", gap: 12 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
+                            <div>
+                                <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                                    <div style={{ fontSize: 17, color: "#F0EDE8", fontWeight: 900 }}>Add action manually</div>
+                                    <HelpTooltip content="Create an action directly when you already know what needs to happen." />
+                                </div>
+                            </div>
+                            {manualNotice && <div style={{ color: manualNotice.includes("added") ? "#4CAF8A" : "#C8A96E", fontSize: 12, fontWeight: 800 }}>{manualNotice}</div>}
+                        </div>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
+                            <TextField label="Action title" value={manualTitle} onChange={setManualTitle} placeholder="Follow up with three discovery leads" />
+                            <SelectField label="Priority" value={manualPriority} options={manualPriorityOptions.map((value) => ({ value, label: value }))} onChange={(value) => setManualPriority(value as FoundryActionPriority)} />
+                        </div>
+                        <TextAreaField label="Description" value={manualDescription} onChange={setManualDescription} placeholder="What needs to happen, why it matters, and what done looks like." />
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10, alignItems: "end" }}>
+                            <SelectField label="Type" value={manualActionType} options={manualActionTypeOptions} onChange={(value) => setManualActionType(value as FoundryActionType)} />
+                            <TextField label="Due date" value={manualDueDate} onChange={setManualDueDate} type="date" />
+                            <button className="foundry-btn foundry-btn--primary" type="button" onClick={saveManualAction} disabled={manualSaving} style={{ padding: "10px 14px", fontSize: 12, height: 40, opacity: manualSaving ? 0.7 : 1 }}>
+                                {manualSaving ? "Adding..." : "Add action"}
+                            </button>
+                        </div>
                     </div>
 
                     <div className="foundry-module-card" style={{ padding: 12, display: "grid", gap: 10 }}>
@@ -320,6 +415,109 @@ function Metric({ label, value }: { label: string; value: number }) {
         </div>
     );
 }
+
+function TextField({
+    label,
+    value,
+    onChange,
+    placeholder,
+    type = "text",
+}: {
+    label: string;
+    value: string;
+    onChange: (value: string) => void;
+    placeholder?: string;
+    type?: string;
+}) {
+    return (
+        <label style={{ display: "grid", gap: 6, minWidth: 0 }}>
+            <span style={fieldLabelStyle}>{label}</span>
+            <input
+                type={type}
+                value={value}
+                onChange={(event) => onChange(event.target.value)}
+                placeholder={placeholder}
+                style={fieldInputStyle}
+            />
+        </label>
+    );
+}
+
+function TextAreaField({
+    label,
+    value,
+    onChange,
+    placeholder,
+}: {
+    label: string;
+    value: string;
+    onChange: (value: string) => void;
+    placeholder?: string;
+}) {
+    return (
+        <label style={{ display: "grid", gap: 6, minWidth: 0 }}>
+            <span style={fieldLabelStyle}>{label}</span>
+            <textarea
+                value={value}
+                onChange={(event) => onChange(event.target.value)}
+                placeholder={placeholder}
+                rows={3}
+                style={{ ...fieldInputStyle, minHeight: 78, resize: "vertical", lineHeight: 1.55 }}
+            />
+        </label>
+    );
+}
+
+function SelectField({
+    label,
+    value,
+    options,
+    onChange,
+}: {
+    label: string;
+    value: string;
+    options: Array<{ value: string; label: string }>;
+    onChange: (value: string) => void;
+}) {
+    return (
+        <label style={{ display: "grid", gap: 6, minWidth: 0 }}>
+            <span style={fieldLabelStyle}>{label}</span>
+            <select
+                value={value}
+                onChange={(event) => onChange(event.target.value)}
+                style={fieldInputStyle}
+            >
+                {options.map((option) => (
+                    <option key={option.value} value={option.value}>
+                        {option.label}
+                    </option>
+                ))}
+            </select>
+        </label>
+    );
+}
+
+const fieldLabelStyle = {
+    color: "#8D857C",
+    fontSize: 11,
+    textTransform: "uppercase",
+    letterSpacing: "0.1em",
+    fontFamily: "'DM Sans', system-ui, sans-serif",
+    fontWeight: 800,
+} as const;
+
+const fieldInputStyle = {
+    width: "100%",
+    boxSizing: "border-box",
+    borderRadius: 10,
+    border: "1px solid rgba(255,255,255,0.08)",
+    background: "rgba(255,255,255,0.035)",
+    color: "#F0EDE8",
+    padding: "10px 11px",
+    fontSize: 13,
+    fontFamily: "'DM Sans', system-ui, sans-serif",
+    outline: "none",
+} as const;
 
 function FilterRow({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (value: string) => void }) {
     return (

@@ -170,7 +170,9 @@ export async function createFoundryAction(userId: string, suggestion: FoundryAct
         if (existing) return mapAction(existing);
     }
 
-    const outcomeAwareSuggestion = await applyOutcomeAwareSuggestion(userId, suggestion);
+    const outcomeAwareSuggestion = suggestion.sourceType === "manual"
+        ? suggestion
+        : await applyOutcomeAwareSuggestion(userId, suggestion);
     if (!outcomeAwareSuggestion) {
         console.info("createFoundryAction suppressed by recent failed outcomes:", suggestion.title);
         return null;
@@ -652,6 +654,7 @@ export function formatActionSourceType(sourceType: string) {
         lesson: "Academy lesson",
         canvas_weakness: "Canvas weak spot",
         market_change: "Market change",
+        manual: "Manual",
     };
     return labels[sourceType] ?? sourceType.split("_").map((part) => part[0].toUpperCase() + part.slice(1)).join(" ");
 }

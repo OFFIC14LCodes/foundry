@@ -9,6 +9,9 @@ export type KnowledgeCheckEvaluation = {
     passed: boolean;
     trackStatus: KnowledgeCheckTrackStatus;
     feedback: string;
+    demonstratedUnderstanding: string[];
+    missingUnderstanding: string[];
+    evidenceQuote: string | null;
 };
 
 export type CompletedAcademyLessonResult = {
@@ -189,7 +192,16 @@ ${answer}
 Return valid JSON only with exactly these keys:
 "trackStatus": exactly one of "passed", "on_track", or "off_track". Use "passed" if the founder clearly demonstrates the core understanding. Use "on_track" if they show partial understanding or are heading in the right direction but need refinement. Use "off_track" only if they fundamentally miss the point or show no real grasp of the lesson.
 "passed": true only if trackStatus is "passed", false otherwise
-"feedback": short feedback in 2-4 sentences. If passed, explain what landed well. If on_track, explain what's right and what still needs sharpening. If off_track, explain what core concept they're missing.`
+"feedback": short feedback in 2-4 sentences. If passed, explain what landed well. If on_track, explain what's right and what still needs sharpening. If off_track, explain what core concept they're missing.
+"demonstratedUnderstanding": an array of 1-4 short strings naming the specific lesson ideas the founder did demonstrate.
+"missingUnderstanding": an array of 0-3 short strings naming only the specific lesson ideas still missing. Empty array if passed.
+"evidenceQuote": a short exact quote from the founder answer that best supports your judgment, or null if no useful quote exists.
+
+Evaluation rules:
+- Judge understanding, not phrasing. Do not require the founder to use the lesson's exact words.
+- Pass answers that accurately connect the lesson to the founder's own behavior, systems, decisions, or business execution.
+- Do not mark an answer incomplete just because it could be sharper. Mark it incomplete only when a required concept is actually absent or materially confused.
+- If the answer is incomplete, the feedback must identify the exact missing idea rather than restarting the lesson.`
         }],
         "You evaluate founder understanding for Forge Academy. Be strict enough to protect quality, but encouraging and direct. Return only valid JSON."
     );
@@ -199,18 +211,32 @@ Return valid JSON only with exactly these keys:
         const trackStatus: KnowledgeCheckTrackStatus =
             parsed?.trackStatus === "passed" ? "passed" :
             parsed?.trackStatus === "on_track" ? "on_track" : "off_track";
+        const demonstratedUnderstanding = Array.isArray(parsed?.demonstratedUnderstanding)
+            ? parsed.demonstratedUnderstanding.map((item: unknown) => String(item).trim()).filter(Boolean).slice(0, 4)
+            : [];
+        const missingUnderstanding = Array.isArray(parsed?.missingUnderstanding)
+            ? parsed.missingUnderstanding.map((item: unknown) => String(item).trim()).filter(Boolean).slice(0, 3)
+            : [];
         return {
             passed: trackStatus === "passed",
             trackStatus,
             feedback: typeof parsed?.feedback === "string" && parsed.feedback.trim()
                 ? parsed.feedback.trim()
                 : "Forge could not produce clear feedback. Try again with a more concrete explanation.",
+            demonstratedUnderstanding,
+            missingUnderstanding,
+            evidenceQuote: typeof parsed?.evidenceQuote === "string" && parsed.evidenceQuote.trim()
+                ? parsed.evidenceQuote.trim().slice(0, 220)
+                : null,
         };
     } catch {
         return {
             passed: false,
             trackStatus: "off_track" as KnowledgeCheckTrackStatus,
             feedback: "Forge could not evaluate that answer cleanly. Try again with a clearer explanation in your own words.",
+            demonstratedUnderstanding: [],
+            missingUnderstanding: ["The answer could not be evaluated cleanly."],
+            evidenceQuote: null,
         };
     }
 }
@@ -246,7 +272,16 @@ ${answer}
 Return valid JSON only with exactly these keys:
 "trackStatus": exactly one of "passed", "on_track", or "off_track". Use "passed" if the founder clearly demonstrates the core understanding. Use "on_track" if they show partial understanding or are heading in the right direction but need refinement. Use "off_track" only if they fundamentally miss the point or show no real grasp of the lesson.
 "passed": true only if trackStatus is "passed", false otherwise
-"feedback": short feedback in 2-4 sentences. If passed, explain what landed well. If on_track, explain what's right and what still needs sharpening. If off_track, explain what core concept they're missing.`
+"feedback": short feedback in 2-4 sentences. If passed, explain what landed well. If on_track, explain what's right and what still needs sharpening. If off_track, explain what core concept they're missing.
+"demonstratedUnderstanding": an array of 1-4 short strings naming the specific lesson ideas the founder did demonstrate.
+"missingUnderstanding": an array of 0-3 short strings naming only the specific lesson ideas still missing. Empty array if passed.
+"evidenceQuote": a short exact quote from the founder answer that best supports your judgment, or null if no useful quote exists.
+
+Evaluation rules:
+- Judge understanding, not phrasing. Do not require the founder to use the lesson's exact words.
+- Pass answers that accurately connect the lesson to the founder's own behavior, systems, decisions, or business execution.
+- Do not mark an answer incomplete just because it could be sharper. Mark it incomplete only when a required concept is actually absent or materially confused.
+- If the answer is incomplete, the feedback must identify the exact missing idea rather than restarting the lesson.`
         }],
         "You evaluate founder understanding for Forge Academy. Be strict enough to protect quality, but encouraging and direct. Return only valid JSON."
     );
@@ -256,18 +291,32 @@ Return valid JSON only with exactly these keys:
         const trackStatus: KnowledgeCheckTrackStatus =
             parsed?.trackStatus === "passed" ? "passed" :
             parsed?.trackStatus === "on_track" ? "on_track" : "off_track";
+        const demonstratedUnderstanding = Array.isArray(parsed?.demonstratedUnderstanding)
+            ? parsed.demonstratedUnderstanding.map((item: unknown) => String(item).trim()).filter(Boolean).slice(0, 4)
+            : [];
+        const missingUnderstanding = Array.isArray(parsed?.missingUnderstanding)
+            ? parsed.missingUnderstanding.map((item: unknown) => String(item).trim()).filter(Boolean).slice(0, 3)
+            : [];
         return {
             passed: trackStatus === "passed",
             trackStatus,
             feedback: typeof parsed?.feedback === "string" && parsed.feedback.trim()
                 ? parsed.feedback.trim()
                 : "Forge could not produce clear feedback. Try again with a more concrete explanation.",
+            demonstratedUnderstanding,
+            missingUnderstanding,
+            evidenceQuote: typeof parsed?.evidenceQuote === "string" && parsed.evidenceQuote.trim()
+                ? parsed.evidenceQuote.trim().slice(0, 220)
+                : null,
         };
     } catch {
         return {
             passed: false,
             trackStatus: "off_track",
             feedback: "Forge could not evaluate that answer cleanly. Try again with a clearer explanation in your own words.",
+            demonstratedUnderstanding: [],
+            missingUnderstanding: ["The answer could not be evaluated cleanly."],
+            evidenceQuote: null,
         };
     }
 }

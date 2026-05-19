@@ -4693,6 +4693,7 @@ Start a focused conversation that helps them understand what is actually unresol
               onBack={() => setShowActionCenter(false)}
               onOpenNav={() => setNavSidebarOpen(true)}
               onAskForge={askForgeAboutAction}
+              onCreateAction={createActionSuggestion}
             />
           </Suspense>
         )}

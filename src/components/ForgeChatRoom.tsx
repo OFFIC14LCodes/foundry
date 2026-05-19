@@ -66,6 +66,14 @@ interface ForgeChatRoomProps {
     workspaces?: CofounderWorkspaceSummary[];
 }
 
+type TestingContinuationContext = {
+    latestAnswer: string;
+    testingTranscript: string;
+    demonstratedUnderstanding?: string[];
+    missingUnderstanding?: string[];
+    evidenceQuote?: string | null;
+};
+
 // ─────────────────────────────────────────────────────────────
 // Context for Forge in this chat room
 // ─────────────────────────────────────────────────────────────
@@ -140,6 +148,12 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
     `.trim(),
         bookMatches: bookContext.matches,
     };
+}
+
+function isTestingClarificationRequest(text: string) {
+    const normalized = text.toLowerCase().replace(/[’`]/g, "'");
+    return /\b(quote|where|what|why|how|show|explain)\b/.test(normalized)
+        && /\b(wrong|incorrect|miss|missing|failed|fail|didn't pass|did not pass|correct me|correction)\b/.test(normalized);
 }
 
 function conversationLooksBusinessSpecific(text: string) {
@@ -689,6 +703,10 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
         if (testingMode && activeAcademyEntry && !academyLessonCompleted) {
             setMessages(history);
             setLoading(true);
+            if (isTestingClarificationRequest(displayText)) {
+                await sendTestingClarificationMessage(activeAcademyEntry, displayText, history);
+                return;
+            }
             await autoEvaluateKnowledgeCheck(displayText, history);
             return;
         }
@@ -951,10 +969,88 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
         }
     };
 
-    const sendTestingContinuationMessage = async (entry: AcademyTopicLaunch, feedback: string, trackStatus: KnowledgeCheckTrackStatus) => {
+    const sendTestingClarificationMessage = async (entry: AcademyTopicLaunch, userRequest: string, history: ChatMessage[]) => {
+        const testingTranscript = history
+            .slice(-12)
+            .map((message) => `${message.role === "forge" ? "Forge" : profile.name || "Founder"}: ${message.text}`)
+            .join("\n\n");
+        const clarificationPrompt = `The founder is in the "Test to Complete" conversation for "${entry.title}" and is asking for clarification about the evaluation, not submitting a new answer.
+
+Founder request:
+${userRequest}
+
+Recent testing transcript:
+${testingTranscript}
+
+Answer the request directly. If they ask to be quoted, quote the exact line or phrase from their answer that needs correction. If their answer was actually sound, say that clearly and explain that the issue is likely the test rubric or evaluation path, then ask one final confirmation question only if completion still needs evidence. Do not restart the lesson. Do not use generic reteaching. Keep testing mode active.`;
+        const forgeMsg: ChatMessage = { id: `f-${Date.now()}`, role: "forge", text: "", createdAt: new Date().toISOString() };
+        setMessages((prev) => [...prev, forgeMsg]);
+        try {
+            const ctx = buildChatRoomContext(profile, [clarificationPrompt], null, null, entry, true, null, null, undefined, null, universalMemoryContext, scopedMemoryContext);
+            await streamForgeAPI(
+                [{ role: "user", content: clarificationPrompt }],
+                FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", ctx.context),
+                (chunk) => {
+                    const { cleanText } = applyFoundryBookCitations(chunk, ctx.bookMatches);
+                    setMessages((prev) => prev.map((m) => m.id === forgeMsg.id ? { ...m, text: cleanText } : m));
+                }
+            );
+        } catch {
+            setMessages((prev) => prev.map((m) =>
+                m.id === forgeMsg.id ? { ...m, text: "You're asking the right thing: the test needs to point to the exact gap. I don't see a clean quoted flaw from your last answer yet, so restate the core idea in one sentence and I'll evaluate that directly." } : m
+            ));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const sendTestingContinuationMessage = async (
+        entry: AcademyTopicLaunch,
+        feedback: string,
+        trackStatus: KnowledgeCheckTrackStatus,
+        context: TestingContinuationContext,
+    ) => {
+        const demonstrated = context.demonstratedUnderstanding?.length
+            ? context.demonstratedUnderstanding.map((item) => `- ${item}`).join("\n")
+            : "- Not specified by evaluator.";
+        const missing = context.missingUnderstanding?.length
+            ? context.missingUnderstanding.map((item) => `- ${item}`).join("\n")
+            : "- No specific missing point supplied.";
         const teachingPrompt = trackStatus === "on_track"
-            ? `The founder is in the "Test to Complete" conversation for "${entry.title}". Their answer is close but not complete yet. Do NOT say they failed. Use this evaluation feedback: "${feedback}". Acknowledge what they got right, then ask one sharper follow-up question that forces the missing piece into the open. Keep the test conversational and continue until they demonstrate real understanding.`
-            : `The founder is in the "Test to Complete" conversation for "${entry.title}", but their answer shows they haven't internalized the core concept yet. Do NOT announce that they failed a test. Use this evaluation feedback to identify what needs reinforcement: "${feedback}". Re-teach the most critical missing piece using a concrete example or analogy, then ask one direct follow-up question so they can try again in their own words. Keep testing mode active.`;
+            ? `The founder is in the "Test to Complete" conversation for "${entry.title}". Their answer is close but not complete yet. Do NOT say they failed. Use this evaluation feedback: "${feedback}".
+
+Latest founder answer:
+${context.latestAnswer}
+
+Recent testing transcript:
+${context.testingTranscript}
+
+What the evaluator says they demonstrated:
+${demonstrated}
+
+What the evaluator says is still missing:
+${missing}
+
+Best evidence quote from their answer: ${context.evidenceQuote || "None supplied"}
+
+Acknowledge what they got right using their actual wording where useful, then ask one sharper follow-up question that forces only the missing piece into the open. If there is no concrete missing point, say their answer is sufficient and ask for one concise summary rather than reteaching. Keep the test conversational.`
+            : `The founder is in the "Test to Complete" conversation for "${entry.title}", but their answer shows they haven't internalized the core concept yet. Do NOT announce that they failed a test. Use this evaluation feedback to identify what needs reinforcement: "${feedback}".
+
+Latest founder answer:
+${context.latestAnswer}
+
+Recent testing transcript:
+${context.testingTranscript}
+
+What the evaluator says they demonstrated:
+${demonstrated}
+
+What the evaluator says is still missing:
+${missing}
+
+Best evidence quote from their answer: ${context.evidenceQuote || "None supplied"}
+
+Re-teach only the most critical missing piece. If you correct them, quote the exact phrase that created the issue. Then ask one direct follow-up question so they can try again in their own words. Do not restart the lesson or ignore what they already got right. Keep testing mode active.`;
         const forgeMsg: ChatMessage = { id: `f-${Date.now()}`, role: "forge", text: "", createdAt: new Date().toISOString() };
         setMessages((prev) => [...prev, forgeMsg]);
         setLoading(true);
@@ -999,7 +1095,13 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
                 void sendLessonCompletionMessage(activeAcademyEntry);
             } else {
                 setTestingMode(true);
-                void sendTestingContinuationMessage(activeAcademyEntry, evaluation.feedback, evaluation.trackStatus);
+                void sendTestingContinuationMessage(activeAcademyEntry, evaluation.feedback, evaluation.trackStatus, {
+                    latestAnswer: userAnswer,
+                    testingTranscript,
+                    demonstratedUnderstanding: evaluation.demonstratedUnderstanding,
+                    missingUnderstanding: evaluation.missingUnderstanding,
+                    evidenceQuote: evaluation.evidenceQuote,
+                });
             }
         } catch (error) {
             console.error("auto knowledge check error:", error);
@@ -1009,6 +1111,16 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
                     activeAcademyEntry,
                     "Forge could not evaluate that cleanly, so keep going with a clearer explanation.",
                     "on_track",
+                    {
+                        latestAnswer: userAnswer,
+                        testingTranscript: history
+                            .slice(-10)
+                            .map((message) => `${message.role === "forge" ? "Forge" : profile.name || "Founder"}: ${message.text}`)
+                            .join("\n\n"),
+                        demonstratedUnderstanding: [],
+                        missingUnderstanding: ["The answer needs to be restated clearly enough to evaluate."],
+                        evidenceQuote: null,
+                    },
                 );
             } else {
                 setLoading(false);
