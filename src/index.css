@@ -1,11 +1,74 @@
+@import url("https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Manrope:wght@400;500;600;700;800&display=swap");
+
 :root {
-  color: #c8c4be;
-  background: #080809;
-  font-family: "Lora", Georgia, serif;
+  color: #102033;
+  background: #FFFFFF;
+  font-family: var(--tekori-font-ui);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Use semantic Tekori tokens. Avoid hardcoded component colors unless necessary. */
+  --tekori-deep-navy: #061832;
+  --tekori-midnight-navy: #0A1D36;
+  --tekori-slate-navy: #102944;
+  --tekori-surface-navy: #14304F;
+  --tekori-surface-soft: rgba(19, 47, 76, 0.72);
+  --tekori-gold: #C98924;
+  --tekori-amber: #E4AA3A;
+  --tekori-soft-gold: #F1CC74;
+  --tekori-cream: #FAF7F0;
+  --tekori-white: #FFFFFF;
+  --tekori-muted-text: #8EA0B5;
+  --tekori-subtle-line: rgba(216, 155, 43, 0.22);
+  --tekori-line-quiet: rgba(7, 26, 47, 0.08);
+  --tekori-success: var(--color-success);
+  --tekori-warning: #F4B642;
+  --tekori-danger: #D96A55;
+  --tekori-info: #8EA0B5;
+  --color-bg: #FFFFFF;
+  --color-bg-soft: #FAF7F0;
+  --color-bg-warm: #F6F1E8;
+  --color-surface: #FFFFFF;
+  --color-surface-elevated: #FFFCF6;
+  --color-text: #102033;
+  --color-text-muted: #667085;
+  --color-text-soft: #475467;
+  --color-primary: #071A2F;
+  --color-primary-hover: #0B1F35;
+  --color-accent: #D89B2B;
+  --color-accent-hover: #B9781F;
+  --color-accent-soft: #F7D98B;
+  --color-border: #E7DDCC;
+  --color-border-strong: rgba(216, 155, 43, 0.32);
+  --color-focus: rgba(244, 182, 66, 0.36);
+  --color-danger: #D96A55;
+  --color-success: #2F8F68;
+  --shadow-card: 0 18px 44px rgba(16, 32, 51, 0.08);
+  --shadow-premium: 0 24px 70px rgba(16, 32, 51, 0.13);
+  --radius-card: 14px;
+  --radius-control: 10px;
+  --tekori-gradient-primary: linear-gradient(135deg, #B9781F 0%, #C98924 42%, #F1CC74 100%);
+  --tekori-gradient-navy: linear-gradient(145deg, #061832 0%, #0A1D36 48%, #102944 100%);
+  --tekori-gradient-surface: linear-gradient(155deg, #FFFFFF 0%, #FFFCF6 52%, rgba(247,217,139,0.22));
+  --tekori-gradient-focus: radial-gradient(circle at 50% 0%, rgba(247,217,139,0.24), transparent 34%);
+  --tekori-shadow-card: var(--shadow-card);
+  --tekori-shadow-modal: var(--shadow-premium);
+  --tekori-shadow-gold: 0 16px 38px rgba(201, 137, 36, 0.24);
+  --tekori-radius-xs: 6px;
+  --tekori-radius-sm: 8px;
+  --tekori-radius-md: 10px;
+  --tekori-radius-lg: 14px;
+  --tekori-radius-xl: 18px;
+  --tekori-radius-pill: 999px;
+  --tekori-font-ui: "Manrope", Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --tekori-font-brand: "Libre Baskerville", Georgia, serif;
+  --tekori-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --tekori-motion-fast: 140ms;
+  --tekori-motion-panel: 320ms;
+  --tekori-motion-page: 380ms;
+  --tekori-motion-progress: 850ms;
+  --tekori-focus-ring: 0 0 0 3px rgba(228, 170, 58, 0.34);
   --foundry-page-width: 1120px;
   --foundry-page-narrow-width: 720px;
   --foundry-hub-content-width: 760px;
@@ -65,40 +128,41 @@
   --foundry-doc-card-body-font: 11px;
   --foundry-doc-card-meta-font: 10px;
   --foundry-doc-card-large-font: 12px;
-  --foundry-bg: #080809;
-  --foundry-bg-app: #080809;
-  --foundry-surface-primary: #0E0F11;
-  --foundry-surface-elevated: #131416;
-  --foundry-surface-control: rgba(255,255,255,0.045);
-  --foundry-orange: #E8622A;
-  --foundry-ember: #F5A843;
-  --foundry-deep-ember: #B9461E;
-  --foundry-blue: #63B3ED;
-  --foundry-green: #4CAF8A;
-  --foundry-amber: #D9B15D;
+  --foundry-bg: var(--color-bg);
+  --foundry-bg-app: var(--color-bg-soft);
+  --foundry-surface-primary: var(--color-surface);
+  --foundry-surface-elevated: var(--color-surface-elevated);
+  --foundry-surface-control: rgba(7,26,47,0.04);
+  --foundry-gold: var(--tekori-gold);
+  --foundry-orange: var(--tekori-gold);
+  --foundry-ember: var(--tekori-amber);
+  --foundry-deep-ember: var(--color-accent-hover);
+  --foundry-blue: var(--tekori-slate-navy);
+  --foundry-green: var(--color-success);
+  --foundry-amber: var(--tekori-amber);
   --foundry-red: #D96A55;
-  --foundry-semantic-intelligence: #63B3ED;
-  --foundry-semantic-positive: #4CAF8A;
-  --foundry-semantic-warning: #D9B15D;
-  --foundry-semantic-danger: #D96A55;
-  --foundry-neutral-data: #8B8FA3;
-  --foundry-text-primary: rgba(255,255,255,0.94);
-  --foundry-text-secondary: rgba(255,255,255,0.82);
-  --foundry-text-muted: rgba(255,255,255,0.64);
-  --foundry-text-disabled: rgba(255,255,255,0.42);
-  --foundry-radius-control: 10px;
-  --foundry-radius-card: 14px;
-  --foundry-radius-command: 18px;
-  --foundry-radius-pill: 999px;
-  --foundry-ease: cubic-bezier(0.16, 1, 0.3, 1);
-  --foundry-motion-hover: 140ms;
-  --foundry-motion-panel: 320ms;
-  --foundry-motion-page: 380ms;
-  --foundry-motion-progress: 850ms;
-  --foundry-border-subtle: 1px solid rgba(255,255,255,0.075);
-  --foundry-border-strong: 1px solid rgba(255,255,255,0.11);
-  --foundry-shadow-command: 0 24px 80px rgba(0,0,0,0.42);
-  --foundry-shadow-modal: 0 28px 90px rgba(0,0,0,0.58);
+  --foundry-semantic-intelligence: var(--tekori-slate-navy);
+  --foundry-semantic-positive: var(--tekori-success);
+  --foundry-semantic-warning: var(--tekori-warning);
+  --foundry-semantic-danger: var(--tekori-danger);
+  --foundry-neutral-data: var(--color-text-muted);
+  --foundry-text-primary: var(--color-text);
+  --foundry-text-secondary: var(--color-text-soft);
+  --foundry-text-muted: var(--color-text-muted);
+  --foundry-text-disabled: rgba(102,112,133,0.62);
+  --foundry-radius-control: var(--tekori-radius-md);
+  --foundry-radius-card: var(--tekori-radius-lg);
+  --foundry-radius-command: var(--tekori-radius-xl);
+  --foundry-radius-pill: var(--tekori-radius-pill);
+  --foundry-ease: var(--tekori-ease);
+  --foundry-motion-hover: var(--tekori-motion-fast);
+  --foundry-motion-panel: var(--tekori-motion-panel);
+  --foundry-motion-page: var(--tekori-motion-page);
+  --foundry-motion-progress: var(--tekori-motion-progress);
+  --foundry-border-subtle: 1px solid var(--color-border);
+  --foundry-border-strong: 1px solid var(--color-border-strong);
+  --foundry-shadow-command: var(--shadow-card);
+  --foundry-shadow-modal: var(--shadow-premium);
 }
 
 * {
@@ -120,9 +184,9 @@ body {
   overflow-y: auto;
   overflow-x: hidden;
   background:
-    radial-gradient(circle at top, rgba(232, 98, 42, 0.08), transparent 28%),
-    #080809;
-  color: #c8c4be;
+    var(--tekori-gradient-focus),
+    linear-gradient(180deg, #FFFFFF 0%, #FAF7F0 100%);
+  color: var(--color-text);
 }
 
 body,
@@ -130,7 +194,7 @@ body,
 .forge-chat-room__messages,
 .forge-chat-room__workspace-column,
 .forge-conversation-workspace {
-  scrollbar-color: rgba(240, 237, 232, 0.28) rgba(255, 255, 255, 0.025);
+  scrollbar-color: rgba(216, 155, 43, 0.36) rgba(7, 26, 47, 0.04);
   scrollbar-width: thin;
 }
 
@@ -148,7 +212,7 @@ body::-webkit-scrollbar-track,
 .forge-chat-room__messages::-webkit-scrollbar-track,
 .forge-chat-room__workspace-column::-webkit-scrollbar-track,
 .forge-conversation-workspace::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.025);
+  background: rgba(7, 26, 47, 0.04);
 }
 
 body::-webkit-scrollbar-thumb,
@@ -156,8 +220,8 @@ body::-webkit-scrollbar-thumb,
 .forge-chat-room__messages::-webkit-scrollbar-thumb,
 .forge-chat-room__workspace-column::-webkit-scrollbar-thumb,
 .forge-conversation-workspace::-webkit-scrollbar-thumb {
-  background: rgba(240, 237, 232, 0.24);
-  border: 3px solid #080809;
+  background: rgba(216, 155, 43, 0.32);
+  border: 3px solid var(--color-bg-soft);
   border-radius: 999px;
 }
 
@@ -190,17 +254,28 @@ button {
   touch-action: manipulation;
 }
 
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--tekori-amber);
+  outline-offset: 2px;
+  box-shadow: var(--tekori-focus-ring);
+}
+
 .foundry-font-ui {
-  font-family: "DM Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--tekori-font-ui);
 }
 
 .foundry-font-brand {
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: var(--tekori-font-brand);
 }
 
 .foundry-command-panel {
   background:
-    linear-gradient(155deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018) 48%, rgba(232,98,42,0.026)),
+    var(--tekori-gradient-surface),
     var(--foundry-surface-primary);
   border: var(--foundry-border-strong);
   border-radius: var(--foundry-radius-command);
@@ -208,41 +283,45 @@ button {
 }
 
 .foundry-module-card {
-  background: rgba(255,255,255,0.021);
-  border: 1px solid rgba(255,255,255,0.062);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: var(--foundry-radius-card);
+  box-shadow: var(--shadow-card);
 }
 
 .foundry-soft-panel {
-  background: rgba(255,255,255,0.024);
-  border: 1px solid rgba(255,255,255,0.066);
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
   border-radius: var(--foundry-radius-card);
+  box-shadow: var(--shadow-card);
 }
 
 .foundry-quiet-panel {
-  background: rgba(255,255,255,0.016);
-  border: 1px solid rgba(255,255,255,0.048);
+  background: rgba(255,252,246,0.72);
+  border: 1px solid var(--color-border);
   border-radius: var(--foundry-radius-card);
 }
 
 .foundry-toolbar {
-  background: rgba(255,255,255,0.022);
-  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,252,246,0.92);
+  border: 1px solid var(--color-border);
   border-radius: var(--foundry-radius-card);
+  color: var(--color-text);
+  box-shadow: 0 10px 28px rgba(16,32,51,0.08);
 }
 
 .foundry-muted-chip {
   display: inline-flex;
   align-items: center;
   border-radius: var(--foundry-radius-pill);
-  background: rgba(255,255,255,0.035);
-  border: 1px solid rgba(255,255,255,0.065);
+  background: rgba(216,155,43,0.08);
+  border: 1px solid rgba(216,155,43,0.18);
   color: var(--foundry-text-secondary);
 }
 
 .foundry-control-surface {
   background: var(--foundry-surface-control);
-  border: 1px solid rgba(255,255,255,0.085);
+  border: 1px solid var(--color-border);
   border-radius: var(--foundry-radius-control);
 }
 
@@ -264,7 +343,7 @@ button {
 
 .foundry-interactive:hover:not(:disabled) {
   transform: translateY(-1px);
-  border-color: rgba(255,255,255,0.16);
+  border-color: rgba(7,26,47,0.16);
 }
 
 .foundry-interactive:active:not(:disabled) {
@@ -274,7 +353,7 @@ button {
 .foundry-btn {
   border: 1px solid transparent;
   border-radius: var(--foundry-radius-control);
-  font-family: "DM Sans", system-ui, sans-serif;
+  font-family: var(--tekori-font-ui);
   font-weight: 700;
   cursor: pointer;
   transition:
@@ -287,7 +366,7 @@ button {
 
 .foundry-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  border-color: rgba(255,255,255,0.16);
+  border-color: rgba(216,155,43,0.34);
 }
 
 .foundry-btn:active:not(:disabled) {
@@ -302,20 +381,20 @@ button {
 
 .foundry-btn--primary {
   color: #fff;
-  background: linear-gradient(135deg, var(--foundry-orange), var(--foundry-deep-ember));
-  box-shadow: 0 12px 32px rgba(232,98,42,0.22);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
+  box-shadow: 0 14px 34px rgba(7,26,47,0.18);
 }
 
 .foundry-btn--secondary {
   color: var(--foundry-text-primary);
-  background: rgba(255,255,255,0.045);
-  border-color: rgba(255,255,255,0.085);
+  background: var(--color-surface);
+  border-color: var(--color-border);
 }
 
 .foundry-btn--ghost {
   color: var(--foundry-text-muted);
   background: transparent;
-  border-color: rgba(255,255,255,0.075);
+  border-color: rgba(7,26,47,0.08);
 }
 
 .foundry-btn--success {
@@ -330,7 +409,7 @@ button {
 
 .foundry-label {
   color: var(--foundry-text-muted);
-  font-family: "DM Sans", system-ui, sans-serif;
+  font-family: var(--tekori-font-ui);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.11em;
@@ -348,6 +427,17 @@ button {
 
 .foundry-panel-in {
   animation: foundryPanelIn var(--foundry-motion-panel) var(--foundry-ease) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+  }
 }
 
 .foundry-page {
@@ -378,11 +468,11 @@ button {
   margin: 0 auto;
   padding: 16px;
   background:
-    linear-gradient(145deg, rgba(155,141,232,0.07), rgba(255,255,255,0.022) 58%, rgba(99,179,237,0.035)),
-    var(--foundry-surface-primary);
-  border: 1px solid rgba(155,141,232,0.22);
+    linear-gradient(145deg, rgba(247,217,139,0.22), rgba(255,252,246,0.94) 58%, rgba(255,255,255,0.98)),
+    var(--color-surface-elevated);
+  border: 1px solid var(--tekori-subtle-line);
   border-radius: var(--foundry-radius-card);
-  box-shadow: 0 18px 54px rgba(0,0,0,0.34);
+  box-shadow: 0 18px 54px rgba(16,32,51,0.10);
 }
 
 .forge-context-card__header {
@@ -393,7 +483,7 @@ button {
 }
 
 .forge-context-card__eyebrow {
-  color: #A78BFA;
+  color: var(--tekori-gold);
   margin-bottom: 7px;
 }
 
@@ -411,9 +501,9 @@ button {
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
-  border: 1px solid rgba(255,255,255,0.075);
+  border: 1px solid rgba(7,26,47,0.075);
   border-radius: 8px;
-  background: rgba(255,255,255,0.032);
+  background: rgba(7,26,47,0.032);
   color: var(--foundry-text-muted);
   cursor: pointer;
 }
@@ -428,8 +518,8 @@ button {
 .forge-context-card__reason {
   margin-top: 10px;
   padding: 9px 11px;
-  background: rgba(255,255,255,0.026);
-  border: 1px solid rgba(255,255,255,0.062);
+  background: rgba(7,26,47,0.026);
+  border: 1px solid rgba(7,26,47,0.062);
   border-radius: 10px;
   color: var(--foundry-text-muted);
   font-size: 12px;
@@ -450,8 +540,8 @@ button {
   gap: 12px;
   padding: 11px 12px;
   text-align: left;
-  background: rgba(255,255,255,0.032);
-  border: 1px solid rgba(255,255,255,0.075);
+  background: rgba(7,26,47,0.032);
+  border: 1px solid rgba(7,26,47,0.075);
   border-radius: 10px;
   color: var(--foundry-text-primary);
   cursor: pointer;
@@ -463,12 +553,12 @@ button {
 
 .forge-context-option:hover {
   transform: translateY(-1px);
-  background: rgba(255,255,255,0.048);
-  border-color: rgba(167,139,250,0.28);
+  background: rgba(7,26,47,0.048);
+  border-color: rgba(216,155,43,0.32);
 }
 
 .forge-context-option--workspace {
-  border-color: rgba(167,139,250,0.16);
+  border-color: rgba(216,155,43,0.18);
 }
 
 .forge-context-option__title {
@@ -484,7 +574,7 @@ button {
 .forge-context-option__meta {
   flex: 0 0 auto;
   color: var(--foundry-text-muted);
-  font-family: "DM Sans", system-ui, sans-serif;
+  font-family: var(--tekori-font-ui);
   font-size: 11px;
   white-space: nowrap;
 }
@@ -504,15 +594,15 @@ button {
 .forge-context-card__custom-row input {
   min-width: 0;
   padding: 10px 12px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.09);
+  background: rgba(7,26,47,0.04);
+  border: 1px solid rgba(7,26,47,0.09);
   border-radius: 10px;
   color: var(--foundry-text-primary);
   outline: none;
 }
 
 .forge-context-card__custom-row input:focus {
-  border-color: rgba(167,139,250,0.36);
+  border-color: rgba(216,155,43,0.42);
 }
 
 .forge-context-card__custom-row .foundry-btn {
@@ -523,7 +613,7 @@ button {
 .forge-context-card__privacy {
   margin-top: 13px;
   color: var(--foundry-text-disabled);
-  font-family: "DM Sans", system-ui, sans-serif;
+  font-family: var(--tekori-font-ui);
   font-size: 11px;
   line-height: 1.45;
 }
@@ -534,10 +624,10 @@ button {
   gap: 6px;
   padding: 5px 9px;
   border-radius: 999px;
-  background: rgba(155,141,232,0.08);
-  border: 1px solid rgba(155,141,232,0.2);
-  color: #B8ABFF;
-  font-family: "DM Sans", system-ui, sans-serif;
+  background: rgba(216,155,43,0.10);
+  border: 1px solid rgba(216,155,43,0.24);
+  color: var(--color-primary);
+  font-family: var(--tekori-font-ui);
   font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
@@ -549,19 +639,19 @@ button {
   justify-content: center;
   padding: 5px 10px;
   border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.085);
-  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(7,26,47,0.085);
+  background: rgba(7,26,47,0.04);
   color: var(--foundry-text-muted);
   cursor: pointer;
-  font-family: "DM Sans", system-ui, sans-serif;
+  font-family: var(--tekori-font-ui);
   font-size: 11px;
   font-weight: 700;
 }
 
 .forge-context-apply-button:hover {
   color: var(--foundry-text-primary);
-  border-color: rgba(167,139,250,0.28);
-  background: rgba(155,141,232,0.075);
+  border-color: rgba(216,155,43,0.28);
+  background: rgba(216,155,43,0.08);
 }
 
 @media (max-width: 640px) {
@@ -717,7 +807,7 @@ button {
   justify-content: space-between;
   gap: 16px;
   padding: 14px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(7,26,47,0.05);
   text-align: left;
 }
 
@@ -786,7 +876,7 @@ button {
   position: fixed;
   inset: 0;
   z-index: 60;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(7, 26, 47, 0.62);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
@@ -996,14 +1086,14 @@ button {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  background: rgba(255, 255, 255, 0.035);
-  border: 1px solid rgba(255, 255, 255, 0.075);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: 14px;
-  color: #F0EDE8;
+  color: var(--color-text);
   overflow-y: auto;
   overflow-x: hidden;
-  font-family: "DM Sans", system-ui, sans-serif;
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.18);
+  font-family: var(--tekori-font-ui);
+  box-shadow: var(--shadow-card);
 }
 
 .forge-conversation-workspace__header {
@@ -1012,13 +1102,13 @@ button {
   justify-content: space-between;
   gap: 14px;
   padding: 16px 16px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.065);
-  background: rgba(12, 12, 14, 0.78);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-elevated);
 }
 
 .forge-conversation-workspace__eyebrow {
   margin-bottom: 6px;
-  color: #4CAF8A;
+  color: var(--tekori-gold);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -1027,7 +1117,7 @@ button {
 
 .forge-conversation-workspace h2 {
   margin: 0;
-  font-family: "Lora", Georgia, serif;
+  font-family: var(--tekori-font-ui);
   font-size: 19px;
   line-height: 1.2;
   font-weight: 700;
@@ -1035,7 +1125,7 @@ button {
 
 .forge-conversation-workspace p {
   margin: 5px 0 0;
-  color: rgba(240, 237, 232, 0.45);
+  color: var(--color-text-muted);
   font-size: 13px;
   line-height: 1.45;
 }
@@ -1047,9 +1137,9 @@ button {
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  color: #4CAF8A;
-  background: rgba(76, 175, 138, 0.08);
-  border: 1px solid rgba(76, 175, 138, 0.18);
+  color: var(--tekori-gold);
+  background: rgba(216, 155, 43, 0.10);
+  border: 1px solid rgba(216, 155, 43, 0.22);
 }
 
 .forge-conversation-workspace__status.is-updating svg {
@@ -1064,7 +1154,7 @@ button {
 
 .forge-conversation-workspace__section {
   padding: 14px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(7, 26, 47, 0.06);
 }
 
 .forge-conversation-workspace__section:first-child {
@@ -1081,7 +1171,7 @@ button {
   align-items: center;
   gap: 7px;
   margin-bottom: 9px;
-  color: rgba(240, 237, 232, 0.74);
+  color: var(--color-text-muted);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -1089,13 +1179,13 @@ button {
 }
 
 .forge-conversation-workspace__section-title svg {
-  color: #E8622A;
+  color: var(--tekori-gold);
   flex-shrink: 0;
 }
 
 .forge-conversation-workspace__summary {
-  color: #D8D2CA;
-  font-family: "Lora", Georgia, serif;
+  color: var(--color-text-soft);
+  font-family: var(--tekori-font-ui);
   font-size: 13.25px;
   line-height: 1.65;
 }
@@ -1105,13 +1195,13 @@ button {
 .forge-conversation-workspace__add-note textarea {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.04);
-  color: #E4DED6;
+  border: 1px solid rgba(7, 26, 47, 0.08);
+  background: rgba(7, 26, 47, 0.04);
+  color: var(--color-text);
   border-radius: 10px;
   resize: vertical;
   outline: none;
-  font-family: "Lora", Georgia, serif;
+  font-family: var(--tekori-font-ui);
   font-size: 13.25px;
   line-height: 1.55;
 }
@@ -1124,8 +1214,8 @@ button {
 .forge-conversation-workspace__focus-input:focus,
 .forge-conversation-workspace__user-note textarea:focus,
 .forge-conversation-workspace__add-note textarea:focus {
-  border-color: rgba(232, 98, 42, 0.34);
-  background: rgba(255, 255, 255, 0.055);
+  border-color: rgba(216, 155, 43, 0.34);
+  background: rgba(7, 26, 47, 0.055);
 }
 
 .forge-conversation-workspace__ownership-row {
@@ -1134,15 +1224,15 @@ button {
   justify-content: space-between;
   gap: 8px;
   margin-top: 7px;
-  color: rgba(240, 237, 232, 0.32);
+  color: var(--color-text-muted);
   font-size: 11px;
-  font-family: "DM Sans", system-ui, sans-serif;
+  font-family: var(--tekori-font-ui);
 }
 
 .forge-conversation-workspace__ownership-row button {
   background: transparent;
   border: 0;
-  color: rgba(76, 175, 138, 0.86);
+  color: var(--tekori-gold);
   padding: 0;
   cursor: pointer;
   font-size: 11px;
@@ -1153,14 +1243,14 @@ button {
   margin-top: 10px;
   padding: 10px 11px;
   border-radius: 10px;
-  background: rgba(232, 98, 42, 0.07);
-  border: 1px solid rgba(232, 98, 42, 0.14);
+  background: rgba(216, 155, 43, 0.07);
+  border: 1px solid rgba(216, 155, 43, 0.14);
 }
 
 .forge-conversation-workspace__lesson span {
   display: block;
   margin-bottom: 4px;
-  color: rgba(232, 98, 42, 0.78);
+  color: rgba(216, 155, 43, 0.78);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.09em;
@@ -1169,8 +1259,8 @@ button {
 
 .forge-conversation-workspace__lesson strong {
   display: block;
-  color: #F0EDE8;
-  font-family: "Lora", Georgia, serif;
+  color: var(--color-text);
+  font-family: var(--tekori-font-ui);
   font-size: 13.25px;
   line-height: 1.35;
 }
@@ -1187,7 +1277,7 @@ button {
 .forge-conversation-workspace__list li {
   position: relative;
   padding-left: 14px;
-  color: rgba(240, 237, 232, 0.68);
+  color: var(--color-text-soft);
   font-size: 13.25px;
   line-height: 1.55;
 }
@@ -1200,11 +1290,11 @@ button {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: rgba(76, 175, 138, 0.7);
+  background: rgba(216, 155, 43, 0.74);
 }
 
 .forge-conversation-workspace__empty-line {
-  color: rgba(240, 237, 232, 0.34);
+  color: var(--color-text-muted);
   font-size: 13.25px;
   line-height: 1.55;
 }
@@ -1231,9 +1321,9 @@ button {
 
 .forge-conversation-workspace__user-note button,
 .forge-conversation-workspace__add-note button {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(240, 237, 232, 0.5);
+  border: 1px solid rgba(7, 26, 47, 0.08);
+  background: rgba(7, 26, 47, 0.04);
+  color: var(--color-text-muted);
   border-radius: 9px;
   cursor: pointer;
   display: grid;
@@ -1241,9 +1331,9 @@ button {
 }
 
 .forge-conversation-workspace__add-note button:not(:disabled) {
-  color: #4CAF8A;
-  border-color: rgba(76, 175, 138, 0.2);
-  background: rgba(76, 175, 138, 0.07);
+  color: var(--tekori-gold);
+  border-color: rgba(216, 155, 43, 0.24);
+  background: rgba(216, 155, 43, 0.08);
 }
 
 .forge-conversation-workspace__add-note button:disabled {
@@ -1309,7 +1399,7 @@ button {
     z-index: 200;
     height: auto;
     padding-bottom: 0;
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(7, 26, 47, 0.58);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     justify-content: flex-end;
@@ -1329,7 +1419,7 @@ button {
     border-right: none;
     border-top: none;
     border-bottom: none;
-    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    border-left: 1px solid rgba(7, 26, 47, 0.08);
   }
 }
 

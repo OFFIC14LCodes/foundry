@@ -106,7 +106,7 @@ export function getPaywallEntryMessage(targetStage: number): string {
     if (targetStage <= 2) {
         return "You are stepping out of validation and into execution. Stage 2 is where the business starts becoming real: model, priorities, decisions, and build discipline.";
     }
-    return `Stage ${targetStage} continues the paid Foundry journey. This unlock keeps your build moving with the full execution path and premium support structure.`;
+    return `Stage ${targetStage} continues the paid Tekori journey. This unlock keeps your build moving with the full execution path and premium support structure.`;
 }
 
 export function getPaidStageBlockNote(access: AccountAccess | null): string {
@@ -127,13 +127,13 @@ export function getPaidStageBlockNote(access: AccountAccess | null): string {
         case "suspended":
             return "This account is suspended and cannot access paid stages right now.";
         case "revoked":
-            return "This account no longer has Foundry access.";
+            return "This account no longer has Tekori access.";
         case "comped":
             return "This account has manually granted access.";
         case "eligible":
             return "This account already has access to paid stages.";
         default:
-            return "Unlock the next phase to continue the full Foundry journey.";
+            return "Unlock the next phase to continue the full Tekori journey.";
     }
 }
 
@@ -215,8 +215,8 @@ export function getAccessSummary(access: AccountAccess | null): AccessSummary {
         return {
             ...base,
             note: access.plan_type === "pro"
-                ? "Full Foundry access is active, including premium tools and paid stages."
-                : "Paid-stage access is active across the full Foundry journey.",
+                ? "Full Tekori access is active, including premium tools and paid stages."
+                : "Paid-stage access is active across the full Tekori journey.",
             badge: founding ? "Founding pricing locked in" : "Active plan",
         };
     }

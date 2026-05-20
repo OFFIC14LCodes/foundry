@@ -1,21 +1,22 @@
 export const DESIGN_TOKENS = {
+  // Use semantic Tekori tokens. Avoid hardcoded component colors unless necessary.
   colors: {
-    background: "#080809",
-    surfacePrimary: "#0E0F11",
-    surfaceElevated: "#131416",
-    surfaceControl: "rgba(255,255,255,0.045)",
-    brandOrange: "#E8622A",
-    emberHighlight: "#F5A843",
-    deepEmber: "#B9461E",
-    intelligenceBlue: "#63B3ED",
-    positiveGreen: "#4CAF8A",
-    warningAmber: "#D9B15D",
+    background: "var(--color-bg-soft)",
+    surfacePrimary: "var(--color-surface)",
+    surfaceElevated: "var(--color-surface-elevated)",
+    surfaceControl: "rgba(7,26,47,0.045)",
+    brandOrange: "var(--tekori-gold)",
+    emberHighlight: "var(--tekori-amber)",
+    deepEmber: "var(--color-accent-hover)",
+    intelligenceBlue: "var(--tekori-muted-text)",
+    positiveGreen: "var(--color-success)",
+    warningAmber: "var(--tekori-amber)",
     destructiveRed: "#D96A55",
-    neutralData: "#8B8FA3",
-    textPrimary: "rgba(255,255,255,0.94)",
-    textSecondary: "rgba(255,255,255,0.82)",
-    textMuted: "rgba(255,255,255,0.64)",
-    textDisabled: "rgba(255,255,255,0.42)",
+    neutralData: "var(--tekori-muted-text)",
+    textPrimary: "var(--color-text)",
+    textSecondary: "var(--color-text-soft)",
+    textMuted: "var(--color-text-muted)",
+    textDisabled: "rgba(102,112,133,0.48)",
   },
   radii: {
     control: "10px",
@@ -33,13 +34,14 @@ export const DESIGN_TOKENS = {
 } as const;
 
 export const GLOBAL_STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@300;400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Manrope:wght@400;500;600;700;800&display=swap');
   :root {
     --foundry-bg: ${DESIGN_TOKENS.colors.background};
     --foundry-bg-app: ${DESIGN_TOKENS.colors.background};
     --foundry-surface-primary: ${DESIGN_TOKENS.colors.surfacePrimary};
     --foundry-surface-elevated: ${DESIGN_TOKENS.colors.surfaceElevated};
     --foundry-surface-control: ${DESIGN_TOKENS.colors.surfaceControl};
+    --foundry-gold: ${DESIGN_TOKENS.colors.brandOrange};
     --foundry-orange: ${DESIGN_TOKENS.colors.brandOrange};
     --foundry-ember: ${DESIGN_TOKENS.colors.emberHighlight};
     --foundry-deep-ember: ${DESIGN_TOKENS.colors.deepEmber};
@@ -68,10 +70,10 @@ export const GLOBAL_STYLES = `
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html { height: -webkit-fill-available; }
-  body { min-height: 100vh; min-height: -webkit-fill-available; overscroll-behavior: none; font-family: 'Lora', Georgia, serif; }
+  body { min-height: 100vh; min-height: -webkit-fill-available; overscroll-behavior: none; font-family: var(--tekori-font-ui); }
   ::-webkit-scrollbar { width: 3px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb { background: rgba(7,26,47,0.1); border-radius: 2px; }
   textarea { resize: none; outline: none; font: inherit; }
   input { outline: none; font: inherit; }
   button { outline: none; -webkit-tap-highlight-color: transparent; font: inherit; }
@@ -85,8 +87,8 @@ export const GLOBAL_STYLES = `
 `;
 
 export const TAG_COLORS = {
-  Legal: { bg: "rgba(99,179,237,0.12)", text: "#63B3ED" },
-  Strategy: { bg: "rgba(232,98,42,0.12)", text: "#E8622A" },
-  Market: { bg: "rgba(72,187,120,0.12)", text: "#48BB78" },
-  Finance: { bg: "rgba(245,168,67,0.12)", text: "#F5A843" },
+  Legal: { bg: "rgba(142,160,181,0.12)", text: "var(--tekori-muted-text)" },
+  Strategy: { bg: "rgba(216,155,43,0.12)", text: "var(--tekori-gold)" },
+  Market: { bg: "rgba(72,187,120,0.12)", text: "var(--color-success)" },
+  Finance: { bg: "rgba(244,182,66,0.12)", text: "var(--tekori-amber)" },
 } as const;

@@ -19,17 +19,17 @@ type Props = {
 };
 
 const priorityColors = {
-    low: "#8D857C",
-    medium: "#C8A96E",
-    high: "#D9B15D",
+    low: "var(--color-text-muted)",
+    medium: "var(--tekori-amber)",
+    high: "var(--tekori-amber)",
     critical: "#F05D5E",
 } as const;
 
 const outcomeColors: Record<FoundryActionOutcomeType, string> = {
-    success: "#4CAF8A",
-    partial: "#C8A96E",
+    success: "var(--color-success)",
+    partial: "var(--tekori-amber)",
     failed: "#F05D5E",
-    unknown: "#8D857C",
+    unknown: "var(--color-text-muted)",
 };
 
 const outcomeLabels: Record<FoundryActionOutcomeType, string> = {
@@ -56,8 +56,8 @@ export default function ActionSuggestionCard({
 
     return (
         <div style={{
-            background: "linear-gradient(180deg, rgba(255,255,255,0.028), rgba(255,255,255,0.014))",
-            border: "1px solid rgba(255,255,255,0.062)",
+            background: "linear-gradient(180deg, var(--color-surface), var(--color-surface-elevated))",
+            border: "1px solid var(--color-border)",
             borderRadius: compact ? 12 : 16,
             padding: compact ? 12 : 16,
             display: "grid",
@@ -65,46 +65,46 @@ export default function ActionSuggestionCard({
         }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start", flexWrap: "wrap" }}>
                 <div style={{ minWidth: 0, display: "grid", gap: 5 }}>
-                    <div style={{ fontSize: 11, color: "#8FC8F6", letterSpacing: "0.12em", textTransform: "uppercase", fontWeight: 800, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+                    <div style={{ fontSize: 11, color: "var(--tekori-slate-navy)", letterSpacing: "0.12em", textTransform: "uppercase", fontWeight: 800, fontFamily: "var(--tekori-font-ui)" }}>
                         Next action
                     </div>
-                    <div style={{ fontSize: compact ? 15 : 18, color: "#F0EDE8", lineHeight: 1.25, fontWeight: 800 }}>
+                    <div style={{ fontSize: compact ? 15 : 18, color: "var(--color-text)", lineHeight: 1.25, fontWeight: 800 }}>
                         {action.title}
                     </div>
                 </div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
-                    {status && <Badge label={status.replace(/_/g, " ")} color="#8FC8F6" />}
+                    {status && <Badge label={status.replace(/_/g, " ")} color="var(--tekori-slate-navy)" />}
                     <Badge label={priority} color={priorityColor} />
                 </div>
             </div>
 
-            <div style={{ fontSize: 13, color: "#BDAFA2", lineHeight: 1.65 }}>
+            <div style={{ fontSize: 13, color: "var(--color-text-soft)", lineHeight: 1.65 }}>
                 {action.description}
             </div>
 
             <div style={{ display: "flex", flexWrap: "wrap", gap: 7, alignItems: "center" }}>
-                <Badge label={`From ${formatActionModule(action.sourceModule)}`} color="#C8A96E" />
-                <Badge label={formatActionSourceType(action.sourceType)} color="#A8A4A0" />
-                <Badge label={formatActionType(action.actionType)} color="#A8A4A0" />
-                {action.dueDate && <Badge label={`Due ${action.dueDate}`} color="#4CAF8A" />}
+                <Badge label={`From ${formatActionModule(action.sourceModule)}`} color="var(--tekori-amber)" />
+                <Badge label={formatActionSourceType(action.sourceType)} color="var(--color-text-muted)" />
+                <Badge label={formatActionType(action.actionType)} color="var(--color-text-muted)" />
+                {action.dueDate && <Badge label={`Due ${action.dueDate}`} color="var(--color-success)" />}
                 {outcomeType && <Badge label={`Outcome: ${outcomeLabels[outcomeType]}`} color={outcomeColors[outcomeType]} />}
             </div>
 
             {outcomeNotes && (
-                <div style={{ borderLeft: "2px solid rgba(76,175,138,0.45)", paddingLeft: 10, color: "#AFA79E", fontSize: 12, lineHeight: 1.55 }}>
+                <div style={{ borderLeft: "2px solid rgba(76,175,138,0.45)", paddingLeft: 10, color: "var(--color-text-muted)", fontSize: 12, lineHeight: 1.55 }}>
                     {outcomeNotes}
                 </div>
             )}
 
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 {onAccept && (
-                    <button type="button" onClick={onAccept} style={buttonStyle("orange")}>
+                    <button type="button" onClick={onAccept} style={buttonStyle("gold")}>
                         {acceptLabel}
                     </button>
                 )}
                 {onAskForge && (
                     <button type="button" onClick={onAskForge} style={buttonStyle("blue")}>
-                        Ask Forge
+                        Ask Navi
                     </button>
                 )}
                 {onDismiss && (
@@ -123,26 +123,26 @@ function Badge({ label, color }: { label: string; color: string }) {
             display: "inline-flex",
             alignItems: "center",
             borderRadius: 999,
-            border: `1px solid ${color}55`,
-            background: `${color}18`,
+            border: `1px solid color-mix(in srgb, ${color} 34%, transparent)`,
+            background: `color-mix(in srgb, ${color} 10%, transparent)`,
             color,
             padding: "4px 8px",
             fontSize: 10,
             lineHeight: 1.1,
             textTransform: "capitalize",
             fontWeight: 800,
-            fontFamily: "'DM Sans', system-ui, sans-serif",
+            fontFamily: "var(--tekori-font-ui)",
         }}>
             {label}
         </span>
     );
 }
 
-function buttonStyle(tone: "orange" | "blue" | "muted") {
+function buttonStyle(tone: "gold" | "blue" | "muted") {
     const styles = {
-        orange: { background: "rgba(232,98,42,0.12)", border: "1px solid rgba(232,98,42,0.28)", color: "#E8622A" },
-        blue: { background: "rgba(99,179,237,0.10)", border: "1px solid rgba(99,179,237,0.22)", color: "#8FC8F6" },
-        muted: { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#9D978E" },
+        gold: { background: "rgba(216,155,43,0.12)", border: "1px solid rgba(216,155,43,0.28)", color: "var(--tekori-gold)" },
+        blue: { background: "rgba(142,160,181,0.10)", border: "1px solid rgba(142,160,181,0.22)", color: "var(--tekori-slate-navy)" },
+        muted: { background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)", color: "var(--color-text-muted)" },
     } as const;
     return {
         ...styles[tone],
@@ -151,6 +151,6 @@ function buttonStyle(tone: "orange" | "blue" | "muted") {
         fontSize: 12,
         fontWeight: 800,
         cursor: "pointer",
-        fontFamily: "'DM Sans', system-ui, sans-serif",
+        fontFamily: "var(--tekori-font-ui)",
     };
 }

@@ -41,10 +41,10 @@ function PriceLine({
     if (useFounding && foundingCents !== null) {
         return (
             <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 8, flexWrap: "wrap" }}>
-                <span style={{ fontSize: 28, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
+                <span style={{ fontSize: 28, fontFamily: "var(--tekori-font-ui)", fontWeight: 700, color: "var(--color-text)" }}>
                     {formatUsd(foundingCents)}
                 </span>
-                <span style={{ fontSize: 12, color: "rgba(240,237,232,0.62)" }}>{intervalLabel}</span>
+                <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>{intervalLabel}</span>
                 <span style={{ fontSize: 11, color: "#B08A6B", textDecoration: "line-through" }}>
                     {formatUsd(standardCents)}
                 </span>
@@ -54,10 +54,10 @@ function PriceLine({
 
     return (
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 8, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 28, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
+            <span style={{ fontSize: 28, fontFamily: "var(--tekori-font-ui)", fontWeight: 700, color: "var(--color-text)" }}>
                 {formatUsd(standardCents)}
             </span>
-            <span style={{ fontSize: 12, color: "rgba(240,237,232,0.62)" }}>{intervalLabel}</span>
+            <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>{intervalLabel}</span>
         </div>
     );
 }
@@ -91,27 +91,27 @@ function PlanCard({
                 minWidth: 260,
                 textAlign: "center",
                 background: planId === "pro"
-                    ? "linear-gradient(180deg, rgba(232,98,42,0.085), rgba(255,255,255,0.024))"
-                    : "rgba(255,255,255,0.024)",
+                    ? "linear-gradient(180deg, rgba(216,155,43,0.085), rgba(7,26,47,0.024))"
+                    : "rgba(7,26,47,0.024)",
                 border: planId === "pro"
-                    ? "1px solid rgba(232,98,42,0.18)"
-                    : "1px solid rgba(255,255,255,0.065)",
+                    ? "1px solid rgba(216,155,43,0.18)"
+                    : "1px solid rgba(7,26,47,0.065)",
                 borderRadius: 14,
                 padding: 20,
-                boxShadow: planId === "pro" ? "0 14px 34px rgba(0,0,0,0.22)" : "none",
+                boxShadow: planId === "pro" ? "0 14px 34px rgba(16,32,51,0.10)" : "none",
             }}
         >
             <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 10, marginBottom: 12, alignItems: "center" }}>
                 <div>
-                    <div style={{ fontSize: 11, color: planId === "pro" ? "#F5A843" : "#888", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6 }}>
+                    <div style={{ fontSize: 11, color: planId === "pro" ? "var(--tekori-amber)" : "var(--color-text-muted)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6 }}>
                         {plan.shortLabel}
                     </div>
-                    <div style={{ fontSize: 20, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
+                    <div style={{ fontSize: 20, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, color: "var(--color-text)" }}>
                         {plan.headline}
                     </div>
                 </div>
                 {planId === "pro" && (
-                    <div style={{ fontSize: 10, color: "#F5A843", background: "rgba(245,168,67,0.1)", border: "1px solid rgba(245,168,67,0.22)", borderRadius: 999, padding: "4px 10px", whiteSpace: "nowrap" }}>
+                    <div style={{ fontSize: 10, color: "var(--tekori-amber)", background: "rgba(244,182,66,0.1)", border: "1px solid rgba(244,182,66,0.22)", borderRadius: 999, padding: "4px 10px", whiteSpace: "nowrap" }}>
                         Premium
                     </div>
                 )}
@@ -124,25 +124,25 @@ function PlanCard({
                 interval={interval}
             />
 
-            <div style={{ fontSize: 12, color: "#A8A4A0", lineHeight: 1.6, marginTop: 10 }}>
+            <div style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.6, marginTop: 10 }}>
                 {plan.tagline}
             </div>
 
             {interval === "yearly" && (
-                <div style={{ marginTop: 8, fontSize: 11, color: "#7CC7FF" }}>
+                <div style={{ marginTop: 8, fontSize: 11, color: "var(--color-success)" }}>
                     {formatAnnualSavings(standardMonthly, standardYearly)}
                 </div>
             )}
 
             {extraSeats > 0 && (
-                <div style={{ marginTop: 10, fontSize: 12, color: "#C8C4BE" }}>
+                <div style={{ marginTop: 10, fontSize: 12, color: "var(--color-text-soft)" }}>
                     With {extraSeats} extra {extraSeats === 1 ? "seat" : "seats"}: {formatUsd(total)} / {interval === "yearly" ? "year" : "month"}
                 </div>
             )}
 
             <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 16, alignItems: "center" }}>
                 {plan.featureHighlights.map((feature) => (
-                    <div key={feature} style={{ display: "flex", gap: 8, alignItems: "flex-start", justifyContent: "center", fontSize: 12, color: "#C8C4BE", lineHeight: 1.5, textAlign: "center" }}>
+                    <div key={feature} style={{ display: "flex", gap: 8, alignItems: "flex-start", justifyContent: "center", fontSize: 12, color: "var(--color-text-soft)", lineHeight: 1.5, textAlign: "center" }}>
                         <Icons.forge.check size={14} />
                         <span>{feature}</span>
                     </div>
@@ -158,13 +158,13 @@ function PlanCard({
                     marginTop: 18,
                     padding: "12px 14px",
                     borderRadius: 12,
-                    border: isCurrent ? "1px solid rgba(255,255,255,0.08)" : "none",
+                    border: isCurrent ? "1px solid rgba(7,26,47,0.08)" : "none",
                     background: isCurrent
-                        ? "rgba(255,255,255,0.04)"
+                        ? "rgba(7,26,47,0.04)"
                         : planId === "pro"
-                            ? "linear-gradient(135deg, #E8622A, #c9521e)"
-                            : "rgba(255,255,255,0.055)",
-                    color: isCurrent ? "#666" : planId === "pro" ? "#fff" : "#F0EDE8",
+                            ? "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))"
+                            : "rgba(7,26,47,0.055)",
+                    color: isCurrent ? "var(--color-text-muted)" : planId === "pro" ? "var(--color-primary)" : "var(--color-text)",
                     fontSize: 12,
                     fontWeight: 700,
                     cursor: isCurrent ? "default" : "pointer",
@@ -205,24 +205,24 @@ export default function PaywallScreen({ open, targetStage, access, onManageSubsc
     const currentPaidPlan = access?.plan_type === "starter" || access?.plan_type === "pro";
 
     return (
-        <div style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(4,4,5,0.84)", backdropFilter: "blur(14px)", display: "flex", justifyContent: "center", overflowY: "auto" }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(7,26,47,0.42)", backdropFilter: "blur(14px)", display: "flex", justifyContent: "center", overflowY: "auto" }}>
             <div style={{ width: "100%", maxWidth: 1120, padding: "32px 20px 56px" }}>
                 <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 16, alignItems: "center", marginBottom: 24, textAlign: "center" }}>
                     <div style={{ maxWidth: 700 }}>
-                        <div style={{ fontSize: 11, color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 10 }}>
+                        <div style={{ fontSize: 11, color: "var(--tekori-gold)", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 10 }}>
                             Unlock Stage {targetStage}
                         </div>
-                        <div style={{ fontSize: "clamp(32px, 5vw, 48px)", lineHeight: 1, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 12 }}>
+                        <div style={{ fontSize: "clamp(32px, 5vw, 48px)", lineHeight: 1, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, color: "var(--color-text)", marginBottom: 12 }}>
                             Continue the build. Step into execution.
                         </div>
-                        <div style={{ fontSize: 15, color: "#C8C4BE", lineHeight: 1.7, maxWidth: 760 }}>
+                        <div style={{ fontSize: 15, color: "var(--color-text-soft)", lineHeight: 1.7, maxWidth: 760 }}>
                             {getPaywallEntryMessage(targetStage)}
                         </div>
                     </div>
                     <button
                         onClick={onClose}
                         className="foundry-btn foundry-btn--ghost"
-                        style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "10px 14px", color: "#C8C4BE", fontSize: 12, cursor: "pointer", height: "fit-content" }}
+                        style={{ background: "rgba(7,26,47,0.06)", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 12, padding: "10px 14px", color: "var(--color-text-soft)", fontSize: 12, cursor: "pointer", height: "fit-content" }}
                     >
                         Close
                     </button>
@@ -232,21 +232,21 @@ export default function PaywallScreen({ open, targetStage, access, onManageSubsc
                     <div>
                         <div className="foundry-command-panel" style={{ padding: 22, marginBottom: 18, textAlign: "center" }}>
                             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 14, justifyContent: "center" }}>
-                                <div style={{ fontSize: 11, color: "#F5A843", background: "rgba(245,168,67,0.1)", border: "1px solid rgba(245,168,67,0.24)", borderRadius: 999, padding: "5px 10px" }}>
+                                <div style={{ fontSize: 11, color: "var(--tekori-amber)", background: "rgba(244,182,66,0.1)", border: "1px solid rgba(244,182,66,0.24)", borderRadius: 999, padding: "5px 10px" }}>
                                     Stage 1 remains free
                                 </div>
                                 {foundingVisible && (
-                                    <div style={{ fontSize: 11, color: "#7CC7FF", background: "rgba(124,199,255,0.1)", border: "1px solid rgba(124,199,255,0.2)", borderRadius: 999, padding: "5px 10px" }}>
+                                    <div style={{ fontSize: 11, color: "var(--tekori-amber)", background: "rgba(244,182,66,0.1)", border: "1px solid rgba(244,182,66,0.22)", borderRadius: 999, padding: "5px 10px" }}>
                                         {foundingLocked ? FOUNDING_PRICING.lockedBadge : FOUNDING_PRICING.badge}
                                     </div>
                                 )}
                             </div>
 
-                            <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8", marginBottom: 8 }}>
+                            <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-ui)", color: "var(--color-text)", marginBottom: 8 }}>
                                 Why payment starts at Stage 2
                             </div>
-                            <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.7 }}>
-                                Foundry opens freely in Stage 1 so founders can think clearly, pressure-test the problem, and decide whether they are serious. Stage 2 is where the real build begins: model decisions, execution structure, premium tools, and the full journey beyond the idea phase.
+                            <div style={{ fontSize: 13, color: "var(--color-text-muted)", lineHeight: 1.7 }}>
+                                Tekori opens freely in Stage 1 so founders can think clearly, pressure-test the problem, and decide whether they are serious. Stage 2 is where the real build begins: model decisions, execution structure, premium tools, and the full journey beyond the idea phase.
                             </div>
                             <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 18, flexWrap: "wrap" }}>
                                 {(["monthly", "yearly"] as BillingInterval[]).map((value) => (
@@ -256,9 +256,9 @@ export default function PaywallScreen({ open, targetStage, access, onManageSubsc
                                         style={{
                                             padding: "9px 14px",
                                             borderRadius: 999,
-                                            border: interval === value ? "1px solid rgba(232,98,42,0.35)" : "1px solid rgba(255,255,255,0.08)",
-                                            background: interval === value ? "rgba(232,98,42,0.14)" : "rgba(255,255,255,0.03)",
-                                            color: interval === value ? "#F0EDE8" : "#A8A4A0",
+                                            border: interval === value ? "1px solid rgba(216,155,43,0.35)" : "1px solid rgba(7,26,47,0.08)",
+                                            background: interval === value ? "rgba(216,155,43,0.14)" : "rgba(7,26,47,0.03)",
+                                            color: interval === value ? "var(--color-text)" : "var(--color-text-muted)",
                                             fontSize: 12,
                                             fontWeight: 600,
                                             cursor: "pointer",
@@ -295,21 +295,21 @@ export default function PaywallScreen({ open, targetStage, access, onManageSubsc
                             </div>
                             <div className="foundry-plan-comparison-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
                                 <div style={{ textAlign: "center" }}>
-                                    <div style={{ fontSize: 12, color: "rgba(240,237,232,0.62)", marginBottom: 8 }}>Free</div>
+                                    <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 8 }}>Free</div>
                                     {BILLING_PLANS.free.comparisonPoints.map((point) => (
                                         <div key={point} style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.6, marginBottom: 6 }}>{point}</div>
                                     ))}
                                 </div>
                                 <div style={{ textAlign: "center" }}>
-                                    <div style={{ fontSize: 12, color: "#F0EDE8", marginBottom: 8 }}>Starter</div>
+                                    <div style={{ fontSize: 12, color: "var(--color-text)", marginBottom: 8 }}>Starter</div>
                                     {BILLING_PLANS.starter.comparisonPoints.map((point) => (
-                                        <div key={point} style={{ fontSize: 12, color: "#C8C4BE", lineHeight: 1.6, marginBottom: 6 }}>{point}</div>
+                                        <div key={point} style={{ fontSize: 12, color: "var(--color-text-soft)", lineHeight: 1.6, marginBottom: 6 }}>{point}</div>
                                     ))}
                                 </div>
                                 <div style={{ textAlign: "center" }}>
-                                    <div style={{ fontSize: 12, color: "#F5A843", marginBottom: 8 }}>Pro</div>
+                                    <div style={{ fontSize: 12, color: "var(--tekori-amber)", marginBottom: 8 }}>Pro</div>
                                     {BILLING_PLANS.pro.comparisonPoints.map((point) => (
-                                        <div key={point} style={{ fontSize: 12, color: "#C8C4BE", lineHeight: 1.6, marginBottom: 6 }}>{point}</div>
+                                        <div key={point} style={{ fontSize: 12, color: "var(--color-text-soft)", lineHeight: 1.6, marginBottom: 6 }}>{point}</div>
                                     ))}
                                 </div>
                             </div>
@@ -321,14 +321,14 @@ export default function PaywallScreen({ open, targetStage, access, onManageSubsc
                             <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>
                                 Current Access
                             </div>
-                            <div style={{ fontSize: 18, fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8", marginBottom: 6 }}>
+                            <div style={{ fontSize: 18, fontFamily: "var(--tekori-font-ui)", color: "var(--color-text)", marginBottom: 6 }}>
                                 {accessSummary.planName} · {accessSummary.statusLabel}
                             </div>
-                            <div style={{ fontSize: 12, color: "#A8A4A0", lineHeight: 1.7 }}>
+                            <div style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.7 }}>
                                 {accessSummary.note}
                             </div>
                             {accessSummary.badge && (
-                                <div style={{ marginTop: 12, fontSize: 11, color: "#7CC7FF", background: "rgba(124,199,255,0.08)", border: "1px solid rgba(124,199,255,0.18)", borderRadius: 999, padding: "5px 10px", display: "inline-block" }}>
+                                <div style={{ marginTop: 12, fontSize: 11, color: "var(--tekori-amber)", background: "rgba(244,182,66,0.08)", border: "1px solid rgba(244,182,66,0.18)", borderRadius: 999, padding: "5px 10px", display: "inline-block" }}>
                                     {accessSummary.badge}
                                 </div>
                             )}
@@ -338,26 +338,26 @@ export default function PaywallScreen({ open, targetStage, access, onManageSubsc
                             <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>
                                 Team Add-On
                             </div>
-                            <div style={{ fontSize: 16, fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8", marginBottom: 8 }}>
+                            <div style={{ fontSize: 16, fontFamily: "var(--tekori-font-ui)", color: "var(--color-text)", marginBottom: 8 }}>
                                 Build with a cofounder or team
                             </div>
-                            <div style={{ fontSize: 12, color: "#A8A4A0", lineHeight: 1.7, marginBottom: 14 }}>
+                            <div style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.7, marginBottom: 14 }}>
                                 {TEAM_SEAT_ADDON.description} {foundingVisible ? `Current rate: ${formatUsd(extraSeatPrice)}/month per added member.` : `Configured rate: ${formatUsd(extraSeatPrice)}/month per added member.`}
                             </div>
                             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                                 <button
                                     onClick={() => setExtraSeats((value) => Math.max(0, value - 1))}
-                                    style={{ width: 36, height: 36, borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)", color: "#F0EDE8", cursor: "pointer" }}
+                                    style={{ width: 36, height: 36, borderRadius: 10, border: "1px solid rgba(7,26,47,0.1)", background: "rgba(7,26,47,0.03)", color: "var(--color-text)", cursor: "pointer" }}
                                 >
                                     -
                                 </button>
                                 <div style={{ flex: 1, textAlign: "center" }}>
-                                    <div style={{ fontSize: 24, fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8" }}>{extraSeats}</div>
+                                    <div style={{ fontSize: 24, fontFamily: "var(--tekori-font-ui)", color: "var(--color-text)" }}>{extraSeats}</div>
                                     <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Extra seats</div>
                                 </div>
                                 <button
                                     onClick={() => setExtraSeats((value) => Math.min(10, value + 1))}
-                                    style={{ width: 36, height: 36, borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)", color: "#F0EDE8", cursor: "pointer" }}
+                                    style={{ width: 36, height: 36, borderRadius: 10, border: "1px solid rgba(7,26,47,0.1)", background: "rgba(7,26,47,0.03)", color: "var(--color-text)", cursor: "pointer" }}
                                 >
                                     +
                                 </button>
@@ -368,16 +368,16 @@ export default function PaywallScreen({ open, targetStage, access, onManageSubsc
                             <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>
                                 Access Rules
                             </div>
-                            <div style={{ fontSize: 12, color: "#A8A4A0", lineHeight: 1.7 }}>
+                            <div style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.7 }}>
                                 {getPaidStageBlockNote(access)}
                             </div>
-                            <div style={{ fontSize: 12, color: "#A8A4A0", lineHeight: 1.7, marginTop: 10 }}>
+                            <div style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.7, marginTop: 10 }}>
                                 Your current access, cancellation window, and any granted plan updates are reflected automatically.
                             </div>
-                            <div style={{ fontSize: 12, color: "#A8A4A0", lineHeight: 1.7, marginTop: 10 }}>
+                            <div style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.7, marginTop: 10 }}>
                                 Refund policy: {REFUND_POLICY.summary}
                             </div>
-                            <div style={{ fontSize: 12, color: "#A8A4A0", lineHeight: 1.7, marginTop: 6 }}>
+                            <div style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.7, marginTop: 6 }}>
                                 Support: {SUPPORT_EMAIL}
                             </div>
                             {currentPaidPlan && (
@@ -388,9 +388,9 @@ export default function PaywallScreen({ open, targetStage, access, onManageSubsc
                                         marginTop: 14,
                                         padding: "10px 14px",
                                         borderRadius: 12,
-                                        border: "1px solid rgba(255,255,255,0.1)",
-                                        background: "rgba(255,255,255,0.04)",
-                                        color: "#F0EDE8",
+                                        border: "1px solid rgba(7,26,47,0.1)",
+                                        background: "rgba(7,26,47,0.04)",
+                                        color: "var(--color-text)",
                                         fontSize: 12,
                                         fontWeight: 600,
                                         cursor: "pointer",
@@ -402,7 +402,7 @@ export default function PaywallScreen({ open, targetStage, access, onManageSubsc
                         </div>
 
                         {(message || billingMessage) && (
-                            <div className="foundry-module-card" style={{ padding: 18, fontSize: 12, color: "#C8C4BE", lineHeight: 1.6, textAlign: "center" }}>
+                            <div className="foundry-module-card" style={{ padding: 18, fontSize: 12, color: "var(--color-text-soft)", lineHeight: 1.6, textAlign: "center" }}>
                                 {loadingPlan ? "Preparing checkout..." : (message || billingMessage)}
                             </div>
                         )}

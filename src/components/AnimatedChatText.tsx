@@ -34,7 +34,7 @@ function renderInline(text: string, keyPrefix: string) {
     return text.split(/(\*\*.*?\*\*)/g).map((part, index) => {
         if (part.startsWith("**") && part.endsWith("**")) {
             return (
-                <strong key={`${keyPrefix}-b-${index}`} style={{ color: "#F0EDE8", fontWeight: 700 }}>
+                <strong key={`${keyPrefix}-b-${index}`} style={{ color: "var(--color-text)", fontWeight: 700 }}>
                     {part.slice(2, -2)}
                 </strong>
             );
@@ -96,7 +96,7 @@ export function renderText(text: string) {
                         fontSize,
                         lineHeight: 1.4,
                         fontWeight: 700,
-                        color: "#F0EDE8",
+                        color: "var(--color-text)",
                         textAlign: "left",
                     }}
                 >
@@ -218,11 +218,11 @@ export function AnimatedChatText({ text, createdAt }: { text: string; createdAt?
                 @keyframes forgeLetterCool {
                     0% {
                         color: #ff6a3d;
-                        text-shadow: 0 0 10px rgba(232,98,42,0.42), 0 0 18px rgba(245,168,67,0.18);
+                        text-shadow: 0 0 10px rgba(216,155,43,0.42), 0 0 18px rgba(244,182,66,0.18);
                     }
                     35% {
                         color: #f59a69;
-                        text-shadow: 0 0 7px rgba(232,98,42,0.24);
+                        text-shadow: 0 0 7px rgba(216,155,43,0.24);
                     }
                     100% {
                         color: #d8d4ce;
@@ -255,7 +255,7 @@ export function AnimatedChatText({ text, createdAt }: { text: string; createdAt?
                                                         <span
                                                             key={`anim-char-${currentIndex}`}
                                                             style={{
-                                                                color: seg.bold ? "#F0EDE8" : "#D8D4CE",
+                                                                color: seg.bold ? "var(--color-text)" : "var(--color-text)",
                                                                 fontWeight: seg.bold ? 700 : undefined,
                                                                 animation: "forgeLetterCool 1s ease forwards",
                                                                 display: "inline-block",
@@ -269,7 +269,7 @@ export function AnimatedChatText({ text, createdAt }: { text: string; createdAt?
                                         );
                                     });
                                     return seg.bold
-                                        ? <strong key={`anim-seg-${pIdx}-${lIdx}-${segIdx}`} style={{ color: "#F0EDE8", fontWeight: 700 }}>{renderedTokens}</strong>
+                                        ? <strong key={`anim-seg-${pIdx}-${lIdx}-${segIdx}`} style={{ color: "var(--color-text)", fontWeight: 700 }}>{renderedTokens}</strong>
                                         : <span key={`anim-seg-${pIdx}-${lIdx}-${segIdx}`}>{renderedTokens}</span>;
                                 })}
                             </span>
@@ -341,9 +341,9 @@ export function MessageActions({
             <button
                 onClick={() => toggleReaction("up")}
                 title="Good response"
-                style={{ ...btnBase, color: reaction === "up" ? "#F0EDE8" : "#3a3a3a" }}
-                onMouseEnter={e => { if (reaction !== "up") e.currentTarget.style.color = "#888"; }}
-                onMouseLeave={e => { if (reaction !== "up") e.currentTarget.style.color = "#3a3a3a"; }}
+                style={{ ...btnBase, color: reaction === "up" ? "var(--color-text)" : "var(--color-text)" }}
+                onMouseEnter={e => { if (reaction !== "up") e.currentTarget.style.color = "var(--color-text-muted)"; }}
+                onMouseLeave={e => { if (reaction !== "up") e.currentTarget.style.color = "var(--color-text)"; }}
             >
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M5 14H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h2m4-1V4a2 2 0 0 0-2-2L5 7v7h7.2a1 1 0 0 0 1-.8l.8-5a1 1 0 0 0-1-1.2H9Z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill={reaction === "up" ? "currentColor" : "none"} fillOpacity={reaction === "up" ? 0.15 : 0} />
@@ -354,9 +354,9 @@ export function MessageActions({
             <button
                 onClick={() => toggleReaction("down")}
                 title="Bad response"
-                style={{ ...btnBase, color: reaction === "down" ? "#F0EDE8" : "#3a3a3a" }}
-                onMouseEnter={e => { if (reaction !== "down") e.currentTarget.style.color = "#888"; }}
-                onMouseLeave={e => { if (reaction !== "down") e.currentTarget.style.color = "#3a3a3a"; }}
+                style={{ ...btnBase, color: reaction === "down" ? "var(--color-text)" : "var(--color-text)" }}
+                onMouseEnter={e => { if (reaction !== "down") e.currentTarget.style.color = "var(--color-text-muted)"; }}
+                onMouseLeave={e => { if (reaction !== "down") e.currentTarget.style.color = "var(--color-text)"; }}
             >
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M11 2h2a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-2M7 9v2a2 2 0 0 0 2 2l4-6V1H5.8a1 1 0 0 0-1 .8l-.8 5a1 1 0 0 0 1 1.2H7Z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" fill={reaction === "down" ? "currentColor" : "none"} fillOpacity={reaction === "down" ? 0.15 : 0} />
@@ -364,15 +364,15 @@ export function MessageActions({
             </button>
 
             {/* Divider */}
-            <div style={{ width: 1, height: 10, background: "rgba(255,255,255,0.08)", margin: "0 2px" }} />
+            <div style={{ width: 1, height: 10, background: "rgba(7,26,47,0.08)", margin: "0 2px" }} />
 
             {/* Copy */}
             <button
                 onClick={handleCopy}
                 title={copied ? "Copied!" : "Copy message"}
-                style={{ ...btnBase, color: copied ? "#4CAF8A" : "#3a3a3a" }}
-                onMouseEnter={e => { if (!copied) e.currentTarget.style.color = "#888"; }}
-                onMouseLeave={e => { if (!copied) e.currentTarget.style.color = "#3a3a3a"; }}
+                style={{ ...btnBase, color: copied ? "var(--color-success)" : "var(--color-text)" }}
+                onMouseEnter={e => { if (!copied) e.currentTarget.style.color = "var(--color-text-muted)"; }}
+                onMouseLeave={e => { if (!copied) e.currentTarget.style.color = "var(--color-text)"; }}
             >
                 {copied ? (
                     <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
@@ -387,13 +387,13 @@ export function MessageActions({
             </button>
             {onApplyToContext && (
                 <>
-                    <div style={{ width: 1, height: 10, background: "rgba(255,255,255,0.08)", margin: "0 2px" }} />
+                    <div style={{ width: 1, height: 10, background: "rgba(7,26,47,0.08)", margin: "0 2px" }} />
                     <button
                         onClick={onApplyToContext}
                         title="Apply this to..."
-                        style={{ ...btnBase, color: "#3a3a3a", width: 22, height: 22 }}
-                        onMouseEnter={e => { e.currentTarget.style.color = "#A78BFA"; }}
-                        onMouseLeave={e => { e.currentTarget.style.color = "#3a3a3a"; }}
+                        style={{ ...btnBase, color: "var(--color-text)", width: 22, height: 22 }}
+                        onMouseEnter={e => { e.currentTarget.style.color = "var(--tekori-soft-gold)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.color = "var(--color-text)"; }}
                     >
                         <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                             <path d="M8 2v12M2 8h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -402,7 +402,7 @@ export function MessageActions({
                 </>
             )}
             {feedbackFailed && (
-                <span style={{ marginLeft: 4, fontSize: 10, color: "#D96A55", fontFamily: "'DM Sans', sans-serif" }}>
+                <span style={{ marginLeft: 4, fontSize: 10, color: "#D96A55", fontFamily: "var(--tekori-font-ui)" }}>
                     Feedback email failed
                 </span>
             )}

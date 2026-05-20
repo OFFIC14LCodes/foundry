@@ -32,7 +32,7 @@ export default function ConceptModal({
     const displayName = entry?.name || conceptName;
     const stageNum = entry?.stage || activeStage;
     const stageData = STAGES_DATA[stageNum - 1];
-    const stageColor = STAGE_COLORS[stageNum] || "#9F7AEA";
+    const stageColor = STAGE_COLORS[stageNum] || "var(--tekori-gold)";
 
     // Generate personalized "why this matters for you" on open
     useEffect(() => {
@@ -40,10 +40,10 @@ export default function ConceptModal({
             setLoadingNote(true);
             try {
                 const businessContext = profile.idea || profile.businessName || "their business";
-                const prompt = `The founder ${profile.name} is building "${businessContext}" and is currently in Stage ${activeStage} of Foundry. They just tapped on the concept "${displayName}" to explore it more deeply.\n\nIn 2-3 sentences, explain specifically why understanding "${displayName}" is important for what they are working on right now. Be concrete and personal — reference their specific business situation. Do not define the concept. Connect it to their specific stage and business in a way that makes them feel like this concept arrived at exactly the right moment.`;
+                const prompt = `The founder ${profile.name} is building "${businessContext}" and is currently in Stage ${activeStage} of Tekori. They just tapped on the concept "${displayName}" to explore it more deeply.\n\nIn 2-3 sentences, explain specifically why understanding "${displayName}" is important for what they are working on right now. Be concrete and personal — reference their specific business situation. Do not define the concept. Connect it to their specific stage and business in a way that makes them feel like this concept arrived at exactly the right moment.`;
                 const note = await callForgeAPI(
                     [{ role: "user", content: prompt }],
-                    "You are Forge. Respond with only the 2-3 sentence insight, no preamble, no sign-off."
+                    "You are Navi. Respond with only the 2-3 sentence insight, no preamble, no sign-off."
                 );
                 setPersonalNote(note || null);
             } catch {
@@ -55,14 +55,14 @@ export default function ConceptModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [conceptName]);
 
-    const SectionLabel = ({ children, color = "#555" }: { children: string; color?: string }) => (
+    const SectionLabel = ({ children, color = "var(--color-text-muted)" }: { children: string; color?: string }) => (
         <div style={{
             fontSize: 10,
             color,
             letterSpacing: "0.13em",
             textTransform: "uppercase" as const,
             marginBottom: 8,
-            fontFamily: "'Lora', Georgia, serif",
+            fontFamily: "var(--tekori-font-ui)",
             fontWeight: 600,
         }}>
             {children}
@@ -72,8 +72,8 @@ export default function ConceptModal({
     const SectionBody = ({ children, italic = false }: { children: string; italic?: boolean }) => (
         <div style={{
             fontSize: 14,
-            fontFamily: "'Lora', Georgia, serif",
-            color: "#C8C4BE",
+            fontFamily: "var(--tekori-font-ui)",
+            color: "var(--color-text-soft)",
             lineHeight: 1.78,
             fontStyle: italic ? "italic" : "normal",
         }}>
@@ -97,7 +97,7 @@ export default function ConceptModal({
                 style={{
                     position: "absolute",
                     inset: 0,
-                    background: "rgba(0,0,0,0.70)",
+                    background: "rgba(7,26,47,0.62)",
                     backdropFilter: "blur(6px)",
                 }}
             />
@@ -106,7 +106,7 @@ export default function ConceptModal({
             <div style={{
                 position: "relative",
                 background: "#0D0D10",
-                borderTop: "1px solid rgba(255,255,255,0.1)",
+                borderTop: "1px solid rgba(7,26,47,0.1)",
                 borderRadius: "20px 20px 0 0",
                 padding: "0 0 max(36px, calc(20px + env(safe-area-inset-bottom)))",
                 animation: "slideUp 0.3s cubic-bezier(0.16,1,0.3,1)",
@@ -117,20 +117,20 @@ export default function ConceptModal({
                 <div style={{
                     width: 36,
                     height: 3,
-                    background: "rgba(255,255,255,0.12)",
+                    background: "rgba(7,26,47,0.12)",
                     borderRadius: 2,
                     margin: "16px auto 20px",
                 }} />
 
                 {/* Header */}
-                <div style={{ padding: "0 20px 18px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                <div style={{ padding: "0 20px 18px", borderBottom: "1px solid rgba(7,26,47,0.05)" }}>
                     <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
                         <div style={{ flex: 1, paddingRight: 12 }}>
                             <div style={{
                                 fontSize: 28,
-                                fontFamily: "'Playfair Display', Georgia, serif",
+                                fontFamily: "var(--tekori-font-brand)",
                                 fontWeight: 700,
-                                color: "#F0EDE8",
+                                color: "var(--color-text)",
                                 letterSpacing: "-0.5px",
                                 lineHeight: 1.1,
                                 marginBottom: 10,
@@ -147,19 +147,19 @@ export default function ConceptModal({
                                         borderRadius: 20,
                                         padding: "2px 9px",
                                         fontWeight: 500,
-                                        fontFamily: "'Lora', Georgia, serif",
+                                        fontFamily: "var(--tekori-font-ui)",
                                     }}>
                                         Stage {stageNum} — {stageData.label}
                                     </div>
                                 )}
                                 <div style={{
                                     fontSize: 10,
-                                    color: "#9F7AEA",
+                                    color: "var(--tekori-gold)",
                                     background: "rgba(159,122,234,0.1)",
                                     border: "1px solid rgba(159,122,234,0.25)",
                                     borderRadius: 20,
                                     padding: "2px 9px",
-                                    fontFamily: "'Lora', Georgia, serif",
+                                    fontFamily: "var(--tekori-font-ui)",
                                     fontWeight: 500,
                                 }}>
                                     ✦ Core Concept
@@ -167,11 +167,11 @@ export default function ConceptModal({
                                 {alreadyExplored && (
                                     <div style={{
                                         fontSize: 10,
-                                        color: "#9F7AEA",
+                                        color: "var(--tekori-gold)",
                                         background: "rgba(159,122,234,0.08)",
                                         borderRadius: 20,
                                         padding: "2px 9px",
-                                        fontFamily: "'Lora', Georgia, serif",
+                                        fontFamily: "var(--tekori-font-ui)",
                                     }}>
                                         ✦ Explored
                                     </div>
@@ -181,7 +181,7 @@ export default function ConceptModal({
                         <button
                             onClick={onClose}
                             style={{
-                                background: "rgba(255,255,255,0.06)",
+                                background: "rgba(7,26,47,0.06)",
                                 border: "none",
                                 borderRadius: 8,
                                 padding: "6px 12px",
@@ -203,12 +203,12 @@ export default function ConceptModal({
                     <div style={{
                         marginTop: 18,
                         marginBottom: 16,
-                        background: "rgba(232,98,42,0.06)",
-                        border: "1px solid rgba(232,98,42,0.15)",
+                        background: "rgba(216,155,43,0.06)",
+                        border: "1px solid rgba(216,155,43,0.15)",
                         borderRadius: 12,
                         padding: "14px 16px",
                     }}>
-                        <SectionLabel color="#E8622A">Why this matters for you right now</SectionLabel>
+                        <SectionLabel color="var(--tekori-gold)">Why this matters for you right now</SectionLabel>
                         {loadingNote ? (
                             <div style={{ display: "flex", gap: 5, alignItems: "center", padding: "4px 0" }}>
                                 {[0, 1, 2].map(i => (
@@ -218,7 +218,7 @@ export default function ConceptModal({
                                             width: 5,
                                             height: 5,
                                             borderRadius: "50%",
-                                            background: "#E8622A",
+                                            background: "var(--tekori-gold)",
                                             animation: "forgePulse 1.4s infinite ease-in-out",
                                             animationDelay: `${i * 0.2}s`,
                                         }}
@@ -228,14 +228,14 @@ export default function ConceptModal({
                         ) : (
                             <div style={{
                                 fontSize: 13,
-                                fontFamily: "'Lora', Georgia, serif",
-                                color: "#D8D4CE",
+                                fontFamily: "var(--tekori-font-ui)",
+                                color: "var(--color-text)",
                                 lineHeight: 1.75,
                                 fontStyle: "italic",
                             }}>
                                 {personalNote || (entry
                                     ? `Understanding ${displayName} is directly relevant to where you are in Stage ${activeStage}. The work you're doing right now will be shaped by how clearly you see this concept.`
-                                    : `This concept is worth exploring carefully at Stage ${activeStage}. Forge will have more to say about it as your work continues.`
+                                    : `This concept is worth exploring carefully at Stage ${activeStage}. Navi will have more to say about it as your work continues.`
                                 )}
                             </div>
                         )}
@@ -281,11 +281,11 @@ export default function ConceptModal({
                                 border: "1px solid rgba(159,122,234,0.18)",
                                 borderRadius: 12,
                             }}>
-                                <SectionLabel color="#9F7AEA">Sit with this</SectionLabel>
+                                <SectionLabel color="var(--tekori-gold)">Sit with this</SectionLabel>
                                 <div style={{
                                     fontSize: 15,
-                                    fontFamily: "'Lora', Georgia, serif",
-                                    color: "#D8D4CE",
+                                    fontFamily: "var(--tekori-font-ui)",
+                                    color: "var(--color-text)",
                                     lineHeight: 1.72,
                                     fontStyle: "italic",
                                 }}>
@@ -313,9 +313,9 @@ export default function ConceptModal({
                                                     border: "1px solid rgba(159,122,234,0.25)",
                                                     borderRadius: 20,
                                                     padding: "4px 12px",
-                                                    color: "#9F7AEA",
+                                                    color: "var(--tekori-gold)",
                                                     fontSize: 11,
-                                                    fontFamily: "'Lora', Georgia, serif",
+                                                    fontFamily: "var(--tekori-font-ui)",
                                                     cursor: onRelatedConceptTap ? "pointer" : "default",
                                                     fontWeight: 500,
                                                 }}
@@ -332,13 +332,13 @@ export default function ConceptModal({
                         <div style={{
                             marginBottom: 22,
                             padding: "16px",
-                            background: "rgba(255,255,255,0.02)",
-                            border: "1px solid rgba(255,255,255,0.06)",
+                            background: "rgba(7,26,47,0.02)",
+                            border: "1px solid rgba(7,26,47,0.06)",
                             borderRadius: 12,
                             textAlign: "center" as const,
                         }}>
-                            <div style={{ fontSize: 13, color: "var(--foundry-text-muted)", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", lineHeight: 1.7 }}>
-                                Deep content for this concept is being written. Check back as Foundry grows.
+                            <div style={{ fontSize: 13, color: "var(--foundry-text-muted)", fontFamily: "var(--tekori-font-ui)", fontStyle: "italic", lineHeight: 1.7 }}>
+                                Deep content for this concept is being written. Check back as Tekori grows.
                             </div>
                         </div>
                     )}
@@ -350,15 +350,15 @@ export default function ConceptModal({
                             style={{
                                 width: "100%",
                                 padding: "13px",
-                                background: "linear-gradient(135deg, #9F7AEA, #7C3AED)",
+                                background: "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))",
                                 border: "none",
                                 borderRadius: 12,
-                                color: "#fff",
+                                color: "var(--color-primary)",
                                 fontSize: 13,
-                                fontFamily: "'Lora', Georgia, serif",
-                                fontWeight: 600,
+                                fontFamily: "var(--tekori-font-ui)",
+                                fontWeight: 800,
                                 cursor: "pointer",
-                                boxShadow: "0 4px 20px rgba(159,122,234,0.3)",
+                                boxShadow: "0 4px 20px rgba(216,155,43,0.3)",
                                 marginBottom: 4,
                             }}
                         >
@@ -368,9 +368,9 @@ export default function ConceptModal({
                         <div style={{
                             textAlign: "center" as const,
                             fontSize: 12,
-                            color: "#9F7AEA",
+                            color: "var(--tekori-gold)",
                             padding: "10px 0",
-                            fontFamily: "'Lora', Georgia, serif",
+                            fontFamily: "var(--tekori-font-ui)",
                         }}>
                             ✦ You've explored this concept
                         </div>

@@ -67,7 +67,7 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
         if (distFromBottom < 120) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
     }, [messages, loading, readyToEnter]);
 
-    const OPENER = `Hey. I'm **Forge** — your partner inside Foundry.\n\nI'm not here to give you generic advice or walk you through a template. I'm here to help you build something **real** — whether that becomes a business, a side hustle, a full-time income path, or an idea you're still shaping.\n\nBefore we get into it, I want to know a few things about you. Not a form. Just a conversation.\n\nWhat's your name?`;
+    const OPENER = `Hey. I'm **Navi** — your partner inside Tekori.\n\nI'm not here to give you generic advice or walk you through a template. I'm here to help you build something **real** — whether that becomes a business, a side hustle, a full-time income path, or an idea you're still shaping.\n\nBefore we get into it, I want to know a few things about you. Not a form. Just a conversation.\n\nWhat's your name?`;
 
     useEffect(() => {
         if (!started) {
@@ -186,7 +186,7 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                 if (isLikelyJokeName(value)) {
                     if (playfulRetryCount.name === 0) {
                         setPlayfulRetryCount((prev) => ({ ...prev, name: 1 }));
-                        await deliverMessage(`Alright, that's at least a decent bit. Now give me the **real name** you want Forge to use.`, setLoading, addForgeMsg, FAST_DELIVERY);
+                        await deliverMessage(`Alright, that's at least a decent bit. Now give me the **real name** you want Navi to use.`, setLoading, addForgeMsg, FAST_DELIVERY);
                         return;
                     }
 
@@ -201,12 +201,12 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                 setPlayfulRetryCount((prev) => ({ ...prev, name: 0 }));
                 p.nameNeedsReview = false;
                 p.name = value; setProfile(p);
-                const prompt = `Respond in 2 sentences only. First: greet "${value}" — warm, natural, one sentence. Second: tell them Foundry meets builders where they actually are, and you want to understand what they're trying to build toward — they'll see some options now.`;
+                const prompt = `Respond in 2 sentences only. First: greet "${value}" — warm, natural, one sentence. Second: tell them Tekori meets builders where they actually are, and you want to understand what they're trying to build toward — they'll see some options now.`;
                 try {
                     const r = await callForgeAPI([{ role: "user", content: prompt }], FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", "Onboarding."));
                     await deliverMessage(r, setLoading, addForgeMsg, FAST_DELIVERY);
                 } catch {
-                    await deliverMessage(`${value} — good to meet you. Foundry works best when we know what you're building toward first.`, setLoading, addForgeMsg, FAST_DELIVERY);
+                    await deliverMessage(`${value} — good to meet you. Tekori works best when we know what you're building toward first.`, setLoading, addForgeMsg, FAST_DELIVERY);
                 }
                 setStepIndex(1);
 
@@ -248,7 +248,7 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                     p.ventureMode = "exploring";
                     p.ventureGoal = p.ventureGoal || "Find and validate the right business idea";
                     setProfile(p);
-                    await deliverMessage(`That's completely fine. Foundry can start before the idea is fully formed — we'll use Stage 1 to help you find a real problem, a real audience, and a direction worth testing.\n\nBefore we do that, I want to understand your background. How much experience do you have with business, selling, or this kind of work?`, setLoading, addForgeMsg, FAST_DELIVERY);
+                    await deliverMessage(`That's completely fine. Tekori can start before the idea is fully formed — we'll use Stage 1 to help you find a real problem, a real audience, and a direction worth testing.\n\nBefore we do that, I want to understand your background. How much experience do you have with business, selling, or this kind of work?`, setLoading, addForgeMsg, FAST_DELIVERY);
                     setStepIndex(4);
                     return;
                 }
@@ -337,7 +337,7 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                 const startStageLabel = STAGES_DATA[startStage - 1]?.label || "Idea";
                 const isExploringWithoutIdea = p.idea === "Still being clarified";
                 const prompt = isExploringWithoutIdea
-                    ? `Onboarding is complete. Give a personalized opening assessment in 3-4 short paragraphs. The builder does not have a business idea yet, and that should feel welcomed, not treated as a problem. Reference their venture mode, goal/constraints, budget, experience level, strategy mode, and the fact that we're starting them at Stage ${startStage}: ${startStageLabel}. Explain that Forge will help them formulate a business idea by looking for problems, skills, audiences, and monetizable opportunities. Tell them briefly that once they choose a direction, they can officially declare or edit the business/project name and market inside Settings. Use **bold** on 2-3 key words. End with just the word "Ready?" on its own line — nothing after it.`
+                    ? `Onboarding is complete. Give a personalized opening assessment in 3-4 short paragraphs. The builder does not have a business idea yet, and that should feel welcomed, not treated as a problem. Reference their venture mode, goal/constraints, budget, experience level, strategy mode, and the fact that we're starting them at Stage ${startStage}: ${startStageLabel}. Explain that Navi will help them formulate a business idea by looking for problems, skills, audiences, and monetizable opportunities. Tell them briefly that once they choose a direction, they can officially declare or edit the business/project name and market inside Settings. Use **bold** on 2-3 key words. End with just the word "Ready?" on its own line — nothing after it.`
                     : `Onboarding is complete. Give a personalized opening assessment in 3-4 short paragraphs. Reference their specific idea, venture mode, goal/constraints, budget, experience level, strategy mode, and the fact that we're starting them at Stage ${startStage}: ${startStageLabel}. Be direct and specific — not generic. If this is a side hustle path, do not imply they must create a formal company; frame it as building a real income engine. If there's a common pitfall for this type of idea or stage, call it out. Explain in one sentence why Stage ${startStage} is the right starting point for them given where they are. Use **bold** on 2-3 key words. End with just the word "Ready?" on its own line — nothing after it.`;
 
                 try {
@@ -402,16 +402,16 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
     const showInput = !currentStep?.cards && stepIndex < ONBOARDING_STEPS.length - 1 && !readyToEnter && !responsePending;
 
     return (
-        <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8", display: "flex", flexDirection: "column" }}>
-            <div style={{ padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ minHeight: "100vh", background: "var(--color-bg-soft)", fontFamily: "var(--tekori-font-ui)", color: "var(--color-text)", display: "flex", flexDirection: "column" }}>
+            <div style={{ padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px", borderBottom: "1px solid rgba(7,26,47,0.05)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <Logo variant="flame" style={{ width: "var(--foundry-app-header-icon-size)", height: "var(--foundry-app-header-icon-size)", objectFit: "contain" }} />
-                    <span style={{ fontSize: "var(--foundry-app-header-title-font)", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>Foundry</span>
+                    <span style={{ fontSize: "var(--foundry-app-header-title-font)", fontFamily: "var(--tekori-font-brand)", fontWeight: 700 }}>Tekori</span>
                 </div>
                 {stepIndex > 0 && (
                     <div style={{ display: "flex", gap: 6 }}>
                         {Array.from({ length: ONBOARDING_STEPS.length - 1 }, (_, i) => i).map(i => (
-                            <div key={i} style={{ width: i < stepIndex ? 18 : 6, height: 6, borderRadius: 3, background: i < stepIndex ? "linear-gradient(90deg, #E8622A, #F5A843)" : "rgba(255,255,255,0.12)", transition: "all 0.4s ease" }} />
+                            <div key={i} style={{ width: i < stepIndex ? 18 : 6, height: 6, borderRadius: 3, background: i < stepIndex ? "linear-gradient(90deg, var(--tekori-gold), var(--tekori-amber))" : "rgba(7,26,47,0.12)", transition: "all 0.4s ease" }} />
                         ))}
                     </div>
                 )}
@@ -452,8 +452,8 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                         <ForgeAvatar size={32} />
                         <div
                             style={{
-                                background: "rgba(255,255,255,0.04)",
-                                border: "1px solid rgba(255,255,255,0.07)",
+                                background: "rgba(7,26,47,0.04)",
+                                border: "1px solid rgba(7,26,47,0.07)",
                                 borderRadius: "4px 16px 16px 16px",
                                 padding: "4px 12px",
                             }}
@@ -467,22 +467,22 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                     <div style={{ display: "flex", flexDirection: "column", gap: 10, marginLeft: 42, animation: "fadeSlideUp 0.5s ease" }}>
                         {currentStep.id === "stage_assessment" && (
                             <>
-                                <div style={{ fontSize: 12, color: "rgba(240,237,232,0.62)", padding: "6px 4px 2px", lineHeight: 1.5 }}>
+                                <div style={{ fontSize: 12, color: "var(--color-text-muted)", padding: "6px 4px 2px", lineHeight: 1.5 }}>
                                     Stage 1 is free. Stages 2–6 require a Starter or Pro plan.
                                 </div>
                                 {ventureStageCards.map(card => (
-                                    <button key={card.id} onClick={() => handleCard(card.id)} style={{ background: cardSelection === card.id ? "rgba(232,98,42,0.15)" : "rgba(255,255,255,0.02)", border: cardSelection === card.id ? "1px solid rgba(232,98,42,0.6)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "14px 16px", cursor: "pointer", textAlign: "left", transition: "all 0.2s" }}>
+                                    <button key={card.id} onClick={() => handleCard(card.id)} style={{ background: cardSelection === card.id ? "rgba(216,155,43,0.15)" : "rgba(7,26,47,0.02)", border: cardSelection === card.id ? "1px solid rgba(216,155,43,0.6)" : "1px solid rgba(7,26,47,0.08)", borderRadius: 12, padding: "14px 16px", cursor: "pointer", textAlign: "left", transition: "all 0.2s" }}>
                                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                            {(() => { const CardIcon = card.icon; return <CardIcon size={20} color="#C8C4BE" />; })()}
+                                            {(() => { const CardIcon = card.icon; return <CardIcon size={20} color="var(--color-text-soft)" />; })()}
                                             <div style={{ flex: 1 }}>
                                                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
-                                                    <span style={{ fontSize: 14, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>{card.label}</span>
+                                                    <span style={{ fontSize: 14, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, color: "var(--color-text)" }}>{card.label}</span>
                                                     {card.stage === 1
                                                         ? <span style={{ fontSize: 10, fontWeight: 600, color: "#5cb85c", background: "rgba(92,184,92,0.12)", border: "1px solid rgba(92,184,92,0.3)", borderRadius: 4, padding: "1px 6px", letterSpacing: "0.04em" }}>FREE</span>
-                                                        : <span style={{ fontSize: 10, fontWeight: 600, color: "#E8622A", background: "rgba(232,98,42,0.1)", border: "1px solid rgba(232,98,42,0.3)", borderRadius: 4, padding: "1px 6px", letterSpacing: "0.04em" }}>PAID</span>
+                                                        : <span style={{ fontSize: 10, fontWeight: 600, color: "var(--tekori-gold)", background: "rgba(216,155,43,0.1)", border: "1px solid rgba(216,155,43,0.3)", borderRadius: 4, padding: "1px 6px", letterSpacing: "0.04em" }}>PAID</span>
                                                     }
                                                 </div>
-                                                <div style={{ fontSize: 12, color: "rgba(240,237,232,0.62)" }}>{card.sub}</div>
+                                                <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>{card.sub}</div>
                                             </div>
                                         </div>
                                     </button>
@@ -490,34 +490,34 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                             </>
                         )}
                         {currentStep.id === "venture_mode" && VENTURE_MODE_CARDS.map(card => (
-                            <button key={card.id} onClick={() => handleCard(card.id)} style={{ background: cardSelection === card.id ? "rgba(232,98,42,0.15)" : "rgba(255,255,255,0.02)", border: cardSelection === card.id ? "1px solid rgba(232,98,42,0.6)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "14px 16px", cursor: "pointer", textAlign: "left", transition: "all 0.2s" }}>
+                            <button key={card.id} onClick={() => handleCard(card.id)} style={{ background: cardSelection === card.id ? "rgba(216,155,43,0.15)" : "rgba(7,26,47,0.02)", border: cardSelection === card.id ? "1px solid rgba(216,155,43,0.6)" : "1px solid rgba(7,26,47,0.08)", borderRadius: 12, padding: "14px 16px", cursor: "pointer", textAlign: "left", transition: "all 0.2s" }}>
                                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                    {(() => { const CardIcon = card.icon; return <CardIcon size={20} color="#C8C4BE" />; })()}
+                                    {(() => { const CardIcon = card.icon; return <CardIcon size={20} color="var(--color-text-soft)" />; })()}
                                     <div style={{ flex: 1 }}>
-                                        <div style={{ fontSize: 14, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 2 }}>{card.label}</div>
-                                        <div style={{ fontSize: 12, color: "rgba(240,237,232,0.62)", lineHeight: 1.45 }}>{card.sub}</div>
+                                        <div style={{ fontSize: 14, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, color: "var(--color-text)", marginBottom: 2 }}>{card.label}</div>
+                                        <div style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.45 }}>{card.sub}</div>
                                     </div>
                                 </div>
                             </button>
                         ))}
                         {currentStep.id === "experience" && EXPERIENCE_CARDS.map(card => (
-                            <button key={card.id} onClick={() => handleCard(card.id)} style={{ background: cardSelection === card.id ? "rgba(232,98,42,0.15)" : "rgba(255,255,255,0.02)", border: cardSelection === card.id ? "1px solid rgba(232,98,42,0.6)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "14px 16px", cursor: "pointer", textAlign: "left", transition: "all 0.2s" }}>
+                            <button key={card.id} onClick={() => handleCard(card.id)} style={{ background: cardSelection === card.id ? "rgba(216,155,43,0.15)" : "rgba(7,26,47,0.02)", border: cardSelection === card.id ? "1px solid rgba(216,155,43,0.6)" : "1px solid rgba(7,26,47,0.08)", borderRadius: 12, padding: "14px 16px", cursor: "pointer", textAlign: "left", transition: "all 0.2s" }}>
                                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                    {(() => { const CardIcon = card.icon; return <CardIcon size={20} color="#C8C4BE" />; })()}
+                                    {(() => { const CardIcon = card.icon; return <CardIcon size={20} color="var(--color-text-soft)" />; })()}
                                     <div>
-                                        <div style={{ fontSize: 14, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 2 }}>{card.label}</div>
-                                        <div style={{ fontSize: 12, color: "rgba(240,237,232,0.62)" }}>{card.sub}</div>
+                                        <div style={{ fontSize: 14, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, color: "var(--color-text)", marginBottom: 2 }}>{card.label}</div>
+                                        <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>{card.sub}</div>
                                     </div>
                                 </div>
                             </button>
                         ))}
                         {currentStep.id === "strategy" && STRATEGY_CARDS.map(card => (
-                            <button key={card.id} onClick={() => handleCard(card.id)} style={{ background: cardSelection === card.id ? "rgba(232,98,42,0.15)" : "rgba(255,255,255,0.02)", border: cardSelection === card.id ? "1px solid rgba(232,98,42,0.6)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "18px 20px", cursor: "pointer", textAlign: "left", transition: "all 0.2s" }}>
+                            <button key={card.id} onClick={() => handleCard(card.id)} style={{ background: cardSelection === card.id ? "rgba(216,155,43,0.15)" : "rgba(7,26,47,0.02)", border: cardSelection === card.id ? "1px solid rgba(216,155,43,0.6)" : "1px solid rgba(7,26,47,0.08)", borderRadius: 12, padding: "18px 20px", cursor: "pointer", textAlign: "left", transition: "all 0.2s" }}>
                                 <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                                    {(() => { const CardIcon = card.icon; return <CardIcon size={24} color="#C8C4BE" />; })()}
+                                    {(() => { const CardIcon = card.icon; return <CardIcon size={24} color="var(--color-text-soft)" />; })()}
                                     <div>
-                                        <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 6 }}>{card.label}</div>
-                                        <div style={{ fontSize: 12, color: "rgba(240,237,232,0.62)", lineHeight: 1.6 }}>{card.desc}</div>
+                                        <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, color: "var(--color-text)", marginBottom: 6 }}>{card.label}</div>
+                                        <div style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.6 }}>{card.desc}</div>
                                     </div>
                                 </div>
                             </button>
@@ -529,18 +529,18 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                     <div style={{ marginLeft: 42, animation: "fadeSlideUp 0.6s ease 0.4s both", opacity: 0 }}>
                         <button
                             onClick={() => onComplete(completedProfile)}
-                            style={{ width: "100%", padding: "16px", background: "linear-gradient(135deg, #E8622A, #c9521e)", border: "none", borderRadius: 12, color: "#fff", fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, cursor: "pointer", boxShadow: "0 8px 32px rgba(232,98,42,0.35)", transition: "all 0.2s ease" }}
-                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; (e.currentTarget as HTMLElement).style.boxShadow = "0 12px 40px rgba(232,98,42,0.5)"; }}
-                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; (e.currentTarget as HTMLElement).style.boxShadow = "0 8px 32px rgba(232,98,42,0.35)"; }}
+                            style={{ width: "100%", padding: "16px", background: "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))", border: "none", borderRadius: 12, color: "var(--color-primary)", fontSize: 15, fontFamily: "var(--tekori-font-ui)", fontWeight: 800, cursor: "pointer", boxShadow: "0 8px 32px rgba(216,155,43,0.35)", transition: "all 0.2s ease" }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; (e.currentTarget as HTMLElement).style.boxShadow = "0 12px 40px rgba(216,155,43,0.5)"; }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; (e.currentTarget as HTMLElement).style.boxShadow = "0 8px 32px rgba(216,155,43,0.35)"; }}
                         >
-                            Enter Foundry →
+                            Enter Tekori →
                         </button>
                     </div>
                 )}
             </div>
 
             {showInput && (
-                <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, padding: "16px 16px max(24px, calc(12px + env(safe-area-inset-bottom)))", background: "linear-gradient(to top, rgba(8,8,9,1) 60%, transparent)", zIndex: 20 }}>
+                <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, padding: "16px 16px max(24px, calc(12px + env(safe-area-inset-bottom)))", background: "linear-gradient(to top, rgba(250,247,240,0.98) 60%, transparent)", zIndex: 20 }}>
                     <div style={{ maxWidth: 680, margin: "0 auto" }}>
                         <ChatInput
                             value={input}
@@ -573,13 +573,13 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                                 style={{
                                     marginTop: 10,
                                     width: "100%",
-                                    background: "rgba(255,255,255,0.035)",
-                                    border: "1px solid rgba(255,255,255,0.08)",
+                                    background: "rgba(7,26,47,0.035)",
+                                    border: "1px solid rgba(7,26,47,0.08)",
                                     borderRadius: 10,
-                                    color: "rgba(240,237,232,0.72)",
+                                    color: "rgba(71,84,103,0.88)",
                                     padding: "10px 12px",
                                     fontSize: 12,
-                                    fontFamily: "'DM Sans', system-ui, sans-serif",
+                                    fontFamily: "var(--tekori-font-ui)",
                                     cursor: loading || responsePending ? "default" : "pointer",
                                 }}
                             >

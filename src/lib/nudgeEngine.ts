@@ -26,7 +26,7 @@ function stageAlertNudge(stage: number, days: number, completedPct: number): { t
     const name = STAGE_NAMES[stage] ?? `Stage ${stage}`;
     const templates = [
         `You've been in ${name} for ${days} days with ${completedPct}% of milestones done. Want to talk through what's keeping you here?`,
-        `${days} days in ${name} — and still ${100 - completedPct}% of milestones ahead. Forge can help you pinpoint the blocker.`,
+        `${days} days in ${name} — and still ${100 - completedPct}% of milestones ahead. Navi can help you pinpoint the blocker.`,
         `You've spent ${days} days in ${name}. Let's figure out together what's keeping progress from moving forward.`,
     ];
     return {
@@ -42,7 +42,7 @@ function decisionFollowUpNudge(decision: FounderDecision): { text: string; sourc
     const templates = [
         `You decided "${truncated}" ${agoStr}. How has that played out so far?`,
         `Quick check-in: "${truncated}" was your call ${agoStr}. Any second thoughts or new info since then?`,
-        `A decision you made ${agoStr} — "${truncated}" — might be worth revisiting with Forge.`,
+        `A decision you made ${agoStr} — "${truncated}" — might be worth revisiting with Navi.`,
     ];
     return {
         text: templates[ago % templates.length],
@@ -54,43 +54,43 @@ function recurringThemeNudge(theme: string): { text: string; source: string } {
     const map: Record<string, { texts: string[]; source: string }> = {
         cash: {
             texts: [
-                "Cash flow has been a recurring topic in your sessions. Want Forge to help you map your current runway?",
-                "Money questions keep coming up in your chats. Forge can run a quick financial clarity session with you.",
+                "Cash flow has been a recurring topic in your sessions. Want Navi to help you map your current runway?",
+                "Money questions keep coming up in your chats. Navi can run a quick financial clarity session with you.",
             ],
             source: "theme:cash_flow",
         },
         customer: {
             texts: [
-                "Customer acquisition keeps surfacing in your chats. Want to work through a concrete acquisition plan with Forge?",
+                "Customer acquisition keeps surfacing in your chats. Want to work through a concrete acquisition plan with Navi?",
                 "You keep circling back to customer and sales questions. Let's build a focused plan together.",
             ],
             source: "theme:customer_acquisition",
         },
         mindset: {
             texts: [
-                "Mindset challenges have come up in several sessions. Sometimes it helps to just name what's getting in the way — Forge is here for that.",
-                "You've mentioned doubt and nerves more than once. Want to talk it through with Forge today?",
+                "Mindset challenges have come up in several sessions. Sometimes it helps to just name what's getting in the way — Navi is here for that.",
+                "You've mentioned doubt and nerves more than once. Want to talk it through with Navi today?",
             ],
             source: "theme:mindset",
         },
         stuck: {
             texts: [
-                "Decision paralysis has appeared across multiple sessions. Forge can help you break the loop — one decision at a time.",
-                "You've felt stuck or blocked recently. A quick Forge session might help clear the path.",
+                "Decision paralysis has appeared across multiple sessions. Navi can help you break the loop — one decision at a time.",
+                "You've felt stuck or blocked recently. A quick Navi session might help clear the path.",
             ],
             source: "theme:paralysis",
         },
         pricing: {
             texts: [
-                "Pricing has come up repeatedly and still seems unsettled. Want Forge to walk you through a pricing framework?",
-                "The pricing question keeps resurfacing. Let's put it to rest with Forge today.",
+                "Pricing has come up repeatedly and still seems unsettled. Want Navi to walk you through a pricing framework?",
+                "The pricing question keeps resurfacing. Let's put it to rest with Navi today.",
             ],
             source: "theme:pricing",
         },
     };
 
     const entry = map[theme];
-    if (!entry) return { text: "Something's been coming up across your sessions — want to dig into it with Forge?", source: "theme:unknown" };
+    if (!entry) return { text: "Something's been coming up across your sessions — want to dig into it with Navi?", source: "theme:unknown" };
     const idx = Math.floor(Math.random() * entry.texts.length);
     return { text: entry.texts[idx], source: entry.source };
 }
@@ -145,17 +145,17 @@ function bestDecisionToFollowUp(decisions: FounderDecision[]): FounderDecision |
 // ── Journal pattern nudge templates ───────────────────────────
 
 const JOURNAL_THEME_NUDGES: Record<string, string> = {
-    fear: "You've been writing about fear more than once this week. That's worth bringing into your Forge session.",
-    clarity: "Your journal shows you working toward clarity on something. Forge can help you find it faster.",
+    fear: "You've been writing about fear more than once this week. That's worth bringing into your Navi session.",
+    clarity: "Your journal shows you working toward clarity on something. Navi can help you find it faster.",
     momentum: "Something's moving for you this week — your journal reflects it. Let's build on it.",
-    product: "Product questions keep showing up in your writing. Let's get specific with Forge.",
+    product: "Product questions keep showing up in your writing. Let's get specific with Navi.",
     team: "Team dynamics have come up in your journal. That's worth a real conversation.",
-    pricing: "Pricing is showing up in your journal. Let's work through it together in Forge.",
-    cash_flow: "Cash concerns have been appearing in your writing. Forge can help you map what's real.",
+    pricing: "Pricing is showing up in your journal. Let's work through it together in Navi.",
+    cash_flow: "Cash concerns have been appearing in your writing. Navi can help you map what's real.",
     customers: "Customer questions are recurring in your journal. Let's build a concrete plan.",
-    mindset: "Your journal is reflecting some internal friction. Forge can help you work through it.",
+    mindset: "Your journal is reflecting some internal friction. Navi can help you work through it.",
     legal: "Legal questions are coming up in your writing. Let's get them answered.",
-    growth: "Growth thinking is showing up in your journal. Let's pressure-test it with Forge.",
+    growth: "Growth thinking is showing up in your journal. Let's pressure-test it with Navi.",
 };
 
 // ── Main export ────────────────────────────────────────────────
@@ -217,7 +217,7 @@ export async function generateNudgeIfNeeded(
         if (journalThemes.length > 0) {
             const theme = journalThemes[0];
             const text = JOURNAL_THEME_NUDGES[theme]
-                ?? "A theme has been showing up in your journal this week. Let's talk it through with Forge.";
+                ?? "A theme has been showing up in your journal this week. Let's talk it through with Navi.";
             nudgePayload = {
                 text,
                 source: `journal_theme_${theme}`,

@@ -53,7 +53,7 @@ type CatalogDoc = {
     whenToUse: string;
 };
 
-const DISCLAIMER = "Foundry can help you identify common documents, but this does not replace legal or tax advice.";
+const DISCLAIMER = "Tekori can help you identify common documents, but this does not replace legal or tax advice.";
 
 const CATALOG: CatalogDoc[] = DOC_CATEGORIES.flatMap((category) => (
     category.documents.map((document) => ({
@@ -256,9 +256,9 @@ export function buildDocumentNeedWizardPrompt(input: DocumentNeedWizardInput, va
     }));
 
     return [
-        "You are Foundry's document recommendation engine.",
+        "You are Tekori's document recommendation engine.",
         "Identify common founder documents. Do not give legal or tax advice.",
-        "Use this wording in the summary or disclaimer conceptually: Foundry can help identify common documents, but this does not replace legal or tax advice.",
+        "Use this wording in the summary or disclaimer conceptually: Tekori can help identify common documents, but this does not replace legal or tax advice.",
         "Return JSON only with this exact shape:",
         JSON.stringify({
             summary: "string",
@@ -318,7 +318,7 @@ export function parseDocumentNeedRecommendationResponse(
             disclaimer: DISCLAIMER,
             summary: typeof parsed.summary === "string" && parsed.summary.trim()
                 ? parsed.summary.trim()
-                : `Foundry identified common next documents for ${GOAL_LABELS[input.goal]}.`,
+                : `Tekori identified common next documents for ${GOAL_LABELS[input.goal]}.`,
             mustHave: buildItems(parsed.mustHave, "must"),
             shouldHave: buildItems(parsed.shouldHave, "should"),
             optionalFuture: buildItems(parsed.optionalFuture, "optional"),

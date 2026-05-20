@@ -68,12 +68,12 @@ export const BILLING_PLANS: Record<BillingPlanId, BillingPlanConfig> = {
         featureHighlights: [
             "Account creation and onboarding",
             "Full access to Stage 1",
-            "Forge guidance inside the validation phase",
+            "Navi guidance inside the validation phase",
         ],
         comparisonPoints: [
             "Stage 1 access",
-            "Foundry onboarding",
-            "Problem validation with Forge",
+            "Tekori onboarding",
+            "Problem validation with Navi",
         ],
     },
     starter: {
@@ -82,7 +82,7 @@ export const BILLING_PLANS: Record<BillingPlanId, BillingPlanConfig> = {
         shortLabel: "Starter",
         stageAccess: "full_journey",
         tagline: "Continue the real build with the full stage journey.",
-        headline: "Core Foundry build path",
+        headline: "Core Tekori build path",
         prices: {
             standard: {
                 monthly: 2999,
@@ -95,13 +95,13 @@ export const BILLING_PLANS: Record<BillingPlanId, BillingPlanConfig> = {
         },
         featureHighlights: [
             "Unlock Stages 2 through 6",
-            "Core Foundry journey and milestone flow",
-            "Forge across the full build and launch path",
+            "Core Tekori journey and milestone flow",
+            "Navi across the full build and launch path",
             "Essential tools for serious execution",
         ],
         comparisonPoints: [
             "Full stage journey",
-            "Core Foundry experience",
+            "Core Tekori experience",
             "Execution-ready founder workflow",
         ],
     },
@@ -110,7 +110,7 @@ export const BILLING_PLANS: Record<BillingPlanId, BillingPlanConfig> = {
         name: "Pro",
         shortLabel: "Pro",
         stageAccess: "full_journey",
-        tagline: "The premium Foundry experience for founders building with range.",
+        tagline: "The premium Tekori experience for founders building with range.",
         headline: "Unlimited / premium positioning",
         prices: {
             standard: {

@@ -1,11 +1,11 @@
 export const STAGE_4_METHOD = `
 # THE FOUNDRY METHOD — STAGE 4: FINANCE
-## The Complete Knowledge Base for Forge
+## The Complete Knowledge Base for Navi
 ### Compiled from 10 source syntheses
 
 ---
 
-> **How Forge uses this document:** Stage 4 is where a founder learns to think in numbers. Not accounting numbers — strategic numbers. The books in this stage cover the full financial life of a business: how to manage cash behaviorally (Profit First), how to read and interpret financial statements (Financial Intelligence), how to design offers that maximize revenue (100M Offers), how to navigate taxes intelligently (Small Business Taxes Made Easy, 475 Deductions, Taxes Made Simple, Tax-Free Wealth), how to build a financial culture inside the organization (The Great Game of Business), how to find where the market mismeasures value (Moneyball), and how to understand the macro forces every business operates within (Naked Economics). Forge's mandate in Stage 4: build founders who understand their numbers at every level — behavioral, structural, strategic, and macroeconomic — and who know exactly when to take action themselves versus when to engage a qualified professional. Tax and financial advice is always routed to a CPA or financial advisor. The goal is a founder who can have an intelligent conversation, not one who replaces professional counsel.
+> **How Navi uses this document:** Stage 4 is where a founder learns to think in numbers. Not accounting numbers — strategic numbers. The books in this stage cover the full financial life of a business: how to manage cash behaviorally (Profit First), how to read and interpret financial statements (Financial Intelligence), how to design offers that maximize revenue (100M Offers), how to navigate taxes intelligently (Small Business Taxes Made Easy, 475 Deductions, Taxes Made Simple, Tax-Free Wealth), how to build a financial culture inside the organization (The Great Game of Business), how to find where the market mismeasures value (Moneyball), and how to understand the macro forces every business operates within (Naked Economics). Navi's mandate in Stage 4: build founders who understand their numbers at every level — behavioral, structural, strategic, and macroeconomic — and who know exactly when to take action themselves versus when to engage a qualified professional. Tax and financial advice is always routed to a CPA or financial advisor. The goal is a founder who can have an intelligent conversation, not one who replaces professional counsel.
 
 ---
 
@@ -322,7 +322,7 @@ Founders often feel guilty charging "too much." Hormozi's virtuous cycle argumen
 
 ---
 
-> **Forge's tax mandate in Stage 4:** Teach concepts and vocabulary. Develop literacy that enables better professional relationships and better decisions. Always route complex or specific questions to qualified professionals. The goal is a founder who can have an intelligent conversation with a CPA — not one who thinks they don't need one.
+> **Navi's tax mandate in Stage 4:** Teach concepts and vocabulary. Develop literacy that enables better professional relationships and better decisions. Always route complex or specific questions to qualified professionals. The goal is a founder who can have an intelligent conversation with a CPA — not one who thinks they don't need one.
 
 ### THE FOUNDATIONAL REFRAME (Tax-Free Wealth)
 
@@ -623,7 +623,7 @@ In 2002, the Oakland A's had a $40 million payroll against the New York Yankees'
 
 Oakland wasn't just winning despite their poverty. They were winning *because* of how they responded to it. Their constraints forced them to find inefficiencies the rich teams couldn't be bothered to look for.
 
-**The Foundry parallel:** Every early-stage founder faces a version of this problem. You cannot outspend better-funded competitors on talent, marketing, or infrastructure. You can outthink them. The question is: where is the market for your resources mispriced?
+**The Tekori parallel:** Every early-stage founder faces a version of this problem. You cannot outspend better-funded competitors on talent, marketing, or infrastructure. You can outthink them. The question is: where is the market for your resources mispriced?
 
 ### THE FIRST INSIGHT: INDUSTRY EXPERTS SYSTEMATICALLY EVALUATE ASSETS USING PROXY MEASURES INSTEAD OF THE THING THEY ACTUALLY CARE ABOUT
 
@@ -812,6 +812,6 @@ Stage 4 is not complete when the founder can talk about finance. It's complete w
 
 ---
 
-*This is the complete Stage 4 Foundry Method knowledge base — compiled from ten source syntheses into a unified coaching document for Forge. This document is injected into Forge's system prompt when a user is in Stage 4: Finance.*
+*This is the complete Stage 4 Tekori Method knowledge base — compiled from ten source syntheses into a unified coaching document for Navi. This document is injected into Navi's system prompt when a user is in Stage 4: Finance.*
 
 `

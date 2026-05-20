@@ -58,18 +58,18 @@ type TabId = 'chat' | 'tasks' | 'decisions' | 'files' | 'team';
 const ROLE_OPTIONS = ['Cofounder', 'CEO', 'CTO', 'COO', 'Marketing Lead', 'Product Lead'];
 
 const ROLE_COLORS: Record<string, string> = {
-    Founder: '#E8622A',
-    Cofounder: '#63B3ED',
-    CEO: '#F5A843',
-    CTO: '#48BB78',
-    COO: '#9B7FE8',
-    'Marketing Lead': '#F472B6',
-    'Product Lead': '#38BDF8',
-    Forge: '#C8A96E',
+    Founder: '#C98924',
+    Cofounder: '#8EA0B5',
+    CEO: '#E4AA3A',
+    CTO: '#2F8F68',
+    COO: '#102944',
+    'Marketing Lead': '#B9781F',
+    'Product Lead': '#14304F',
+    Forge: '#E4AA3A',
 };
 
 function roleColor(role: string): string {
-    return ROLE_COLORS[role] ?? '#888';
+    return ROLE_COLORS[role] ?? 'var(--color-text-muted)';
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -104,9 +104,9 @@ function getPresence(member: CofounderMember): 'active' | 'today' | 'away' | nul
 }
 
 function presenceDotColor(p: 'active' | 'today' | 'away'): string {
-    if (p === 'active') return '#48BB78';
-    if (p === 'today') return '#F5A843';
-    return '#444';
+    if (p === 'active') return 'var(--color-success)';
+    if (p === 'today') return 'var(--tekori-amber)';
+    return 'var(--color-text-muted)';
 }
 
 function isOverdue(dueDate: string | null): boolean {
@@ -636,13 +636,14 @@ export default function CofounderModeScreen({ userId, profile, onBack, onOpenNav
             currentMember.display_name, currentMember.role, text
         );
 
-        const DISMISS_FORGE_RE = /\b(dismiss\s+forge|forge\s+dismiss|thanks?\s+forge|bye\s+forge|forge\s+thanks?|stop\s+forge|that'?s?\s+all\s+forge|ok(ay)?\s+forge|got\s+it\s+forge)\b/i;
+        const NAVI_MENTION_RE = /@(navi|forge)\b/i;
+        const DISMISS_NAVI_RE = /\b(dismiss\s+(navi|forge)|(navi|forge)\s+dismiss|thanks?\s+(navi|forge)|bye\s+(navi|forge)|(navi|forge)\s+thanks?|stop\s+(navi|forge)|that'?s?\s+all\s+(navi|forge)|ok(ay)?\s+(navi|forge)|got\s+it\s+(navi|forge))\b/i;
 
         if (saved) {
             setMessages(prev => prev.map(m => m.id === optimisticId ? saved : m));
-            if (DISMISS_FORGE_RE.test(text)) {
+            if (DISMISS_NAVI_RE.test(text)) {
                 setForgeEngagedSync(false);
-            } else if (/@forge/i.test(text)) {
+            } else if (NAVI_MENTION_RE.test(text)) {
                 setForgeEngagedSync(false);
                 await handleForgeReply(messagesRef.current.concat(saved), undefined, 'mention');
             } else if (forgeEngagedRef.current) {
@@ -662,7 +663,7 @@ export default function CofounderModeScreen({ userId, profile, onBack, onOpenNav
         );
         if (saved) {
             setMessages(prev => prev.map(m => m.id === failedId ? saved : m));
-            if (/@forge/i.test(content)) {
+            if (/@(navi|forge)\b/i.test(content)) {
                 const ctx = messages.filter(m => m.id !== failedId).concat(saved);
                 await handleForgeReply(ctx);
             }
@@ -688,7 +689,7 @@ export default function CofounderModeScreen({ userId, profile, onBack, onOpenNav
                 team_id: team.id,
                 user_id: null,
                 role: 'forge',
-                sender_name: 'Forge',
+                sender_name: 'Navi',
                 sender_role: 'AI Partner',
                 content: '',
                 created_at: new Date().toISOString(),
@@ -709,8 +710,8 @@ export default function CofounderModeScreen({ userId, profile, onBack, onOpenNav
         const engagementNote = triggerReason === 'engaged'
             ? `You are currently engaged in an active conversation with this team. Respond only if this message meaningfully continues the conversation or is clearly directed at you. If the message is just team coordination, a quick acknowledgement, or something that doesn't need your input, respond with exactly: [SKIP]
 If you want to step back gracefully after fully answering, end your reply with [STEPPING_BACK].
-Otherwise, continue naturally — no preamble, get right to what matters. Team members can say "dismiss forge" at any time.`
-            : `You were mentioned with @forge. Respond as Forge — direct, useful, invested. No preamble. Get right to what matters for this team. End with a question to continue the conversation, or [STEPPING_BACK] if you've fully addressed it.`;
+Otherwise, continue naturally — no preamble, get right to what matters. Team members can say "dismiss navi" at any time.`
+            : `You were mentioned with @navi. Respond as Navi — direct, useful, invested. No preamble. Get right to what matters for this team. End with a question to continue the conversation, or [STEPPING_BACK] if you've fully addressed it.`;
 
         let workspaceMemoryContext = '';
         try {
@@ -767,7 +768,7 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                     .replace(/\[STEPPING_BACK\]/gi, '')
                     .trim();
                 const savedForge = await sendCofounderMessage(
-                    team.id, null, 'forge', 'Forge', 'AI Partner', clean
+                    team.id, null, 'forge', 'Navi', 'AI Partner', clean
                 );
                 if (savedForge) {
                     setMessages(prev => prev.map(m => m.id === placeholderId ? savedForge : m));
@@ -775,11 +776,11 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                 setForgeEngagedSync(!steppingBack);
             }
         } catch (err) {
-            console.error('Forge group chat error:', err);
+            console.error('Navi group chat error:', err);
             setForgeEngagedSync(false);
             setMessages(prev => prev.map(m =>
                 m.id === placeholderId
-                    ? { ...m, content: 'Forge ran into a problem. Tap to try again.', failed: true }
+                    ? { ...m, content: 'Navi ran into a problem. Tap to try again.', failed: true }
                     : m
             ));
         }
@@ -972,34 +973,34 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
     // ── Shared styles ────────────────────────────────────────────
 
     const card = {
-        background: 'rgba(255,255,255,0.02)',
-        border: '1px solid rgba(255,255,255,0.07)',
+        background: 'rgba(7,26,47,0.02)',
+        border: '1px solid rgba(7,26,47,0.07)',
         borderRadius: 14,
         padding: '14px 16px',
         marginBottom: 12,
     } as const;
 
     const btnPrimary = {
-        background: 'linear-gradient(135deg, #E8622A, #c9521e)',
+        background: 'linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))',
         border: 'none',
         borderRadius: 10,
         padding: '10px 20px',
-        color: '#fff',
+        color: 'var(--color-primary)',
         fontSize: 13,
         fontWeight: 600,
         cursor: 'pointer',
-        fontFamily: "'Lora', Georgia, serif",
+        fontFamily: "var(--tekori-font-ui)",
     } as const;
 
     const btnSecondary = {
-        background: 'rgba(255,255,255,0.05)',
-        border: '1px solid rgba(255,255,255,0.1)',
+        background: 'rgba(7,26,47,0.05)',
+        border: '1px solid rgba(7,26,47,0.1)',
         borderRadius: 10,
         padding: '10px 20px',
-        color: '#C8C4BE',
+        color: 'rgba(16,32,51,0.74)',
         fontSize: 13,
         cursor: 'pointer',
-        fontFamily: "'Lora', Georgia, serif",
+        fontFamily: "var(--tekori-font-ui)",
     } as const;
 
     const inviteUrl = getInviteUrl();
@@ -1009,10 +1010,10 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
 
     if (dataLoading) {
         return (
-            <div style={{ position: 'fixed', inset: 0, background: '#080809', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
+            <div style={{ position: 'fixed', inset: 0, background: 'var(--tekori-deep-navy)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
                 <Logo variant="flame" style={{ width: 48, height: 48, objectFit: 'contain', opacity: 0.88 }} />
                 <LoadingForgeAnimation size={62} />
-                <div style={{ fontSize: 12, color: '#5B5650', fontFamily: "'Lora', Georgia, serif", letterSpacing: '0.08em' }}>Loading workspace...</div>
+                <div style={{ fontSize: 12, color: 'var(--color-text-soft)', fontFamily: "var(--tekori-font-ui)", letterSpacing: '0.08em' }}>Loading workspace...</div>
             </div>
         );
     }
@@ -1021,30 +1022,30 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
 
     if (inviteInfo) {
         return (
-            <div style={{ position: 'fixed', inset: 0, background: '#080809', fontFamily: "'Lora', Georgia, serif", color: '#F0EDE8', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ padding: 'max(16px, calc(10px + env(safe-area-inset-top))) 16px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ position: 'fixed', inset: 0, background: 'var(--tekori-deep-navy)', fontFamily: "var(--tekori-font-ui)", color: 'var(--color-text)', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ padding: 'max(16px, calc(10px + env(safe-area-inset-top))) 16px 14px', borderBottom: '1px solid rgba(7,26,47,0.06)', display: 'flex', alignItems: 'center', gap: 12 }}>
                     <button onClick={onBack} style={{ ...btnSecondary, padding: '7px 14px', fontSize: 12 }}>← Back</button>
                     <div style={{ fontSize: 15, fontWeight: 600 }}>You've been invited</div>
                 </div>
                 <div style={{ flex: 1, overflowY: 'auto', padding: 20, maxWidth: 500, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
                     <div style={{ animation: 'fadeSlideUp 0.4s ease', marginBottom: 28 }}>
-                        <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(232,98,42,0.1)', border: '1px solid rgba(232,98,42,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
+                        <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(216,155,43,0.1)', border: '1px solid rgba(216,155,43,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
                             <Icons.sidebar.cofounder size={24} />
                         </div>
-                        <div style={{ fontSize: 22, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 6 }}>Join {inviteInfo.teamName}</div>
-                        <div style={{ fontSize: 13, color: '#666', fontStyle: 'italic', lineHeight: 1.6 }}>You've been invited to collaborate on this business inside Foundry. Your team will be able to chat together and bring Forge into shared discussions.</div>
+                        <div style={{ fontSize: 22, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, marginBottom: 6 }}>Join {inviteInfo.teamName}</div>
+                        <div style={{ fontSize: 13, color: 'var(--color-text-muted)', fontStyle: 'italic', lineHeight: 1.6 }}>You've been invited to collaborate on this business inside Tekori. Your team will be able to chat together and bring Navi into shared discussions.</div>
                     </div>
                     <div style={{ ...card, animation: 'fadeSlideUp 0.4s ease 0.1s both' }}>
-                        <div style={{ fontSize: 11, color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Your Details</div>
+                        <div style={{ fontSize: 11, color: 'var(--color-text-soft)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14 }}>Your Details</div>
                         <div style={{ marginBottom: 16 }}>
-                            <div style={{ fontSize: 11, color: '#666', marginBottom: 6 }}>Display Name</div>
-                            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '10px 12px', fontSize: 13, color: '#F0EDE8' }}>{profile.name}</div>
+                            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 6 }}>Display Name</div>
+                            <div style={{ background: 'rgba(7,26,47,0.03)', border: '1px solid rgba(7,26,47,0.08)', borderRadius: 8, padding: '10px 12px', fontSize: 13, color: 'var(--color-text)' }}>{profile.name}</div>
                         </div>
                         <div>
-                            <div style={{ fontSize: 11, color: '#666', marginBottom: 8 }}>Your Role</div>
+                            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 8 }}>Your Role</div>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                                 {ROLE_OPTIONS.map(r => (
-                                    <button key={r} onClick={() => setJoiningRole(r)} style={{ padding: '6px 14px', borderRadius: 20, fontSize: 12, border: joiningRole === r ? 'none' : '1px solid rgba(255,255,255,0.1)', background: joiningRole === r ? `${roleColor(r)}22` : 'transparent', color: joiningRole === r ? roleColor(r) : '#666', cursor: 'pointer', fontFamily: "'Lora', Georgia, serif", outline: joiningRole === r ? `1px solid ${roleColor(r)}55` : 'none', transition: 'all 0.15s' }}>{r}</button>
+                                    <button key={r} onClick={() => setJoiningRole(r)} style={{ padding: '6px 14px', borderRadius: 20, fontSize: 12, border: joiningRole === r ? 'none' : '1px solid rgba(7,26,47,0.1)', background: joiningRole === r ? `${roleColor(r)}22` : 'transparent', color: joiningRole === r ? roleColor(r) : 'var(--color-text-muted)', cursor: 'pointer', fontFamily: "var(--tekori-font-ui)", outline: joiningRole === r ? `1px solid ${roleColor(r)}55` : 'none', transition: 'all 0.15s' }}>{r}</button>
                                 ))}
                             </div>
                         </div>
@@ -1056,7 +1057,7 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                         Decline invite
                     </button>
                     {inviteError && (
-                        <div style={{ fontSize: 12, color: 'rgba(232,98,42,0.8)', textAlign: 'center', marginTop: 12, lineHeight: 1.5 }}>{inviteError}</div>
+                        <div style={{ fontSize: 12, color: 'rgba(216,155,43,0.8)', textAlign: 'center', marginTop: 12, lineHeight: 1.5 }}>{inviteError}</div>
                     )}
                 </div>
             </div>
@@ -1067,45 +1068,45 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
 
     if (!team || !currentMember) {
         return (
-            <div style={{ position: 'fixed', inset: 0, background: '#080809', fontFamily: "'Lora', Georgia, serif", color: '#F0EDE8', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ padding: 'max(16px, calc(10px + env(safe-area-inset-top))) 16px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ position: 'fixed', inset: 0, background: 'var(--tekori-deep-navy)', fontFamily: "var(--tekori-font-ui)", color: 'var(--color-text)', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ padding: 'max(16px, calc(10px + env(safe-area-inset-top))) 16px 14px', borderBottom: '1px solid rgba(7,26,47,0.06)', display: 'flex', alignItems: 'center', gap: 12 }}>
                     <button onClick={onBack} style={{ ...btnSecondary, padding: '7px 14px', fontSize: 12 }}>← Back</button>
                     <div style={{ fontSize: 15, fontWeight: 600 }}>Cofounder Mode</div>
                 </div>
                 <div style={{ flex: 1, overflowY: 'auto', padding: 20, maxWidth: 500, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
                     <div style={{ animation: 'fadeSlideUp 0.4s ease', marginBottom: 28 }}>
-                        <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(232,98,42,0.1)', border: '1px solid rgba(232,98,42,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
+                        <div style={{ width: 52, height: 52, borderRadius: 14, background: 'rgba(216,155,43,0.1)', border: '1px solid rgba(216,155,43,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
                             <Icons.sidebar.cofounder size={24} />
                         </div>
-                        <div style={{ fontSize: 22, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 8 }}>Start Your Team Workspace</div>
-                        <div style={{ fontSize: 13, color: '#666', fontStyle: 'italic', lineHeight: 1.7 }}>Cofounder Mode gives your founding team a shared workspace inside Foundry. Chat together, bring Forge into group discussions, and share context across every individual Forge conversation.</div>
+                        <div style={{ fontSize: 22, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, marginBottom: 8 }}>Start Your Team Workspace</div>
+                        <div style={{ fontSize: 13, color: 'var(--color-text-muted)', fontStyle: 'italic', lineHeight: 1.7 }}>Cofounder Mode gives your founding team a shared workspace inside Tekori. Chat together, bring Navi into group discussions, and share context across every individual Navi conversation.</div>
                     </div>
                     <div style={{ ...card, animation: 'fadeSlideUp 0.4s ease 0.1s both' }}>
-                        <div style={{ fontSize: 11, color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>Team Name</div>
+                        <div style={{ fontSize: 11, color: 'var(--color-text-soft)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>Team Name</div>
                         <input
                             value={teamNameInput}
                             onChange={e => setTeamNameInput(e.target.value)}
                             onKeyDown={e => e.key === 'Enter' && handleCreateTeam()}
                             placeholder="e.g. Acme Inc or your business name"
                             autoFocus
-                            style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '11px 14px', color: '#F0EDE8', fontSize: 14, fontFamily: "'Lora', Georgia, serif", boxSizing: 'border-box', outline: 'none' }}
+                            style={{ width: '100%', background: 'rgba(7,26,47,0.04)', border: '1px solid rgba(7,26,47,0.1)', borderRadius: 10, padding: '11px 14px', color: 'var(--color-text)', fontSize: 14, fontFamily: "var(--tekori-font-ui)", boxSizing: 'border-box', outline: 'none' }}
                         />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {([
-                            { icon: <Icons.forge.chat size={15} color="rgba(240,237,232,0.55)" />, text: 'Shared team chat for your founding team' },
-                            { icon: <Icons.onboarding.someExperience size={15} color="rgba(240,237,232,0.55)" />, text: "Tag @forge in the chat to get Forge's take on any discussion" },
-                            { icon: <Icons.forge.complete size={15} color="rgba(240,237,232,0.55)" />, text: 'Shared task list so nothing falls through the cracks' },
-                            { icon: <Icons.stages.idea size={15} color="rgba(240,237,232,0.55)" />, text: 'Forge carries your team context into individual conversations' },
+                            { icon: <Icons.forge.chat size={15} color="rgba(102,112,133,0.74)" />, text: 'Shared team chat for your founding team' },
+                            { icon: <Icons.onboarding.someExperience size={15} color="rgba(102,112,133,0.74)" />, text: "Tag @navi in the chat to get Navi's take on any discussion" },
+                            { icon: <Icons.forge.complete size={15} color="rgba(102,112,133,0.74)" />, text: 'Shared task list so nothing falls through the cracks' },
+                            { icon: <Icons.stages.idea size={15} color="rgba(102,112,133,0.74)" />, text: 'Navi carries your team context into individual conversations' },
                         ] as { icon: React.ReactNode; text: string }[]).map(({ icon, text }) => (
-                            <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: 10 }}>
+                            <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: 'rgba(7,26,47,0.02)', border: '1px solid rgba(7,26,47,0.04)', borderRadius: 10 }}>
                                 <span style={{ display: 'flex', alignItems: 'center' }}>{icon}</span>
-                                <span style={{ fontSize: 12, color: '#888', lineHeight: 1.5 }}>{text}</span>
+                                <span style={{ fontSize: 12, color: 'var(--color-text-muted)', lineHeight: 1.5 }}>{text}</span>
                             </div>
                         ))}
                     </div>
                     {createTeamError && (
-                        <div style={{ fontSize: 12, color: 'rgba(232,98,42,0.8)', textAlign: 'center', marginTop: 12 }}>{createTeamError}</div>
+                        <div style={{ fontSize: 12, color: 'rgba(216,155,43,0.8)', textAlign: 'center', marginTop: 12 }}>{createTeamError}</div>
                     )}
                     <button
                         onClick={handleCreateTeam}
@@ -1130,18 +1131,18 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
     });
 
     return (
-        <div style={{ position: 'fixed', inset: 0, background: '#080809', fontFamily: "'Lora', Georgia, serif", color: '#F0EDE8', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'var(--tekori-deep-navy)', fontFamily: "var(--tekori-font-ui)", color: 'var(--color-text)', display: 'flex', flexDirection: 'column' }}>
 
             {/* Header */}
-            <div style={{ padding: 'max(14px, calc(10px + env(safe-area-inset-top))) 16px 12px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, background: 'rgba(8,8,9,0.95)', backdropFilter: 'blur(12px)' }}>
+            <div style={{ padding: 'max(14px, calc(10px + env(safe-area-inset-top))) 16px 12px', borderBottom: '1px solid rgba(7,26,47,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, background: 'rgba(255,252,246,0.95)', backdropFilter: 'blur(12px)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <button onClick={onOpenNav} style={{ ...btnSecondary, padding: '7px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg></button>
                     <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                             <Icons.sidebar.cofounder size={14} />
-                            <span style={{ fontSize: 14, fontWeight: 600, color: '#F0EDE8' }}>Cofounder Mode</span>
+                            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text)' }}>Cofounder Mode</span>
                         </div>
-                        <div style={{ fontSize: 10, color: '#555', marginTop: 1, fontStyle: 'italic' }}>{team.business_name}</div>
+                        <div style={{ fontSize: 10, color: 'var(--color-text-soft)', marginTop: 1, fontStyle: 'italic' }}>{team.business_name}</div>
                     </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -1153,17 +1154,17 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                                     {m.display_name.charAt(0).toUpperCase()}
                                 </div>
                                 {presence && (
-                                    <div style={{ position: 'absolute', bottom: 0, right: 0, width: 7, height: 7, borderRadius: '50%', background: presenceDotColor(presence), border: '1.5px solid #080809' }} />
+                                    <div style={{ position: 'absolute', bottom: 0, right: 0, width: 7, height: 7, borderRadius: '50%', background: presenceDotColor(presence), border: '1.5px solid var(--tekori-deep-navy)' }} />
                                 )}
                             </div>
                         );
                     })}
-                    {members.length > 4 && <div style={{ fontSize: 10, color: '#555', marginLeft: 4 }}>+{members.length - 4}</div>}
+                    {members.length > 4 && <div style={{ fontSize: 10, color: 'var(--color-text-soft)', marginLeft: 4 }}>+{members.length - 4}</div>}
                 </div>
             </div>
 
             {/* Tab bar */}
-            <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(12,12,14,0.98)', flexShrink: 0, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <div style={{ display: 'flex', borderBottom: '1px solid rgba(7,26,47,0.06)', background: 'var(--color-surface-elevated)', flexShrink: 0, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
                 {([
                     { id: 'chat', label: 'Chat' },
                     { id: 'tasks', label: 'Tasks' },
@@ -1174,7 +1175,7 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
-                        style={{ flex: '0 0 auto', minWidth: 60, padding: '11px 16px', background: 'transparent', border: 'none', borderBottom: activeTab === tab.id ? '2px solid #E8622A' : '2px solid transparent', color: activeTab === tab.id ? '#F0EDE8' : 'rgba(240,237,232,0.45)', fontSize: 12, fontWeight: activeTab === tab.id ? 600 : 400, cursor: 'pointer', transition: 'all 0.15s', fontFamily: "'Lora', Georgia, serif", whiteSpace: 'nowrap' }}
+                        style={{ flex: '0 0 auto', minWidth: 60, padding: '11px 16px', background: 'transparent', border: 'none', borderBottom: activeTab === tab.id ? '2px solid var(--tekori-gold)' : '2px solid transparent', color: activeTab === tab.id ? 'var(--color-text)' : 'rgba(16,32,51,0.45)', fontSize: 12, fontWeight: activeTab === tab.id ? 600 : 400, cursor: 'pointer', transition: 'all 0.15s', fontFamily: "var(--tekori-font-ui)", whiteSpace: 'nowrap' }}
                     >
                         {tab.label}
                     </button>
@@ -1188,7 +1189,7 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
 
                         {/* Team roster */}
                         <div style={{ marginBottom: 8 }}>
-                            <div style={{ fontSize: 10, color: '#444', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 12 }}>
+                            <div style={{ fontSize: 10, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 12 }}>
                                 Team · {members.length} {members.length === 1 ? 'Member' : 'Members'}
                             </div>
 
@@ -1203,41 +1204,41 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
 
                                 return (
                                     <div key={member.id} style={{ marginBottom: 8 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: isMe ? 'rgba(232,98,42,0.04)' : 'rgba(255,255,255,0.02)', border: isMe ? '1px solid rgba(232,98,42,0.15)' : '1px solid rgba(255,255,255,0.06)', borderRadius: isEditingThis ? '12px 12px 0 0' : 12, animation: 'fadeSlideUp 0.3s ease', position: 'relative' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: isMe ? 'rgba(216,155,43,0.04)' : 'rgba(7,26,47,0.02)', border: isMe ? '1px solid rgba(216,155,43,0.15)' : '1px solid rgba(7,26,47,0.06)', borderRadius: isEditingThis ? '12px 12px 0 0' : 12, animation: 'fadeSlideUp 0.3s ease', position: 'relative' }}>
                                             <div style={{ position: 'relative', flexShrink: 0 }}>
                                                 <div style={{ width: 38, height: 38, borderRadius: '50%', background: `${color}18`, border: `1.5px solid ${color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, color, fontWeight: 700 }}>
                                                     {member.display_name.charAt(0).toUpperCase()}
                                                 </div>
                                                 {presence && (
-                                                    <div style={{ position: 'absolute', bottom: 1, right: 1, width: 9, height: 9, borderRadius: '50%', background: presenceDotColor(presence), border: '2px solid #080809' }} />
+                                                    <div style={{ position: 'absolute', bottom: 1, right: 1, width: 9, height: 9, borderRadius: '50%', background: presenceDotColor(presence), border: '2px solid var(--tekori-deep-navy)' }} />
                                                 )}
                                             </div>
                                             <div style={{ flex: 1, minWidth: 0 }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                                                    <span style={{ fontSize: 13, fontWeight: 500, color: '#F0EDE8' }}>{member.display_name}</span>
-                                                    {isMe && <span style={{ fontSize: 9, color: '#E8622A', background: 'rgba(232,98,42,0.1)', border: '1px solid rgba(232,98,42,0.2)', borderRadius: 20, padding: '1px 7px', lineHeight: 1.6 }}>You</span>}
-                                                    {isTeamOwner && <span style={{ fontSize: 9, color: '#F5A843', background: 'rgba(245,168,67,0.1)', border: '1px solid rgba(245,168,67,0.2)', borderRadius: 20, padding: '1px 7px', lineHeight: 1.6 }}>Owner</span>}
+                                                    <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-text)' }}>{member.display_name}</span>
+                                                    {isMe && <span style={{ fontSize: 9, color: 'var(--tekori-gold)', background: 'rgba(216,155,43,0.1)', border: '1px solid rgba(216,155,43,0.2)', borderRadius: 20, padding: '1px 7px', lineHeight: 1.6 }}>You</span>}
+                                                    {isTeamOwner && <span style={{ fontSize: 9, color: 'var(--tekori-amber)', background: 'rgba(244,182,66,0.1)', border: '1px solid rgba(244,182,66,0.2)', borderRadius: 20, padding: '1px 7px', lineHeight: 1.6 }}>Owner</span>}
                                                 </div>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3 }}>
                                                     <div style={{ fontSize: 10, color, background: `${color}14`, border: `1px solid ${color}30`, borderRadius: 20, padding: '1px 8px' }}>{member.role}</div>
                                                     {canEdit && (
-                                                        <button onClick={() => setEditingRoleFor(isEditingThis ? null : member.id)} style={{ fontSize: 11, color: 'rgba(240,237,232,0.4)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', padding: 0 }}>
+                                                        <button onClick={() => setEditingRoleFor(isEditingThis ? null : member.id)} style={{ fontSize: 11, color: 'rgba(102,112,133,0.58)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--tekori-font-ui)', padding: 0 }}>
                                                             {isEditingThis ? 'Cancel' : 'Edit role'}
                                                         </button>
                                                     )}
                                                 </div>
                                             </div>
                                             {canRemove && (
-                                                <button onClick={() => setConfirmRemove({ id: member.id, name: member.display_name })} title="Remove member" style={{ position: 'absolute', top: 10, right: 12, width: 20, height: 20, borderRadius: '50%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(240,237,232,0.3)', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1, fontFamily: 'sans-serif' }}>×</button>
+                                                <button onClick={() => setConfirmRemove({ id: member.id, name: member.display_name })} title="Remove member" style={{ position: 'absolute', top: 10, right: 12, width: 20, height: 20, borderRadius: '50%', background: 'rgba(7,26,47,0.04)', border: '1px solid rgba(7,26,47,0.08)', color: 'rgba(102,112,133,0.45)', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1, fontFamily: 'sans-serif' }}>×</button>
                                             )}
                                         </div>
 
                                         {isEditingThis && (
-                                            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderTop: 'none', borderRadius: '0 0 12px 12px', padding: '10px 14px' }}>
-                                                <div style={{ fontSize: 10, color: '#555', marginBottom: 8 }}>Select new role</div>
+                                            <div style={{ background: 'rgba(7,26,47,0.02)', border: '1px solid rgba(7,26,47,0.07)', borderTop: 'none', borderRadius: '0 0 12px 12px', padding: '10px 14px' }}>
+                                                <div style={{ fontSize: 10, color: 'var(--color-text-soft)', marginBottom: 8 }}>Select new role</div>
                                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                                                     {ROLE_OPTIONS.map(r => (
-                                                        <button key={r} onClick={() => handleRoleChange(member.id, r)} style={{ padding: '5px 12px', borderRadius: 20, fontSize: 11, border: member.role === r ? 'none' : '1px solid rgba(255,255,255,0.1)', background: member.role === r ? `${roleColor(r)}22` : 'transparent', color: member.role === r ? roleColor(r) : '#666', cursor: 'pointer', fontFamily: "'Lora', Georgia, serif", transition: 'all 0.15s' }}>{r}</button>
+                                                        <button key={r} onClick={() => handleRoleChange(member.id, r)} style={{ padding: '5px 12px', borderRadius: 20, fontSize: 11, border: member.role === r ? 'none' : '1px solid rgba(7,26,47,0.1)', background: member.role === r ? `${roleColor(r)}22` : 'transparent', color: member.role === r ? roleColor(r) : 'var(--color-text-muted)', cursor: 'pointer', fontFamily: "var(--tekori-font-ui)", transition: 'all 0.15s' }}>{r}</button>
                                                     ))}
                                                 </div>
                                             </div>
@@ -1249,12 +1250,12 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
 
                         {/* Invite section */}
                         <div style={{ ...card, marginTop: 20, animation: 'fadeSlideUp 0.4s ease 0.1s both' }}>
-                            <div style={{ fontSize: 13, fontWeight: 600, color: '#F0EDE8', marginBottom: 6 }}>Add to Your Team</div>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)', marginBottom: 6 }}>Add to Your Team</div>
 
                             {/* Email invite (primary) */}
                             {isOwner && (
                                 <div style={{ marginBottom: 16 }}>
-                                    <div style={{ fontSize: 12, color: '#777', lineHeight: 1.5, marginBottom: 10 }}>Enter their email — they'll get an invitation link and an in-app notification if they already have a Foundry account.</div>
+                                    <div style={{ fontSize: 12, color: 'var(--color-text-muted)', lineHeight: 1.5, marginBottom: 10 }}>Enter their email — they'll get an invitation link and an in-app notification if they already have a Tekori account.</div>
                                     <div style={{ display: 'flex', gap: 8 }}>
                                         <input
                                             type="email"
@@ -1262,28 +1263,28 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                                             value={emailInviteInput}
                                             onChange={e => setEmailInviteInput(e.target.value)}
                                             onKeyDown={e => { if (e.key === 'Enter') handleSendEmailInvite(); }}
-                                            style={{ flex: 1, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '10px 12px', fontSize: 13, color: '#F0EDE8', fontFamily: 'DM Sans, sans-serif', outline: 'none' }}
+                                            style={{ flex: 1, background: 'rgba(7,26,47,0.04)', border: '1px solid rgba(7,26,47,0.1)', borderRadius: 8, padding: '10px 12px', fontSize: 13, color: 'var(--color-text)', fontFamily: 'var(--tekori-font-ui)', outline: 'none' }}
                                         />
                                         <button
                                             onClick={handleSendEmailInvite}
                                             disabled={sendingEmailInvite || !emailInviteInput.trim()}
-                                            style={{ ...btnPrimary, padding: '10px 16px', background: emailInviteSent ? 'linear-gradient(135deg, #48BB78, #38a869)' : 'linear-gradient(135deg, #E8622A, #c9521e)', opacity: (sendingEmailInvite || !emailInviteInput.trim()) ? 0.6 : 1, flexShrink: 0, transition: 'background 0.3s' }}
+                                            style={{ ...btnPrimary, padding: '10px 16px', background: emailInviteSent ? 'linear-gradient(135deg, var(--color-success), var(--color-success))' : 'linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))', opacity: (sendingEmailInvite || !emailInviteInput.trim()) ? 0.6 : 1, flexShrink: 0, transition: 'background 0.3s' }}
                                         >
                                             {sendingEmailInvite ? 'Sending...' : emailInviteSent ? '✓ Sent' : 'Send Invite'}
                                         </button>
                                     </div>
                                     {emailInviteError && (
-                                        <div style={{ fontSize: 12, color: 'rgba(232,98,42,0.8)', fontFamily: 'DM Sans, sans-serif', marginTop: 6 }}>{emailInviteError}</div>
+                                        <div style={{ fontSize: 12, color: 'rgba(216,155,43,0.8)', fontFamily: 'var(--tekori-font-ui)', marginTop: 6 }}>{emailInviteError}</div>
                                     )}
 
                                     {/* Sent invites list */}
                                     {sentEmailInvites.length > 0 && (
                                         <div style={{ marginTop: 12 }}>
-                                            <div style={{ fontSize: 10, color: '#444', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Sent Invitations</div>
+                                            <div style={{ fontSize: 10, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Sent Invitations</div>
                                             {sentEmailInvites.slice(0, 5).map(inv => (
-                                                <div key={inv.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                                                    <div style={{ fontSize: 12, color: '#888', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{inv.invited_email}</div>
-                                                    <div style={{ fontSize: 11, color: inv.status === 'accepted' ? '#48BB78' : inv.status === 'declined' ? '#E8622A' : '#555', flexShrink: 0, marginLeft: 8, textTransform: 'capitalize' }}>{inv.status}</div>
+                                                <div key={inv.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid rgba(7,26,47,0.04)' }}>
+                                                    <div style={{ fontSize: 12, color: 'var(--color-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{inv.invited_email}</div>
+                                                    <div style={{ fontSize: 11, color: inv.status === 'accepted' ? 'var(--color-success)' : inv.status === 'declined' ? 'var(--tekori-gold)' : 'var(--color-text-soft)', flexShrink: 0, marginLeft: 8, textTransform: 'capitalize' }}>{inv.status}</div>
                                                 </div>
                                             ))}
                                         </div>
@@ -1293,44 +1294,44 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
 
                             {/* Divider */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                                <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.06)' }} />
-                                <div style={{ fontSize: 10, color: '#444', fontFamily: 'DM Sans, sans-serif' }}>or share a link</div>
-                                <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.06)' }} />
+                                <div style={{ flex: 1, height: 1, background: 'rgba(7,26,47,0.06)' }} />
+                                <div style={{ fontSize: 10, color: 'var(--color-text-muted)', fontFamily: 'var(--tekori-font-ui)' }}>or share a link</div>
+                                <div style={{ flex: 1, height: 1, background: 'rgba(7,26,47,0.06)' }} />
                             </div>
 
                             {/* Copy link */}
-                            <div style={{ fontSize: 12, color: '#555', lineHeight: 1.5, marginBottom: 10 }}>Anyone with this link can join the workspace.</div>
+                            <div style={{ fontSize: 12, color: 'var(--color-text-soft)', lineHeight: 1.5, marginBottom: 10 }}>Anyone with this link can join the workspace.</div>
 
                             {inviteUrl && (
                                 <div style={{ marginBottom: 10 }}>
-                                    <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '9px 12px', fontSize: 11, color: '#666', wordBreak: 'break-all', lineHeight: 1.5, fontFamily: 'monospace', marginBottom: 4 }}>
+                                    <div style={{ background: 'rgba(7,26,47,0.03)', border: '1px solid rgba(7,26,47,0.08)', borderRadius: 8, padding: '9px 12px', fontSize: 11, color: 'var(--color-text-muted)', wordBreak: 'break-all', lineHeight: 1.5, fontFamily: 'monospace', marginBottom: 4 }}>
                                         {inviteUrl}
                                     </div>
-                                    <div style={{ fontSize: 11, color: 'rgba(240,237,232,0.25)', fontFamily: 'DM Sans, sans-serif' }}>No expiration · Reusable link</div>
+                                    <div style={{ fontSize: 11, color: 'rgba(102,112,133,0.40)', fontFamily: 'var(--tekori-font-ui)' }}>No expiration · Reusable link</div>
                                 </div>
                             )}
 
                             <div style={{ display: 'flex', gap: 8 }}>
-                                <button onClick={handleGetInviteLink} disabled={generatingInvite} style={{ ...btnPrimary, flex: 1, padding: '10px', fontSize: 12, background: copied ? 'linear-gradient(135deg, #48BB78, #38a869)' : 'rgba(255,255,255,0.06)', color: copied ? '#fff' : '#aaa', border: '1px solid rgba(255,255,255,0.08)', opacity: generatingInvite ? 0.7 : 1, transition: 'background 0.3s' }}>
+                                <button onClick={handleGetInviteLink} disabled={generatingInvite} style={{ ...btnPrimary, flex: 1, padding: '10px', fontSize: 12, background: copied ? 'linear-gradient(135deg, var(--color-success), var(--color-success))' : 'rgba(7,26,47,0.06)', color: copied ? '#fff' : 'var(--color-text-muted)', border: '1px solid rgba(7,26,47,0.08)', opacity: generatingInvite ? 0.7 : 1, transition: 'background 0.3s' }}>
                                     {generatingInvite ? 'Generating...' : copied ? '✓ Copied' : inviteUrl ? 'Copy Link' : 'Generate & Copy Link'}
                                 </button>
                                 {inviteUrl && isOwner && (
-                                    <button onClick={() => setConfirmRevokeInvite(true)} style={{ ...btnSecondary, padding: '10px 14px', fontSize: 12, color: 'rgba(240,237,232,0.3)', flexShrink: 0 }}>Revoke</button>
+                                    <button onClick={() => setConfirmRevokeInvite(true)} style={{ ...btnSecondary, padding: '10px 14px', fontSize: 12, color: 'rgba(102,112,133,0.45)', flexShrink: 0 }}>Revoke</button>
                                 )}
                             </div>
 
                             {inviteError && (
-                                <div style={{ fontSize: 12, color: 'rgba(232,98,42,0.7)', fontFamily: 'DM Sans, sans-serif', marginTop: 8, textAlign: 'center' }}>{inviteError}</div>
+                                <div style={{ fontSize: 12, color: 'rgba(216,155,43,0.7)', fontFamily: 'var(--tekori-font-ui)', marginTop: 8, textAlign: 'center' }}>{inviteError}</div>
                             )}
 
-                            <div style={{ fontSize: 10, color: '#333', textAlign: 'center', marginTop: 12 }}>Forge will carry shared team context into each person's individual conversations.</div>
+                            <div style={{ fontSize: 10, color: 'var(--color-text-muted)', textAlign: 'center', marginTop: 12 }}>Navi will carry shared team context into each person's individual conversations.</div>
                         </div>
 
                         {/* Role legend */}
                         <div style={{ marginTop: 20 }}>
-                            <div style={{ fontSize: 10, color: '#333', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>Role Colours</div>
+                            <div style={{ fontSize: 10, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>Role Colours</div>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                                {Object.entries(ROLE_COLORS).filter(([r]) => r !== 'Forge').map(([role, color]) => (
+                                {Object.entries(ROLE_COLORS).filter(([r]) => r !== 'Navi').map(([role, color]) => (
                                     <div key={role} style={{ fontSize: 10, color, background: `${color}12`, border: `1px solid ${color}25`, borderRadius: 20, padding: '2px 10px' }}>{role}</div>
                                 ))}
                             </div>
@@ -1339,7 +1340,7 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                         {/* Leave team */}
                         {!isOwner && (
                             <div style={{ marginTop: 32, textAlign: 'center' }}>
-                                <button onClick={() => setConfirmLeave(true)} style={{ fontSize: 12, color: 'rgba(240,237,232,0.3)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', padding: '8px 0' }}>Leave this workspace</button>
+                                <button onClick={() => setConfirmLeave(true)} style={{ fontSize: 12, color: 'rgba(102,112,133,0.45)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--tekori-font-ui)', padding: '8px 0' }}>Leave this workspace</button>
                             </div>
                         )}
                     </div>
@@ -1353,7 +1354,7 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
 
                         {/* Header row */}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                            <div style={{ fontSize: 18, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: '#F0EDE8' }}>Team Tasks</div>
+                            <div style={{ fontSize: 18, fontFamily: "var(--tekori-font-ui)", fontWeight: 700, color: 'var(--color-text)' }}>Team Tasks</div>
                             <button onClick={() => setAddTaskOpen(true)} style={{ ...btnPrimary, padding: '8px 14px', fontSize: 12 }}>Add Task +</button>
                         </div>
 
@@ -1363,7 +1364,7 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                                 const label = f === 'all' ? 'All' : f === 'mine' ? 'My Tasks' : f === 'todo' ? 'Todo' : f === 'inprogress' ? 'In Progress' : 'Done';
                                 const active = taskFilter === f;
                                 return (
-                                    <button key={f} onClick={() => setTaskFilter(f)} style={{ padding: '5px 12px', borderRadius: 20, fontSize: 11, border: active ? 'none' : '1px solid rgba(255,255,255,0.1)', background: active ? 'rgba(232,98,42,0.15)' : 'transparent', color: active ? '#E8622A' : '#666', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', outline: active ? '1px solid rgba(232,98,42,0.3)' : 'none', transition: 'all 0.15s' }}>{label}</button>
+                                    <button key={f} onClick={() => setTaskFilter(f)} style={{ padding: '5px 12px', borderRadius: 20, fontSize: 11, border: active ? 'none' : '1px solid rgba(7,26,47,0.1)', background: active ? 'rgba(216,155,43,0.15)' : 'transparent', color: active ? 'var(--tekori-gold)' : 'var(--color-text-muted)', cursor: 'pointer', fontFamily: 'var(--tekori-font-ui)', outline: active ? '1px solid rgba(216,155,43,0.3)' : 'none', transition: 'all 0.15s' }}>{label}</button>
                                 );
                             })}
                         </div>
@@ -1371,10 +1372,10 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                         {/* Empty state */}
                         {filteredTasks.length === 0 && (
                             <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-                                <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(232,98,42,0.08)', border: '1px solid rgba(232,98,42,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                                    <Icons.forge.complete size={22} color="rgba(240,237,232,0.4)" />
+                                <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(216,155,43,0.08)', border: '1px solid rgba(216,155,43,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                                    <Icons.forge.complete size={22} color="rgba(102,112,133,0.58)" />
                                 </div>
-                                <div style={{ fontSize: 13, color: 'rgba(240,237,232,0.4)', lineHeight: 1.7, fontFamily: 'DM Sans, sans-serif' }}>
+                                <div style={{ fontSize: 13, color: 'rgba(102,112,133,0.58)', lineHeight: 1.7, fontFamily: 'var(--tekori-font-ui)' }}>
                                     {taskFilter === 'all' ? 'No tasks yet. Add your first one.' : 'No tasks match this filter.'}
                                 </div>
                             </div>
@@ -1392,27 +1393,27 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                                     {/* Card header */}
                                     <div
                                         onClick={() => setExpandedTaskId(expanded ? null : task.id)}
-                                        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: expanded ? '12px 12px 0 0' : 12, cursor: 'pointer' }}
+                                        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px', background: 'rgba(7,26,47,0.02)', border: '1px solid rgba(7,26,47,0.07)', borderRadius: expanded ? '12px 12px 0 0' : 12, cursor: 'pointer' }}
                                     >
                                         {/* Status toggle */}
                                         <button
                                             onClick={e => { e.stopPropagation(); handleTaskStatusCycle(task.id, task.status); }}
                                             title="Cycle status"
-                                            style={{ flexShrink: 0, width: 20, height: 20, borderRadius: '50%', border: task.status === 'done' ? 'none' : '1.5px solid rgba(255,255,255,0.25)', background: task.status === 'done' ? '#48BB78' : task.status === 'in_progress' ? 'rgba(245,168,67,0.2)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 11, color: task.status === 'done' ? '#fff' : '#F5A843', transition: 'all 0.15s' }}
+                                            style={{ flexShrink: 0, width: 20, height: 20, borderRadius: '50%', border: task.status === 'done' ? 'none' : '1.5px solid rgba(7,26,47,0.25)', background: task.status === 'done' ? 'var(--color-success)' : task.status === 'in_progress' ? 'rgba(244,182,66,0.2)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 11, color: task.status === 'done' ? '#fff' : 'var(--tekori-amber)', transition: 'all 0.15s' }}
                                         >
                                             {task.status === 'done' ? '✓' : task.status === 'in_progress' ? '◑' : ''}
                                         </button>
 
                                         {/* Title */}
-                                        <span style={{ flex: 1, fontSize: 14, color: task.status === 'done' ? '#555' : '#F0EDE8', fontFamily: 'DM Sans, sans-serif', textDecoration: task.status === 'done' ? 'line-through' : 'none', lineHeight: 1.4 }}>{task.title}</span>
+                                        <span style={{ flex: 1, fontSize: 14, color: task.status === 'done' ? 'var(--color-text-soft)' : 'var(--color-text)', fontFamily: 'var(--tekori-font-ui)', textDecoration: task.status === 'done' ? 'line-through' : 'none', lineHeight: 1.4 }}>{task.title}</span>
 
                                         {/* Priority badge */}
-                                        {task.priority === 'high' && <span style={{ fontSize: 11, color: '#E8622A', flexShrink: 0 }}>!</span>}
-                                        {task.priority === 'low' && <span style={{ fontSize: 11, color: '#555', flexShrink: 0 }}>↓</span>}
+                                        {task.priority === 'high' && <span style={{ fontSize: 11, color: 'var(--tekori-gold)', flexShrink: 0 }}>!</span>}
+                                        {task.priority === 'low' && <span style={{ fontSize: 11, color: 'var(--color-text-soft)', flexShrink: 0 }}>↓</span>}
 
                                         {/* Due date */}
                                         {dueFmt && (
-                                            <span style={{ fontSize: 11, color: overdue ? 'rgba(232,98,42,0.8)' : 'rgba(240,237,232,0.4)', fontFamily: 'DM Sans, sans-serif', flexShrink: 0 }}>{dueFmt}</span>
+                                            <span style={{ fontSize: 11, color: overdue ? 'rgba(216,155,43,0.8)' : 'rgba(102,112,133,0.58)', fontFamily: 'var(--tekori-font-ui)', flexShrink: 0 }}>{dueFmt}</span>
                                         )}
 
                                         {/* Assignee */}
@@ -1421,33 +1422,33 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                                                 {assigneeMember.display_name.charAt(0).toUpperCase()}
                                             </div>
                                         ) : (
-                                            <div title="Unassigned" style={{ width: 20, height: 20, borderRadius: '50%', border: '1px dashed rgba(255,255,255,0.15)', flexShrink: 0 }} />
+                                            <div title="Unassigned" style={{ width: 20, height: 20, borderRadius: '50%', border: '1px dashed rgba(7,26,47,0.15)', flexShrink: 0 }} />
                                         )}
                                     </div>
 
                                     {/* Expanded panel */}
                                     {expanded && (
-                                        <div style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.07)', borderTop: 'none', borderRadius: '0 0 12px 12px', padding: '12px 14px' }}>
+                                        <div style={{ background: 'rgba(7,26,47,0.015)', border: '1px solid rgba(7,26,47,0.07)', borderTop: 'none', borderRadius: '0 0 12px 12px', padding: '12px 14px' }}>
                                             {/* Description */}
                                             <div style={{ marginBottom: 12 }}>
-                                                <div style={{ fontSize: 10, color: '#555', marginBottom: 6 }}>Description</div>
+                                                <div style={{ fontSize: 10, color: 'var(--color-text-soft)', marginBottom: 6 }}>Description</div>
                                                 <textarea
                                                     value={editingDescription}
                                                     onChange={e => setEditingDescription(e.target.value)}
                                                     onBlur={() => handleUpdateTaskField(task.id, 'description', editingDescription || null)}
                                                     placeholder="Add details..."
                                                     rows={2}
-                                                    style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '8px 10px', color: '#C8C4BE', fontSize: 12, fontFamily: "'Lora', Georgia, serif", resize: 'none', outline: 'none', boxSizing: 'border-box' }}
+                                                    style={{ width: '100%', background: 'rgba(7,26,47,0.03)', border: '1px solid rgba(7,26,47,0.08)', borderRadius: 8, padding: '8px 10px', color: 'rgba(16,32,51,0.74)', fontSize: 12, fontFamily: "var(--tekori-font-ui)", resize: 'none', outline: 'none', boxSizing: 'border-box' }}
                                                 />
                                             </div>
 
                                             {/* Assignee */}
                                             <div style={{ marginBottom: 12 }}>
-                                                <div style={{ fontSize: 10, color: '#555', marginBottom: 6 }}>Assignee</div>
+                                                <div style={{ fontSize: 10, color: 'var(--color-text-soft)', marginBottom: 6 }}>Assignee</div>
                                                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                                                    <button onClick={() => handleUpdateTaskField(task.id, 'assigned_to', null)} style={{ padding: '4px 10px', borderRadius: 20, fontSize: 10, border: !task.assigned_to ? '1px solid rgba(255,255,255,0.25)' : '1px solid rgba(255,255,255,0.1)', background: !task.assigned_to ? 'rgba(255,255,255,0.06)' : 'transparent', color: !task.assigned_to ? '#F0EDE8' : '#555', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>Unassigned</button>
+                                                    <button onClick={() => handleUpdateTaskField(task.id, 'assigned_to', null)} style={{ padding: '4px 10px', borderRadius: 20, fontSize: 10, border: !task.assigned_to ? '1px solid rgba(7,26,47,0.25)' : '1px solid rgba(7,26,47,0.1)', background: !task.assigned_to ? 'rgba(7,26,47,0.06)' : 'transparent', color: !task.assigned_to ? 'var(--color-text)' : 'var(--color-text-soft)', cursor: 'pointer', fontFamily: 'var(--tekori-font-ui)' }}>Unassigned</button>
                                                     {members.map(m => (
-                                                        <button key={m.id} onClick={() => handleUpdateTaskField(task.id, 'assigned_to', m.id)} style={{ padding: '4px 10px', borderRadius: 20, fontSize: 10, border: task.assigned_to === m.id ? `1px solid ${roleColor(m.role)}55` : '1px solid rgba(255,255,255,0.1)', background: task.assigned_to === m.id ? `${roleColor(m.role)}18` : 'transparent', color: task.assigned_to === m.id ? roleColor(m.role) : '#555', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>{m.display_name}</button>
+                                                        <button key={m.id} onClick={() => handleUpdateTaskField(task.id, 'assigned_to', m.id)} style={{ padding: '4px 10px', borderRadius: 20, fontSize: 10, border: task.assigned_to === m.id ? `1px solid ${roleColor(m.role)}55` : '1px solid rgba(7,26,47,0.1)', background: task.assigned_to === m.id ? `${roleColor(m.role)}18` : 'transparent', color: task.assigned_to === m.id ? roleColor(m.role) : 'var(--color-text-soft)', cursor: 'pointer', fontFamily: 'var(--tekori-font-ui)' }}>{m.display_name}</button>
                                                     ))}
                                                 </div>
                                             </div>
@@ -1455,46 +1456,46 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                                             {/* Priority + Due date row */}
                                             <div style={{ display: 'flex', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
                                                 <div>
-                                                    <div style={{ fontSize: 10, color: '#555', marginBottom: 6 }}>Priority</div>
+                                                    <div style={{ fontSize: 10, color: 'var(--color-text-soft)', marginBottom: 6 }}>Priority</div>
                                                     <div style={{ display: 'flex', gap: 4 }}>
                                                         {(['low', 'normal', 'high'] as const).map(p => (
-                                                            <button key={p} onClick={() => handleUpdateTaskField(task.id, 'priority', p)} style={{ padding: '4px 10px', borderRadius: 20, fontSize: 10, border: task.priority === p ? 'none' : '1px solid rgba(255,255,255,0.1)', background: task.priority === p ? (p === 'high' ? 'rgba(232,98,42,0.2)' : p === 'low' ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.05)') : 'transparent', color: task.priority === p ? (p === 'high' ? '#E8622A' : '#C8C4BE') : '#555', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', textTransform: 'capitalize' }}>{p}</button>
+                                                            <button key={p} onClick={() => handleUpdateTaskField(task.id, 'priority', p)} style={{ padding: '4px 10px', borderRadius: 20, fontSize: 10, border: task.priority === p ? 'none' : '1px solid rgba(7,26,47,0.1)', background: task.priority === p ? (p === 'high' ? 'rgba(216,155,43,0.2)' : p === 'low' ? 'rgba(7,26,47,0.05)' : 'rgba(7,26,47,0.05)') : 'transparent', color: task.priority === p ? (p === 'high' ? 'var(--tekori-gold)' : 'rgba(16,32,51,0.74)') : 'var(--color-text-soft)', cursor: 'pointer', fontFamily: 'var(--tekori-font-ui)', textTransform: 'capitalize' }}>{p}</button>
                                                         ))}
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <div style={{ fontSize: 10, color: '#555', marginBottom: 6 }}>Due date</div>
+                                                    <div style={{ fontSize: 10, color: 'var(--color-text-soft)', marginBottom: 6 }}>Due date</div>
                                                     <input
                                                         type="date"
                                                         value={task.due_date ?? ''}
                                                         onChange={e => handleUpdateTaskField(task.id, 'due_date', e.target.value || null)}
-                                                        style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '4px 8px', color: '#C8C4BE', fontSize: 11, outline: 'none', fontFamily: 'DM Sans, sans-serif', colorScheme: 'dark' }}
+                                                        style={{ background: 'rgba(7,26,47,0.03)', border: '1px solid rgba(7,26,47,0.08)', borderRadius: 8, padding: '4px 8px', color: 'rgba(16,32,51,0.74)', fontSize: 11, outline: 'none', fontFamily: 'var(--tekori-font-ui)', colorScheme: 'light' }}
                                                     />
                                                 </div>
                                             </div>
 
                                             {/* Comments */}
-                                            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 12, marginTop: 4, marginBottom: 12 }}>
-                                                <div style={{ fontSize: 10, color: '#555', marginBottom: 8 }}>Comments</div>
-                                                {loadingComments[task.id] && <div style={{ fontSize: 11, color: '#444', fontFamily: 'DM Sans, sans-serif' }}>Loading...</div>}
+                                            <div style={{ borderTop: '1px solid rgba(7,26,47,0.06)', paddingTop: 12, marginTop: 4, marginBottom: 12 }}>
+                                                <div style={{ fontSize: 10, color: 'var(--color-text-soft)', marginBottom: 8 }}>Comments</div>
+                                                {loadingComments[task.id] && <div style={{ fontSize: 11, color: 'var(--color-text-muted)', fontFamily: 'var(--tekori-font-ui)' }}>Loading...</div>}
                                                 {(taskComments[task.id] ?? []).map(c => {
                                                     const commenter = members.find(m => m.user_id === c.user_id);
                                                     return (
                                                         <div key={c.id} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'flex-start' }}>
-                                                            <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#888', flexShrink: 0, marginTop: 1 }}>
+                                                            <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'rgba(7,26,47,0.06)', border: '1px solid rgba(7,26,47,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: 'var(--color-text-muted)', flexShrink: 0, marginTop: 1 }}>
                                                                 {(commenter?.display_name ?? '?').charAt(0).toUpperCase()}
                                                             </div>
-                                                            <div style={{ flex: 1, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 8, padding: '6px 10px' }}>
+                                                            <div style={{ flex: 1, background: 'rgba(7,26,47,0.02)', border: '1px solid rgba(7,26,47,0.06)', borderRadius: 8, padding: '6px 10px' }}>
                                                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
-                                                                    <span style={{ fontSize: 10, color: '#666' }}>{commenter?.display_name ?? 'Unknown'}</span>
+                                                                    <span style={{ fontSize: 10, color: 'var(--color-text-muted)' }}>{commenter?.display_name ?? 'Unknown'}</span>
                                                                     <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                                                                        <span style={{ fontSize: 10, color: '#333' }}>{formatTime(c.created_at)}</span>
+                                                                        <span style={{ fontSize: 10, color: 'var(--color-text-muted)' }}>{formatTime(c.created_at)}</span>
                                                                         {c.user_id === userId && (
-                                                                            <button onClick={() => handleDeleteComment(task.id, c.id)} style={{ fontSize: 10, color: 'rgba(232,98,42,0.4)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>×</button>
+                                                                            <button onClick={() => handleDeleteComment(task.id, c.id)} style={{ fontSize: 10, color: 'rgba(216,155,43,0.4)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>×</button>
                                                                         )}
                                                                     </div>
                                                                 </div>
-                                                                <div style={{ fontSize: 12, color: '#C8C4BE', fontFamily: "'Lora', Georgia, serif", lineHeight: 1.5 }}>{c.content}</div>
+                                                                <div style={{ fontSize: 12, color: 'rgba(16,32,51,0.74)', fontFamily: "var(--tekori-font-ui)", lineHeight: 1.5 }}>{c.content}</div>
                                                             </div>
                                                         </div>
                                                     );
@@ -1505,14 +1506,14 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                                                         onChange={e => setCommentInputs(prev => ({ ...prev, [task.id]: e.target.value }))}
                                                         onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAddComment(task.id); } }}
                                                         placeholder="Add a comment..."
-                                                        style={{ flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '6px 10px', color: '#F0EDE8', fontSize: 12, fontFamily: "'Lora', Georgia, serif", outline: 'none' }}
+                                                        style={{ flex: 1, background: 'rgba(7,26,47,0.03)', border: '1px solid rgba(7,26,47,0.08)', borderRadius: 8, padding: '6px 10px', color: 'var(--color-text)', fontSize: 12, fontFamily: "var(--tekori-font-ui)", outline: 'none' }}
                                                     />
                                                     <button onClick={() => handleAddComment(task.id)} disabled={!(commentInputs[task.id] ?? '').trim()} style={{ ...btnPrimary, padding: '6px 12px', fontSize: 11, opacity: !(commentInputs[task.id] ?? '').trim() ? 0.4 : 1 }}>Post</button>
                                                 </div>
                                             </div>
 
                                             {/* Delete */}
-                                            <button onClick={() => handleDeleteTask(task.id)} style={{ fontSize: 11, color: 'rgba(232,98,42,0.5)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', padding: 0 }}>Delete task</button>
+                                            <button onClick={() => handleDeleteTask(task.id)} style={{ fontSize: 11, color: 'rgba(216,155,43,0.5)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--tekori-font-ui)', padding: 0 }}>Delete task</button>
                                         </div>
                                     )}
                                 </div>
@@ -1527,15 +1528,15 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                 <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 32 }}>
                     <div style={{ maxWidth: 600, margin: '0 auto', padding: '16px 16px 0' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                            <div style={{ fontSize: 18, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: '#F0EDE8' }}>Decision Log</div>
+                            <div style={{ fontSize: 18, fontFamily: "var(--tekori-font-ui)", fontWeight: 700, color: 'var(--color-text)' }}>Decision Log</div>
                             <button onClick={() => openDecisionForm()} style={{ ...btnPrimary, padding: '8px 14px', fontSize: 12 }}>Log Decision +</button>
                         </div>
                         {decisions.length === 0 && (
                             <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-                                <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(232,98,42,0.08)', border: '1px solid rgba(232,98,42,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                                    <Icons.hub.decisions size={22} color="rgba(240,237,232,0.4)" />
+                                <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(216,155,43,0.08)', border: '1px solid rgba(216,155,43,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                                    <Icons.hub.decisions size={22} color="rgba(102,112,133,0.58)" />
                                 </div>
-                                <div style={{ fontSize: 13, color: 'rgba(240,237,232,0.4)', lineHeight: 1.7, fontFamily: 'DM Sans, sans-serif' }}>No decisions logged yet. Record key choices so your team stays aligned.</div>
+                                <div style={{ fontSize: 13, color: 'rgba(102,112,133,0.58)', lineHeight: 1.7, fontFamily: 'var(--tekori-font-ui)' }}>No decisions logged yet. Record key choices so your team stays aligned.</div>
                             </div>
                         )}
                         {decisions.map(d => {
@@ -1543,39 +1544,39 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                             const maker = members.find(m => m.user_id === d.created_by);
                             return (
                                 <div key={d.id} style={{ marginBottom: 8, animation: 'fadeSlideUp 0.2s ease' }}>
-                                    <div onClick={() => setExpandedDecisionId(expanded ? null : d.id)} style={{ padding: '12px 14px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: expanded ? '12px 12px 0 0' : 12, cursor: 'pointer' }}>
+                                    <div onClick={() => setExpandedDecisionId(expanded ? null : d.id)} style={{ padding: '12px 14px', background: 'rgba(7,26,47,0.02)', border: '1px solid rgba(7,26,47,0.07)', borderRadius: expanded ? '12px 12px 0 0' : 12, cursor: 'pointer' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
                                             <div style={{ flex: 1 }}>
-                                                <div style={{ fontSize: 14, color: '#F0EDE8', fontFamily: 'DM Sans, sans-serif', lineHeight: 1.4, marginBottom: 4 }}>{d.title}</div>
+                                                <div style={{ fontSize: 14, color: 'var(--color-text)', fontFamily: 'var(--tekori-font-ui)', lineHeight: 1.4, marginBottom: 4 }}>{d.title}</div>
                                                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                                                    {d.chosen_option && <span style={{ fontSize: 10, color: '#48BB78', background: 'rgba(72,187,120,0.1)', border: '1px solid rgba(72,187,120,0.2)', borderRadius: 20, padding: '1px 8px' }}>✓ {d.chosen_option}</span>}
-                                                    <span style={{ fontSize: 10, color: '#444', fontFamily: 'DM Sans, sans-serif' }}>{maker?.display_name ?? 'Unknown'} · {new Date(d.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                                                    {d.chosen_option && <span style={{ fontSize: 10, color: 'var(--color-success)', background: 'rgba(72,187,120,0.1)', border: '1px solid rgba(72,187,120,0.2)', borderRadius: 20, padding: '1px 8px' }}>✓ {d.chosen_option}</span>}
+                                                    <span style={{ fontSize: 10, color: 'var(--color-text-muted)', fontFamily: 'var(--tekori-font-ui)' }}>{maker?.display_name ?? 'Unknown'} · {new Date(d.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                                                 </div>
                                             </div>
-                                            <span style={{ fontSize: 12, color: '#555', flexShrink: 0 }}>{expanded ? '▲' : '▼'}</span>
+                                            <span style={{ fontSize: 12, color: 'var(--color-text-soft)', flexShrink: 0 }}>{expanded ? '▲' : '▼'}</span>
                                         </div>
                                     </div>
                                     {expanded && (
-                                        <div style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.07)', borderTop: 'none', borderRadius: '0 0 12px 12px', padding: '12px 14px' }}>
-                                            {d.description && <div style={{ fontSize: 13, color: '#C8C4BE', fontFamily: "'Lora', Georgia, serif", lineHeight: 1.6, marginBottom: 12 }}>{d.description}</div>}
+                                        <div style={{ background: 'rgba(7,26,47,0.015)', border: '1px solid rgba(7,26,47,0.07)', borderTop: 'none', borderRadius: '0 0 12px 12px', padding: '12px 14px' }}>
+                                            {d.description && <div style={{ fontSize: 13, color: 'rgba(16,32,51,0.74)', fontFamily: "var(--tekori-font-ui)", lineHeight: 1.6, marginBottom: 12 }}>{d.description}</div>}
                                             {d.options && d.options.length > 0 && (
                                                 <div style={{ marginBottom: 12 }}>
-                                                    <div style={{ fontSize: 10, color: '#555', marginBottom: 6 }}>Options considered</div>
+                                                    <div style={{ fontSize: 10, color: 'var(--color-text-soft)', marginBottom: 6 }}>Options considered</div>
                                                     {d.options.map((opt, i) => (
                                                         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                                                            <div style={{ width: 6, height: 6, borderRadius: '50%', background: opt === d.chosen_option ? '#48BB78' : '#333', flexShrink: 0 }} />
-                                                            <span style={{ fontSize: 12, color: opt === d.chosen_option ? '#F0EDE8' : '#666', fontFamily: 'DM Sans, sans-serif' }}>{opt}</span>
+                                                            <div style={{ width: 6, height: 6, borderRadius: '50%', background: opt === d.chosen_option ? 'var(--color-success)' : 'var(--color-text-muted)', flexShrink: 0 }} />
+                                                            <span style={{ fontSize: 12, color: opt === d.chosen_option ? 'var(--color-text)' : 'var(--color-text-muted)', fontFamily: 'var(--tekori-font-ui)' }}>{opt}</span>
                                                         </div>
                                                     ))}
                                                 </div>
                                             )}
                                             {d.rationale && (
                                                 <div style={{ marginBottom: 12 }}>
-                                                    <div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>Rationale</div>
-                                                    <div style={{ fontSize: 12, color: '#888', fontFamily: "'Lora', Georgia, serif", lineHeight: 1.6, fontStyle: 'italic' }}>{d.rationale}</div>
+                                                    <div style={{ fontSize: 10, color: 'var(--color-text-soft)', marginBottom: 4 }}>Rationale</div>
+                                                    <div style={{ fontSize: 12, color: 'var(--color-text-muted)', fontFamily: "var(--tekori-font-ui)", lineHeight: 1.6, fontStyle: 'italic' }}>{d.rationale}</div>
                                                 </div>
                                             )}
-                                            <button onClick={() => handleDeleteDecision(d.id)} style={{ fontSize: 11, color: 'rgba(232,98,42,0.5)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', padding: 0 }}>Delete</button>
+                                            <button onClick={() => handleDeleteDecision(d.id)} style={{ fontSize: 11, color: 'rgba(216,155,43,0.5)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--tekori-font-ui)', padding: 0 }}>Delete</button>
                                         </div>
                                     )}
                                 </div>
@@ -1590,16 +1591,16 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                 <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 32 }}>
                     <div style={{ maxWidth: 600, margin: '0 auto', padding: '16px 16px 0' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                            <div style={{ fontSize: 18, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: '#F0EDE8' }}>Shared Files</div>
+                            <div style={{ fontSize: 18, fontFamily: "var(--tekori-font-ui)", fontWeight: 700, color: 'var(--color-text)' }}>Shared Files</div>
                             <button onClick={() => setAddFileOpen(true)} style={{ ...btnPrimary, padding: '8px 14px', fontSize: 12 }}>Add Link +</button>
                         </div>
-                        <div style={{ fontSize: 12, color: '#444', fontFamily: 'DM Sans, sans-serif', marginBottom: 16, lineHeight: 1.5 }}>Share links to Google Docs, Figma files, Notion pages, or any resource your team needs.</div>
+                        <div style={{ fontSize: 12, color: 'var(--color-text-muted)', fontFamily: 'var(--tekori-font-ui)', marginBottom: 16, lineHeight: 1.5 }}>Share links to Google Docs, Figma files, Notion pages, or any resource your team needs.</div>
                         {fileLinks.length === 0 && (
                             <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-                                <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(232,98,42,0.08)', border: '1px solid rgba(232,98,42,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                                    <Paperclip size={22} color="rgba(240,237,232,0.4)" />
+                                <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(216,155,43,0.08)', border: '1px solid rgba(216,155,43,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                                    <Paperclip size={22} color="rgba(102,112,133,0.58)" />
                                 </div>
-                                <div style={{ fontSize: 13, color: 'rgba(240,237,232,0.4)', lineHeight: 1.7, fontFamily: 'DM Sans, sans-serif' }}>No files shared yet. Add links to keep your team's resources in one place.</div>
+                                <div style={{ fontSize: 13, color: 'rgba(102,112,133,0.58)', lineHeight: 1.7, fontFamily: 'var(--tekori-font-ui)' }}>No files shared yet. Add links to keep your team's resources in one place.</div>
                             </div>
                         )}
                         {fileLinks.map(f => {
@@ -1614,16 +1615,16 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                                 else FaviconIcon = LinkIcon;
                             } catch { FaviconIcon = LinkIcon; }
                             return (
-                                <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, marginBottom: 8, animation: 'fadeSlideUp 0.2s ease' }}>
+                                <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: 'rgba(7,26,47,0.02)', border: '1px solid rgba(7,26,47,0.07)', borderRadius: 12, marginBottom: 8, animation: 'fadeSlideUp 0.2s ease' }}>
                                     <div style={{ flexShrink: 0, width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <FaviconIcon size={16} color="rgba(240,237,232,0.4)" />
+                                        <FaviconIcon size={16} color="rgba(102,112,133,0.58)" />
                                     </div>
                                     <div style={{ flex: 1, minWidth: 0 }}>
-                                        <a href={f.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: '#F0EDE8', fontFamily: 'DM Sans, sans-serif', fontWeight: 500, textDecoration: 'none', display: 'block', marginBottom: 2 }} onMouseEnter={e => (e.currentTarget.style.textDecoration = 'underline')} onMouseLeave={e => (e.currentTarget.style.textDecoration = 'none')}>{f.label}</a>
-                                        <div style={{ fontSize: 10, color: '#444', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sharer?.display_name ?? 'Unknown'} · {new Date(f.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
+                                        <a href={f.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: 'var(--color-text)', fontFamily: 'var(--tekori-font-ui)', fontWeight: 500, textDecoration: 'none', display: 'block', marginBottom: 2 }} onMouseEnter={e => (e.currentTarget.style.textDecoration = 'underline')} onMouseLeave={e => (e.currentTarget.style.textDecoration = 'none')}>{f.label}</a>
+                                        <div style={{ fontSize: 10, color: 'var(--color-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sharer?.display_name ?? 'Unknown'} · {new Date(f.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
                                     </div>
                                     {canDelete && (
-                                        <button onClick={() => handleDeleteFileLink(f.id)} style={{ fontSize: 13, color: 'rgba(240,237,232,0.25)', background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0 }}>×</button>
+                                        <button onClick={() => handleDeleteFileLink(f.id)} style={{ fontSize: 13, color: 'rgba(102,112,133,0.40)', background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0 }}>×</button>
                                     )}
                                 </div>
                             );
@@ -1641,7 +1642,7 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                             {/* Load earlier messages */}
                             {hasMoreMessages && (
                                 <div style={{ textAlign: 'center', marginBottom: 8 }}>
-                                    <button onClick={handleLoadMore} disabled={loadingMore} style={{ fontSize: 12, color: loadingMore ? '#333' : 'rgba(240,237,232,0.4)', background: 'none', border: 'none', cursor: loadingMore ? 'default' : 'pointer', padding: '8px 0', fontFamily: 'DM Sans, sans-serif' }}>
+                                    <button onClick={handleLoadMore} disabled={loadingMore} style={{ fontSize: 12, color: loadingMore ? 'var(--color-text-muted)' : 'rgba(102,112,133,0.58)', background: 'none', border: 'none', cursor: loadingMore ? 'default' : 'pointer', padding: '8px 0', fontFamily: 'var(--tekori-font-ui)' }}>
                                         {loadingMore ? 'Loading...' : '↑ Load earlier messages'}
                                     </button>
                                 </div>
@@ -1650,16 +1651,16 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                             {/* Empty state */}
                             {messages.length === 0 && (
                                 <div style={{ textAlign: 'center', padding: '48px 20px', animation: 'fadeIn 0.4s ease' }}>
-                                    <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(232,98,42,0.08)', border: '1px solid rgba(232,98,42,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                                    <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(216,155,43,0.08)', border: '1px solid rgba(216,155,43,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                                         <Icons.sidebar.cofounder size={22} />
                                     </div>
-                                    <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: '#F0EDE8', marginBottom: 8 }}>Your team workspace</div>
-                                    <div style={{ fontSize: 13, color: 'rgba(240,237,232,0.4)', lineHeight: 1.7, fontFamily: 'DM Sans, sans-serif', marginBottom: 16 }}>
+                                    <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, color: 'var(--color-text)', marginBottom: 8 }}>Your team workspace</div>
+                                    <div style={{ fontSize: 13, color: 'rgba(102,112,133,0.58)', lineHeight: 1.7, fontFamily: 'var(--tekori-font-ui)', marginBottom: 16 }}>
                                         This is where your founding team thinks out loud together.<br />
-                                        Use <strong style={{ color: 'rgba(240,237,232,0.55)' }}>@forge</strong> to bring Forge into any conversation — ask for advice, pressure-test ideas, or get a second opinion.
+                                        Use <strong style={{ color: 'rgba(16,32,51,0.65)' }}>@navi</strong> to bring Navi into any conversation — ask for advice, pressure-test ideas, or get a second opinion.
                                     </div>
-                                    <div style={{ fontSize: 12, color: 'rgba(240,237,232,0.25)', fontFamily: 'DM Sans, sans-serif', fontStyle: 'italic' }}>
-                                        Try: @forge what should we prioritize this week?
+                                    <div style={{ fontSize: 12, color: 'rgba(102,112,133,0.40)', fontFamily: 'var(--tekori-font-ui)', fontStyle: 'italic' }}>
+                                        Try: @navi what should we prioritize this week?
                                     </div>
                                 </div>
                             )}
@@ -1671,7 +1672,7 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                                 return (
                                     <div key={msg.id}>
                                         {showDivider && (
-                                            <div style={{ textAlign: 'center', margin: '12px 0 8px', fontSize: 11, color: 'rgba(240,237,232,0.3)', fontFamily: 'DM Sans, sans-serif' }}>
+                                            <div style={{ textAlign: 'center', margin: '12px 0 8px', fontSize: 11, color: 'rgba(102,112,133,0.45)', fontFamily: 'var(--tekori-font-ui)' }}>
                                                 {formatMessageDate(msg.created_at)}
                                             </div>
                                         )}
@@ -1699,10 +1700,10 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                             {chatLoading && (
                                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '6px 0', animation: 'fadeSlideUp 0.2s ease' }}>
                                     <ForgeAvatar size={30} />
-                                    <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '4px 14px 14px 14px', padding: '10px 14px' }}>
+                                    <div style={{ background: 'rgba(7,26,47,0.04)', border: '1px solid rgba(7,26,47,0.07)', borderRadius: '4px 14px 14px 14px', padding: '10px 14px' }}>
                                         <div style={{ display: 'flex', gap: 4, alignItems: 'center', height: 18 }}>
                                             {[0, 1, 2].map(i => (
-                                                <div key={i} style={{ width: 5, height: 5, borderRadius: '50%', background: '#555', animation: `forgePulse 1.2s ease-in-out ${i * 0.2}s infinite` }} />
+                                                <div key={i} style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--color-text-soft)', animation: `forgePulse 1.2s ease-in-out ${i * 0.2}s infinite` }} />
                                             ))}
                                         </div>
                                     </div>
@@ -1711,15 +1712,15 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
 
                             {Object.keys(typingUsers).length > 0 && (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0 2px' }}>
-                                    <div style={{ width: 28, height: 28, borderRadius: '50%', flexShrink: 0, background: 'rgba(232,98,42,0.1)', border: '1.5px solid rgba(232,98,42,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#E8622A', fontWeight: 700 }}>
+                                    <div style={{ width: 28, height: 28, borderRadius: '50%', flexShrink: 0, background: 'rgba(216,155,43,0.1)', border: '1.5px solid rgba(216,155,43,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: 'var(--tekori-gold)', fontWeight: 700 }}>
                                         {Object.values(typingUsers)[0].charAt(0).toUpperCase()}
                                     </div>
-                                    <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px 16px 16px 4px', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 4 }}>
-                                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(240,237,232,0.4)', display: 'inline-block', animation: 'typingDot 1.2s ease-in-out infinite', animationDelay: '0ms' }} />
-                                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(240,237,232,0.4)', display: 'inline-block', animation: 'typingDot 1.2s ease-in-out infinite', animationDelay: '200ms' }} />
-                                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(240,237,232,0.4)', display: 'inline-block', animation: 'typingDot 1.2s ease-in-out infinite', animationDelay: '400ms' }} />
+                                    <div style={{ background: 'rgba(7,26,47,0.05)', border: '1px solid rgba(7,26,47,0.08)', borderRadius: '16px 16px 16px 4px', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(102,112,133,0.58)', display: 'inline-block', animation: 'typingDot 1.2s ease-in-out infinite', animationDelay: '0ms' }} />
+                                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(102,112,133,0.58)', display: 'inline-block', animation: 'typingDot 1.2s ease-in-out infinite', animationDelay: '200ms' }} />
+                                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(102,112,133,0.58)', display: 'inline-block', animation: 'typingDot 1.2s ease-in-out infinite', animationDelay: '400ms' }} />
                                     </div>
-                                    <span style={{ fontSize: 11, color: 'rgba(240,237,232,0.3)', fontFamily: 'DM Sans, sans-serif', fontStyle: 'italic' }}>
+                                    <span style={{ fontSize: 11, color: 'rgba(102,112,133,0.45)', fontFamily: 'var(--tekori-font-ui)', fontStyle: 'italic' }}>
                                         {Object.keys(typingUsers).length === 1
                                             ? `${Object.values(typingUsers)[0]} is typing`
                                             : Object.keys(typingUsers).length === 2
@@ -1734,19 +1735,19 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                     </div>
 
                     {/* Input area */}
-                    <div style={{ padding: '10px 16px max(16px, calc(12px + env(safe-area-inset-bottom)))', borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(8,8,9,0.97)', flexShrink: 0 }}>
+                    <div style={{ padding: '10px 16px max(16px, calc(12px + env(safe-area-inset-bottom)))', borderTop: '1px solid rgba(7,26,47,0.06)', background: 'rgba(255,252,246,0.97)', flexShrink: 0 }}>
                         <div style={{ maxWidth: 640, margin: '0 auto' }}>
-                            {forgeEngaged && !/@forge/i.test(input) && (
+                            {forgeEngaged && !/@(navi|forge)\b/i.test(input) && (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#E8622A', flexShrink: 0, boxShadow: '0 0 6px #E8622A88' }} />
-                                    <span style={{ fontSize: 11, color: 'rgba(232,98,42,0.7)', fontFamily: 'DM Sans, sans-serif', fontStyle: 'italic' }}>
-                                        Forge is listening — say "dismiss forge" to end the conversation
+                                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--tekori-gold)', flexShrink: 0, boxShadow: '0 0 6px rgba(216,155,43,0.54)' }} />
+                                    <span style={{ fontSize: 11, color: 'rgba(216,155,43,0.7)', fontFamily: 'var(--tekori-font-ui)', fontStyle: 'italic' }}>
+                                        Navi is listening — say "dismiss navi" to end the conversation
                                     </span>
                                 </div>
                             )}
-                            {/@forge/i.test(input) && (
-                                <div style={{ fontSize: 11, color: 'rgba(240,237,232,0.3)', fontFamily: 'DM Sans, sans-serif', fontStyle: 'italic', marginBottom: 6 }}>
-                                    Forge will see the last 20 team messages
+                            {/@(navi|forge)\b/i.test(input) && (
+                                <div style={{ fontSize: 11, color: 'rgba(102,112,133,0.45)', fontFamily: 'var(--tekori-font-ui)', fontStyle: 'italic', marginBottom: 6 }}>
+                                    Navi will see the last 20 team messages
                                 </div>
                             )}
                             <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
@@ -1758,20 +1759,20 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                                     value={input}
                                     onChange={e => handleInputChange(e.target.value)}
                                     onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                                    placeholder={forgeEngaged ? "Forge is listening — reply freely or say \"dismiss forge\" to step back" : "Message your team — type @forge to bring Forge in"}
+                                    placeholder={forgeEngaged ? "Navi is listening — reply freely or say \"dismiss navi\" to step back" : "Message your team — type @navi to bring Navi in"}
                                     rows={1}
-                                    style={{ flex: 1, resize: 'none', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '9px 12px', color: '#F0EDE8', fontSize: 13, fontFamily: "'Lora', Georgia, serif", lineHeight: 1.5, outline: 'none', maxHeight: 120, overflowY: 'auto' }}
+                                    style={{ flex: 1, resize: 'none', background: 'rgba(7,26,47,0.04)', border: '1px solid rgba(7,26,47,0.1)', borderRadius: 12, padding: '9px 12px', color: 'var(--color-text)', fontSize: 13, fontFamily: "var(--tekori-font-ui)", lineHeight: 1.5, outline: 'none', maxHeight: 120, overflowY: 'auto' }}
                                 />
                                 {/* Convert to task button */}
                                 {input.trim() && (
-                                    <button onClick={handleConvertToTask} title="Save as task" style={{ flexShrink: 0, ...btnSecondary, padding: '8px 10px', fontSize: 12, color: 'rgba(240,237,232,0.4)', marginBottom: 0 }}>
+                                    <button onClick={handleConvertToTask} title="Save as task" style={{ flexShrink: 0, ...btnSecondary, padding: '8px 10px', fontSize: 12, color: 'rgba(102,112,133,0.58)', marginBottom: 0 }}>
                                         ☑
                                     </button>
                                 )}
                                 <MicButton value={input} onChange={setInput} disabled={chatLoading} />
                                 <button onClick={handleSend} disabled={!input.trim() || chatLoading} style={{ ...btnPrimary, padding: '9px 16px', flexShrink: 0, opacity: (!input.trim() || chatLoading) ? 0.4 : 1, transition: 'opacity 0.15s', marginBottom: 0 }}>Send</button>
                             </div>
-                            <div style={{ fontSize: 10, color: '#2b2b2b', textAlign: 'center' }}>Forge is an AI. Always verify important information before acting on it.</div>
+                            <div style={{ fontSize: 10, color: 'var(--color-text-muted)', textAlign: 'center' }}>Navi is an AI. Always verify important information before acting on it.</div>
                         </div>
                     </div>
                 </>
@@ -1779,12 +1780,12 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
 
             {/* ── CONFIRMATION OVERLAYS ── */}
             {(confirmRemove || confirmLeave || confirmRevokeInvite) && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 24 }} onClick={() => { setConfirmRemove(null); setConfirmLeave(false); setConfirmRevokeInvite(false); }}>
-                    <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, padding: 24, maxWidth: 340, width: '100%', animation: 'fadeSlideUp 0.2s ease' }} onClick={e => e.stopPropagation()}>
-                        <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 10, fontFamily: "'Lora', Georgia, serif" }}>
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(7,26,47,0.62)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 24 }} onClick={() => { setConfirmRemove(null); setConfirmLeave(false); setConfirmRevokeInvite(false); }}>
+                    <div style={{ background: 'var(--color-surface-elevated)', border: '1px solid rgba(7,26,47,0.1)', borderRadius: 16, padding: 24, maxWidth: 340, width: '100%', animation: 'fadeSlideUp 0.2s ease' }} onClick={e => e.stopPropagation()}>
+                        <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 10, fontFamily: "var(--tekori-font-ui)" }}>
                             {confirmRemove ? `Remove ${confirmRemove.name}?` : confirmLeave ? 'Leave this workspace?' : 'Revoke this invite link?'}
                         </div>
-                        <div style={{ fontSize: 13, color: '#666', lineHeight: 1.6, marginBottom: 20, fontFamily: 'DM Sans, sans-serif' }}>
+                        <div style={{ fontSize: 13, color: 'var(--color-text-muted)', lineHeight: 1.6, marginBottom: 20, fontFamily: 'var(--tekori-font-ui)' }}>
                             {confirmRemove ? `Remove ${confirmRemove.name} from the workspace? They will need a new invite link to rejoin.` : confirmLeave ? "You'll need a new invite link to rejoin." : "Anyone who has this link won't be able to use it."}
                         </div>
                         <div style={{ display: 'flex', gap: 8 }}>
@@ -1795,7 +1796,7 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                                     else if (confirmLeave) handleLeaveTeam();
                                     else if (confirmRevokeInvite) handleRevokeInvite();
                                 }}
-                                style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: 'rgba(232,98,42,0.15)', border: '1px solid rgba(232,98,42,0.3)', color: '#E8622A', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'Lora', Georgia, serif" } as any}
+                                style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: 'rgba(216,155,43,0.15)', border: '1px solid rgba(216,155,43,0.3)', color: 'var(--tekori-gold)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "var(--tekori-font-ui)" } as any}
                             >
                                 {confirmRemove ? 'Remove' : confirmLeave ? 'Leave' : 'Revoke'}
                             </button>
@@ -1806,31 +1807,31 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
 
             {/* ── ADD DECISION PANEL ── */}
             {addDecisionOpen && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100 }} onClick={() => setAddDecisionOpen(false)}>
-                    <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px 20px 0 0', padding: 24, width: '100%', maxWidth: 600, animation: 'slideUp 0.25s ease', paddingBottom: 'max(24px, calc(24px + env(safe-area-inset-bottom)))', maxHeight: '85vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
-                        <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.1)', margin: '0 auto 20px' }} />
-                        <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "'Lora', Georgia, serif", marginBottom: 4 }}>Log Decision</div>
-                        {decisionFromMsg && <div style={{ fontSize: 11, color: '#555', fontFamily: 'DM Sans, sans-serif', marginBottom: 16, fontStyle: 'italic' }}>From message by {decisionFromMsg.sender_name}</div>}
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(7,26,47,0.62)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100 }} onClick={() => setAddDecisionOpen(false)}>
+                    <div style={{ background: 'var(--color-surface-elevated)', border: '1px solid rgba(7,26,47,0.1)', borderRadius: '20px 20px 0 0', padding: 24, width: '100%', maxWidth: 600, animation: 'slideUp 0.25s ease', paddingBottom: 'max(24px, calc(24px + env(safe-area-inset-bottom)))', maxHeight: '85vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+                        <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(7,26,47,0.1)', margin: '0 auto 20px' }} />
+                        <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "var(--tekori-font-ui)", marginBottom: 4 }}>Log Decision</div>
+                        {decisionFromMsg && <div style={{ fontSize: 11, color: 'var(--color-text-soft)', fontFamily: 'var(--tekori-font-ui)', marginBottom: 16, fontStyle: 'italic' }}>From message by {decisionFromMsg.sender_name}</div>}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                             <div>
-                                <div style={{ fontSize: 11, color: '#555', marginBottom: 6 }}>Title *</div>
-                                <input value={newDecisionTitle} onChange={e => setNewDecisionTitle(e.target.value)} placeholder="What was decided?" autoFocus style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 14px', color: '#F0EDE8', fontSize: 13, fontFamily: "'Lora', Georgia, serif", outline: 'none', boxSizing: 'border-box' }} />
+                                <div style={{ fontSize: 11, color: 'var(--color-text-soft)', marginBottom: 6 }}>Title *</div>
+                                <input value={newDecisionTitle} onChange={e => setNewDecisionTitle(e.target.value)} placeholder="What was decided?" autoFocus style={{ width: '100%', background: 'rgba(7,26,47,0.04)', border: '1px solid rgba(7,26,47,0.1)', borderRadius: 10, padding: '10px 14px', color: 'var(--color-text)', fontSize: 13, fontFamily: "var(--tekori-font-ui)", outline: 'none', boxSizing: 'border-box' }} />
                             </div>
                             <div>
-                                <div style={{ fontSize: 11, color: '#555', marginBottom: 6 }}>Context / Description</div>
-                                <textarea value={newDecisionDescription} onChange={e => setNewDecisionDescription(e.target.value)} placeholder="What led to this decision?" rows={3} style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 14px', color: '#C8C4BE', fontSize: 12, fontFamily: "'Lora', Georgia, serif", resize: 'none', outline: 'none', boxSizing: 'border-box' }} />
+                                <div style={{ fontSize: 11, color: 'var(--color-text-soft)', marginBottom: 6 }}>Context / Description</div>
+                                <textarea value={newDecisionDescription} onChange={e => setNewDecisionDescription(e.target.value)} placeholder="What led to this decision?" rows={3} style={{ width: '100%', background: 'rgba(7,26,47,0.04)', border: '1px solid rgba(7,26,47,0.1)', borderRadius: 10, padding: '10px 14px', color: 'rgba(16,32,51,0.74)', fontSize: 12, fontFamily: "var(--tekori-font-ui)", resize: 'none', outline: 'none', boxSizing: 'border-box' }} />
                             </div>
                             <div>
-                                <div style={{ fontSize: 11, color: '#555', marginBottom: 4 }}>Options considered <span style={{ color: '#333' }}>(one per line)</span></div>
-                                <textarea value={newDecisionOptions} onChange={e => setNewDecisionOptions(e.target.value)} placeholder={"Option A\nOption B\nOption C"} rows={3} style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 14px', color: '#C8C4BE', fontSize: 12, fontFamily: "'Lora', Georgia, serif", resize: 'none', outline: 'none', boxSizing: 'border-box' }} />
+                                <div style={{ fontSize: 11, color: 'var(--color-text-soft)', marginBottom: 4 }}>Options considered <span style={{ color: 'var(--color-text-muted)' }}>(one per line)</span></div>
+                                <textarea value={newDecisionOptions} onChange={e => setNewDecisionOptions(e.target.value)} placeholder={"Option A\nOption B\nOption C"} rows={3} style={{ width: '100%', background: 'rgba(7,26,47,0.04)', border: '1px solid rgba(7,26,47,0.1)', borderRadius: 10, padding: '10px 14px', color: 'rgba(16,32,51,0.74)', fontSize: 12, fontFamily: "var(--tekori-font-ui)", resize: 'none', outline: 'none', boxSizing: 'border-box' }} />
                             </div>
                             <div>
-                                <div style={{ fontSize: 11, color: '#555', marginBottom: 6 }}>Chosen option</div>
-                                <input value={newDecisionChosen} onChange={e => setNewDecisionChosen(e.target.value)} placeholder="What was ultimately chosen?" style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 14px', color: '#F0EDE8', fontSize: 13, fontFamily: "'Lora', Georgia, serif", outline: 'none', boxSizing: 'border-box' }} />
+                                <div style={{ fontSize: 11, color: 'var(--color-text-soft)', marginBottom: 6 }}>Chosen option</div>
+                                <input value={newDecisionChosen} onChange={e => setNewDecisionChosen(e.target.value)} placeholder="What was ultimately chosen?" style={{ width: '100%', background: 'rgba(7,26,47,0.04)', border: '1px solid rgba(7,26,47,0.1)', borderRadius: 10, padding: '10px 14px', color: 'var(--color-text)', fontSize: 13, fontFamily: "var(--tekori-font-ui)", outline: 'none', boxSizing: 'border-box' }} />
                             </div>
                             <div>
-                                <div style={{ fontSize: 11, color: '#555', marginBottom: 6 }}>Rationale</div>
-                                <textarea value={newDecisionRationale} onChange={e => setNewDecisionRationale(e.target.value)} placeholder="Why was this chosen?" rows={2} style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 14px', color: '#C8C4BE', fontSize: 12, fontFamily: "'Lora', Georgia, serif", resize: 'none', outline: 'none', boxSizing: 'border-box' }} />
+                                <div style={{ fontSize: 11, color: 'var(--color-text-soft)', marginBottom: 6 }}>Rationale</div>
+                                <textarea value={newDecisionRationale} onChange={e => setNewDecisionRationale(e.target.value)} placeholder="Why was this chosen?" rows={2} style={{ width: '100%', background: 'rgba(7,26,47,0.04)', border: '1px solid rgba(7,26,47,0.1)', borderRadius: 10, padding: '10px 14px', color: 'rgba(16,32,51,0.74)', fontSize: 12, fontFamily: "var(--tekori-font-ui)", resize: 'none', outline: 'none', boxSizing: 'border-box' }} />
                             </div>
                         </div>
                         <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
@@ -1845,17 +1846,17 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
 
             {/* ── ADD FILE LINK PANEL ── */}
             {addFileOpen && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100 }} onClick={() => setAddFileOpen(false)}>
-                    <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px 20px 0 0', padding: 24, width: '100%', maxWidth: 600, animation: 'slideUp 0.25s ease', paddingBottom: 'max(24px, calc(24px + env(safe-area-inset-bottom)))' }} onClick={e => e.stopPropagation()}>
-                        <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.1)', margin: '0 auto 20px' }} />
-                        <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "'Lora', Georgia, serif", marginBottom: 18 }}>Add File Link</div>
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(7,26,47,0.62)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100 }} onClick={() => setAddFileOpen(false)}>
+                    <div style={{ background: 'var(--color-surface-elevated)', border: '1px solid rgba(7,26,47,0.1)', borderRadius: '20px 20px 0 0', padding: 24, width: '100%', maxWidth: 600, animation: 'slideUp 0.25s ease', paddingBottom: 'max(24px, calc(24px + env(safe-area-inset-bottom)))' }} onClick={e => e.stopPropagation()}>
+                        <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(7,26,47,0.1)', margin: '0 auto 20px' }} />
+                        <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "var(--tekori-font-ui)", marginBottom: 18 }}>Add File Link</div>
                         <div style={{ marginBottom: 14 }}>
-                            <div style={{ fontSize: 11, color: '#555', marginBottom: 6 }}>Label *</div>
-                            <input value={newFileLabel} onChange={e => setNewFileLabel(e.target.value)} placeholder="e.g. Q2 Pitch Deck, Brand Guidelines" autoFocus style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '11px 14px', color: '#F0EDE8', fontSize: 13, fontFamily: "'Lora', Georgia, serif", outline: 'none', boxSizing: 'border-box' }} />
+                            <div style={{ fontSize: 11, color: 'var(--color-text-soft)', marginBottom: 6 }}>Label *</div>
+                            <input value={newFileLabel} onChange={e => setNewFileLabel(e.target.value)} placeholder="e.g. Q2 Pitch Deck, Brand Guidelines" autoFocus style={{ width: '100%', background: 'rgba(7,26,47,0.04)', border: '1px solid rgba(7,26,47,0.1)', borderRadius: 10, padding: '11px 14px', color: 'var(--color-text)', fontSize: 13, fontFamily: "var(--tekori-font-ui)", outline: 'none', boxSizing: 'border-box' }} />
                         </div>
                         <div style={{ marginBottom: 20 }}>
-                            <div style={{ fontSize: 11, color: '#555', marginBottom: 6 }}>URL *</div>
-                            <input value={newFileUrl} onChange={e => setNewFileUrl(e.target.value)} placeholder="https://..." type="url" style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '11px 14px', color: '#F0EDE8', fontSize: 13, fontFamily: "'Lora', Georgia, serif", outline: 'none', boxSizing: 'border-box' }} />
+                            <div style={{ fontSize: 11, color: 'var(--color-text-soft)', marginBottom: 6 }}>URL *</div>
+                            <input value={newFileUrl} onChange={e => setNewFileUrl(e.target.value)} placeholder="https://..." type="url" style={{ width: '100%', background: 'rgba(7,26,47,0.04)', border: '1px solid rgba(7,26,47,0.1)', borderRadius: 10, padding: '11px 14px', color: 'var(--color-text)', fontSize: 13, fontFamily: "var(--tekori-font-ui)", outline: 'none', boxSizing: 'border-box' }} />
                         </div>
                         <div style={{ display: 'flex', gap: 8 }}>
                             <button onClick={() => setAddFileOpen(false)} style={{ ...btnSecondary, flex: 1, padding: '12px' }}>Cancel</button>
@@ -1869,10 +1870,10 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
 
             {/* ── ADD TASK PANEL ── */}
             {addTaskOpen && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100 }} onClick={() => setAddTaskOpen(false)}>
-                    <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px 20px 0 0', padding: 24, width: '100%', maxWidth: 600, animation: 'slideUp 0.25s ease', paddingBottom: 'max(24px, calc(24px + env(safe-area-inset-bottom)))' }} onClick={e => e.stopPropagation()}>
-                        <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.1)', margin: '0 auto 20px' }} />
-                        <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "'Lora', Georgia, serif", marginBottom: 18 }}>Add Task</div>
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(7,26,47,0.62)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100 }} onClick={() => setAddTaskOpen(false)}>
+                    <div style={{ background: 'var(--color-surface-elevated)', border: '1px solid rgba(7,26,47,0.1)', borderRadius: '20px 20px 0 0', padding: 24, width: '100%', maxWidth: 600, animation: 'slideUp 0.25s ease', paddingBottom: 'max(24px, calc(24px + env(safe-area-inset-bottom)))' }} onClick={e => e.stopPropagation()}>
+                        <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(7,26,47,0.1)', margin: '0 auto 20px' }} />
+                        <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "var(--tekori-font-ui)", marginBottom: 18 }}>Add Task</div>
 
                         <div style={{ marginBottom: 14 }}>
                             <input
@@ -1880,7 +1881,7 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                                 onChange={e => setNewTaskTitle(e.target.value)}
                                 placeholder="Task title (required)"
                                 autoFocus
-                                style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '11px 14px', color: '#F0EDE8', fontSize: 14, fontFamily: "'Lora', Georgia, serif", outline: 'none', boxSizing: 'border-box' }}
+                                style={{ width: '100%', background: 'rgba(7,26,47,0.04)', border: '1px solid rgba(7,26,47,0.1)', borderRadius: 10, padding: '11px 14px', color: 'var(--color-text)', fontSize: 14, fontFamily: "var(--tekori-font-ui)", outline: 'none', boxSizing: 'border-box' }}
                             />
                         </div>
                         <div style={{ marginBottom: 14 }}>
@@ -1889,17 +1890,17 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                                 onChange={e => setNewTaskDescription(e.target.value)}
                                 placeholder="Description (optional)"
                                 rows={2}
-                                style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 14px', color: '#C8C4BE', fontSize: 13, fontFamily: "'Lora', Georgia, serif", resize: 'none', outline: 'none', boxSizing: 'border-box' }}
+                                style={{ width: '100%', background: 'rgba(7,26,47,0.04)', border: '1px solid rgba(7,26,47,0.1)', borderRadius: 10, padding: '10px 14px', color: 'rgba(16,32,51,0.74)', fontSize: 13, fontFamily: "var(--tekori-font-ui)", resize: 'none', outline: 'none', boxSizing: 'border-box' }}
                             />
                         </div>
 
                         {/* Assignee */}
                         <div style={{ marginBottom: 14 }}>
-                            <div style={{ fontSize: 11, color: '#555', marginBottom: 8 }}>Assign to</div>
+                            <div style={{ fontSize: 11, color: 'var(--color-text-soft)', marginBottom: 8 }}>Assign to</div>
                             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                                <button onClick={() => setNewTaskAssignedTo(null)} style={{ padding: '5px 12px', borderRadius: 20, fontSize: 11, border: !newTaskAssignedTo ? '1px solid rgba(255,255,255,0.25)' : '1px solid rgba(255,255,255,0.1)', background: !newTaskAssignedTo ? 'rgba(255,255,255,0.06)' : 'transparent', color: !newTaskAssignedTo ? '#F0EDE8' : '#555', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>Unassigned</button>
+                                <button onClick={() => setNewTaskAssignedTo(null)} style={{ padding: '5px 12px', borderRadius: 20, fontSize: 11, border: !newTaskAssignedTo ? '1px solid rgba(7,26,47,0.25)' : '1px solid rgba(7,26,47,0.1)', background: !newTaskAssignedTo ? 'rgba(7,26,47,0.06)' : 'transparent', color: !newTaskAssignedTo ? 'var(--color-text)' : 'var(--color-text-soft)', cursor: 'pointer', fontFamily: 'var(--tekori-font-ui)' }}>Unassigned</button>
                                 {members.map(m => (
-                                    <button key={m.id} onClick={() => setNewTaskAssignedTo(m.id)} style={{ padding: '5px 12px', borderRadius: 20, fontSize: 11, border: newTaskAssignedTo === m.id ? `1px solid ${roleColor(m.role)}55` : '1px solid rgba(255,255,255,0.1)', background: newTaskAssignedTo === m.id ? `${roleColor(m.role)}18` : 'transparent', color: newTaskAssignedTo === m.id ? roleColor(m.role) : '#555', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif' }}>{m.display_name}</button>
+                                    <button key={m.id} onClick={() => setNewTaskAssignedTo(m.id)} style={{ padding: '5px 12px', borderRadius: 20, fontSize: 11, border: newTaskAssignedTo === m.id ? `1px solid ${roleColor(m.role)}55` : '1px solid rgba(7,26,47,0.1)', background: newTaskAssignedTo === m.id ? `${roleColor(m.role)}18` : 'transparent', color: newTaskAssignedTo === m.id ? roleColor(m.role) : 'var(--color-text-soft)', cursor: 'pointer', fontFamily: 'var(--tekori-font-ui)' }}>{m.display_name}</button>
                                 ))}
                             </div>
                         </div>
@@ -1907,16 +1908,16 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                         {/* Priority + Due date */}
                         <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
                             <div>
-                                <div style={{ fontSize: 11, color: '#555', marginBottom: 8 }}>Priority</div>
+                                <div style={{ fontSize: 11, color: 'var(--color-text-soft)', marginBottom: 8 }}>Priority</div>
                                 <div style={{ display: 'flex', gap: 4 }}>
                                     {(['low', 'normal', 'high'] as const).map(p => (
-                                        <button key={p} onClick={() => setNewTaskPriority(p)} style={{ padding: '5px 12px', borderRadius: 20, fontSize: 11, border: newTaskPriority === p ? 'none' : '1px solid rgba(255,255,255,0.1)', background: newTaskPriority === p ? (p === 'high' ? 'rgba(232,98,42,0.2)' : 'rgba(255,255,255,0.06)') : 'transparent', color: newTaskPriority === p ? (p === 'high' ? '#E8622A' : '#F0EDE8') : '#555', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', textTransform: 'capitalize' }}>{p}</button>
+                                        <button key={p} onClick={() => setNewTaskPriority(p)} style={{ padding: '5px 12px', borderRadius: 20, fontSize: 11, border: newTaskPriority === p ? 'none' : '1px solid rgba(7,26,47,0.1)', background: newTaskPriority === p ? (p === 'high' ? 'rgba(216,155,43,0.2)' : 'rgba(7,26,47,0.06)') : 'transparent', color: newTaskPriority === p ? (p === 'high' ? 'var(--tekori-gold)' : 'var(--color-text)') : 'var(--color-text-soft)', cursor: 'pointer', fontFamily: 'var(--tekori-font-ui)', textTransform: 'capitalize' }}>{p}</button>
                                     ))}
                                 </div>
                             </div>
                             <div>
-                                <div style={{ fontSize: 11, color: '#555', marginBottom: 8 }}>Due date</div>
-                                <input type="date" value={newTaskDueDate} onChange={e => setNewTaskDueDate(e.target.value)} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '6px 10px', color: '#C8C4BE', fontSize: 12, outline: 'none', fontFamily: 'DM Sans, sans-serif', colorScheme: 'dark' }} />
+                                <div style={{ fontSize: 11, color: 'var(--color-text-soft)', marginBottom: 8 }}>Due date</div>
+                                <input type="date" value={newTaskDueDate} onChange={e => setNewTaskDueDate(e.target.value)} style={{ background: 'rgba(7,26,47,0.04)', border: '1px solid rgba(7,26,47,0.1)', borderRadius: 8, padding: '6px 10px', color: 'rgba(16,32,51,0.74)', fontSize: 12, outline: 'none', fontFamily: 'var(--tekori-font-ui)', colorScheme: 'light' }} />
                             </div>
                         </div>
 
@@ -1951,7 +1952,7 @@ interface ChatMessageProps {
 
 function ChatMessage({ msg, isOwn, isHovered, onMouseEnter, onMouseLeave, onRetry, onLogDecision, teamName, currentStage }: ChatMessageProps) {
     const isForge = msg.role === 'forge';
-    const color = isForge ? '#C8A96E' : (ROLE_COLORS[msg.sender_role] ?? '#888');
+    const color = isForge ? 'var(--tekori-amber)' : (ROLE_COLORS[msg.sender_role] ?? 'var(--color-text-muted)');
     const failed = msg.failed;
 
     return (
@@ -1964,23 +1965,23 @@ function ChatMessage({ msg, isOwn, isHovered, onMouseEnter, onMouseLeave, onRetr
                 <>
                     <ForgeAvatar size={30} />
                     <div>
-                        <div style={{ fontSize: 10, color: '#C8A96E', fontWeight: 600, marginBottom: 5, letterSpacing: '0.04em' }}>Forge · AI Partner</div>
+                        <div style={{ fontSize: 10, color: 'var(--tekori-amber)', fontWeight: 600, marginBottom: 5, letterSpacing: '0.04em' }}>Navi · AI Partner</div>
                         <div
                             onClick={failed ? onRetry : undefined}
                             style={{
-                                background: failed ? 'rgba(232,98,42,0.08)' : 'rgba(255,255,255,0.04)',
-                                border: failed ? '1px solid rgba(232,98,42,0.2)' : '1px solid rgba(255,255,255,0.07)',
+                                background: failed ? 'rgba(216,155,43,0.08)' : 'rgba(7,26,47,0.04)',
+                                border: failed ? '1px solid rgba(216,155,43,0.2)' : '1px solid rgba(7,26,47,0.07)',
                                 borderRadius: '4px 14px 14px 14px',
                                 padding: '10px 14px', fontSize: 13,
-                                fontFamily: "'Lora', Georgia, serif",
-                                lineHeight: 1.75, color: failed ? 'rgba(240,237,232,0.5)' : '#D8D4CE', maxWidth: 480,
+                                fontFamily: "var(--tekori-font-ui)",
+                                lineHeight: 1.75, color: failed ? 'rgba(16,32,51,0.5)' : 'rgba(16,32,51,0.82)', maxWidth: 480,
                                 cursor: failed ? 'pointer' : 'default',
                             }}
                         >
                             {renderMessageText(msg.content)}
                         </div>
                         {failed && (
-                            <div style={{ fontSize: 11, color: 'rgba(232,98,42,0.6)', fontFamily: 'DM Sans, sans-serif', marginTop: 4 }}>Tap to retry</div>
+                            <div style={{ fontSize: 11, color: 'rgba(216,155,43,0.6)', fontFamily: 'var(--tekori-font-ui)', marginTop: 4 }}>Tap to retry</div>
                         )}
                         {!failed && (
                             <MessageActions
@@ -1994,7 +1995,7 @@ function ChatMessage({ msg, isOwn, isHovered, onMouseEnter, onMouseLeave, onRetr
                             />
                         )}
                         {isHovered && (
-                            <div style={{ fontSize: 11, color: '#333', fontFamily: 'DM Sans, sans-serif', marginTop: 2 }}>{formatTime(msg.created_at)}</div>
+                            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', fontFamily: 'var(--tekori-font-ui)', marginTop: 2 }}>{formatTime(msg.created_at)}</div>
                         )}
                     </div>
                 </>
@@ -2004,32 +2005,32 @@ function ChatMessage({ msg, isOwn, isHovered, onMouseEnter, onMouseLeave, onRetr
                         <div style={{ width: 20, height: 20, borderRadius: '50%', background: `${color}18`, border: `1.5px solid ${color}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color, fontWeight: 700 }}>
                             {msg.sender_name.charAt(0).toUpperCase()}
                         </div>
-                        <span style={{ fontSize: 10, color: '#555' }}>{msg.sender_name}</span>
+                        <span style={{ fontSize: 10, color: 'var(--color-text-soft)' }}>{msg.sender_name}</span>
                         <span style={{ fontSize: 9, color, background: `${color}12`, border: `1px solid ${color}25`, borderRadius: 20, padding: '1px 7px' }}>{msg.sender_role}</span>
-                        {isOwn && <span style={{ fontSize: 9, color: '#333' }}>You</span>}
+                        {isOwn && <span style={{ fontSize: 9, color: 'var(--color-text-muted)' }}>You</span>}
                     </div>
                     <div
                         onClick={failed ? onRetry : undefined}
                         style={{
                             maxWidth: '75%', padding: '9px 13px', fontSize: 13,
-                            fontFamily: "'Lora', Georgia, serif", lineHeight: 1.6, whiteSpace: 'pre-wrap',
+                            fontFamily: "var(--tekori-font-ui)", lineHeight: 1.6, whiteSpace: 'pre-wrap',
                             borderRadius: isOwn ? '14px 4px 14px 14px' : '4px 14px 14px 14px',
-                            background: failed ? 'rgba(232,98,42,0.08)' : (isOwn ? `linear-gradient(135deg, ${color}22, ${color}18)` : 'rgba(255,255,255,0.04)'),
-                            border: failed ? '1px solid rgba(232,98,42,0.2)' : (isOwn ? `1px solid ${color}35` : '1px solid rgba(255,255,255,0.07)'),
-                            color: failed ? 'rgba(240,237,232,0.5)' : '#D8D4CE',
+                            background: failed ? 'rgba(216,155,43,0.08)' : (isOwn ? `linear-gradient(135deg, ${color}22, ${color}18)` : 'rgba(7,26,47,0.04)'),
+                            border: failed ? '1px solid rgba(216,155,43,0.2)' : (isOwn ? `1px solid ${color}35` : '1px solid rgba(7,26,47,0.07)'),
+                            color: failed ? 'rgba(16,32,51,0.5)' : 'rgba(16,32,51,0.82)',
                             cursor: failed ? 'pointer' : 'default',
                         }}
                     >
                         {msg.content}
                     </div>
                     {failed && (
-                        <div style={{ fontSize: 11, color: 'rgba(232,98,42,0.6)', fontFamily: 'DM Sans, sans-serif', marginTop: 4 }}>Failed to send · Tap to retry</div>
+                        <div style={{ fontSize: 11, color: 'rgba(216,155,43,0.6)', fontFamily: 'var(--tekori-font-ui)', marginTop: 4 }}>Failed to send · Tap to retry</div>
                     )}
                     {isHovered && !failed && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 2 }}>
-                            <span style={{ fontSize: 11, color: '#333', fontFamily: 'DM Sans, sans-serif' }}>{formatTime(msg.created_at)}</span>
+                            <span style={{ fontSize: 11, color: 'var(--color-text-muted)', fontFamily: 'var(--tekori-font-ui)' }}>{formatTime(msg.created_at)}</span>
                             {onLogDecision && (
-                                <button onClick={onLogDecision} style={{ fontSize: 10, color: 'rgba(240,237,232,0.35)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', padding: 0 }}>Log as decision</button>
+                                <button onClick={onLogDecision} style={{ fontSize: 10, color: 'rgba(102,112,133,0.52)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--tekori-font-ui)', padding: 0 }}>Log as decision</button>
                             )}
                         </div>
                     )}
@@ -2045,7 +2046,7 @@ function renderMessageText(text: string) {
     const parts = text.split(/(\*\*.*?\*\*)/g);
     return parts.map((part, i) => {
         if (part.startsWith('**') && part.endsWith('**')) {
-            return <strong key={i} style={{ color: '#F0EDE8', fontWeight: 700 }}>{part.slice(2, -2)}</strong>;
+            return <strong key={i} style={{ color: 'var(--color-text)', fontWeight: 700 }}>{part.slice(2, -2)}</strong>;
         }
         const lines = part.split('\n\n');
         return lines.map((line, j) => (

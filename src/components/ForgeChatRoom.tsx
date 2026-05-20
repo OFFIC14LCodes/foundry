@@ -95,13 +95,13 @@ function buildChatRoomContext(
     const modeInstruction = !academyEntry ? "" : testingMode
         ? `TESTING MODE: The founder has clicked "Test to Complete". Test their understanding of this lesson through natural conversation. Ask probing questions that reveal whether they truly understand the lesson and can apply it to their own business. Do not lecture — probe for real comprehension. If an answer is shallow or incomplete, explain what is missing and invite a stronger response. Keep it direct but encouraging.`
         : academyMode === "apply"
-            ? `This conversation is in APPLY mode. Forge should:
+            ? `This conversation is in APPLY mode. Navi should:
 1. state what this lesson was really teaching
 2. explain why founders miss it
 3. show how it appears in real business situations
 4. connect it to the founder's known business context using the memory sections below
 5. ask only one targeted gap question if the available context is not enough`
-            : `This conversation is in LEARN mode. Forge should:
+            : `This conversation is in LEARN mode. Navi should:
 1. teach the lesson cleanly
 2. explain why it matters
 3. expose the weak founder instinct underneath it
@@ -116,7 +116,7 @@ function buildChatRoomContext(
         .filter(s => s.id !== activeArchiveId && s.summary?.trim())
         .slice(0, 6);
     const pastConversationsSection = relevantPast.length > 0
-        ? `\n\nPAST CONVERSATION ARCHIVE:\nThe founder has had these recent conversations with Forge. When the current topic overlaps with something discussed before, reference it naturally — mention it came up earlier and briefly connect what was explored then to what they're asking now. Don't force it — only surface past context when it genuinely adds value.\n\n${relevantPast.map(s => `— "${s.title}" (${s.date}): ${s.summary.replace(/#+\s*/g, "").replace(/\*\*/g, "").slice(0, 220).trim()}…`).join("\n")}`
+        ? `\n\nPAST CONVERSATION ARCHIVE:\nThe founder has had these recent conversations with Navi. When the current topic overlaps with something discussed before, reference it naturally — mention it came up earlier and briefly connect what was explored then to what they're asking now. Don't force it — only surface past context when it genuinely adds value.\n\n${relevantPast.map(s => `— "${s.title}" (${s.date}): ${s.summary.replace(/#+\s*/g, "").replace(/\*\*/g, "").slice(0, 220).trim()}…`).join("\n")}`
         : "";
 
     return {
@@ -132,15 +132,15 @@ Budget: $${(profile.budget?.remaining || 0).toLocaleString()} remaining of $${(p
 CONTEXT — FORGE CHAT ROOM:
 The founder has opened the Chat Room — a dedicated space for open-ended conversation, questions, and learning. This is not a coaching session tied to stage milestones. There is no agenda. The founder might want to think out loud, explore a concept, get a second opinion, discuss something they read, ask about business fundamentals, or just talk through what's on their mind.
 
-Your role here is slightly different from the structured Forge chat: lean into education. When a founder asks a question — even a simple one — look for the natural teaching moment inside it. Not by lecturing, but by giving them the fuller picture behind the answer. If they ask "what's a CAC?", don't just define it — show them why it matters, what a healthy one looks like for their type of business, and what it tells you about your model.
+Your role here is slightly different from the structured Navi chat: lean into education. When a founder asks a question — even a simple one — look for the natural teaching moment inside it. Not by lecturing, but by giving them the fuller picture behind the answer. If they ask "what's a CAC?", don't just define it — show them why it matters, what a healthy one looks like for their type of business, and what it tells you about your model.
 
 That said, don't turn every exchange into a lesson. Match their energy. If they want a quick answer, give one. If they seem curious and want to go deep, go deep with them. Read the room.
 
 Be the knowledgeable business partner they can talk to freely — about their business, about business in general, about an idea they have, about something that's worrying them, about something that excited them. This is a safe space to think out loud without worrying about what step they're on.
 ${archiveSummary ? `\n\nARCHIVE CONTEXT:\nThe founder is continuing a prior archived conversation titled "${archiveTitle || "Saved conversation"}". Use this summary as prior context for the current discussion. Build on it naturally and answer follow-up questions as a continuation, not as a fresh topic.\n\n${archiveSummary}` : ""}
-${academyEntry ? `\n\nACADEMY ENTRY CONTEXT:\nThe founder opened this conversation from Forge Academy.\nMode: ${academyMode}\nTopic: ${academyEntry.title}\nCategory: ${academyEntry.categoryTitle || "Forge Academy"}\nLearning goal: ${academyEntry.learningGoal || "Help the founder understand the topic deeply and practically."}\nWho this is for: ${academyEntry.whoThisIsFor || "A first-time founder who needs a more grounded understanding before the stakes get higher."}\nWhen this matters: ${academyEntry.whenThisMatters || "Before the founder drifts into weak assumptions or avoidable execution mistakes."}\nCommon mistake: ${academyEntry.commonMistake || "Founders often treat this as obvious until they are forced to make a real decision under pressure."}\nWhy this matters: ${academyEntry.whyThisMatters || "Teach the founder why this topic matters before they need it."}\nWhat to watch for: ${academyEntry.whatToWatchFor || "Surface the subtle mistakes and weak thinking patterns that matter here."}\nKnowledge check prompt: ${academyEntry.knowledgeCheckPrompt || "Not explicitly set"}\nExpected understanding points: ${academyEntry.knowledgeCheckExpectedPoints.join(" | ") || "Use broad founder judgment"}\nConcept tags: ${academyEntry.tags.join(", ") || "None"}\nRelevant stages: ${academyEntry.stageIds.length > 0 ? academyEntry.stageIds.join(", ") : "General"}\nSupporting context: ${academyEntry.forgeContext || "None provided"}\n\nAcademy personalization rule: use the business profile, archives, journal, financials, decisions, actions, canvas, and cofounder/workspace memory below before asking discovery questions. Do not ask broad questions like "tell me about your business" when the context already contains the answer. If information is missing, ask one narrow question about the missing piece.\n\n${modeInstruction}` : ""}
-${marketIntelEntry ? `\n\nMARKET INTELLIGENCE CONTEXT:\nThe founder opened this conversation from Market Intelligence to explore a specific trend.\nTrend name: ${marketIntelEntry.name}\nImpact level: ${marketIntelEntry.impactLevel}\nTimeframe: ${marketIntelEntry.timeframe}\nDescription: ${marketIntelEntry.description}\n\nForge should help the founder understand this trend deeply and practically — what it means for their business, how to respond or position, and what concrete actions they could take. Ask probing questions to help them think it through. Keep it strategic and grounded.` : ""}
-${clarityEntry ? `\n\nCLARITY SESSION CONTEXT:\nThe founder opened this as a quick Clarity chat from the Hub. This is separate from the main stage chat and should stay tightly focused on the recurring issue or confusion that prompted it.\nSession title: ${clarityEntry.title}\nRecurring issue: ${clarityEntry.nudgeText}\nSignal source: ${clarityEntry.signalSource || "Not specified"}\n\nForge should help the founder name what is unresolved, understand why it matters, and identify the next useful question, decision, or action. Keep it conversational and focused. The founder can archive this conversation from the chat room when finished.` : ""}
+${academyEntry ? `\n\nACADEMY ENTRY CONTEXT:\nThe founder opened this conversation from Navi Academy.\nMode: ${academyMode}\nTopic: ${academyEntry.title}\nCategory: ${academyEntry.categoryTitle || "Navi Academy"}\nLearning goal: ${academyEntry.learningGoal || "Help the founder understand the topic deeply and practically."}\nWho this is for: ${academyEntry.whoThisIsFor || "A first-time founder who needs a more grounded understanding before the stakes get higher."}\nWhen this matters: ${academyEntry.whenThisMatters || "Before the founder drifts into weak assumptions or avoidable execution mistakes."}\nCommon mistake: ${academyEntry.commonMistake || "Founders often treat this as obvious until they are forced to make a real decision under pressure."}\nWhy this matters: ${academyEntry.whyThisMatters || "Teach the founder why this topic matters before they need it."}\nWhat to watch for: ${academyEntry.whatToWatchFor || "Surface the subtle mistakes and weak thinking patterns that matter here."}\nKnowledge check prompt: ${academyEntry.knowledgeCheckPrompt || "Not explicitly set"}\nExpected understanding points: ${academyEntry.knowledgeCheckExpectedPoints.join(" | ") || "Use broad founder judgment"}\nConcept tags: ${academyEntry.tags.join(", ") || "None"}\nRelevant stages: ${academyEntry.stageIds.length > 0 ? academyEntry.stageIds.join(", ") : "General"}\nSupporting context: ${academyEntry.forgeContext || "None provided"}\n\nAcademy personalization rule: use the business profile, archives, journal, financials, decisions, actions, canvas, and cofounder/workspace memory below before asking discovery questions. Do not ask broad questions like "tell me about your business" when the context already contains the answer. If information is missing, ask one narrow question about the missing piece.\n\n${modeInstruction}` : ""}
+${marketIntelEntry ? `\n\nMARKET INTELLIGENCE CONTEXT:\nThe founder opened this conversation from Market Intelligence to explore a specific trend.\nTrend name: ${marketIntelEntry.name}\nImpact level: ${marketIntelEntry.impactLevel}\nTimeframe: ${marketIntelEntry.timeframe}\nDescription: ${marketIntelEntry.description}\n\nNavi should help the founder understand this trend deeply and practically — what it means for their business, how to respond or position, and what concrete actions they could take. Ask probing questions to help them think it through. Keep it strategic and grounded.` : ""}
+${clarityEntry ? `\n\nCLARITY SESSION CONTEXT:\nThe founder opened this as a quick Clarity chat from the Hub. This is separate from the main stage chat and should stay tightly focused on the recurring issue or confusion that prompted it.\nSession title: ${clarityEntry.title}\nRecurring issue: ${clarityEntry.nudgeText}\nSignal source: ${clarityEntry.signalSource || "Not specified"}\n\nNavi should help the founder name what is unresolved, understand why it matters, and identify the next useful question, decision, or action. Keep it conversational and focused. The founder can archive this conversation from the chat room when finished.` : ""}
 ${pastConversationsSection}
 ${scopedMemoryContext ? `\n\n${scopedMemoryContext}` : ""}
 ${universalMemoryContext ? `\n\n${universalMemoryContext}` : ""}
@@ -513,7 +513,7 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
         if (activeAcademyEntry) return `Academy takeaway — ${activeAcademyEntry.title}`;
         if (activeTrendEntry) return `Market intelligence takeaway — ${activeTrendEntry.name}`;
         if (activeClarityEntry) return `Clarity takeaway — ${activeClarityEntry.title}`;
-        return "Forge chat takeaway";
+        return "Navi chat takeaway";
     };
 
     const saveContextMemory = async (context: ActiveForgeContext) => {
@@ -548,7 +548,7 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
         setPendingApplyText(null);
         setApplyStatus(context.scope === "workspace"
             ? "Saved as shared workspace memory."
-            : "Saved privately to your Forge memory.");
+            : "Saved privately to your Navi memory.");
     };
 
     const openContextApplyCard = (text: string | null = null) => {
@@ -566,7 +566,7 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
                     ? `Market Intel — ${activeTrendEntry.name}`
                     : activeClarityEntry
                         ? `Clarity — ${activeClarityEntry.title}`
-                        : `Chat with Forge — ${new Date().toLocaleDateString("en-US", {
+                        : `Ask Navi — ${new Date().toLocaleDateString("en-US", {
                             month: "short",
                             day: "numeric",
                             year: "numeric",
@@ -579,14 +579,14 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
         if (savingArchive || messages.length === 0) return;
         setArchiveError(null);
 
-        const title = archiveTitleInput.trim() || activeAcademyEntry?.title || activeTrendEntry?.name || "Chat with Forge";
+        const title = archiveTitleInput.trim() || activeAcademyEntry?.title || activeTrendEntry?.name || "Ask Navi";
         const transcript = messages
-            .map((msg) => `${msg.role === "forge" ? "Forge" : profile.name}: ${msg.text}`)
+            .map((msg) => `${msg.role === "forge" ? "Navi" : profile.name}: ${msg.text}`)
             .join("\n");
 
         const prompt = activeArchive?.id
-            ? `Update this archived Chat with Forge conversation for ${profile.name} in clear markdown.\n\nExisting archive summary:\n${activeArchive.summary}\n\nNew continuation transcript:\n${transcript}\n\nReturn valid JSON with exactly these keys:\n"title": keep exactly this title: "${title}"\n"summary": a refreshed markdown summary with these sections: Main Questions, Key Takeaways, Useful Concepts, Next Moves. Blend the prior archive context with the new continuation so this replaces the old summary cleanly.`
-            : `Summarize this Chat with Forge conversation for ${profile.name} in clear markdown.\n\nReturn valid JSON with exactly these keys:\n"title": keep exactly this title: "${title}"\n"summary": a detailed markdown summary with these sections: Main Questions, Key Takeaways, Useful Concepts, Next Moves.\n\nConversation:\n${transcript}`;
+            ? `Update this archived Ask Navi conversation for ${profile.name} in clear markdown.\n\nExisting archive summary:\n${activeArchive.summary}\n\nNew continuation transcript:\n${transcript}\n\nReturn valid JSON with exactly these keys:\n"title": keep exactly this title: "${title}"\n"summary": a refreshed markdown summary with these sections: Main Questions, Key Takeaways, Useful Concepts, Next Moves. Blend the prior archive context with the new continuation so this replaces the old summary cleanly.`
+            : `Summarize this Ask Navi conversation for ${profile.name} in clear markdown.\n\nReturn valid JSON with exactly these keys:\n"title": keep exactly this title: "${title}"\n"summary": a detailed markdown summary with these sections: Main Questions, Key Takeaways, Useful Concepts, Next Moves.\n\nConversation:\n${transcript}`;
 
         setSavingArchive(true);
         try {
@@ -635,7 +635,7 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
                 userId,
                 archive: saved,
                 sourceType: getBookTypeForChatRoom(activeAcademyEntry, activeTrendEntry, activeClarityEntry),
-                sourceLabel: activeAcademyEntry ? "Forge Academy" : activeTrendEntry ? "Market Intelligence" : activeClarityEntry ? "Quick Chat" : "Chat with Forge",
+                sourceLabel: activeAcademyEntry ? "Navi Academy" : activeTrendEntry ? "Market Intelligence" : activeClarityEntry ? "Quick Chat" : "Ask Navi",
                 sourceRefId: activeAcademyEntry?.id || activeTrendEntry?.id || activeClarityEntry?.id || activeArchive?.id || null,
                 stageId: activeAcademyEntry?.stageIds?.[0] ?? (Number(profile.currentStage) || 1),
                 academyEntry: activeAcademyEntry,
@@ -777,7 +777,7 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
         if (!entry || loading) return;
 
         const starterPrompt = entry.starterPrompt?.trim()
-            || `Open a guided Forge Academy lesson on "${entry.title}".
+            || `Open a guided Navi Academy lesson on "${entry.title}".
 
 Teach it like a serious founder educator, not a generic assistant.
 Learning goal: ${entry.learningGoal || "Help the founder get practical clarity."}
@@ -925,7 +925,7 @@ Start by making the trend real and concrete for them. No vague advice — be dir
     };
 
     const sendLessonCompletionMessage = async (entry: AcademyTopicLaunch) => {
-        const completionPrompt = `The founder just successfully demonstrated real understanding of "${entry.title}" through our conversation. Their lesson is now marked complete in Forge Academy. Send them a brief, warm congratulation. Let them know the lesson is complete. Tell them: to save this conversation and return to Academy, just press "Archive Chat" above — or they can keep chatting to go even deeper on this topic. Keep it short and encouraging.`;
+        const completionPrompt = `The founder just successfully demonstrated real understanding of "${entry.title}" through our conversation. Their lesson is now marked complete in Navi Academy. Send them a brief, warm congratulation. Let them know the lesson is complete. Tell them: to save this conversation and return to Academy, just press "Archive Chat" above — or they can keep chatting to go even deeper on this topic. Keep it short and encouraging.`;
         const forgeMsg: ChatMessage = { id: `f-${Date.now()}`, role: "forge", text: "", createdAt: new Date().toISOString() };
         setMessages((prev) => [...prev, forgeMsg]);
         setLoading(true);
@@ -952,7 +952,7 @@ Start by making the trend real and concrete for them. No vague advice — be dir
         if (!activeAcademyEntry || loading || testingMode || academyLessonCompleted) return;
         setTestingMode(true);
         const entry = activeAcademyEntry;
-        const kickoffPrompt = `The founder has clicked "Test to Complete" for the Forge Academy lesson "${entry.title}". Begin conversationally testing their understanding. Ask natural questions that probe whether they genuinely understand this lesson and can apply it to their own business. Don't announce you are testing — just start asking. Keep it conversational.
+        const kickoffPrompt = `The founder has clicked "Test to Complete" for the Navi Academy lesson "${entry.title}". Begin conversationally testing their understanding. Ask natural questions that probe whether they genuinely understand this lesson and can apply it to their own business. Don't announce you are testing — just start asking. Keep it conversational.
 
 Learning goal: ${entry.learningGoal || "Core understanding of " + entry.title}
 Knowledge check: ${entry.knowledgeCheckPrompt || "What is the core founder judgment this lesson was trying to build?"}
@@ -983,7 +983,7 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
     const sendTestingClarificationMessage = async (entry: AcademyTopicLaunch, userRequest: string, history: ChatMessage[]) => {
         const testingTranscript = history
             .slice(-12)
-            .map((message) => `${message.role === "forge" ? "Forge" : profile.name || "Founder"}: ${message.text}`)
+            .map((message) => `${message.role === "forge" ? "Navi" : profile.name || "Founder"}: ${message.text}`)
             .join("\n\n");
         const clarificationPrompt = `The founder is in the "Test to Complete" conversation for "${entry.title}" and is asking for clarification about the evaluation, not submitting a new answer.
 
@@ -1092,7 +1092,7 @@ Re-teach only the most critical missing piece. If you correct them, quote the ex
         try {
             const testingTranscript = history
                 .slice(-10)
-                .map((message) => `${message.role === "forge" ? "Forge" : profile.name || "Founder"}: ${message.text}`)
+                .map((message) => `${message.role === "forge" ? "Navi" : profile.name || "Founder"}: ${message.text}`)
                 .join("\n\n");
             const evaluation = await evaluateKnowledgeCheckLaunchAnswer(activeAcademyEntry, `Latest answer:\n${userAnswer}\n\nTesting conversation so far:\n${testingTranscript}`);
             if (isAcademyEvaluationCompleteEnough(evaluation)) {
@@ -1120,13 +1120,13 @@ Re-teach only the most critical missing piece. If you correct them, quote the ex
             if (activeAcademyEntry) {
                 void sendTestingContinuationMessage(
                     activeAcademyEntry,
-                    "Forge could not evaluate that cleanly, so keep going with a clearer explanation.",
+                    "Navi could not evaluate that cleanly, so keep going with a clearer explanation.",
                     "on_track",
                     {
                         latestAnswer: userAnswer,
                         testingTranscript: history
                             .slice(-10)
-                            .map((message) => `${message.role === "forge" ? "Forge" : profile.name || "Founder"}: ${message.text}`)
+                            .map((message) => `${message.role === "forge" ? "Navi" : profile.name || "Founder"}: ${message.text}`)
                             .join("\n\n"),
                         demonstratedUnderstanding: [],
                         missingUnderstanding: ["The answer needs to be restated clearly enough to evaluate."],
@@ -1141,12 +1141,12 @@ Re-teach only the most critical missing piece. If you correct them, quote the ex
 
     const hasMessages = messages.length > 0;
     const chatTitle = activeAcademyEntry
-        ? `Forge Academy · ${activeAcademyEntry.title}`
+        ? `Navi Academy · ${activeAcademyEntry.title}`
         : activeTrendEntry
             ? `Market Intel · ${activeTrendEntry.name}`
             : activeClarityEntry
                 ? `Clarity · ${activeClarityEntry.title}`
-                : "Chat with Forge";
+                : "Ask Navi";
     const chatSubtitle = activeAcademyEntry
         ? getAcademySessionSubtitle(activeAcademyEntry.sessionMode)
         : activeTrendEntry
@@ -1159,20 +1159,20 @@ Re-teach only the most critical missing piece. If you correct them, quote the ex
         <div style={{
             position: "fixed",
             inset: 0,
-            background: "#080809",
+            background: "var(--color-bg-soft)",
             display: "flex",
             flexDirection: "column",
-            fontFamily: "'Lora', Georgia, serif",
-            color: "#F0EDE8",
+            fontFamily: "var(--tekori-font-ui)",
+            color: "var(--color-text)",
         }}>
             {/* Header */}
             <div style={{
                 padding: "max(16px, calc(12px + env(safe-area-inset-top))) 20px 14px",
-                borderBottom: "1px solid rgba(255,255,255,0.07)",
+                borderBottom: "1px solid rgba(7,26,47,0.07)",
                 display: "flex",
                 alignItems: "center",
                 gap: 12,
-                background: "#0C0C0E",
+                background: "var(--color-surface)",
                 flexShrink: 0,
             }}>
                 <button
@@ -1189,30 +1189,30 @@ Re-teach only the most critical missing piece. If you correct them, quote the ex
                         fontSize: 13,
                         transition: "color 0.15s",
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.color = "#F0EDE8"; }}
-                    onMouseLeave={e => { e.currentTarget.style.color = "#666"; }}
+                    onMouseEnter={e => { e.currentTarget.style.color = "var(--color-text)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = "var(--color-text-muted)"; }}
                 >
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                         <path d="M10 12L6 8l4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                     Back
                 </button>
-                <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.08)" }} />
+                <div style={{ width: 1, height: 20, background: "rgba(7,26,47,0.08)" }} />
                 <ForgeAvatar size={30} />
                 <div className="forge-chat-room__title-wrap" style={{ flex: 1, minWidth: 0 }}>
                     <div
                         className="forge-chat-room__title"
                         title={chatTitle}
-                        style={{ fontSize: 15, fontWeight: 600, color: "#F0EDE8", fontFamily: "'Lora', Georgia, serif" }}
+                        style={{ fontSize: 15, fontWeight: 600, color: "var(--color-text)", fontFamily: "var(--tekori-font-ui)" }}
                     >
                         {chatTitle}
                     </div>
-                    <div className="forge-chat-room__subtitle" style={{ fontSize: 11, color: "#4CAF8A", marginTop: 1 }}>
+                    <div className="forge-chat-room__subtitle" style={{ fontSize: 11, color: "var(--tekori-gold)", marginTop: 1 }}>
                         {chatSubtitle}
                     </div>
                 </div>
-                <div className="forge-context-indicator" title="Current Forge memory context">
-                    Forge Context: {getForgeContextLabel(activeForgeContext)}
+                <div className="forge-context-indicator" title="Current Navi memory context">
+                    Navi Context: {getForgeContextLabel(activeForgeContext)}
                 </div>
                 <button
                     className="forge-context-apply-button"
@@ -1229,20 +1229,20 @@ Re-teach only the most critical missing piece. If you correct them, quote the ex
                             background: academyLessonCompleted
                                 ? "rgba(76,175,138,0.08)"
                                 : testingMode
-                                    ? "rgba(232,98,42,0.06)"
-                                    : "rgba(232,98,42,0.10)",
+                                    ? "rgba(216,155,43,0.06)"
+                                    : "rgba(216,155,43,0.10)",
                             border: academyLessonCompleted
                                 ? "1px solid rgba(76,175,138,0.22)"
                                 : testingMode
-                                    ? "1px solid rgba(232,98,42,0.15)"
-                                    : "1px solid rgba(232,98,42,0.22)",
+                                    ? "1px solid rgba(216,155,43,0.15)"
+                                    : "1px solid rgba(216,155,43,0.22)",
                             borderRadius: 8,
                             padding: "5px 12px",
                             color: academyLessonCompleted
-                                ? "#4CAF8A"
+                                ? "var(--color-success)"
                                 : testingMode
-                                    ? "rgba(232,98,42,0.65)"
-                                    : "#E8622A",
+                                    ? "rgba(216,155,43,0.65)"
+                                    : "var(--tekori-gold)",
                             fontSize: 11,
                             cursor: academyLessonCompleted || testingMode ? "default" : "pointer",
                             transition: "all 0.15s",
@@ -1256,11 +1256,11 @@ Re-teach only the most critical missing piece. If you correct them, quote the ex
                         className="forge-chat-room__action"
                         onClick={openSaveArchiveModal}
                         style={{
-                            background: "rgba(76,175,138,0.08)",
-                            border: "1px solid rgba(76,175,138,0.22)",
+                            background: "rgba(216,155,43,0.08)",
+                            border: "1px solid rgba(216,155,43,0.20)",
                             borderRadius: 8,
                             padding: "5px 12px",
-                            color: "#4CAF8A",
+                            color: "var(--tekori-gold)",
                             fontSize: 11,
                             cursor: "pointer",
                             transition: "all 0.15s",
@@ -1274,8 +1274,8 @@ Re-teach only the most critical missing piece. If you correct them, quote the ex
                         className="forge-chat-room__action"
                         onClick={() => setMessages([])}
                         style={{
-                            background: "rgba(255,255,255,0.04)",
-                            border: "1px solid rgba(255,255,255,0.08)",
+                            background: "rgba(7,26,47,0.04)",
+                            border: "1px solid rgba(7,26,47,0.08)",
                             borderRadius: 8,
                             padding: "5px 12px",
                             color: "var(--foundry-text-muted)",
@@ -1283,8 +1283,8 @@ Re-teach only the most critical missing piece. If you correct them, quote the ex
                             cursor: "pointer",
                             transition: "all 0.15s",
                         }}
-                        onMouseEnter={e => { e.currentTarget.style.color = "#F0EDE8"; e.currentTarget.style.background = "rgba(255,255,255,0.08)"; }}
-                        onMouseLeave={e => { e.currentTarget.style.color = "#555"; e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+                        onMouseEnter={e => { e.currentTarget.style.color = "var(--color-text)"; e.currentTarget.style.background = "rgba(7,26,47,0.08)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.color = "var(--color-text-muted)"; e.currentTarget.style.background = "rgba(7,26,47,0.04)"; }}
                     >
                         New chat
                     </button>
@@ -1293,15 +1293,15 @@ Re-teach only the most critical missing piece. If you correct them, quote the ex
                     className="forge-workspace-toggle-btn"
                     onClick={() => setWorkspaceOpen(v => !v)}
                     style={{
-                        background: workspaceOpen ? "rgba(232,98,42,0.12)" : "rgba(255,255,255,0.04)",
-                        border: workspaceOpen ? "1px solid rgba(232,98,42,0.28)" : "1px solid rgba(255,255,255,0.08)",
+                        background: workspaceOpen ? "rgba(216,155,43,0.12)" : "rgba(7,26,47,0.04)",
+                        border: workspaceOpen ? "1px solid rgba(216,155,43,0.28)" : "1px solid rgba(7,26,47,0.08)",
                         borderRadius: 8,
                         padding: "5px 10px",
-                        color: workspaceOpen ? "#E8622A" : "#666",
+                        color: workspaceOpen ? "var(--tekori-gold)" : "var(--color-text-muted)",
                         fontSize: 11,
                         cursor: "pointer",
                         flexShrink: 0,
-                        fontFamily: "'DM Sans', sans-serif",
+                        fontFamily: "var(--tekori-font-ui)",
                         display: "none",
                     }}
                 >
@@ -1331,21 +1331,21 @@ Re-teach only the most critical missing piece. If you correct them, quote the ex
                     >
                 {activeArchive && (
                     <div style={{
-                        background: "rgba(76,175,138,0.05)",
-                        border: "1px solid rgba(76,175,138,0.16)",
+                        background: "rgba(216,155,43,0.06)",
+                        border: "1px solid rgba(216,155,43,0.16)",
                         borderRadius: 14,
                         padding: "14px 16px",
                     }}>
-                        <div style={{ fontSize: 10, color: "#4CAF8A", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6 }}>
+                        <div style={{ fontSize: 10, color: "var(--tekori-gold)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6 }}>
                             Continuing Archive
                         </div>
-                        <div style={{ fontSize: 18, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 8 }}>
+                        <div style={{ fontSize: 18, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, color: "var(--color-text)", marginBottom: 8 }}>
                             {activeArchive.title}
                         </div>
                         <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.7 }}>
                             {getArchivePreviewText(activeArchive.summary).slice(0, 220)}...
                         </div>
-                        <div style={{ fontSize: 11, color: "rgba(240,237,232,0.62)", lineHeight: 1.6, marginTop: 10 }}>
+                        <div style={{ fontSize: 11, color: "var(--color-text-muted)", lineHeight: 1.6, marginTop: 10 }}>
                             Ask follow-up questions normally. Saving will update this same archive card instead of creating a new one.
                         </div>
                     </div>
@@ -1400,8 +1400,8 @@ Re-teach only the most critical missing piece. If you correct them, quote the ex
                             width: 64,
                             height: 64,
                             borderRadius: "50%",
-                            background: "linear-gradient(135deg, #2D221C, #1a120e)",
-                            border: "1px solid rgba(232,98,42,0.2)",
+                            background: "linear-gradient(135deg, var(--color-bg-warm), var(--color-bg-soft))",
+                            border: "1px solid rgba(216,155,43,0.2)",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
@@ -1409,12 +1409,12 @@ Re-teach only the most critical missing piece. If you correct them, quote the ex
                             <Logo variant="forge" style={{ width: 36, height: 36, objectFit: "contain" }} />
                         </div>
                         <div>
-                            <div style={{ fontSize: 20, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 8 }}>
+                            <div style={{ fontSize: 20, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, color: "var(--color-text)", marginBottom: 8 }}>
                                 {activeAcademyEntry ? activeAcademyEntry.title : "What's on your mind?"}
                             </div>
                             <div style={{ fontSize: 13, color: "var(--foundry-text-muted)", lineHeight: 1.7, maxWidth: 380 }}>
                                 {activeAcademyEntry
-                                    ? activeAcademyEntry.learningGoal || "Forge is opening this Academy topic with context already loaded. Keep going by asking follow-up questions, pressure-testing the ideas, or applying them directly to your business."
+                                    ? activeAcademyEntry.learningGoal || "Navi is opening this Academy topic with context already loaded. Keep going by asking follow-up questions, pressure-testing the ideas, or applying them directly to your business."
                                     : "This is your open space to talk through anything — business questions, ideas, concepts you're learning, or things you're unsure about. No agenda. Just a conversation."}
                             </div>
                         </div>
@@ -1438,18 +1438,18 @@ Re-teach only the most critical missing piece. If you correct them, quote the ex
                                     key={prompt}
                                     onClick={() => { setInput(prompt); setTimeout(() => inputRef.current?.focus(), 50); }}
                                     style={{
-                                        background: "rgba(255,255,255,0.04)",
-                                        border: "1px solid rgba(255,255,255,0.08)",
+                                        background: "rgba(7,26,47,0.04)",
+                                        border: "1px solid rgba(7,26,47,0.08)",
                                         borderRadius: 20,
                                         padding: "7px 14px",
-                                        color: "rgba(240,237,232,0.62)",
+                                        color: "var(--color-text-muted)",
                                         fontSize: 12,
                                         cursor: "pointer",
                                         transition: "all 0.15s",
-                                        fontFamily: "'Lora', Georgia, serif",
+                                        fontFamily: "var(--tekori-font-ui)",
                                     }}
-                                    onMouseEnter={e => { e.currentTarget.style.color = "#C8C4BE"; e.currentTarget.style.borderColor = "rgba(232,98,42,0.3)"; e.currentTarget.style.background = "rgba(232,98,42,0.05)"; }}
-                                    onMouseLeave={e => { e.currentTarget.style.color = "#888"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+                                    onMouseEnter={e => { e.currentTarget.style.color = "var(--color-text-soft)"; e.currentTarget.style.borderColor = "rgba(216,155,43,0.3)"; e.currentTarget.style.background = "rgba(216,155,43,0.05)"; }}
+                                    onMouseLeave={e => { e.currentTarget.style.color = "var(--color-text-muted)"; e.currentTarget.style.borderColor = "rgba(7,26,47,0.08)"; e.currentTarget.style.background = "rgba(7,26,47,0.04)"; }}
                                 >
                                     {prompt}
                                 </button>
@@ -1476,15 +1476,16 @@ Re-teach only the most critical missing piece. If you correct them, quote the ex
                                     ? "16px 4px 16px 16px"
                                     : "4px 16px 16px 16px",
                                 background: msg.role === "user"
-                                    ? "rgba(232,98,42,0.12)"
-                                    : "rgba(255,255,255,0.04)",
+                                    ? "linear-gradient(135deg, var(--color-primary), var(--color-primary-hover))"
+                                    : "var(--color-surface-elevated)",
                                 border: msg.role === "user"
-                                    ? "1px solid rgba(232,98,42,0.2)"
-                                    : "1px solid rgba(255,255,255,0.07)",
+                                    ? "1px solid rgba(7,26,47,0.18)"
+                                    : "1px solid var(--color-border)",
                                 fontSize: 13.5,
-                                color: msg.role === "user" ? "#F0EDE8" : "#C8C4BE",
+                                color: msg.role === "user" ? "#fff" : "var(--color-text-soft)",
                                 lineHeight: 1.7,
                                 textAlign: "left",
+                                boxShadow: msg.role === "user" ? "0 12px 28px rgba(7,26,47,0.16)" : "0 10px 26px rgba(16,32,51,0.07)",
                             }}>
                                 {msg.role === "forge"
                                     ? (msg.text ? <AnimatedChatText text={msg.text} createdAt={msg.createdAt} /> : <TypingDots />)
@@ -1494,7 +1495,7 @@ Re-teach only the most critical missing piece. If you correct them, quote the ex
                                 <MessageActions
                                     text={msg.text}
                                     feedbackContext={{
-                                        surface: activeAcademyEntry ? "Forge Academy" : activeTrendEntry ? "Market Intelligence" : activeClarityEntry ? "Clarity" : "Chat with Forge",
+                                        surface: activeAcademyEntry ? "Navi Academy" : activeTrendEntry ? "Market Intelligence" : activeClarityEntry ? "Clarity" : "Ask Navi",
                                         conversationTitle: chatTitle,
                                         stageId: Number(profile.currentStage) || null,
                                         messageId: msg.id,
@@ -1513,8 +1514,8 @@ Re-teach only the most critical missing piece. If you correct them, quote the ex
                     {/* Input Area */}
                     <div style={{
                         padding: "12px 0 max(16px, calc(12px + env(safe-area-inset-bottom)))",
-                        borderTop: "1px solid rgba(255,255,255,0.06)",
-                        background: "#0C0C0E",
+                        borderTop: "1px solid rgba(7,26,47,0.06)",
+                        background: "var(--color-surface)",
                         flexShrink: 0,
                     }}>
                         <div
@@ -1535,8 +1536,8 @@ Re-teach only the most critical missing piece. If you correct them, quote the ex
                                         display: "flex",
                                         alignItems: "center",
                                         gap: 5,
-                                        background: "rgba(232,98,42,0.08)",
-                                        border: "1px solid rgba(232,98,42,0.2)",
+                                        background: "rgba(216,155,43,0.08)",
+                                        border: "1px solid rgba(216,155,43,0.2)",
                                         borderRadius: 8,
                                         padding: "4px 9px 4px 6px",
                                         maxWidth: 200,
@@ -1547,7 +1548,7 @@ Re-teach only the most critical missing piece. If you correct them, quote the ex
                                     ) : (
                                         <span style={{ fontSize: 12, flexShrink: 0 }}>{file.isPDF ? "📄" : "📝"}</span>
                                     )}
-                                    <span style={{ fontSize: 11, color: "#C8C4BE", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                    <span style={{ fontSize: 11, color: "var(--color-text-soft)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                         {file.name}
                                     </span>
                                     <button
@@ -1571,7 +1572,7 @@ Re-teach only the most critical missing piece. If you correct them, quote the ex
                                 background: "none",
                                 border: "none",
                                 cursor: "pointer",
-                                color: attachedFiles.length > 0 ? "#E8622A" : "#444",
+                                color: attachedFiles.length > 0 ? "var(--tekori-gold)" : "var(--color-text-muted)",
                                 padding: "6px 4px",
                                 flexShrink: 0,
                                 display: "flex",
@@ -1579,8 +1580,8 @@ Re-teach only the most critical missing piece. If you correct them, quote the ex
                                 justifyContent: "center",
                                 transition: "color 0.15s",
                             }}
-                            onMouseEnter={e => { if (attachedFiles.length === 0) e.currentTarget.style.color = "#888"; }}
-                            onMouseLeave={e => { if (attachedFiles.length === 0) e.currentTarget.style.color = "#444"; }}
+                            onMouseEnter={e => { if (attachedFiles.length === 0) e.currentTarget.style.color = "var(--color-text-muted)"; }}
+                            onMouseLeave={e => { if (attachedFiles.length === 0) e.currentTarget.style.color = "var(--color-text-muted)"; }}
                         >
                             <svg width="18" height="18" viewBox="-1 -1 18 18" fill="none" style={{ overflow: "visible", display: "block" }}>
                                 <path d="M13.5 7.5L7 14c-1.657 1.657-4.343 1.657-6 0-1.657-1.657-1.657-4.343 0-6L8 1c1.105-1.105 2.895-1.105 4 0 1.105 1.105 1.105 2.895 0 4L5.5 11.5C4.948 12.052 4.052 12.052 3.5 11.5 2.948 10.948 2.948 10.052 3.5 9.5L9 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
@@ -1635,13 +1636,13 @@ Re-teach only the most critical missing piece. If you correct them, quote the ex
                             placeholder="Ask anything — business, concepts, ideas, whatever's on your mind..."
                             style={{
                                 flex: 1,
-                                background: "rgba(255,255,255,0.05)",
-                                border: "1px solid rgba(255,255,255,0.1)",
+                                background: "rgba(7,26,47,0.05)",
+                                border: "1px solid rgba(7,26,47,0.1)",
                                 borderRadius: 12,
                                 padding: "10px 14px",
-                                color: "#F0EDE8",
+                                color: "var(--color-text)",
                                 fontSize: 13.5,
-                                fontFamily: "'Lora', Georgia, serif",
+                                fontFamily: "var(--tekori-font-ui)",
                                 resize: "none",
                                 outline: "none",
                                 lineHeight: 1.5,
@@ -1659,9 +1660,9 @@ Re-teach only the most critical missing piece. If you correct them, quote the ex
                                 borderRadius: 10,
                                 border: "none",
                                 background: (input.trim() || attachedFiles.length > 0) && !loading
-                                    ? "linear-gradient(135deg, #E8622A, #c9521e)"
-                                    : "rgba(255,255,255,0.06)",
-                                color: (input.trim() || attachedFiles.length > 0) && !loading ? "#fff" : "#444",
+                                    ? "linear-gradient(135deg, var(--color-primary), var(--color-primary-hover))"
+                                    : "rgba(7,26,47,0.06)",
+                                color: (input.trim() || attachedFiles.length > 0) && !loading ? "var(--color-primary)" : "var(--color-text-muted)",
                                 cursor: (input.trim() || attachedFiles.length > 0) && !loading ? "pointer" : "default",
                                 display: "flex",
                                 alignItems: "center",
@@ -1676,15 +1677,15 @@ Re-teach only the most critical missing piece. If you correct them, quote the ex
                         </button>
                     </div>
                     {languageWarning && (
-                        <div style={{ fontSize: 11, color: "#D3A48D", textAlign: "center", lineHeight: 1.5 }}>
+                        <div style={{ fontSize: 11, color: "var(--color-danger)", textAlign: "center", lineHeight: 1.5 }}>
                             {languageWarning}
                         </div>
                     )}
-                    <div style={{ fontSize: 10, color: "#333", textAlign: "center" }}>
+                    <div style={{ fontSize: 10, color: "var(--color-text-muted)", textAlign: "center" }}>
                         Shift + Enter for new line
                     </div>
-                    <div style={{ fontSize: 10, color: "#2b2b2b", textAlign: "center" }}>
-                        Forge is an AI. Always verify important information before acting on it.
+                    <div style={{ fontSize: 10, color: "var(--color-text-muted)", textAlign: "center" }}>
+                        Navi is an AI. Always verify important information before acting on it.
                     </div>
                         </div>
                     </div>
@@ -1696,7 +1697,7 @@ Re-teach only the most critical missing piece. If you correct them, quote the ex
                     <ForgeConversationWorkspace
                         messages={messages}
                         loading={loading}
-                        title={activeAcademyEntry ? "Lesson Workspace" : activeTrendEntry ? "Market Workspace" : activeClarityEntry ? "Clarity Workspace" : "Forge Workspace"}
+                        title={activeAcademyEntry ? "Lesson Workspace" : activeTrendEntry ? "Market Workspace" : activeClarityEntry ? "Clarity Workspace" : "Navi Workspace"}
                         subtitle="Live notes, lesson links, and next steps"
                         academyEntry={activeAcademyEntry}
                         source={workspaceSource}
@@ -1707,10 +1708,10 @@ Re-teach only the most critical missing piece. If you correct them, quote the ex
             </div>
 
             {saveArchiveModalOpen && (
-                <div style={{ position: "fixed", inset: 0, zIndex: 120, background: "rgba(4,4,5,0.84)", backdropFilter: "blur(12px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }}>
-                    <div style={{ width: "min(520px, 100%)", background: "#0E0E10", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, padding: "20px 18px 18px" }}>
-                        <div style={{ fontSize: 22, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 6 }}>
-                            {activeArchive?.id ? "Update Chat Archive" : "Archive Chat with Forge"}
+                <div style={{ position: "fixed", inset: 0, zIndex: 120, background: "rgba(7,26,47,0.42)", backdropFilter: "blur(12px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }}>
+                    <div style={{ width: "min(520px, 100%)", background: "var(--color-surface)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 18, padding: "20px 18px 18px" }}>
+                        <div style={{ fontSize: 22, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, marginBottom: 6 }}>
+                            {activeArchive?.id ? "Update Chat Archive" : "Archive Ask Navi"}
                         </div>
                         <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.6, marginBottom: 14 }}>
                             {activeArchive?.id
@@ -1723,13 +1724,13 @@ Re-teach only the most critical missing piece. If you correct them, quote the ex
                             placeholder="Archive title"
                             style={{
                                 width: "100%",
-                                background: "rgba(255,255,255,0.04)",
-                                border: "1px solid rgba(255,255,255,0.08)",
+                                background: "rgba(7,26,47,0.04)",
+                                border: "1px solid rgba(7,26,47,0.08)",
                                 borderRadius: 12,
                                 padding: "12px 14px",
-                                color: "#F0EDE8",
+                                color: "var(--color-text)",
                                 fontSize: 14,
-                                fontFamily: "'Lora', Georgia, serif",
+                                fontFamily: "var(--tekori-font-ui)",
                                 outline: "none",
                                 boxSizing: "border-box",
                                 marginBottom: 14,
@@ -1744,11 +1745,11 @@ Re-teach only the most critical missing piece. If you correct them, quote the ex
                             <button
                                 onClick={() => { setSaveArchiveModalOpen(false); setArchiveError(null); }}
                                 style={{
-                                    background: "rgba(255,255,255,0.04)",
-                                    border: "1px solid rgba(255,255,255,0.08)",
+                                    background: "rgba(7,26,47,0.04)",
+                                    border: "1px solid rgba(7,26,47,0.08)",
                                     borderRadius: 10,
                                     padding: "10px 14px",
-                                    color: "rgba(240,237,232,0.62)",
+                                    color: "var(--color-text-muted)",
                                     cursor: "pointer",
                                 }}
                             >
@@ -1758,7 +1759,7 @@ Re-teach only the most critical missing piece. If you correct them, quote the ex
                                 onClick={handleSaveArchive}
                                 disabled={savingArchive}
                                 style={{
-                                    background: savingArchive ? "rgba(76,175,138,0.18)" : "linear-gradient(135deg, #4CAF8A, #3b8f70)",
+                                    background: savingArchive ? "rgba(76,175,138,0.18)" : "linear-gradient(135deg, var(--color-success), #3b8f70)",
                                     border: "none",
                                     borderRadius: 10,
                                     padding: "10px 14px",

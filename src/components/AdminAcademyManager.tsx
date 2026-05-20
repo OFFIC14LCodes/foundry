@@ -95,8 +95,8 @@ type CategoryFormState = {
     isActive: boolean;
 };
 
-const surface = "rgba(255,255,255,0.03)";
-const border = "1px solid rgba(255,255,255,0.08)";
+const surface = "rgba(7,26,47,0.03)";
+const border = "1px solid rgba(7,26,47,0.08)";
 
 export default function AdminAcademyManager({ userId, onBack }: Props) {
     const [workspace, setWorkspace] = useState<AcademyAdminWorkspace>({
@@ -179,15 +179,15 @@ export default function AdminAcademyManager({ userId, onBack }: Props) {
     return (
         <AdminShell onBack={onBack}>
             <div style={{ maxWidth: 1220, margin: "0 auto", display: "grid", gap: 18 }}>
-                <div style={{ background: "linear-gradient(180deg, rgba(232,98,42,0.10), rgba(255,255,255,0.03))", border, borderRadius: 24, padding: 22 }}>
-                    <div style={{ fontSize: 10, color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 10 }}>
+                <div style={{ background: "linear-gradient(180deg, rgba(216,155,43,0.10), rgba(7,26,47,0.03))", border, borderRadius: 24, padding: 22 }}>
+                    <div style={{ fontSize: 10, color: "var(--tekori-gold)", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 10 }}>
                         Academy Control Surface
                     </div>
-                    <div style={{ fontSize: "clamp(30px, 5vw, 42px)", lineHeight: 1, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 12 }}>
-                        Forge Academy Management
+                    <div style={{ fontSize: "clamp(30px, 5vw, 42px)", lineHeight: 1, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, color: "var(--color-text)", marginBottom: 12 }}>
+                        Navi Academy Management
                     </div>
                     <div style={{ maxWidth: 820, fontSize: 14, color: "#B5AEA5", lineHeight: 1.85 }}>
-                        Create and maintain the structured learning layer of Foundry. Publish guided topics, attach YouTube videos with founder annotations, build lesson series, and keep Winner&apos;s Mindset content distinct from tactical business instruction.
+                        Create and maintain the structured learning layer of Tekori. Publish guided topics, attach YouTube videos with founder annotations, build lesson series, and keep Winner&apos;s Mindset content distinct from tactical business instruction.
                     </div>
                 </div>
 
@@ -204,9 +204,9 @@ export default function AdminAcademyManager({ userId, onBack }: Props) {
                             style={{
                                 padding: "10px 14px",
                                 borderRadius: 999,
-                                border: activeTab === tab.id ? "1px solid rgba(232,98,42,0.28)" : border,
-                                background: activeTab === tab.id ? "rgba(232,98,42,0.14)" : surface,
-                                color: activeTab === tab.id ? "#E8622A" : "#C8C4BE",
+                                border: activeTab === tab.id ? "1px solid rgba(216,155,43,0.28)" : border,
+                                background: activeTab === tab.id ? "rgba(216,155,43,0.14)" : surface,
+                                color: activeTab === tab.id ? "var(--tekori-gold)" : "var(--color-text-soft)",
                                 fontSize: 12,
                                 fontWeight: 700,
                                 cursor: "pointer",
@@ -515,7 +515,7 @@ export default function AdminAcademyManager({ userId, onBack }: Props) {
                                 {workspace.tags.map((tag) => (
                                     <div key={tag.id} style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", background: surface, border, borderRadius: 14, padding: "12px 14px" }}>
                                         <div>
-                                            <div style={{ fontSize: 13, color: "#F0EDE8", fontWeight: 600 }}>{tag.name}</div>
+                                            <div style={{ fontSize: 13, color: "var(--color-text)", fontWeight: 600 }}>{tag.name}</div>
                                             <div style={{ fontSize: 11, color: "var(--foundry-text-muted)" }}>{tag.slug}</div>
                                         </div>
                                         <button
@@ -546,13 +546,13 @@ export default function AdminAcademyManager({ userId, onBack }: Props) {
 
 function AdminShell({ children, onBack }: { children: ReactNode; onBack: () => void }) {
     return (
-        <div style={{ position: "fixed", inset: 0, zIndex: 190, background: "#080809", color: "#F0EDE8", display: "flex", flexDirection: "column", fontFamily: "'Lora', Georgia, serif" }}>
-            <div style={{ padding: "max(14px, calc(10px + env(safe-area-inset-top))) 16px 12px", borderBottom: border, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(14px)", display: "flex", alignItems: "center", gap: 10 }}>
-                <button onClick={onBack} style={{ background: surface, border, borderRadius: 9, padding: "8px 12px", color: "#C8C4BE", fontSize: 12, cursor: "pointer" }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 190, background: "var(--color-bg-soft)", color: "var(--color-text)", display: "flex", flexDirection: "column", fontFamily: "var(--tekori-font-ui)" }}>
+            <div style={{ padding: "max(14px, calc(10px + env(safe-area-inset-top))) 16px 12px", borderBottom: border, background: "rgba(255,252,246,0.94)", backdropFilter: "blur(14px)", display: "flex", alignItems: "center", gap: 10 }}>
+                <button onClick={onBack} style={{ background: surface, border, borderRadius: 9, padding: "8px 12px", color: "var(--color-text-soft)", fontSize: 12, cursor: "pointer" }}>
                     ← Admin Hub
                 </button>
                 <div>
-                    <div style={{ fontSize: 15, fontWeight: 600 }}>Forge Academy Admin</div>
+                    <div style={{ fontSize: 15, fontWeight: 600 }}>Navi Academy Admin</div>
                     <div style={{ fontSize: 11, color: "#6E675F" }}>Content and curriculum management</div>
                 </div>
             </div>
@@ -575,7 +575,7 @@ function Panel({
     return (
         <div style={{ background: surface, border, borderRadius: 22, padding: 18 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-                <div style={{ fontSize: 22, lineHeight: 1.05, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>
+                <div style={{ fontSize: 22, lineHeight: 1.05, fontFamily: "var(--tekori-font-brand)", fontWeight: 700 }}>
                     {title}
                 </div>
                 <HelpTooltip content={subtitle} />
@@ -600,9 +600,9 @@ function FilterChip({
             style={{
                 padding: "8px 12px",
                 borderRadius: 999,
-                border: active ? "1px solid rgba(232,98,42,0.28)" : border,
-                background: active ? "rgba(232,98,42,0.14)" : "rgba(255,255,255,0.03)",
-                color: active ? "#E8622A" : "#C8C4BE",
+                border: active ? "1px solid rgba(216,155,43,0.28)" : border,
+                background: active ? "rgba(216,155,43,0.14)" : "rgba(7,26,47,0.03)",
+                color: active ? "var(--tekori-gold)" : "var(--color-text-soft)",
                 fontSize: 11,
                 fontWeight: 700,
                 cursor: "pointer",
@@ -629,15 +629,15 @@ function AdminListRow({
     deleting?: boolean;
 }) {
     return (
-        <div style={{ background: "rgba(255,255,255,0.025)", border, borderRadius: 16, padding: 14, display: "grid", gap: 10 }}>
+        <div style={{ background: "rgba(7,26,47,0.025)", border, borderRadius: 16, padding: 14, display: "grid", gap: 10 }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
                 <div>
-                    <div style={{ fontSize: 14, color: "#F0EDE8", fontWeight: 700, marginBottom: 6 }}>{title}</div>
-                    <div style={{ fontSize: 12, color: "#8D857C", lineHeight: 1.7 }}>{subtitle}</div>
+                    <div style={{ fontSize: 14, color: "var(--color-text)", fontWeight: 700, marginBottom: 6 }}>{title}</div>
+                    <div style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.7 }}>{subtitle}</div>
                 </div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
                     {badges.map((badge) => (
-                        <span key={badge} style={{ padding: "5px 8px", borderRadius: 999, background: "rgba(255,255,255,0.05)", border, color: "#C8C4BE", fontSize: 10, fontWeight: 700 }}>
+                        <span key={badge} style={{ padding: "5px 8px", borderRadius: 999, background: "rgba(7,26,47,0.05)", border, color: "var(--color-text-soft)", fontSize: 10, fontWeight: 700 }}>
                             {badge}
                         </span>
                     ))}
@@ -658,7 +658,7 @@ function FormField({ label, hint, children }: { label: string; hint?: string; ch
         <label style={{ display: "grid", gap: 8 }}>
             <div>
                 <div style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
-                    <div style={{ fontSize: 11, color: "#C8C4BE", letterSpacing: "0.1em", textTransform: "uppercase" }}>{label}</div>
+                    <div style={{ fontSize: 11, color: "var(--color-text-soft)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{label}</div>
                     {hint && <HelpTooltip content={hint} />}
                 </div>
             </div>
@@ -685,8 +685,8 @@ function Toggle({
                 padding: "8px 12px",
                 borderRadius: 999,
                 border: checked ? "1px solid rgba(76,175,138,0.28)" : border,
-                background: checked ? "rgba(76,175,138,0.14)" : "rgba(255,255,255,0.03)",
-                color: checked ? "#4CAF8A" : "#C8C4BE",
+                background: checked ? "rgba(76,175,138,0.14)" : "rgba(7,26,47,0.03)",
+                color: checked ? "var(--color-success)" : "var(--color-text-soft)",
                 fontSize: 11,
                 fontWeight: 700,
                 cursor: "pointer",
@@ -710,9 +710,9 @@ function StageSelector({ value, onChange }: { value: number[]; onChange: (next: 
                         style={{
                             padding: "8px 10px",
                             borderRadius: 999,
-                            border: active ? "1px solid rgba(232,98,42,0.28)" : border,
-                            background: active ? "rgba(232,98,42,0.14)" : "rgba(255,255,255,0.03)",
-                            color: active ? "#E8622A" : "#C8C4BE",
+                            border: active ? "1px solid rgba(216,155,43,0.28)" : border,
+                            background: active ? "rgba(216,155,43,0.14)" : "rgba(7,26,47,0.03)",
+                            color: active ? "var(--tekori-gold)" : "var(--color-text-soft)",
                             fontSize: 11,
                             fontWeight: 700,
                             cursor: "pointer",
@@ -731,7 +731,7 @@ function CenteredAdminState({ title, body }: { title: string; body: string }) {
         <div style={{ minHeight: "70vh", display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
             <div style={{ maxWidth: 560, display: "grid", gap: 10 }}>
                 <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                    <div style={{ fontSize: 36, lineHeight: 1, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>{title}</div>
+                    <div style={{ fontSize: 36, lineHeight: 1, fontFamily: "var(--tekori-font-brand)", fontWeight: 700 }}>{title}</div>
                     <HelpTooltip content={body} side="bottom" />
                 </div>
             </div>
@@ -741,11 +741,11 @@ function CenteredAdminState({ title, body }: { title: string; body: string }) {
 
 const inputStyle: CSSProperties = {
     width: "100%",
-    background: "rgba(255,255,255,0.04)",
-    border: "1px solid rgba(255,255,255,0.10)",
+    background: "rgba(7,26,47,0.04)",
+    border: "1px solid rgba(7,26,47,0.10)",
     borderRadius: 12,
     padding: "11px 12px",
-    color: "#F0EDE8",
+    color: "var(--color-text)",
     fontSize: 13,
     boxSizing: "border-box",
 };
@@ -759,22 +759,22 @@ const textareaStyle: CSSProperties = {
 };
 
 const primaryButtonStyle: CSSProperties = {
-    background: "linear-gradient(135deg, #E8622A, #C9521E)",
+    background: "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))",
     border: "none",
     borderRadius: 12,
     padding: "11px 14px",
-    color: "#fff",
+    color: "var(--color-primary)",
     fontSize: 12,
     fontWeight: 700,
     cursor: "pointer",
 };
 
 const secondaryButtonStyle: CSSProperties = {
-    background: "rgba(255,255,255,0.04)",
+    background: "rgba(7,26,47,0.04)",
     border,
     borderRadius: 10,
     padding: "9px 12px",
-    color: "#C8C4BE",
+    color: "var(--color-text-soft)",
     fontSize: 12,
     fontWeight: 700,
     cursor: "pointer",
@@ -843,7 +843,7 @@ function renderContentForm({
                 </FormField>
                 <FormField label="Source type">
                     <select value={form.sourceType} onChange={(event) => onChange({ ...form, sourceType: event.target.value as ContentFormState["sourceType"] })} style={inputStyle}>
-                        <option value="foundry_original">Foundry original</option>
+                        <option value="foundry_original">Tekori original</option>
                         <option value="external_youtube">External YouTube</option>
                         <option value="external_resource">External resource</option>
                     </select>
@@ -913,16 +913,16 @@ function renderContentForm({
             <FormField label="Common mistake">
                 <textarea value={form.commonMistake} onChange={(event) => onChange({ ...form, commonMistake: event.target.value })} style={{ ...textareaStyle, minHeight: 90 }} />
             </FormField>
-            <FormField label="Forge starter prompt" hint="Used when a founder opens a guided topic conversation from Academy.">
+            <FormField label="Navi starter prompt" hint="Used when a founder opens a guided topic conversation from Academy.">
                 <textarea value={form.starterPrompt} onChange={(event) => onChange({ ...form, starterPrompt: event.target.value })} style={textareaStyle} />
             </FormField>
-            <FormField label="Forge supporting context">
+            <FormField label="Navi supporting context">
                 <textarea value={form.forgeContext} onChange={(event) => onChange({ ...form, forgeContext: event.target.value })} style={textareaStyle} />
             </FormField>
-            <FormField label="Knowledge check prompt" hint="One sharp understanding question Forge can use before completion.">
+            <FormField label="Knowledge check prompt" hint="One sharp understanding question Navi can use before completion.">
                 <textarea value={form.knowledgeCheckPrompt} onChange={(event) => onChange({ ...form, knowledgeCheckPrompt: event.target.value })} style={{ ...textareaStyle, minHeight: 110 }} />
             </FormField>
-            <FormField label="Knowledge check expected points" hint="One point per line. Forge uses these to judge whether the lesson really landed.">
+            <FormField label="Knowledge check expected points" hint="One point per line. Navi uses these to judge whether the lesson really landed.">
                 <textarea value={form.knowledgeCheckExpectedPoints} onChange={(event) => onChange({ ...form, knowledgeCheckExpectedPoints: event.target.value })} style={{ ...textareaStyle, minHeight: 120 }} />
             </FormField>
             <FormField label="Completion badge label">
@@ -1023,7 +1023,7 @@ function renderSeriesForm({
             <FormField label="Series items" hint="Add Academy content records in the order founders should progress through them.">
                 <div style={{ display: "grid", gap: 10 }}>
                     {form.items.map((item, index) => (
-                        <div key={`${item.id ?? "new"}-${index}`} style={{ background: "rgba(255,255,255,0.02)", border, borderRadius: 14, padding: 12, display: "grid", gap: 10 }}>
+                        <div key={`${item.id ?? "new"}-${index}`} style={{ background: "rgba(7,26,47,0.02)", border, borderRadius: 14, padding: 12, display: "grid", gap: 10 }}>
                             <FormField label={`Item ${index + 1}`}>
                                 <select value={item.contentId} onChange={(event) => onChange({
                                     ...form,

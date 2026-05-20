@@ -18,11 +18,11 @@ export function buildPitchSystemPrompt(profile: any, scenario: string): string {
     const idea = profile.idea || "a business idea";
     const stage = profile.currentStage || 1;
 
-    return `You are Michael Vincent, speaking through Forge and playing the role of ${role} in a pitch practice session inside Foundry.
+    return `You are Michael Vincent, speaking through Navi and playing the role of ${role} in a pitch practice session inside Tekori.
 
 The founder's business: ${idea}
 Business name: ${businessName}
-Their Foundry stage: ${stage} of 6
+Their Tekori stage: ${stage} of 6
 
 YOUR ROLE IN THIS SESSION:
 You are the audience, not the coach. Stay in character as ${role} throughout. React the way a real audience member would — ask probing questions, push back on vague claims, and ask for specifics when something is unclear.
@@ -49,7 +49,7 @@ export function buildFeedbackSystemPrompt(profile: any, scenario: string, messag
         .map(m => `${m.role === "user" ? "Founder" : "Audience"}: ${m.text}`)
         .join("\n\n");
 
-    return `You are Forge — the founder's business partner in Foundry. You just ran a pitch practice session and now need to give honest, specific coaching feedback.
+    return `You are Navi — the founder's business partner in Tekori. You just ran a pitch practice session and now need to give honest, specific coaching feedback.
 
 Business: ${profile.idea || "their idea"}
 Scenario: ${scenarioLabel} pitch

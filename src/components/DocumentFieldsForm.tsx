@@ -16,13 +16,13 @@ function FieldInput({ field, value, error, onChange }: {
 }) {
     const baseStyle = {
         width: "100%",
-        background: "rgba(255,255,255,0.04)",
-        border: error ? "1px solid rgba(214,80,55,0.55)" : "1px solid rgba(255,255,255,0.1)",
+        background: "rgba(7,26,47,0.04)",
+        border: error ? "1px solid rgba(214,80,55,0.55)" : "1px solid rgba(7,26,47,0.1)",
         borderRadius: 10,
         padding: "10px 12px",
-        color: "#F0EDE8",
+        color: "var(--color-text)",
         fontSize: 13,
-        fontFamily: "'Lora', Georgia, serif",
+        fontFamily: "var(--tekori-font-ui)",
         lineHeight: 1.55,
         boxSizing: "border-box" as const,
         outline: "none",
@@ -45,11 +45,11 @@ function FieldInput({ field, value, error, onChange }: {
             <select
                 value={value ?? ""}
                 onChange={(event) => onChange(event.target.value)}
-                style={{ ...baseStyle, cursor: "pointer", colorScheme: "dark" as const }}
+                style={{ ...baseStyle, cursor: "pointer", colorScheme: "light" as const }}
             >
                 <option value="">{field.placeholder || "Select..."}</option>
                 {(field.options || []).map((option) => (
-                    <option key={option} value={option} style={{ background: "#111", color: "#F0EDE8" }}>
+                    <option key={option} value={option} style={{ background: "var(--color-surface-elevated)", color: "var(--color-text)" }}>
                         {option}
                     </option>
                 ))}
@@ -59,12 +59,12 @@ function FieldInput({ field, value, error, onChange }: {
 
     if (field.type === "checkbox") {
         return (
-            <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", color: "#C8C4BE", fontSize: 13 }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", color: "var(--color-text-soft)", fontSize: 13 }}>
                 <input
                     type="checkbox"
                     checked={!!value}
                     onChange={(event) => onChange(event.target.checked)}
-                    style={{ accentColor: "#E8622A", width: 16, height: 16 }}
+                    style={{ accentColor: "var(--tekori-gold)", width: 16, height: 16 }}
                 />
                 <span>{field.placeholder || "Yes"}</span>
             </label>
@@ -87,7 +87,7 @@ function FieldInput({ field, value, error, onChange }: {
             value={value ?? ""}
             onChange={(event) => onChange(event.target.value)}
             placeholder={field.placeholder}
-            style={{ ...baseStyle, colorScheme: "dark" as const }}
+            style={{ ...baseStyle, colorScheme: "light" as const }}
         />
     );
 }
@@ -99,14 +99,14 @@ export default function DocumentFieldsForm({ requirement, values, errors, onChan
                 <section
                     key={group.id}
                     style={{
-                        border: "1px solid rgba(255,255,255,0.07)",
-                        background: "rgba(255,255,255,0.02)",
+                        border: "1px solid rgba(7,26,47,0.07)",
+                        background: "rgba(7,26,47,0.02)",
                         borderRadius: 14,
                         padding: "14px 14px 16px",
                     }}
                 >
                     <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-                        <div style={{ fontSize: 13, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>
+                        <div style={{ fontSize: 13, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, color: "var(--color-text)" }}>
                             {group.title}
                         </div>
                         {group.description && <HelpTooltip content={group.description} />}
@@ -119,9 +119,9 @@ export default function DocumentFieldsForm({ requirement, values, errors, onChan
                             <div key={field.id}>
                                 <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginBottom: 6 }}>
                                     <div style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
-                                        <label style={{ fontSize: 11, color: "#A8A4A0", letterSpacing: "0.04em" }}>
+                                        <label style={{ fontSize: 11, color: "var(--color-text-muted)", letterSpacing: "0.04em" }}>
                                             {field.label}
-                                            {field.required && <span style={{ color: "#E8622A" }}> *</span>}
+                                            {field.required && <span style={{ color: "var(--tekori-gold)" }}> *</span>}
                                         </label>
                                         {field.help && <HelpTooltip content={field.help} />}
                                         {field.type === "list" && <HelpTooltip content="Enter one item per line." />}

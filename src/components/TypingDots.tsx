@@ -8,7 +8,7 @@ export default function TypingDots() {
                         width: 6,
                         height: 6,
                         borderRadius: "50%",
-                        background: "#E8622A",
+                        background: "var(--tekori-gold)",
                         animation: "forgePulse 1.4s infinite ease-in-out",
                         animationDelay: `${i * 0.2}s`,
                     }}

@@ -45,7 +45,7 @@ function InlineCitationLink({ href, children }: { href: string; children: string
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
             style={{
-                color: "#63B3ED",
+                color: "var(--tekori-muted-text)",
                 fontSize: "inherit",
                 textDecoration: hovered ? "underline" : "none",
                 textUnderlineOffset: 3,
@@ -86,7 +86,7 @@ function renderInline(text: string) {
     const parts = text.split(/\*\*(.+?)\*\*/g);
     return parts.flatMap((part, i) =>
         i % 2 === 1
-            ? [<strong key={`bold-${i}`} style={{ color: "#F0EDE8", fontWeight: 700 }}>{renderLinks(part, `bold-${i}`)}</strong>]
+            ? [<strong key={`bold-${i}`} style={{ color: "var(--color-text)", fontWeight: 700 }}>{renderLinks(part, `bold-${i}`)}</strong>]
             : renderLinks(part, `plain-${i}`),
     );
 }
@@ -115,13 +115,13 @@ export function ReportSection({ content }: { content: string }) {
 
         if (line.startsWith("## ")) {
             elements.push(
-                <div key={i} style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#63B3ED", fontWeight: 700, marginTop: i > 0 ? 26 : 0, marginBottom: 8, paddingBottom: 5, borderBottom: "1px solid rgba(99,179,237,0.14)", fontFamily: "'Lora', Georgia, serif" }}>
+                <div key={i} style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--tekori-muted-text)", fontWeight: 700, marginTop: i > 0 ? 26 : 0, marginBottom: 8, paddingBottom: 5, borderBottom: "1px solid rgba(142,160,181,0.14)", fontFamily: "var(--tekori-font-ui)" }}>
                     {line.slice(3)}
                 </div>,
             );
         } else if (line.startsWith("**") && line.endsWith("**")) {
             elements.push(
-                <div key={i} style={{ fontSize: 12, fontWeight: 700, color: "#C8C4BE", marginTop: 10, marginBottom: 4, fontFamily: "'Lora', Georgia, serif" }}>
+                <div key={i} style={{ fontSize: 12, fontWeight: 700, color: "var(--color-text-soft)", marginTop: 10, marginBottom: 4, fontFamily: "var(--tekori-font-ui)" }}>
                     {renderInline(line)}
                 </div>,
             );
@@ -134,7 +134,7 @@ export function ReportSection({ content }: { content: string }) {
             elements.push(
                 <ul key={`ul-${i}`} style={{ margin: "4px 0 8px 14px", padding: 0 }}>
                     {bullets.map((b, j) => (
-                        <li key={j} style={{ fontSize: 13, color: "#C8C4BE", lineHeight: 1.75, marginBottom: 4, fontFamily: "'Lora', Georgia, serif" }}>
+                        <li key={j} style={{ fontSize: 13, color: "var(--color-text-soft)", lineHeight: 1.75, marginBottom: 4, fontFamily: "var(--tekori-font-ui)" }}>
                             {renderInline(b)}
                         </li>
                     ))}
@@ -143,7 +143,7 @@ export function ReportSection({ content }: { content: string }) {
             continue;
         } else if (line.trim() !== "") {
             elements.push(
-                <p key={i} style={{ fontSize: 13, color: "#C8C4BE", lineHeight: 1.8, marginBottom: 8, fontFamily: "'Lora', Georgia, serif" }}>
+                <p key={i} style={{ fontSize: 13, color: "var(--color-text-soft)", lineHeight: 1.8, marginBottom: 8, fontFamily: "var(--tekori-font-ui)" }}>
                     {renderInline(line)}
                 </p>,
             );
@@ -158,13 +158,13 @@ export function ReportSection({ content }: { content: string }) {
 export function StructuredEmptyState({ title, body }: { title: string; body: string }) {
     return (
         <div style={{
-            background: "rgba(255,255,255,0.02)",
-            border: "1px solid rgba(255,255,255,0.06)",
+            background: "rgba(7,26,47,0.02)",
+            border: "1px solid rgba(7,26,47,0.06)",
             borderRadius: 14,
             padding: "22px 20px",
         }}>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                <div style={{ fontSize: 16, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>
+                <div style={{ fontSize: 16, fontFamily: "var(--tekori-font-brand)", fontWeight: 700 }}>
                     {title}
                 </div>
                 <HelpTooltip content={body} />

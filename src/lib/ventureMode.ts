@@ -74,6 +74,6 @@ Mode: ${label}
 Primary thing being built: ${noun}
 Goal / constraints: ${goal}
 
-How Forge should adapt:
+How Navi should adapt:
 ${rules.map((rule) => `- ${rule}`).join("\n")}`;
 }

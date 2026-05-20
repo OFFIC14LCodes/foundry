@@ -75,28 +75,28 @@ export default function StructuredCompetitorsPanel({
                         style={{
                             width: "100%",
                             textAlign: "left",
-                            background: expanded ? "rgba(99,179,237,0.045)" : "rgba(255,255,255,0.02)",
-                            border: expanded ? "1px solid rgba(99,179,237,0.18)" : "1px solid rgba(255,255,255,0.06)",
+                            background: expanded ? "rgba(142,160,181,0.045)" : "rgba(7,26,47,0.02)",
+                            border: expanded ? "1px solid rgba(142,160,181,0.18)" : "1px solid rgba(7,26,47,0.06)",
                             borderRadius: 12,
                             padding: "16px 16px 14px",
-                            color: "#F0EDE8",
+                            color: "var(--color-text)",
                             cursor: "pointer",
                             boxSizing: "border-box",
                             transition: "background 0.15s, border-color 0.15s",
                         }}
                     >
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, marginBottom: 8 }}>
-                            <div style={{ fontSize: 16, fontWeight: 700, color: "#63B3ED", fontFamily: "'Lora', Georgia, serif", lineHeight: 1.35, minWidth: 0, flex: 1 }}>
+                            <div style={{ fontSize: 16, fontWeight: 700, color: "var(--tekori-muted-text)", fontFamily: "var(--tekori-font-ui)", lineHeight: 1.35, minWidth: 0, flex: 1 }}>
                                 {competitor.name}
                             </div>
                             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
                                 {(competitor.timesSpotted ?? 0) > 0 && (
-                                    <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 10, color: "#F5A843", background: "rgba(245,168,67,0.1)", border: "1px solid rgba(245,168,67,0.25)", borderRadius: 999, padding: "4px 7px", lineHeight: 1.2, fontWeight: 700 }}>
+                                    <div style={{ fontFamily: "var(--tekori-font-ui)", fontSize: 10, color: "var(--tekori-amber)", background: "rgba(244,182,66,0.1)", border: "1px solid rgba(244,182,66,0.25)", borderRadius: 999, padding: "4px 7px", lineHeight: 1.2, fontWeight: 700 }}>
                                         {competitor.timesSpotted}x spotted
                                     </div>
                                 )}
                                 {competitor.positioning && (
-                                    <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: "#63B3ED", background: "rgba(99,179,237,0.12)", border: "1px solid rgba(99,179,237,0.34)", borderRadius: 6, padding: "4px 7px", lineHeight: 1.2 }}>
+                                    <div style={{ fontFamily: "var(--tekori-font-ui)", fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--tekori-muted-text)", background: "rgba(142,160,181,0.12)", border: "1px solid rgba(142,160,181,0.34)", borderRadius: 6, padding: "4px 7px", lineHeight: 1.2 }}>
                                         {competitor.positioning}
                                     </div>
                                 )}
@@ -106,9 +106,9 @@ export default function StructuredCompetitorsPanel({
                         <div
                             style={{
                                 fontSize: 12,
-                                color: "#A8A4A0",
+                                color: "var(--color-text-muted)",
                                 lineHeight: 1.7,
-                                fontFamily: "'DM Sans', system-ui, sans-serif",
+                                fontFamily: "var(--tekori-font-ui)",
                                 overflow: expanded ? "visible" : "hidden",
                                 textOverflow: expanded ? "clip" : "ellipsis",
                                 whiteSpace: expanded ? "normal" : "nowrap",
@@ -121,10 +121,10 @@ export default function StructuredCompetitorsPanel({
                             <div style={{ marginTop: 14 }}>
                                 {competitor.summary && competitor.summary.trim() !== (competitor.description ?? "").trim() && (
                                     <div style={{ marginBottom: 16 }}>
-                                        <div style={{ fontSize: 10, fontFamily: "'DM Sans', system-ui, sans-serif", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#63B3ED", marginBottom: 7 }}>
+                                        <div style={{ fontSize: 10, fontFamily: "var(--tekori-font-ui)", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--tekori-muted-text)", marginBottom: 7 }}>
                                             What they offer
                                         </div>
-                                        <div style={{ fontSize: 13, color: "rgba(240,237,232,0.8)", lineHeight: 1.75, fontFamily: "'DM Sans', system-ui, sans-serif", paddingBottom: 14, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                                        <div style={{ fontSize: 13, color: "rgba(16,32,51,0.8)", lineHeight: 1.75, fontFamily: "var(--tekori-font-ui)", paddingBottom: 14, borderBottom: "1px solid rgba(7,26,47,0.06)" }}>
                                             {competitor.summary}
                                         </div>
                                     </div>
@@ -133,32 +133,32 @@ export default function StructuredCompetitorsPanel({
                                 {(strengths.length > 0 || weaknesses.length > 0) && (
                                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14, marginTop: 2 }}>
                                         <div>
-                                            <div style={{ color: "#4CAF8A", fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 7 }}>
+                                            <div style={{ color: "var(--color-success)", fontFamily: "var(--tekori-font-ui)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 7 }}>
                                                 Strengths
                                             </div>
                                             {strengths.length > 0 ? strengths.map((strength) => (
-                                                <div key={strength} style={{ display: "flex", gap: 7, color: "rgba(240,237,232,0.65)", fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, lineHeight: 1.6, marginBottom: 4 }}>
-                                                    <span style={{ color: "#4CAF8A" }}>•</span>
+                                                <div key={strength} style={{ display: "flex", gap: 7, color: "rgba(16,32,51,0.65)", fontFamily: "var(--tekori-font-ui)", fontSize: 12, lineHeight: 1.6, marginBottom: 4 }}>
+                                                    <span style={{ color: "var(--color-success)" }}>•</span>
                                                     <span>{strength}</span>
                                                 </div>
                                             )) : (
-                                                <div style={{ color: "rgba(240,237,232,0.55)", fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12 }}>No strengths captured.</div>
+                                                <div style={{ color: "rgba(102,112,133,0.74)", fontFamily: "var(--tekori-font-ui)", fontSize: 12 }}>No strengths captured.</div>
                                             )}
                                         </div>
                                         <div>
-                                            <div style={{ color: "#63B3ED", fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 7 }}>
+                                            <div style={{ color: "var(--tekori-muted-text)", fontFamily: "var(--tekori-font-ui)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 7 }}>
                                                 Weaknesses
                                             </div>
                                             {weaknesses.length > 0 ? weaknesses.map((weakness) => (
-                                                <div key={weakness} style={{ display: "flex", gap: 7, color: "rgba(240,237,232,0.65)", fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, lineHeight: 1.6, marginBottom: 4 }}>
-                                                    <span style={{ color: "#63B3ED" }}>•</span>
+                                                <div key={weakness} style={{ display: "flex", gap: 7, color: "rgba(16,32,51,0.65)", fontFamily: "var(--tekori-font-ui)", fontSize: 12, lineHeight: 1.6, marginBottom: 4 }}>
+                                                    <span style={{ color: "var(--tekori-muted-text)" }}>•</span>
                                                     <span>{weakness}</span>
                                                 </div>
                                             )) : (
-                                                <div style={{ color: "rgba(240,237,232,0.55)", fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12 }}>No weaknesses captured.</div>
+                                                <div style={{ color: "rgba(102,112,133,0.74)", fontFamily: "var(--tekori-font-ui)", fontSize: 12 }}>No weaknesses captured.</div>
                                             )}
                                             {competitor.pricingNotes && (
-                                                <div style={{ color: "rgba(240,237,232,0.62)", fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, lineHeight: 1.6, marginTop: 8 }}>
+                                                <div style={{ color: "var(--color-text-muted)", fontFamily: "var(--tekori-font-ui)", fontSize: 12, lineHeight: 1.6, marginTop: 8 }}>
                                                     Pricing: {competitor.pricingNotes}
                                                 </div>
                                             )}
@@ -175,7 +175,7 @@ export default function StructuredCompetitorsPanel({
                                             onClick={(event) => event.stopPropagation()}
                                             onMouseEnter={() => setHoveredWebsite(competitor.id)}
                                             onMouseLeave={() => setHoveredWebsite(null)}
-                                            style={{ color: "#63B3ED", fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 11, textDecoration: hoveredWebsite === competitor.id ? "underline" : "none", textUnderlineOffset: 3 }}
+                                            style={{ color: "var(--tekori-muted-text)", fontFamily: "var(--tekori-font-ui)", fontSize: 11, textDecoration: hoveredWebsite === competitor.id ? "underline" : "none", textUnderlineOffset: 3 }}
                                         >
                                             Visit website ↗
                                         </a>
@@ -195,7 +195,7 @@ export default function StructuredCompetitorsPanel({
                             </div>
                         )}
 
-                        <div style={{ textAlign: "right", color: expanded ? "rgba(99,179,237,0.55)" : "rgba(240,237,232,0.3)", fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 11, marginTop: 10 }}>
+                        <div style={{ textAlign: "right", color: expanded ? "rgba(142,160,181,0.55)" : "rgba(102,112,133,0.45)", fontFamily: "var(--tekori-font-ui)", fontSize: 11, marginTop: 10 }}>
                             {expanded ? "See less ↑" : "See more ↓"}
                         </div>
                     </div>

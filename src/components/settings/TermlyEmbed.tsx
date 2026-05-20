@@ -23,7 +23,7 @@ export default function TermlyEmbed({ policyId }: TermlyEmbedProps) {
                 background: "#f8f6f2",
                 borderRadius: 12,
                 padding: "28px 32px",
-                border: "1px solid rgba(255,255,255,0.07)",
+                border: "1px solid rgba(7,26,47,0.07)",
                 color: "#1a1a1a",
                 fontSize: 14,
                 lineHeight: 1.75,

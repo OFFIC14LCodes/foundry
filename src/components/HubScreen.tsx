@@ -29,24 +29,24 @@ function HubFocusCard({
 }) {
     const tones = {
         primary: {
-            background: "linear-gradient(180deg, rgba(232,98,42,0.075), rgba(255,255,255,0.022))",
-            border: "1px solid rgba(232,98,42,0.16)",
-            color: "#E8622A",
+            background: "linear-gradient(180deg, rgba(216,155,43,0.075), rgba(7,26,47,0.022))",
+            border: "1px solid rgba(216,155,43,0.16)",
+            color: "var(--tekori-gold)",
         },
         learn: {
-            background: "linear-gradient(180deg, rgba(99,179,237,0.07), rgba(255,255,255,0.02))",
-            border: "1px solid rgba(99,179,237,0.15)",
-            color: "#8FC8F6",
+            background: "linear-gradient(180deg, rgba(142,160,181,0.07), rgba(7,26,47,0.02))",
+            border: "1px solid rgba(142,160,181,0.15)",
+            color: "var(--tekori-slate-navy)",
         },
         execute: {
-            background: "linear-gradient(180deg, rgba(76,175,138,0.065), rgba(255,255,255,0.02))",
+            background: "linear-gradient(180deg, rgba(76,175,138,0.065), rgba(7,26,47,0.02))",
             border: "1px solid rgba(76,175,138,0.15)",
             color: "#8FD0B5",
         },
         clarity: {
-            background: "linear-gradient(180deg, rgba(167,139,250,0.085), rgba(255,255,255,0.022))",
-            border: "1px solid rgba(167,139,250,0.18)",
-            color: "#A78BFA",
+            background: "linear-gradient(180deg, rgba(216,155,43,0.085), rgba(7,26,47,0.022))",
+            border: "1px solid rgba(216,155,43,0.18)",
+            color: "var(--tekori-soft-gold)",
         },
     } as const;
     const selected = tones[tone];
@@ -72,19 +72,19 @@ function HubFocusCard({
         >
             <div style={{ display: "grid", gap: 9 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-                    <div style={{ fontSize: 10, color: selected.color, letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: "'DM Sans', system-ui, sans-serif", fontWeight: 800 }}>
+                    <div style={{ fontSize: 10, color: selected.color, letterSpacing: "0.12em", textTransform: "uppercase", fontFamily: "var(--tekori-font-ui)", fontWeight: 800 }}>
                         {eyebrow}
                     </div>
                     <div style={{ color: selected.color, opacity: 0.9 }}>{icon}</div>
                 </div>
-                <div style={{ fontSize: 17, color: "#F0EDE8", fontFamily: "'Lora', Georgia, serif", fontWeight: 700, lineHeight: 1.18 }}>
+                <div style={{ fontSize: 17, color: "var(--color-text)", fontFamily: "var(--tekori-font-ui)", fontWeight: 700, lineHeight: 1.18 }}>
                     {title}
                 </div>
-                <div style={{ fontSize: 12, color: "#A8A4A0", lineHeight: 1.65 }}>
+                <div style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.65 }}>
                     {body}
                 </div>
             </div>
-            <div style={{ fontSize: 12, color: selected.color, fontFamily: "'DM Sans', system-ui, sans-serif", fontWeight: 800 }}>
+            <div style={{ fontSize: 12, color: selected.color, fontFamily: "var(--tekori-font-ui)", fontWeight: 800 }}>
                 {actionLabel} →
             </div>
         </button>
@@ -100,7 +100,7 @@ function getNudgePresentation(activeNudge: any) {
             eyebrow: "Clarity",
             title: "Money questions keep resurfacing",
             actionLabel: "Start quick chat",
-            color: "#A78BFA",
+            color: "var(--tekori-soft-gold)",
             icon: <BarChart3 size={16} />,
         };
     }
@@ -110,7 +110,7 @@ function getNudgePresentation(activeNudge: any) {
             eyebrow: "Clarity",
             title: "Pricing keeps coming up",
             actionLabel: "Start quick chat",
-            color: "#A78BFA",
+            color: "var(--tekori-soft-gold)",
             icon: <BarChart3 size={16} />,
         };
     }
@@ -120,7 +120,7 @@ function getNudgePresentation(activeNudge: any) {
             eyebrow: "Clarity",
             title: "A decision needs another look",
             actionLabel: "Start quick chat",
-            color: "#A78BFA",
+            color: "var(--tekori-soft-gold)",
             icon: <Zap size={16} />,
         };
     }
@@ -130,7 +130,7 @@ function getNudgePresentation(activeNudge: any) {
             eyebrow: "Clarity",
             title: "Something is slowing progress",
             actionLabel: "Start quick chat",
-            color: "#A78BFA",
+            color: "var(--tekori-soft-gold)",
             icon: <Icons.forge.chat size={16} />,
         };
     }
@@ -139,7 +139,7 @@ function getNudgePresentation(activeNudge: any) {
         eyebrow: "Clarity",
         title: "Pick up the thread",
         actionLabel: "Start quick chat",
-        color: "#A78BFA",
+        color: "var(--tekori-soft-gold)",
         icon: <Icons.forge.chat size={16} />,
     };
 }
@@ -405,24 +405,24 @@ export default function HubScreen({
             tone: "clarity" as const,
         }] : [{
             eyebrow: "Think",
-            title: "Talk to Forge",
-            body: "Use Forge to turn uncertainty, decisions, and messy next steps into a clear move.",
-            actionLabel: "Talk to Forge",
+            title: "Talk to Navi",
+            body: "Use Navi to turn uncertainty, decisions, and messy next steps into a clear move.",
+            actionLabel: "Talk to Navi",
             icon: <Icons.forge.chat size={17} />,
             onClick: onOpenForge,
             tone: "primary" as const,
         }]),
     ];
     return (
-        <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8" }}>
+        <div style={{ minHeight: "100vh", background: "var(--color-bg-soft)", fontFamily: "var(--tekori-font-ui)", color: "var(--color-text)" }}>
             <div
                 className="hub-topbar"
                 style={{
                     padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px",
-                    borderBottom: "1px solid rgba(255,255,255,0.05)",
+                    borderBottom: "1px solid rgba(7,26,47,0.05)",
                     position: "sticky",
                     top: 0,
-                    background: "rgba(8,8,9,0.95)",
+                    background: "rgba(255,252,246,0.94)",
                     backdropFilter: "blur(12px)",
                     zIndex: 10,
                 }}
@@ -431,11 +431,11 @@ export default function HubScreen({
                     <button
                         onClick={onOpenNav}
                         style={{
-                            background: "rgba(255,255,255,0.04)",
-                            border: "1px solid rgba(255,255,255,0.08)",
+                            background: "rgba(7,26,47,0.04)",
+                            border: "1px solid rgba(7,26,47,0.08)",
                             borderRadius: 8,
                             padding: "var(--foundry-hub-header-menu-padding)",
-                            color: "rgba(240,237,232,0.62)",
+                            color: "var(--color-text-muted)",
                             fontSize: "var(--foundry-hub-header-menu-font)",
                             cursor: "pointer",
                             display: "flex",
@@ -450,12 +450,12 @@ export default function HubScreen({
                         <div
                             style={{
                                 fontSize: "var(--foundry-hub-header-title-font)",
-                                fontFamily: "'Playfair Display', Georgia, serif",
+                                fontFamily: "var(--tekori-font-brand)",
                                 fontWeight: 700,
-                                color: "#F0EDE8",
+                                color: "var(--color-text)",
                             }}
                         >
-                            Foundry
+                            Tekori
                         </div>
                         <div style={{ fontSize: "var(--foundry-hub-header-meta-font)", color: "var(--foundry-text-muted)" }}>Hub · {profile.name}</div>
                     </div>
@@ -482,7 +482,7 @@ export default function HubScreen({
                             <div
                                 style={{
                                     fontSize: 24,
-                                    fontFamily: "'Playfair Display', Georgia, serif",
+                                    fontFamily: "var(--tekori-font-brand)",
                                     fontWeight: 700,
                                     color: "var(--foundry-text-primary)",
                                     lineHeight: 1.12,
@@ -495,7 +495,7 @@ export default function HubScreen({
                                 style={{
                                     fontSize: 13,
                                     color: "var(--foundry-text-secondary)",
-                                    fontFamily: "'DM Sans', system-ui, sans-serif",
+                                    fontFamily: "var(--tekori-font-ui)",
                                     lineHeight: 1.7,
                                     maxWidth: 680,
                                 }}
@@ -509,9 +509,9 @@ export default function HubScreen({
                         style={{
                             padding: "15px 15px 14px",
                             borderRadius: "var(--foundry-radius-card)",
-                            background: "linear-gradient(135deg, rgba(232,98,42,0.12), rgba(245,168,67,0.055) 48%, rgba(255,255,255,0.026))",
-                            border: "1px solid rgba(232,98,42,0.26)",
-                            boxShadow: "0 18px 44px rgba(232,98,42,0.10)",
+                            background: "linear-gradient(135deg, rgba(216,155,43,0.12), rgba(244,182,66,0.055) 48%, rgba(7,26,47,0.026))",
+                            border: "1px solid rgba(216,155,43,0.26)",
+                            boxShadow: "0 18px 44px rgba(216,155,43,0.10)",
                             marginBottom: 16,
                         }}
                     >
@@ -520,7 +520,7 @@ export default function HubScreen({
                                 <div className="foundry-label" style={{ color: "var(--foundry-orange)", marginBottom: 4 }}>
                                     Resume Progress
                                 </div>
-                                <div style={{ fontSize: 17, color: "var(--foundry-text-primary)", fontFamily: "'Lora', Georgia, serif", fontWeight: 700, lineHeight: 1.2 }}>
+                                <div style={{ fontSize: 17, color: "var(--foundry-text-primary)", fontFamily: "var(--tekori-font-ui)", fontWeight: 700, lineHeight: 1.2 }}>
                                     Stage {currentStage} · {currentStageData.label}
                                 </div>
                             </div>
@@ -528,7 +528,7 @@ export default function HubScreen({
                                 {currentStagePct}%
                             </div>
                         </div>
-                        <div style={{ height: 7, borderRadius: 999, background: "rgba(255,255,255,0.08)", overflow: "hidden", marginBottom: 11 }}>
+                        <div style={{ height: 7, borderRadius: 999, background: "rgba(7,26,47,0.08)", overflow: "hidden", marginBottom: 11 }}>
                             <div
                                 className="foundry-progress-fill"
                                 style={{
@@ -604,12 +604,12 @@ export default function HubScreen({
                                 <div
                                     style={{
                                         fontSize: 13,
-                                        color: "#D4CFC9",
-                                        fontFamily: "'Lora', Georgia, serif",
+                                        color: "var(--color-text-soft)",
+                                        fontFamily: "var(--tekori-font-ui)",
                                         lineHeight: 1.5,
                                     }}
                                 >
-                                    <strong style={{ color: "#63B3ED" }}>{invite.inviter_name}</strong> has invited you to join <strong style={{ color: "#F0EDE8" }}>{invite.team_name}</strong> on Foundry.
+                                    <strong style={{ color: "var(--tekori-muted-text)" }}>{invite.inviter_name}</strong> has invited you to join <strong style={{ color: "var(--color-text)" }}>{invite.team_name}</strong> on Tekori.
                                 </div>
                             </div>
                         </div>
@@ -617,7 +617,7 @@ export default function HubScreen({
                             <button
                                 onClick={() => onAcceptCofounderInvite?.(invite)}
                                 style={{
-                                    background: "linear-gradient(135deg, #63B3ED, #4299e1)",
+                                    background: "linear-gradient(135deg, var(--tekori-muted-text), var(--tekori-slate-navy))",
                                     border: "none",
                                     borderRadius: 8,
                                     padding: "6px 16px",
@@ -625,7 +625,7 @@ export default function HubScreen({
                                     fontSize: 12,
                                     fontWeight: 600,
                                     cursor: "pointer",
-                                    fontFamily: "'Lora', Georgia, serif",
+                                    fontFamily: "var(--tekori-font-ui)",
                                 }}
                             >
                                 Accept
@@ -634,13 +634,13 @@ export default function HubScreen({
                                 onClick={() => onDeclineCofounderInvite?.(invite)}
                                 style={{
                                     background: "transparent",
-                                    border: "1px solid rgba(255,255,255,0.1)",
+                                    border: "1px solid rgba(7,26,47,0.1)",
                                     borderRadius: 8,
                                     padding: "6px 12px",
                                     color: "var(--foundry-text-secondary)",
                                     fontSize: 12,
                                     cursor: "pointer",
-                                    fontFamily: "'Lora', Georgia, serif",
+                                    fontFamily: "var(--tekori-font-ui)",
                                 }}
                             >
                                 Decline
@@ -661,9 +661,9 @@ export default function HubScreen({
                         <div
                             style={{
                                 fontSize: 15,
-                                fontFamily: "'Lora', Georgia, serif",
+                                fontFamily: "var(--tekori-font-ui)",
                                 fontWeight: 600,
-                                color: "#F0EDE8",
+                                color: "var(--color-text)",
                             }}
                         >
                             Your Journey
@@ -700,25 +700,25 @@ export default function HubScreen({
                                             background: isComplete
                                                 ? "rgba(76,175,138,0.16)"
                                                 : isCurrent
-                                                    ? "rgba(232,98,42,0.15)"
-                                                    : "rgba(255,255,255,0.03)",
-                                            color: isComplete ? "#4CAF8A" : undefined,
+                                                    ? "rgba(216,155,43,0.15)"
+                                                    : "rgba(7,26,47,0.03)",
+                                            color: isComplete ? "var(--color-success)" : undefined,
                                             border: isComplete
                                                 ? "1px solid rgba(76,175,138,0.24)"
-                                                : isCurrent && !isComplete ? "1px solid rgba(232,98,42,0.42)" : "1px solid rgba(255,255,255,0.04)",
+                                                : isCurrent && !isComplete ? "1px solid rgba(216,155,43,0.42)" : "1px solid rgba(7,26,47,0.04)",
                                             display: "flex",
                                             alignItems: "center",
                                             justifyContent: "center",
                                             transition: "all 0.2s",
                                         }}
                                     >
-                                        {isComplete ? "✓" : <StageIcon size={18} color={isCurrent ? stage.color : "#888"} />}
+                                        {isComplete ? "✓" : <StageIcon size={18} color={isCurrent ? stage.color : "var(--color-text-muted)"} />}
                                     </div>
 
                                     <div
                                         style={{
                                             fontSize: 9,
-                                            color: isCurrent && !isComplete ? "#E8622A" : isComplete ? "#4CAF8A" : "#555",
+                                            color: isCurrent && !isComplete ? "var(--tekori-gold)" : isComplete ? "var(--color-success)" : "var(--color-text-muted)",
                                             fontWeight: isCurrent && !isComplete ? 600 : 400,
                                             textTransform: "uppercase",
                                             letterSpacing: "0.05em",
@@ -731,12 +731,12 @@ export default function HubScreen({
                         })}
                     </div>
 
-                    <div style={{ marginTop: 4, height: 3, background: "rgba(255,255,255,0.06)", borderRadius: 2 }}>
+                    <div style={{ marginTop: 4, height: 3, background: "rgba(7,26,47,0.06)", borderRadius: 2 }}>
                         <div
                             style={{
                                 height: "100%",
                                 width: `${journeyPct}%`,
-                                background: "linear-gradient(90deg, #E8622A, #F5A843)",
+                                background: "linear-gradient(90deg, var(--tekori-gold), var(--tekori-amber))",
                                 borderRadius: 2,
                                 transition: "width 1s ease",
                             }}
@@ -762,10 +762,10 @@ export default function HubScreen({
                                 marginTop: 12,
                                 width: "100%",
                                 padding: "10px 12px",
-                                background: "rgba(255,255,255,0.03)",
-                                border: "1px solid rgba(255,255,255,0.08)",
+                                background: "rgba(7,26,47,0.03)",
+                                border: "1px solid rgba(7,26,47,0.08)",
                                 borderRadius: 10,
-                                color: "#C8C4BE",
+                                color: "var(--color-text-soft)",
                                 fontSize: 12,
                                 fontWeight: 600,
                                 cursor: "pointer",
@@ -782,18 +782,18 @@ export default function HubScreen({
                     )}
                 </div>
 
-                <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "16px", marginBottom: 14, animation: "fadeSlideUp 0.5s ease 0.14s both" }}>
+                <div style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.06)", borderRadius: 16, padding: "16px", marginBottom: 14, animation: "fadeSlideUp 0.5s ease 0.14s both" }}>
                     <div className="hub-section-header" style={{ marginBottom: 14 }}>
-                        <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>
+                        <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, color: "var(--color-text)" }}>
                             Support Signal: Business Health
                         </div>
                         <div className="foundry-inline-actions">
-                            <div style={{ fontSize: 11, color: businessHealth.overallScore >= 62 ? "#4CAF8A" : businessHealth.overallScore >= 45 ? "#D9B15D" : "#D96A55" }}>
+                            <div style={{ fontSize: 11, color: businessHealth.overallScore >= 62 ? "var(--color-success)" : businessHealth.overallScore >= 45 ? "var(--tekori-amber)" : "#D96A55" }}>
                                 {businessHealth.statusLabel}
                             </div>
                             <button
                                 onClick={() => onOpenMarketIntel?.()}
-                                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "4px 12px", color: "#C8C4BE", fontSize: 11, cursor: "pointer", fontWeight: 500 }}
+                                style={{ background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 8, padding: "4px 12px", color: "var(--color-text-soft)", fontSize: 11, cursor: "pointer", fontWeight: 500 }}
                             >
                                 Market Intel
                             </button>
@@ -805,18 +805,18 @@ export default function HubScreen({
                             <BusinessHealthDonut health={businessHealth} />
                             <div style={{ display: "grid", gap: 8 }}>
                                 {businessHealth.segments.map((segment) => (
-                                    <div key={segment.key} style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: "8px 9px" }}>
+                                    <div key={segment.key} style={{ background: "rgba(7,26,47,0.025)", border: "1px solid rgba(7,26,47,0.05)", borderRadius: 12, padding: "8px 9px" }}>
                                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 9, marginBottom: 5 }}>
                                             <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
                                                 <span style={{ width: 7, height: 7, borderRadius: 999, background: segment.color, flexShrink: 0 }} />
-                                                <span style={{ fontSize: 11, color: "#F0EDE8", fontWeight: 600 }}>{segment.label}</span>
+                                                <span style={{ fontSize: 11, color: "var(--color-text)", fontWeight: 600 }}>{segment.label}</span>
                                             </div>
                                             <span style={{ fontSize: 11, color: segment.color, fontWeight: 700 }}>{segment.value}</span>
                                         </div>
-                                        <div style={{ height: 4, background: "rgba(255,255,255,0.05)", borderRadius: 999, overflow: "hidden", marginBottom: 6 }}>
+                                        <div style={{ height: 4, background: "rgba(7,26,47,0.05)", borderRadius: 999, overflow: "hidden", marginBottom: 6 }}>
                                             <div style={{ width: `${segment.value}%`, height: "100%", background: segment.color, borderRadius: 999, transition: "width 0.6s ease" }} />
                                         </div>
-                                        <div style={{ fontSize: 10, color: "#787169", lineHeight: 1.55 }}>
+                                        <div style={{ fontSize: 10, color: "var(--color-text-muted)", lineHeight: 1.55 }}>
                                             {segment.note}
                                         </div>
                                     </div>
@@ -830,31 +830,31 @@ export default function HubScreen({
                                     <BusinessHealthDonut health={businessHealth} />
                                     <div style={{ display: "grid", gap: 8 }}>
                                         {businessHealth.segments.map((segment) => (
-                                            <div key={segment.key} style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: "8px 9px" }}>
+                                            <div key={segment.key} style={{ background: "rgba(7,26,47,0.025)", border: "1px solid rgba(7,26,47,0.05)", borderRadius: 12, padding: "8px 9px" }}>
                                                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 9, marginBottom: 5 }}>
                                                     <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
                                                         <span style={{ width: 7, height: 7, borderRadius: 999, background: segment.color, flexShrink: 0 }} />
-                                                        <span style={{ fontSize: 11, color: "#F0EDE8", fontWeight: 600 }}>{segment.label}</span>
+                                                        <span style={{ fontSize: 11, color: "var(--color-text)", fontWeight: 600 }}>{segment.label}</span>
                                                     </div>
                                                     <span style={{ fontSize: 11, color: segment.color, fontWeight: 700 }}>{segment.value}</span>
                                                 </div>
-                                                <div style={{ height: 4, background: "rgba(255,255,255,0.05)", borderRadius: 999, overflow: "hidden", marginBottom: 6 }}>
+                                                <div style={{ height: 4, background: "rgba(7,26,47,0.05)", borderRadius: 999, overflow: "hidden", marginBottom: 6 }}>
                                                     <div style={{ width: `${segment.value}%`, height: "100%", background: segment.color, borderRadius: 999 }} />
                                                 </div>
-                                                <div style={{ height: 10, background: "rgba(255,255,255,0.04)", borderRadius: 4 }} />
+                                                <div style={{ height: 10, background: "rgba(7,26,47,0.04)", borderRadius: 4 }} />
                                             </div>
                                         ))}
                                     </div>
                                 </div>
                             </div>
-                            <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, background: "rgba(8,8,9,0.45)", backdropFilter: "blur(2px)", padding: 16 }}>
+                            <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, background: "rgba(255,252,246,0.78)", backdropFilter: "blur(2px)", padding: 16 }}>
                                 <button
                                     onClick={() => onGetHealthScore?.()}
-                                    style={{ background: "linear-gradient(135deg, #E8622A, #c9521e)", border: "none", borderRadius: 12, padding: "11px 18px", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "'Lora', Georgia, serif", textAlign: "center", lineHeight: 1.4, boxShadow: "0 4px 18px rgba(232,98,42,0.35)" }}
+                                    style={{ background: "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))", border: "none", borderRadius: 12, padding: "11px 18px", color: "var(--color-primary)", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "var(--tekori-font-ui)", textAlign: "center", lineHeight: 1.4, boxShadow: "0 4px 18px rgba(216,155,43,0.35)" }}
                                 >
                                     Get Your Business Health Score
                                 </button>
-                                <div style={{ fontSize: 10, color: "rgba(240,237,232,0.7)", textAlign: "center", lineHeight: 1.6, maxWidth: 180 }}>
+                                <div style={{ fontSize: 10, color: "rgba(71,84,103,0.88)", textAlign: "center", lineHeight: 1.6, maxWidth: 180 }}>
                                     Run a market analysis to unlock your full score
                                 </div>
                             </div>
@@ -870,16 +870,16 @@ export default function HubScreen({
                 </div>
 
                 {/* Financial Modeling */}
-                <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "14px 16px", marginBottom: 14, animation: "fadeSlideUp 0.5s ease 0.25s both" }}>
+                <div style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.06)", borderRadius: 16, padding: "14px 16px", marginBottom: 14, animation: "fadeSlideUp 0.5s ease 0.25s both" }}>
                     <div className="hub-section-header" style={{ marginBottom: 10 }}>
-                        <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>Support: Financial Modeling</div>
+                        <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, color: "var(--color-text)" }}>Support: Financial Modeling</div>
                         <div className="foundry-inline-actions">
-                            <button onClick={openBudgetModal} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "4px 12px", color: "#F0EDE8", fontSize: 11, cursor: "pointer", fontWeight: 500 }}>Customize</button>
-                            <button onClick={() => setShowIncomeModal(true)} style={{ background: "rgba(76,175,138,0.1)", border: "1px solid rgba(76,175,138,0.25)", borderRadius: 8, padding: "4px 12px", color: "#4CAF8A", fontSize: 11, cursor: "pointer", fontWeight: 500 }}>+ Revenue</button>
+                            <button onClick={openBudgetModal} style={{ background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 8, padding: "4px 12px", color: "var(--color-text)", fontSize: 11, cursor: "pointer", fontWeight: 500 }}>Customize</button>
+                            <button onClick={() => setShowIncomeModal(true)} style={{ background: "rgba(76,175,138,0.1)", border: "1px solid rgba(76,175,138,0.25)", borderRadius: 8, padding: "4px 12px", color: "var(--color-success)", fontSize: 11, cursor: "pointer", fontWeight: 500 }}>+ Revenue</button>
                             <button onClick={() => setShowExpenseModal(true)} style={{ background: "rgba(217,106,85,0.1)", border: "1px solid rgba(217,106,85,0.25)", borderRadius: 8, padding: "4px 12px", color: "#D96A55", fontSize: 11, cursor: "pointer", fontWeight: 500 }}>+ Expense</button>
                         </div>
                     </div>
-                    <div style={{ fontSize: 12, color: "#A8A4A0", lineHeight: 1.6, marginBottom: 12 }}>
+                    <div style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.6, marginBottom: 12 }}>
                         Estimates based on the data you&apos;ve entered. This is not accounting, tax, or legal advice.
                     </div>
                     {(profile.budgetRange || profile.budgetIsEstimated) && (
@@ -890,13 +890,13 @@ export default function HubScreen({
                     )}
                     <div className="hub-budget-grid" style={{ marginBottom: 14 }}>
                         {[
-                            { label: "Available Cash", value: formatCurrency(financialSummary?.availableCash || profile.budget?.remaining || 0), color: "#F0EDE8" },
+                            { label: "Available Cash", value: formatCurrency(financialSummary?.availableCash || profile.budget?.remaining || 0), color: "var(--color-text)" },
                             { label: "Monthly Burn", value: formatCurrency(financialSummary?.monthlyBurn || 0), color: "#D96A55" },
-                            { label: "Runway", value: financialSummary?.runwayMonths != null ? `${financialSummary.runwayMonths.toFixed(1)} mo` : "TBD", color: "#4CAF8A" },
-                            { label: "Net Snapshot", value: formatCurrency(financialSummary?.roughNetSnapshot || 0), color: (financialSummary?.roughNetSnapshot || 0) >= 0 ? "#4CAF8A" : "#FF6B6B" },
+                            { label: "Runway", value: financialSummary?.runwayMonths != null ? `${financialSummary.runwayMonths.toFixed(1)} mo` : "TBD", color: "var(--color-success)" },
+                            { label: "Net Snapshot", value: formatCurrency(financialSummary?.roughNetSnapshot || 0), color: (financialSummary?.roughNetSnapshot || 0) >= 0 ? "var(--color-success)" : "#FF6B6B" },
                         ].map(item => (
-                            <div key={item.label} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 10, padding: "10px", textAlign: "center" }}>
-                                <div style={{ fontSize: "clamp(14px, 4vw, 20px)", fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: item.color, lineHeight: 1.1, marginBottom: 3 }}>{item.value}</div>
+                            <div key={item.label} style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.05)", borderRadius: 10, padding: "10px", textAlign: "center" }}>
+                                <div style={{ fontSize: "clamp(14px, 4vw, 20px)", fontFamily: "var(--tekori-font-ui)", fontWeight: 700, color: item.color, lineHeight: 1.1, marginBottom: 3 }}>{item.value}</div>
                                 <div style={{ fontSize: 9, color: "var(--foundry-text-muted)", letterSpacing: "0.08em", textTransform: "uppercase" }}>{item.label}</div>
                             </div>
                         ))}
@@ -907,11 +907,11 @@ export default function HubScreen({
                             onClick={onOpenFinancialDashboard}
                             style={{
                                 width: "100%",
-                                background: "rgba(255,255,255,0.03)",
-                                border: "1px solid rgba(255,255,255,0.08)",
+                                background: "rgba(7,26,47,0.03)",
+                                border: "1px solid rgba(7,26,47,0.08)",
                                 borderRadius: 10,
                                 padding: "10px 14px",
-                                color: "#A8A4A0",
+                                color: "var(--color-text-muted)",
                                 fontSize: 12,
                                 fontWeight: 600,
                                 cursor: "pointer",
@@ -924,88 +924,88 @@ export default function HubScreen({
                         </button>
                     )}
 
-                    <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: 12, marginBottom: 12 }}>
+                    <div style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.05)", borderRadius: 12, padding: 12, marginBottom: 12 }}>
                         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 8, flexWrap: "wrap" }}>
                             <div>
-                                <div style={{ fontSize: 13, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>Bank Connections</div>
-                                <div style={{ fontSize: 11, color: "#A8A4A0", lineHeight: 1.6, marginTop: 4 }}>
+                                <div style={{ fontSize: 13, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, color: "var(--color-text)" }}>Bank Connections</div>
+                                <div style={{ fontSize: 11, color: "var(--color-text-muted)", lineHeight: 1.6, marginTop: 4 }}>
                                     Plaid bank linking is coming soon. For launch, keep this local by entering revenue and expenses manually.
                                 </div>
                             </div>
-                            <div style={{ background: "rgba(99,179,237,0.1)", border: "1px solid rgba(99,179,237,0.22)", borderRadius: 999, padding: "6px 10px", color: "#8FC8F6", fontSize: 10, fontFamily: "'DM Sans', system-ui, sans-serif", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                            <div style={{ background: "rgba(142,160,181,0.1)", border: "1px solid rgba(142,160,181,0.22)", borderRadius: 999, padding: "6px 10px", color: "var(--tekori-slate-navy)", fontSize: 10, fontFamily: "var(--tekori-font-ui)", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase" }}>
                                 Coming Soon
                             </div>
                         </div>
                     </div>
 
-                    <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: 12, marginBottom: 12 }}>
+                    <div style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.05)", borderRadius: 12, padding: 12, marginBottom: 12 }}>
                         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline", marginBottom: 8, flexWrap: "wrap" }}>
-                            <div style={{ fontSize: 13, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>Profit First Buckets</div>
+                            <div style={{ fontSize: 13, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, color: "var(--color-text)" }}>Profit First Buckets</div>
                             <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)" }}>{financialSummary?.profitFirst?.basisLabel || "Estimated basis"}</div>
                         </div>
                         {(financialSummary?.profitFirst?.buckets || []).map((bucket) => (
                             <div key={bucket.bucketType} style={{ marginBottom: 10 }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 4 }}>
-                                    <div style={{ fontSize: 12, color: "#F0EDE8", textTransform: "capitalize" }}>{bucket.bucketType.replace("_", " ")}</div>
-                                    <div style={{ fontSize: 11, color: "#C8C4BE" }}>{bucket.allocationPercent}% · {formatCurrency(bucket.estimatedAmount)}</div>
+                                    <div style={{ fontSize: 12, color: "var(--color-text)", textTransform: "capitalize" }}>{bucket.bucketType.replace("_", " ")}</div>
+                                    <div style={{ fontSize: 11, color: "var(--color-text-soft)" }}>{bucket.allocationPercent}% · {formatCurrency(bucket.estimatedAmount)}</div>
                                 </div>
-                                <div style={{ height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 999, overflow: "hidden" }}>
-                                    <div style={{ width: `${Math.max(0, Math.min(bucket.allocationPercent, 100))}%`, height: "100%", background: bucket.bucketType === "profit" || bucket.bucketType === "tax" ? "linear-gradient(90deg, #4CAF8A, #75D0A7)" : "linear-gradient(90deg, #D96A55, #D9B15D)" }} />
+                                <div style={{ height: 6, background: "rgba(7,26,47,0.06)", borderRadius: 999, overflow: "hidden" }}>
+                                    <div style={{ width: `${Math.max(0, Math.min(bucket.allocationPercent, 100))}%`, height: "100%", background: bucket.bucketType === "profit" || bucket.bucketType === "tax" ? "linear-gradient(90deg, var(--color-success), #75D0A7)" : "linear-gradient(90deg, #D96A55, var(--tekori-amber))" }} />
                                 </div>
                             </div>
                         ))}
                         <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", lineHeight: 1.5 }}>Connect bank data later to improve accuracy. For now, these allocations are estimated from your entered revenue or available cash.</div>
                     </div>
 
-                    <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: 12, marginBottom: 12 }}>
-                        <div style={{ fontSize: 13, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 8 }}>Runway Calculator</div>
+                    <div style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.05)", borderRadius: 12, padding: 12, marginBottom: 12 }}>
+                        <div style={{ fontSize: 13, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, color: "var(--color-text)", marginBottom: 8 }}>Runway Calculator</div>
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10, marginBottom: 10 }}>
                             <div>
                                 <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>Recurring Expenses</div>
-                                <div style={{ fontSize: 16, color: "#D96A55", fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>{formatCurrency(financialSummary?.monthlyRecurringExpenses || 0)}/mo</div>
+                                <div style={{ fontSize: 16, color: "#D96A55", fontFamily: "var(--tekori-font-ui)", fontWeight: 600 }}>{formatCurrency(financialSummary?.monthlyRecurringExpenses || 0)}/mo</div>
                             </div>
                             <div>
                                 <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>Recurring Revenue</div>
-                                <div style={{ fontSize: 16, color: "#4CAF8A", fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>{formatCurrency(financialSummary?.monthlyRecurringRevenue || 0)}/mo</div>
+                                <div style={{ fontSize: 16, color: "var(--color-success)", fontFamily: "var(--tekori-font-ui)", fontWeight: 600 }}>{formatCurrency(financialSummary?.monthlyRecurringRevenue || 0)}/mo</div>
                             </div>
                         </div>
-                        <div style={{ fontSize: 11, color: "#A8A4A0", lineHeight: 1.6 }}>
+                        <div style={{ fontSize: 11, color: "var(--color-text-muted)", lineHeight: 1.6 }}>
                             Estimated monthly burn is recurring expenses minus recurring revenue, with yearly items spread across 12 months. One-time items stay in the snapshot totals but do not inflate recurring burn.
                         </div>
                     </div>
 
-                    <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: 12, marginBottom: 12 }}>
-                        <div style={{ fontSize: 13, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 8 }}>Rough Monthly Snapshot</div>
+                    <div style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.05)", borderRadius: 12, padding: 12, marginBottom: 12 }}>
+                        <div style={{ fontSize: 13, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, color: "var(--color-text)", marginBottom: 8 }}>Rough Monthly Snapshot</div>
                         {financialSummary?.breakEvenReady ? (
                             <>
                                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10, marginBottom: 10 }}>
                                     <div>
                                         <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>Monthly Revenue</div>
-                                        <div style={{ fontSize: 15, color: "#4CAF8A", fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>{formatCurrency(financialSummary?.operatingView.monthlyRevenue || 0)}</div>
+                                        <div style={{ fontSize: 15, color: "var(--color-success)", fontFamily: "var(--tekori-font-ui)", fontWeight: 600 }}>{formatCurrency(financialSummary?.operatingView.monthlyRevenue || 0)}</div>
                                     </div>
                                     <div>
                                         <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>Monthly Expenses</div>
-                                        <div style={{ fontSize: 15, color: "#D96A55", fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>{formatCurrency(financialSummary?.operatingView.monthlyExpenses || 0)}</div>
+                                        <div style={{ fontSize: 15, color: "#D96A55", fontFamily: "var(--tekori-font-ui)", fontWeight: 600 }}>{formatCurrency(financialSummary?.operatingView.monthlyExpenses || 0)}</div>
                                     </div>
                                     <div>
                                         <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>Operating Gap</div>
-                                        <div style={{ fontSize: 15, color: (financialSummary?.operatingView.monthlyOperatingGap || 0) >= 0 ? "#4CAF8A" : "#FF6B6B", fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>{formatCurrency(financialSummary?.operatingView.monthlyOperatingGap || 0)}</div>
+                                        <div style={{ fontSize: 15, color: (financialSummary?.operatingView.monthlyOperatingGap || 0) >= 0 ? "var(--color-success)" : "#FF6B6B", fontFamily: "var(--tekori-font-ui)", fontWeight: 600 }}>{formatCurrency(financialSummary?.operatingView.monthlyOperatingGap || 0)}</div>
                                     </div>
                                 </div>
-                                <div style={{ fontSize: 11, color: "#A8A4A0", lineHeight: 1.6 }}>{financialSummary.breakEvenMessage}</div>
+                                <div style={{ fontSize: 11, color: "var(--color-text-muted)", lineHeight: 1.6 }}>{financialSummary.breakEvenMessage}</div>
                             </>
                         ) : (
-                            <div style={{ fontSize: 12, color: "#A8A4A0", lineHeight: 1.6 }}>
-                                Add revenue and categorize expenses to unlock a better break-even view. Foundry will keep this honest until the inputs are strong enough to say more.
+                            <div style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.6 }}>
+                                Add revenue and categorize expenses to unlock a better break-even view. Tekori will keep this honest until the inputs are strong enough to say more.
                             </div>
                         )}
                     </div>
 
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 12 }}>
-                        <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: 12 }}>
+                        <div style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.05)", borderRadius: 12, padding: 12 }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                                <div style={{ fontSize: 12, color: "#F0EDE8", fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>Imported Transactions</div>
-                                <div style={{ fontSize: 10, color: "#8FC8F6", fontWeight: 700 }}>Coming soon</div>
+                                <div style={{ fontSize: 12, color: "var(--color-text)", fontFamily: "var(--tekori-font-ui)", fontWeight: 600 }}>Imported Transactions</div>
+                                <div style={{ fontSize: 10, color: "var(--tekori-slate-navy)", fontWeight: 700 }}>Coming soon</div>
                             </div>
                             <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", lineHeight: 1.5, marginBottom: 8 }}>
                                 Bank imports will arrive after launch. Until then, use manual revenue and expense entries so the model stays fully local.
@@ -1013,42 +1013,42 @@ export default function HubScreen({
                             <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)", lineHeight: 1.6 }}>No imported transaction review is available yet.</div>
                         </div>
 
-                        <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: 12 }}>
+                        <div style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.05)", borderRadius: 12, padding: 12 }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                                <div style={{ fontSize: 12, color: "#F0EDE8", fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>Expenses</div>
+                                <div style={{ fontSize: 12, color: "var(--color-text)", fontFamily: "var(--tekori-font-ui)", fontWeight: 600 }}>Expenses</div>
                                 <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)" }}>{expenseRows.length} logged</div>
                             </div>
                             {expenseRows.length === 0 ? (
-                                <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)", lineHeight: 1.6 }}>No normalized expenses yet. Add the costs that actually shape the business and Foundry will start modeling burn and runway more intelligently.</div>
+                                <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)", lineHeight: 1.6 }}>No normalized expenses yet. Add the costs that actually shape the business and Tekori will start modeling burn and runway more intelligently.</div>
                             ) : expenseRows.map((exp: any) => (
-                                <div key={exp.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "7px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                                <div key={exp.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "7px 0", borderBottom: "1px solid rgba(7,26,47,0.04)" }}>
                                     <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ fontSize: 12, color: "#C8C4BE" }}>{exp.label}</div>
+                                        <div style={{ fontSize: 12, color: "var(--color-text-soft)" }}>{exp.label}</div>
                                         <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", marginTop: 2 }}>{exp.category} · {String(exp.frequency).replace("_", " ")}{exp.incurredOn ? ` · ${formatFinancialDate(exp.incurredOn)}` : ""}</div>
                                     </div>
                                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                        <div style={{ fontSize: 12, color: "#D96A55", fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>-{formatCurrency(exp.amount)}</div>
+                                        <div style={{ fontSize: 12, color: "#D96A55", fontFamily: "var(--tekori-font-ui)", fontWeight: 600 }}>-{formatCurrency(exp.amount)}</div>
                                         <button onClick={() => deleteExpense(exp.id)} style={{ background: "none", border: "none", color: "var(--foundry-text-muted)", cursor: "pointer", fontSize: 14, lineHeight: 1, padding: "0 2px" }} title="Delete expense">×</button>
                                     </div>
                                 </div>
                             ))}
                         </div>
 
-                        <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: 12 }}>
+                        <div style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.05)", borderRadius: 12, padding: 12 }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                                <div style={{ fontSize: 12, color: "#F0EDE8", fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>Revenue</div>
+                                <div style={{ fontSize: 12, color: "var(--color-text)", fontFamily: "var(--tekori-font-ui)", fontWeight: 600 }}>Revenue</div>
                                 <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)" }}>{revenueRows.length} logged</div>
                             </div>
                             {revenueRows.length === 0 ? (
                                 <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)", lineHeight: 1.6 }}>No revenue logged yet. Add sales, services, or recurring receipts to sharpen the operating view and make runway more realistic.</div>
                             ) : revenueRows.map((inc: any) => (
-                                <div key={inc.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "7px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                                <div key={inc.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "7px 0", borderBottom: "1px solid rgba(7,26,47,0.04)" }}>
                                     <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ fontSize: 12, color: "#C8C4BE" }}>{inc.label}</div>
+                                        <div style={{ fontSize: 12, color: "var(--color-text-soft)" }}>{inc.label}</div>
                                         <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", marginTop: 2 }}>{inc.category} · {String(inc.frequency).replace("_", " ")}{inc.receivedOn ? ` · ${formatFinancialDate(inc.receivedOn)}` : ""}</div>
                                     </div>
                                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                        <div style={{ fontSize: 12, color: "#4CAF8A", fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>+{formatCurrency(inc.amount)}</div>
+                                        <div style={{ fontSize: 12, color: "var(--color-success)", fontFamily: "var(--tekori-font-ui)", fontWeight: 600 }}>+{formatCurrency(inc.amount)}</div>
                                         <button onClick={() => deleteIncome(inc.id)} style={{ background: "none", border: "none", color: "var(--foundry-text-muted)", cursor: "pointer", fontSize: 14, lineHeight: 1, padding: "0 2px" }} title="Delete revenue">×</button>
                                     </div>
                                 </div>
@@ -1059,22 +1059,22 @@ export default function HubScreen({
 
                 {/* Glossary learned */}
                 {(profile.glossaryLearned || []).length > 0 && (
-                    <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "14px 16px", marginBottom: 12, animation: "fadeSlideUp 0.5s ease 0.32s both" }}>
+                    <div style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.06)", borderRadius: 16, padding: "14px 16px", marginBottom: 12, animation: "fadeSlideUp 0.5s ease 0.32s both" }}>
                         <div className="hub-section-header" style={{ marginBottom: 14 }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                                 <Icons.glossary.book size={14} />
                                 <span>Your Glossary</span>
                             </div>
-                            <div style={{ fontSize: 11, color: "#4CAF8A" }}>{(profile.glossaryLearned || []).length} terms learned</div>
+                            <div style={{ fontSize: 11, color: "var(--color-success)" }}>{(profile.glossaryLearned || []).length} terms learned</div>
                         </div>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                             {(profile.glossaryLearned || []).map((item, i) => {
-                                const color = STAGE_COLORS[item.stage] || "#E8622A";
-                                return <div key={i} style={{ fontSize: 11, color, background: `${color}12`, border: `1px solid ${color}25`, borderRadius: 20, padding: "3px 10px", fontFamily: "'Lora', Georgia, serif", fontWeight: 500 }}>{item.term}</div>;
+                                const color = STAGE_COLORS[item.stage] || "var(--tekori-gold)";
+                                return <div key={i} style={{ fontSize: 11, color, background: `color-mix(in srgb, ${color} 7%, transparent)`, border: `1px solid color-mix(in srgb, ${color} 15%, transparent)`, borderRadius: 20, padding: "3px 10px", fontFamily: "var(--tekori-font-ui)", fontWeight: 500 }}>{item.term}</div>;
                             })}
                         </div>
                         {(profile.glossaryLearned || []).length >= 5 && (
-                            <div style={{ fontSize: 11, color: "var(--foundry-text-muted)", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", marginTop: 10 }}>You're building real business literacy. Keep going.</div>
+                            <div style={{ fontSize: 11, color: "var(--foundry-text-muted)", fontFamily: "var(--tekori-font-ui)", fontStyle: "italic", marginTop: 10 }}>You're building real business literacy. Keep going.</div>
                         )}
                     </div>
                 )}
@@ -1083,42 +1083,42 @@ export default function HubScreen({
                 {(profile.exploredConcepts || []).length > 0 && (
                     <div style={{ background: "rgba(159,122,234,0.03)", border: "1px solid rgba(159,122,234,0.12)", borderRadius: 16, padding: "14px 16px", marginBottom: 12, animation: "fadeSlideUp 0.5s ease 0.34s both" }}>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>
-                                <span style={{ color: "#9F7AEA" }}>✦</span>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, color: "var(--color-text)" }}>
+                                <span style={{ color: "var(--tekori-gold)" }}>✦</span>
                                 <span>Concepts Explored</span>
                             </div>
-                            <div style={{ fontSize: 11, color: "#9F7AEA" }}>{(profile.exploredConcepts || []).length} explored</div>
+                            <div style={{ fontSize: 11, color: "var(--tekori-gold)" }}>{(profile.exploredConcepts || []).length} explored</div>
                         </div>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                             {(profile.exploredConcepts || []).map((item: any, i: number) => (
-                                <div key={i} style={{ fontSize: 11, color: "#9F7AEA", background: "rgba(159,122,234,0.1)", border: "1px solid rgba(159,122,234,0.22)", borderRadius: 20, padding: "3px 10px", fontFamily: "'Lora', Georgia, serif", fontWeight: 500 }}>
+                                <div key={i} style={{ fontSize: 11, color: "var(--tekori-gold)", background: "rgba(159,122,234,0.1)", border: "1px solid rgba(159,122,234,0.22)", borderRadius: 20, padding: "3px 10px", fontFamily: "var(--tekori-font-ui)", fontWeight: 500 }}>
                                     ✦ {item.concept}
                                 </div>
                             ))}
                         </div>
                         {(profile.exploredConcepts || []).length >= 3 && (
-                            <div style={{ fontSize: 11, color: "var(--foundry-text-muted)", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", marginTop: 10 }}>Every concept you explore is a framework you now carry into every decision.</div>
+                            <div style={{ fontSize: 11, color: "var(--foundry-text-muted)", fontFamily: "var(--tekori-font-ui)", fontStyle: "italic", marginTop: 10 }}>Every concept you explore is a framework you now carry into every decision.</div>
                         )}
                     </div>
                 )}
 
                 {/* Decisions */}
-                <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "14px 16px", animation: "fadeSlideUp 0.5s ease 0.3s both" }}>
+                <div style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.06)", borderRadius: 16, padding: "14px 16px", animation: "fadeSlideUp 0.5s ease 0.3s both" }}>
                         <div className="hub-section-header" style={{ marginBottom: 14 }}>
-                            <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>Decisions</div>
+                            <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, color: "var(--color-text)" }}>Decisions</div>
                         <button onClick={() => setShowDecisionModal(true)} className="foundry-btn foundry-btn--secondary" style={{ padding: "4px 12px", fontSize: 11 }}>+ Log Decision</button>
                     </div>
                     {(!profile.decisions || profile.decisions.length === 0) ? (
-                        <div style={{ fontSize: 13, color: "var(--foundry-text-secondary)", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", textAlign: "center", padding: "16px 0" }}>No decisions logged yet. Every call you make deliberately is worth recording.</div>
+                        <div style={{ fontSize: 13, color: "var(--foundry-text-secondary)", fontFamily: "var(--tekori-font-ui)", fontStyle: "italic", textAlign: "center", padding: "16px 0" }}>No decisions logged yet. Every call you make deliberately is worth recording.</div>
                     ) : (
                         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                             {profile.decisions.slice(0, 4).map((d, i) => {
                                 const dec = typeof d === "string" ? { text: d, tag: "Strategy", date: "Recent" } : d;
                                 return (
-                                    <div key={i} style={{ padding: "10px 12px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 10 }}>
+                                    <div key={i} style={{ padding: "10px 12px", background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.05)", borderRadius: 10 }}>
                                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-                                            <div style={{ fontSize: 12, color: "#C8C4BE", lineHeight: 1.5, flex: 1 }}>{dec.text}</div>
-                                            {dec.tag && <div style={{ fontSize: 10, color: TAG_COLORS[dec.tag]?.text || "#888", background: TAG_COLORS[dec.tag]?.bg || "rgba(255,255,255,0.06)", borderRadius: 20, padding: "2px 8px", flexShrink: 0 }}>{dec.tag}</div>}
+                                            <div style={{ fontSize: 12, color: "var(--color-text-soft)", lineHeight: 1.5, flex: 1 }}>{dec.text}</div>
+                                            {dec.tag && <div style={{ fontSize: 10, color: TAG_COLORS[dec.tag]?.text || "var(--color-text-muted)", background: TAG_COLORS[dec.tag]?.bg || "rgba(7,26,47,0.06)", borderRadius: 20, padding: "2px 8px", flexShrink: 0 }}>{dec.tag}</div>}
                                         </div>
                                         <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", marginTop: 4 }}>{dec.date}</div>
                                     </div>
@@ -1132,22 +1132,22 @@ export default function HubScreen({
             {/* Decision modal */}
             {showDecisionModal && (
                 <div className="hub-modal-backdrop" onClick={() => setShowDecisionModal(false)}>
-                    <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: "#0E0E10", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 22, animation: "fadeSlideUp 0.3s ease" }}>
-                        <div style={{ fontSize: 17, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 16 }}>Log a Decision</div>
+                    <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: "var(--color-surface)", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 16, padding: 22, animation: "fadeSlideUp 0.3s ease" }}>
+                        <div style={{ fontSize: 17, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, color: "var(--color-text)", marginBottom: 16 }}>Log a Decision</div>
                         <div style={{ position: "relative" }}>
-                            <textarea value={decisionText} onChange={e => setDecisionText(e.target.value)} placeholder="What did you decide and why?" rows={3} autoFocus style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 36px 10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", lineHeight: 1.6, boxSizing: "border-box" }} />
+                            <textarea value={decisionText} onChange={e => setDecisionText(e.target.value)} placeholder="What did you decide and why?" rows={3} autoFocus style={{ width: "100%", background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 10, padding: "10px 36px 10px 12px", color: "var(--color-text)", fontSize: 13, fontFamily: "var(--tekori-font-ui)", lineHeight: 1.6, boxSizing: "border-box" }} />
                             <div style={{ position: "absolute", top: 8, right: 8 }}>
-                                <MicButton value={decisionText} onChange={setDecisionText} size={16} idleColor="#555" />
+                                <MicButton value={decisionText} onChange={setDecisionText} size={16} idleColor="var(--color-text-muted)" />
                             </div>
                         </div>
                         <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
                             {Object.keys(TAG_COLORS).map(t => (
-                                <button key={t} onClick={() => setDecisionTag(t)} style={{ padding: "4px 12px", borderRadius: 20, border: "none", background: decisionTag === t ? TAG_COLORS[t].bg : "rgba(255,255,255,0.04)", color: decisionTag === t ? TAG_COLORS[t].text : "#555", fontSize: 11, cursor: "pointer" }}>{t}</button>
+                                <button key={t} onClick={() => setDecisionTag(t)} style={{ padding: "4px 12px", borderRadius: 20, border: "none", background: decisionTag === t ? TAG_COLORS[t].bg : "rgba(7,26,47,0.04)", color: decisionTag === t ? TAG_COLORS[t].text : "var(--color-text-muted)", fontSize: 11, cursor: "pointer" }}>{t}</button>
                             ))}
                         </div>
                         <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
-                            <button onClick={() => setShowDecisionModal(false)} style={{ flex: 1, padding: "10px", background: "transparent", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "var(--foundry-text-muted)", fontSize: 12, cursor: "pointer" }}>Cancel</button>
-                            <button onClick={addDecision} style={{ flex: 2, padding: "10px", background: "linear-gradient(135deg, #E8622A, #c9521e)", border: "none", borderRadius: 10, color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}>Save Decision</button>
+                            <button onClick={() => setShowDecisionModal(false)} style={{ flex: 1, padding: "10px", background: "transparent", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 10, color: "var(--foundry-text-muted)", fontSize: 12, cursor: "pointer" }}>Cancel</button>
+                            <button onClick={addDecision} style={{ flex: 2, padding: "10px", background: "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))", border: "none", borderRadius: 10, color: "var(--color-primary)", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "var(--tekori-font-ui)" }}>Save Decision</button>
                         </div>
                     </div>
                 </div>
@@ -1156,31 +1156,31 @@ export default function HubScreen({
             {/* Expense modal */}
             {showExpenseModal && (
                 <div className="hub-modal-backdrop" onClick={() => setShowExpenseModal(false)}>
-                    <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: "#0E0E10", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 22, animation: "fadeSlideUp 0.3s ease" }}>
-                        <div style={{ fontSize: 17, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 16 }}>Log an Expense</div>
-                        <input value={expenseLabel} onChange={e => setExpenseLabel(e.target.value)} placeholder="What was it for?" style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", marginBottom: 10, boxSizing: "border-box" }} />
-                        <select value={expenseCategory} onChange={e => setExpenseCategory(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", marginBottom: 10, boxSizing: "border-box" }}>
+                    <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: "var(--color-surface)", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 16, padding: 22, animation: "fadeSlideUp 0.3s ease" }}>
+                        <div style={{ fontSize: 17, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, color: "var(--color-text)", marginBottom: 16 }}>Log an Expense</div>
+                        <input value={expenseLabel} onChange={e => setExpenseLabel(e.target.value)} placeholder="What was it for?" style={{ width: "100%", background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 10, padding: "10px 12px", color: "var(--color-text)", fontSize: 13, fontFamily: "var(--tekori-font-ui)", marginBottom: 10, boxSizing: "border-box" }} />
+                        <select value={expenseCategory} onChange={e => setExpenseCategory(e.target.value)} style={{ width: "100%", background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 10, padding: "10px 12px", color: "var(--color-text)", fontSize: 13, fontFamily: "var(--tekori-font-ui)", marginBottom: 10, boxSizing: "border-box" }}>
                             {expenseCategoryOptions.map((category) => (
-                                <option key={category} value={category} style={{ background: "#0E0E10" }}>{category}</option>
+                                <option key={category} value={category} style={{ background: "var(--color-surface)" }}>{category}</option>
                             ))}
                         </select>
-                        <input value={expenseAmount} onChange={e => setExpenseAmount(e.target.value)} placeholder="Amount ($)" type="number" style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", marginBottom: 10, boxSizing: "border-box" }} />
-                        <input type="date" value={expenseDate} onChange={e => setExpenseDate(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", marginBottom: 10, boxSizing: "border-box", colorScheme: "dark" }} />
+                        <input value={expenseAmount} onChange={e => setExpenseAmount(e.target.value)} placeholder="Amount ($)" type="number" style={{ width: "100%", background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 10, padding: "10px 12px", color: "var(--color-text)", fontSize: 13, fontFamily: "var(--tekori-font-ui)", marginBottom: 10, boxSizing: "border-box" }} />
+                        <input type="date" value={expenseDate} onChange={e => setExpenseDate(e.target.value)} style={{ width: "100%", background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 10, padding: "10px 12px", color: "var(--color-text)", fontSize: 13, fontFamily: "var(--tekori-font-ui)", marginBottom: 10, boxSizing: "border-box", colorScheme: "light" }} />
                         <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)", marginBottom: 6, letterSpacing: "0.08em", textTransform: "uppercase" }}>Frequency</div>
                         <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
                             {(["one-time", "monthly", "yearly"] as const).map(f => (
-                                <button key={f} onClick={() => { setExpenseFrequency(f); if (f === "one-time") setExpenseRenewalDate(""); }} style={{ flex: 1, padding: "8px 4px", borderRadius: 8, border: expenseFrequency === f ? "1px solid rgba(232,98,42,0.5)" : "1px solid rgba(255,255,255,0.08)", background: expenseFrequency === f ? "rgba(232,98,42,0.12)" : "rgba(255,255,255,0.03)", color: expenseFrequency === f ? "#E8622A" : "#888", fontSize: 11, cursor: "pointer", fontWeight: 500, textTransform: "capitalize" }}>{f}</button>
+                                <button key={f} onClick={() => { setExpenseFrequency(f); if (f === "one-time") setExpenseRenewalDate(""); }} style={{ flex: 1, padding: "8px 4px", borderRadius: 8, border: expenseFrequency === f ? "1px solid rgba(216,155,43,0.5)" : "1px solid rgba(7,26,47,0.08)", background: expenseFrequency === f ? "rgba(216,155,43,0.12)" : "rgba(7,26,47,0.03)", color: expenseFrequency === f ? "var(--tekori-gold)" : "var(--color-text-muted)", fontSize: 11, cursor: "pointer", fontWeight: 500, textTransform: "capitalize" }}>{f}</button>
                             ))}
                         </div>
                         {expenseFrequency !== "one-time" && (
                             <>
                                 <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)", marginBottom: 6, letterSpacing: "0.08em", textTransform: "uppercase" }}>Next Renewal Date</div>
-                                <input type="date" value={expenseRenewalDate} onChange={e => setExpenseRenewalDate(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", marginBottom: 10, boxSizing: "border-box", colorScheme: "dark" }} />
+                                <input type="date" value={expenseRenewalDate} onChange={e => setExpenseRenewalDate(e.target.value)} style={{ width: "100%", background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 10, padding: "10px 12px", color: "var(--color-text)", fontSize: 13, fontFamily: "var(--tekori-font-ui)", marginBottom: 10, boxSizing: "border-box", colorScheme: "light" }} />
                             </>
                         )}
                         <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
-                            <button onClick={() => setShowExpenseModal(false)} style={{ flex: 1, padding: "10px", background: "transparent", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "var(--foundry-text-muted)", fontSize: 12, cursor: "pointer" }}>Cancel</button>
-                            <button onClick={addExpense} style={{ flex: 2, padding: "10px", background: "linear-gradient(135deg, #E8622A, #c9521e)", border: "none", borderRadius: 10, color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}>Save Expense</button>
+                            <button onClick={() => setShowExpenseModal(false)} style={{ flex: 1, padding: "10px", background: "transparent", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 10, color: "var(--foundry-text-muted)", fontSize: 12, cursor: "pointer" }}>Cancel</button>
+                            <button onClick={addExpense} style={{ flex: 2, padding: "10px", background: "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))", border: "none", borderRadius: 10, color: "var(--color-primary)", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "var(--tekori-font-ui)" }}>Save Expense</button>
                         </div>
                     </div>
                 </div>
@@ -1189,31 +1189,31 @@ export default function HubScreen({
             {/* Income modal */}
             {showIncomeModal && (
                 <div className="hub-modal-backdrop" onClick={() => setShowIncomeModal(false)}>
-                    <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: "#0E0E10", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 22, animation: "fadeSlideUp 0.3s ease" }}>
-                        <div style={{ fontSize: 17, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 16 }}>Log Revenue</div>
-                        <input value={incomeLabel} onChange={e => setIncomeLabel(e.target.value)} placeholder="Where did the revenue come from?" style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", marginBottom: 10, boxSizing: "border-box" }} />
-                        <select value={incomeCategory} onChange={e => setIncomeCategory(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", marginBottom: 10, boxSizing: "border-box" }}>
+                    <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: "var(--color-surface)", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 16, padding: 22, animation: "fadeSlideUp 0.3s ease" }}>
+                        <div style={{ fontSize: 17, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, color: "var(--color-text)", marginBottom: 16 }}>Log Revenue</div>
+                        <input value={incomeLabel} onChange={e => setIncomeLabel(e.target.value)} placeholder="Where did the revenue come from?" style={{ width: "100%", background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 10, padding: "10px 12px", color: "var(--color-text)", fontSize: 13, fontFamily: "var(--tekori-font-ui)", marginBottom: 10, boxSizing: "border-box" }} />
+                        <select value={incomeCategory} onChange={e => setIncomeCategory(e.target.value)} style={{ width: "100%", background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 10, padding: "10px 12px", color: "var(--color-text)", fontSize: 13, fontFamily: "var(--tekori-font-ui)", marginBottom: 10, boxSizing: "border-box" }}>
                             {revenueCategoryOptions.map((category) => (
-                                <option key={category} value={category} style={{ background: "#0E0E10" }}>{category}</option>
+                                <option key={category} value={category} style={{ background: "var(--color-surface)" }}>{category}</option>
                             ))}
                         </select>
-                        <input value={incomeAmount} onChange={e => setIncomeAmount(e.target.value)} placeholder="Amount ($)" type="number" style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", marginBottom: 10, boxSizing: "border-box" }} />
-                        <input type="date" value={incomeDate} onChange={e => setIncomeDate(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", marginBottom: 10, boxSizing: "border-box", colorScheme: "dark" }} />
+                        <input value={incomeAmount} onChange={e => setIncomeAmount(e.target.value)} placeholder="Amount ($)" type="number" style={{ width: "100%", background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 10, padding: "10px 12px", color: "var(--color-text)", fontSize: 13, fontFamily: "var(--tekori-font-ui)", marginBottom: 10, boxSizing: "border-box" }} />
+                        <input type="date" value={incomeDate} onChange={e => setIncomeDate(e.target.value)} style={{ width: "100%", background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 10, padding: "10px 12px", color: "var(--color-text)", fontSize: 13, fontFamily: "var(--tekori-font-ui)", marginBottom: 10, boxSizing: "border-box", colorScheme: "light" }} />
                         <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)", marginBottom: 6, letterSpacing: "0.08em", textTransform: "uppercase" }}>Frequency</div>
                         <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
                             {(["one-time", "monthly", "yearly"] as const).map(f => (
-                                <button key={f} onClick={() => { setIncomeFrequency(f); if (f === "one-time") setIncomeRenewalDate(""); }} style={{ flex: 1, padding: "8px 4px", borderRadius: 8, border: incomeFrequency === f ? "1px solid rgba(76,175,138,0.5)" : "1px solid rgba(255,255,255,0.08)", background: incomeFrequency === f ? "rgba(76,175,138,0.12)" : "rgba(255,255,255,0.03)", color: incomeFrequency === f ? "#4CAF8A" : "#888", fontSize: 11, cursor: "pointer", fontWeight: 500, textTransform: "capitalize" }}>{f}</button>
+                                <button key={f} onClick={() => { setIncomeFrequency(f); if (f === "one-time") setIncomeRenewalDate(""); }} style={{ flex: 1, padding: "8px 4px", borderRadius: 8, border: incomeFrequency === f ? "1px solid rgba(76,175,138,0.5)" : "1px solid rgba(7,26,47,0.08)", background: incomeFrequency === f ? "rgba(76,175,138,0.12)" : "rgba(7,26,47,0.03)", color: incomeFrequency === f ? "var(--color-success)" : "var(--color-text-muted)", fontSize: 11, cursor: "pointer", fontWeight: 500, textTransform: "capitalize" }}>{f}</button>
                             ))}
                         </div>
                         {incomeFrequency !== "one-time" && (
                             <>
                                 <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)", marginBottom: 6, letterSpacing: "0.08em", textTransform: "uppercase" }}>Next Renewal Date</div>
-                                <input type="date" value={incomeRenewalDate} onChange={e => setIncomeRenewalDate(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", marginBottom: 10, boxSizing: "border-box", colorScheme: "dark" }} />
+                                <input type="date" value={incomeRenewalDate} onChange={e => setIncomeRenewalDate(e.target.value)} style={{ width: "100%", background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 10, padding: "10px 12px", color: "var(--color-text)", fontSize: 13, fontFamily: "var(--tekori-font-ui)", marginBottom: 10, boxSizing: "border-box", colorScheme: "light" }} />
                             </>
                         )}
                         <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
-                            <button onClick={() => setShowIncomeModal(false)} style={{ flex: 1, padding: "10px", background: "transparent", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "var(--foundry-text-muted)", fontSize: 12, cursor: "pointer" }}>Cancel</button>
-                            <button onClick={addIncome} style={{ flex: 2, padding: "10px", background: "linear-gradient(135deg, #4CAF8A, #3a9470)", border: "none", borderRadius: 10, color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}>Save Revenue</button>
+                            <button onClick={() => setShowIncomeModal(false)} style={{ flex: 1, padding: "10px", background: "transparent", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 10, color: "var(--foundry-text-muted)", fontSize: 12, cursor: "pointer" }}>Cancel</button>
+                            <button onClick={addIncome} style={{ flex: 2, padding: "10px", background: "linear-gradient(135deg, var(--color-success), var(--color-success))", border: "none", borderRadius: 10, color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "var(--tekori-font-ui)" }}>Save Revenue</button>
                         </div>
                     </div>
                 </div>
@@ -1221,9 +1221,9 @@ export default function HubScreen({
 
             {showBudgetModal && (
                 <div className="hub-modal-backdrop" onClick={() => setShowBudgetModal(false)}>
-                    <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 460, background: "#0E0E10", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 22, animation: "fadeSlideUp 0.3s ease" }}>
-                        <div style={{ fontSize: 17, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 10 }}>Customize Budget</div>
-                        <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.6, marginBottom: 16 }}>
+                    <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 460, background: "var(--color-surface)", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 16, padding: 22, animation: "fadeSlideUp 0.3s ease" }}>
+                        <div style={{ fontSize: 17, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, color: "var(--color-text)", marginBottom: 10 }}>Customize Budget</div>
+                        <div style={{ fontSize: 13, color: "var(--color-text-muted)", lineHeight: 1.6, marginBottom: 16 }}>
                             Your budget is a living input. Update the exact amount you can realistically plan around right now, and adjust the range if it changed too.
                         </div>
                         <div style={{ marginBottom: 12 }}>
@@ -1236,9 +1236,9 @@ export default function HubScreen({
                                         style={{
                                             padding: "6px 10px",
                                             borderRadius: 999,
-                                            border: budgetEditRange === card.id ? "1px solid rgba(232,98,42,0.35)" : "1px solid rgba(255,255,255,0.08)",
-                                            background: budgetEditRange === card.id ? "rgba(232,98,42,0.12)" : "rgba(255,255,255,0.03)",
-                                            color: budgetEditRange === card.id ? "#E8622A" : "#C8C4BE",
+                                            border: budgetEditRange === card.id ? "1px solid rgba(216,155,43,0.35)" : "1px solid rgba(7,26,47,0.08)",
+                                            background: budgetEditRange === card.id ? "rgba(216,155,43,0.12)" : "rgba(7,26,47,0.03)",
+                                            color: budgetEditRange === card.id ? "var(--tekori-gold)" : "var(--color-text-soft)",
                                             fontSize: 11,
                                             cursor: "pointer",
                                         }}
@@ -1252,11 +1252,11 @@ export default function HubScreen({
                             value={budgetEditAmount}
                             onChange={e => setBudgetEditAmount(e.target.value)}
                             placeholder="Exact amount available right now"
-                            style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", marginBottom: 16, boxSizing: "border-box" }}
+                            style={{ width: "100%", background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 10, padding: "10px 12px", color: "var(--color-text)", fontSize: 13, fontFamily: "var(--tekori-font-ui)", marginBottom: 16, boxSizing: "border-box" }}
                         />
                         <div style={{ display: "flex", gap: 8 }}>
-                            <button onClick={() => setShowBudgetModal(false)} style={{ flex: 1, padding: "10px", background: "transparent", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "var(--foundry-text-muted)", fontSize: 12, cursor: "pointer" }}>Cancel</button>
-                            <button onClick={saveBudget} style={{ flex: 2, padding: "10px", background: "linear-gradient(135deg, #E8622A, #c9521e)", border: "none", borderRadius: 10, color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}>Save Budget</button>
+                            <button onClick={() => setShowBudgetModal(false)} style={{ flex: 1, padding: "10px", background: "transparent", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 10, color: "var(--foundry-text-muted)", fontSize: 12, cursor: "pointer" }}>Cancel</button>
+                            <button onClick={saveBudget} style={{ flex: 2, padding: "10px", background: "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))", border: "none", borderRadius: 10, color: "var(--color-primary)", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "var(--tekori-font-ui)" }}>Save Budget</button>
                         </div>
                     </div>
                 </div>
@@ -1269,18 +1269,18 @@ export default function HubScreen({
                 >
                     <div
                         onClick={e => e.stopPropagation()}
-                        style={{ width: "100%", maxWidth: 420, background: "#0E0E10", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 22, animation: "fadeSlideUp 0.3s ease" }}
+                        style={{ width: "100%", maxWidth: 420, background: "var(--color-surface)", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 16, padding: 22, animation: "fadeSlideUp 0.3s ease" }}
                     >
-                        <div style={{ fontSize: 17, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 10 }}>
+                        <div style={{ fontSize: 17, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, color: "var(--color-text)", marginBottom: 10 }}>
                             Log out?
                         </div>
-                        <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.6, marginBottom: 16 }}>
+                        <div style={{ fontSize: 13, color: "var(--color-text-muted)", lineHeight: 1.6, marginBottom: 16 }}>
                             Are you sure you want to log out? Your local session will be cleared and you&apos;ll return to sign in.
                         </div>
                         <div style={{ display: "flex", gap: 8 }}>
                             <button
                                 onClick={() => setShowLogoutModal(false)}
-                                style={{ flex: 1, padding: "10px", background: "transparent", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "var(--foundry-text-muted)", fontSize: 12, cursor: "pointer" }}
+                                style={{ flex: 1, padding: "10px", background: "transparent", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 10, color: "var(--foundry-text-muted)", fontSize: 12, cursor: "pointer" }}
                             >
                                 Cancel
                             </button>
@@ -1289,7 +1289,7 @@ export default function HubScreen({
                                     setShowLogoutModal(false);
                                     onLogout?.();
                                 }}
-                                style={{ flex: 2, padding: "10px", background: "linear-gradient(135deg, #F0EDE8, #D9D2C7)", border: "none", borderRadius: 10, color: "#111", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}
+                                style={{ flex: 2, padding: "10px", background: "linear-gradient(135deg, var(--color-text), #D9D2C7)", border: "none", borderRadius: 10, color: "var(--color-surface-elevated)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "var(--tekori-font-ui)" }}
                             >
                                 Yes, log out
                             </button>
@@ -1305,19 +1305,19 @@ export default function HubScreen({
                 >
                     <div
                         onClick={e => e.stopPropagation()}
-                        style={{ width: "100%", maxWidth: 440, background: "#0E0E10", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 22, animation: "fadeSlideUp 0.3s ease" }}
+                        style={{ width: "100%", maxWidth: 440, background: "var(--color-surface)", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 16, padding: 22, animation: "fadeSlideUp 0.3s ease" }}
                     >
-                        <div style={{ fontSize: 17, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 10 }}>
+                        <div style={{ fontSize: 17, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, color: "var(--color-text)", marginBottom: 10 }}>
                             Reset account?
                         </div>
-                        <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.6, marginBottom: 16 }}>
-                            Resetting your account will make Foundry and Forge both completely restart and forget any progress you&apos;ve made. This cannot be undone.
+                        <div style={{ fontSize: 13, color: "var(--color-text-muted)", lineHeight: 1.6, marginBottom: 16 }}>
+                            Resetting your account will make Tekori and Navi both completely restart and forget any progress you&apos;ve made. This cannot be undone.
                         </div>
                         <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>
                             Confirmation code
                         </div>
-                        <div style={{ fontSize: 13, color: "#C8C4BE", lineHeight: 1.7, marginBottom: 10 }}>
-                            To avoid accidental resets, type <span style={{ color: "#F0EDE8", fontWeight: 700 }}>12345</span> to continue.
+                        <div style={{ fontSize: 13, color: "var(--color-text-soft)", lineHeight: 1.7, marginBottom: 10 }}>
+                            To avoid accidental resets, type <span style={{ color: "var(--color-text)", fontWeight: 700 }}>12345</span> to continue.
                         </div>
                         <input
                             type="text"
@@ -1325,7 +1325,7 @@ export default function HubScreen({
                             value={resetConfirmationCode}
                             onChange={(e) => setResetConfirmationCode(e.target.value)}
                             placeholder="Type 12345"
-                            style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 12px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", marginBottom: 16, boxSizing: "border-box" }}
+                            style={{ width: "100%", background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 10, padding: "10px 12px", color: "var(--color-text)", fontSize: 13, fontFamily: "var(--tekori-font-ui)", marginBottom: 16, boxSizing: "border-box" }}
                         />
                         {resetError && (
                             <div style={{ fontSize: 12, color: "#D28B76", lineHeight: 1.6, marginBottom: 16 }}>
@@ -1335,13 +1335,13 @@ export default function HubScreen({
                         <div style={{ display: "flex", gap: 8 }}>
                             <button
                                 onClick={() => setShowResetModal(false)}
-                                style={{ flex: 1, padding: "10px", background: "transparent", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "var(--foundry-text-muted)", fontSize: 12, cursor: "pointer" }}
+                                style={{ flex: 1, padding: "10px", background: "transparent", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 10, color: "var(--foundry-text-muted)", fontSize: 12, cursor: "pointer" }}
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={confirmReset}
-                                style={{ flex: 2, padding: "10px", background: "linear-gradient(135deg, #A63B24, #842B1A)", border: "none", borderRadius: 10, color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}
+                                style={{ flex: 2, padding: "10px", background: "linear-gradient(135deg, #A63B24, #842B1A)", border: "none", borderRadius: 10, color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "var(--tekori-font-ui)" }}
                             >
                                 Yes, reset everything
                             </button>
@@ -1379,7 +1379,7 @@ function BusinessHealthDonut({ health }) {
         return cos > 0.25 ? "start" : cos < -0.25 ? "end" : "middle";
     };
 
-    const scoreColor = health.overallScore >= 62 ? "#4CAF8A" : health.overallScore >= 45 ? "#D9B15D" : "#D96A55";
+    const scoreColor = health.overallScore >= 62 ? "var(--color-success)" : health.overallScore >= 45 ? "var(--tekori-amber)" : "#D96A55";
 
     return (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10 }}>
@@ -1393,8 +1393,8 @@ function BusinessHealthDonut({ health }) {
                     <polygon
                         key={ri}
                         points={polyStr(r * maxR)}
-                        fill={ri === rings.length - 1 ? "rgba(255,255,255,0.018)" : "none"}
-                        stroke="rgba(255,255,255,0.07)"
+                        fill={ri === rings.length - 1 ? "rgba(7,26,47,0.018)" : "none"}
+                        stroke="rgba(7,26,47,0.07)"
                         strokeWidth={0.75}
                     />
                 ))}
@@ -1404,15 +1404,15 @@ function BusinessHealthDonut({ health }) {
                     const outer = pt(maxR, i);
                     return (
                         <line key={i} x1={cx} y1={cy} x2={outer.x} y2={outer.y}
-                            stroke="rgba(255,255,255,0.07)" strokeWidth={0.75} />
+                            stroke="rgba(7,26,47,0.07)" strokeWidth={0.75} />
                     );
                 })}
 
                 {/* Shaded data polygon */}
                 <polygon
                     points={dataPolyStr}
-                    fill="rgba(255,255,255,0.05)"
-                    stroke="rgba(255,255,255,0.22)"
+                    fill="rgba(7,26,47,0.05)"
+                    stroke="rgba(7,26,47,0.16)"
                     strokeWidth={1.2}
                     strokeLinejoin="round"
                 />
@@ -1435,7 +1435,7 @@ function BusinessHealthDonut({ health }) {
                         <text key={seg.key} x={lp.x} y={lp.y}
                             textAnchor={anchor(i)} dominantBaseline="middle"
                             fill={seg.color} fontSize={9}
-                            fontFamily="'DM Sans', sans-serif" fontWeight="600"
+                            fontFamily="var(--tekori-font-ui)" fontWeight="600"
                             letterSpacing="0.07em" opacity={0.85}
                         >
                             {seg.label.toUpperCase()}
@@ -1445,19 +1445,19 @@ function BusinessHealthDonut({ health }) {
 
                 {/* Center score */}
                 <text x={cx} y={cy - 8} textAnchor="middle" dominantBaseline="auto"
-                    fill="#F0EDE8" fontSize={28}
-                    fontFamily="'Playfair Display', Georgia, serif" fontWeight="700"
+                    fill="var(--color-text)" fontSize={28}
+                    fontFamily="var(--tekori-font-brand)" fontWeight="700"
                 >
                     {health.overallScore}
                 </text>
                 <text x={cx} y={cy + 10} textAnchor="middle" dominantBaseline="hanging"
                     fill={scoreColor} fontSize={8}
-                    fontFamily="'DM Sans', sans-serif" fontWeight="600" letterSpacing="0.14em"
+                    fontFamily="var(--tekori-font-ui)" fontWeight="600" letterSpacing="0.14em"
                 >
                     {health.statusLabel.toUpperCase()}
                 </text>
             </svg>
-            <div style={{ fontSize: 11, color: "#5B5650", lineHeight: 1.6, textAlign: "center", maxWidth: 260 }}>
+            <div style={{ fontSize: 11, color: "var(--color-text-soft)", lineHeight: 1.6, textAlign: "center", maxWidth: 260 }}>
                 A founder-facing view of how the business is holding up across execution, capital, clarity, market strength, and upside.
             </div>
         </div>

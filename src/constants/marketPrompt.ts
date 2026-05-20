@@ -164,7 +164,7 @@ Two short columns — write them as:
 - [2-3 genuine opportunities a founder entering now could exploit]
 
 ## What Matters Most Right Now
-1 paragraph. Given their stage (${stageLabel}), strategy (${strategy}), and this specific market — what is the single most strategically important thing for this founder to understand about their market right now? Be direct and specific. This is the section Forge will reference most.
+1 paragraph. Given their stage (${stageLabel}), strategy (${strategy}), and this specific market — what is the single most strategically important thing for this founder to understand about their market right now? Be direct and specific. This is the section Navi will reference most.
 
 Keep the entire report tight and high-signal. No filler. No generic business advice that could apply to any industry. Write as if you are briefing a smart founder who has 5 minutes.`;
 }

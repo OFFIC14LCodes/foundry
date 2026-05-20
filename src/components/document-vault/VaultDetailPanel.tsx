@@ -100,10 +100,10 @@ export default function VaultDetailPanel(props: {
                     style={{
                         margin: "0 0 12px",
                         padding: isChanged ? "8px 10px" : "0",
-                        background: isChanged ? (mode === "old" ? "rgba(232,98,42,0.08)" : "rgba(76,175,138,0.08)") : "transparent",
-                        borderLeft: isChanged ? (mode === "old" ? "2px solid rgba(232,98,42,0.4)" : "2px solid rgba(76,175,138,0.4)") : "none",
-                        color: "#F0EDE8",
-                        fontFamily: "'DM Sans', system-ui, sans-serif",
+                        background: isChanged ? (mode === "old" ? "rgba(216,155,43,0.08)" : "rgba(76,175,138,0.08)") : "transparent",
+                        borderLeft: isChanged ? (mode === "old" ? "2px solid rgba(216,155,43,0.4)" : "2px solid rgba(76,175,138,0.4)") : "none",
+                        color: "var(--color-text)",
+                        fontFamily: "var(--tekori-font-ui)",
                         fontSize: 13,
                         lineHeight: 1.7,
                         whiteSpace: "pre-wrap",
@@ -118,29 +118,29 @@ export default function VaultDetailPanel(props: {
     return (
         <div style={{
             borderRadius: 16,
-            border: "1px solid rgba(255,255,255,0.07)",
-            background: "rgba(255,255,255,0.025)",
+            border: "1px solid rgba(7,26,47,0.07)",
+            background: "rgba(7,26,47,0.025)",
             minHeight: 520,
             overflow: "hidden",
         }}>
             {!document && !loading ? (
                 <div style={{ padding: "40px 28px", textAlign: "center" }}>
-                    <FolderOpen size={30} color="#555" style={{ marginBottom: 10 }} />
-                    <div style={{ fontSize: 15, color: "#D0CCC6", marginBottom: 4 }}>Select a document</div>
+                    <FolderOpen size={30} color="var(--color-text-muted)" style={{ marginBottom: 10 }} />
+                    <div style={{ fontSize: 15, color: "var(--color-text-muted)", marginBottom: 4 }}>Select a document</div>
                     <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.6 }}>
                         Choose a vault document to inspect its content, versions, files, and future signature state.
                     </div>
                 </div>
             ) : (
                 <>
-                    <div style={{ padding: "18px 18px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                    <div style={{ padding: "18px 18px 16px", borderBottom: "1px solid rgba(7,26,47,0.06)" }}>
                         {loading || !document ? (
                             <div style={{ color: "var(--foundry-text-secondary)", fontSize: 12 }}>Loading document detail...</div>
                         ) : (
                             <>
                                 <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", marginBottom: 10 }}>
                                     <div style={{ minWidth: 0 }}>
-                                        <div style={{ fontSize: 20, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, lineHeight: 1.25 }}>{document.title}</div>
+                                        <div style={{ fontSize: 20, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, lineHeight: 1.25 }}>{document.title}</div>
                                         <div style={{ fontSize: 12, color: "var(--foundry-text-muted)", marginTop: 5 }}>
                                             {document.docType}
                                             {document.category ? ` · ${document.category}` : ""}
@@ -164,7 +164,7 @@ export default function VaultDetailPanel(props: {
                                         value={document.folderId ?? "unfiled"}
                                         onChange={(event) => onMoveToFolder(document.id, event.target.value === "unfiled" ? null : event.target.value)}
                                         disabled={movingDocumentId === document.id}
-                                        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 10, padding: "7px 10px", color: "#F0EDE8", fontSize: 11, fontFamily: "'Lora', Georgia, serif", colorScheme: "dark" }}
+                                        style={{ background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.09)", borderRadius: 10, padding: "7px 10px", color: "var(--color-text)", fontSize: 11, fontFamily: "var(--tekori-font-ui)", colorScheme: "light" }}
                                     >
                                         <option value="unfiled">Unfiled</option>
                                         {folders.map((folder) => (
@@ -179,19 +179,19 @@ export default function VaultDetailPanel(props: {
 
                     {!loading && document && (
                         <div style={{ padding: 18, display: "grid", gap: 18 }}>
-                            <div style={{ border: "1px solid rgba(232,98,42,0.18)", borderRadius: 12, background: "rgba(232,98,42,0.06)", padding: "12px 14px" }}>
-                                <div style={{ fontSize: 11, color: "#E8622A", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 5 }}>Document-specific legal review</div>
-                                <div style={{ fontSize: 12, color: "#D8C9BC", lineHeight: 1.65 }}>
-                                    {getLegalRiskNotes(document.docType)} Foundry drafts are working documents, not legal advice.
+                            <div style={{ border: "1px solid rgba(216,155,43,0.18)", borderRadius: 12, background: "rgba(216,155,43,0.06)", padding: "12px 14px" }}>
+                                <div style={{ fontSize: 11, color: "var(--tekori-gold)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 5 }}>Document-specific legal review</div>
+                                <div style={{ fontSize: 12, color: "var(--color-text-soft)", lineHeight: 1.65 }}>
+                                    {getLegalRiskNotes(document.docType)} Tekori drafts are working documents, not legal advice.
                                 </div>
                             </div>
                             <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.5fr) minmax(280px, 0.9fr)", gap: 18, alignItems: "start" }}>
                                 {previewNode}
 
                                 <div style={{ display: "grid", gap: 14 }}>
-                                    <div style={{ border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, background: "rgba(255,255,255,0.018)", overflow: "hidden" }}>
-                                        <div style={{ padding: "12px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                                            <div style={{ fontSize: 13, color: "#F0EDE8", fontWeight: 600 }}>Version History</div>
+                                    <div style={{ border: "1px solid rgba(7,26,47,0.06)", borderRadius: 14, background: "rgba(7,26,47,0.018)", overflow: "hidden" }}>
+                                        <div style={{ padding: "12px 14px", borderBottom: "1px solid rgba(7,26,47,0.05)" }}>
+                                            <div style={{ fontSize: 13, color: "var(--color-text)", fontWeight: 600 }}>Version History</div>
                                             <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", marginTop: 2 }}>Immutable snapshots from the normalized vault</div>
                                         </div>
                                         <div style={{ maxHeight: 290, overflowY: "auto", padding: 12 }}>
@@ -214,15 +214,15 @@ export default function VaultDetailPanel(props: {
                                                             textAlign: "left",
                                                             padding: "12px 12px 11px",
                                                             borderRadius: 12,
-                                                            border: active ? "1px solid rgba(232,98,42,0.24)" : "1px solid rgba(255,255,255,0.06)",
-                                                            background: active ? "rgba(232,98,42,0.08)" : "rgba(255,255,255,0.018)",
+                                                            border: active ? "1px solid rgba(216,155,43,0.24)" : "1px solid rgba(7,26,47,0.06)",
+                                                            background: active ? "rgba(216,155,43,0.08)" : "rgba(7,26,47,0.018)",
                                                             marginBottom: 8,
                                                             cursor: "pointer",
-                                                            fontFamily: "'Lora', Georgia, serif",
+                                                            fontFamily: "var(--tekori-font-ui)",
                                                         }}
                                                     >
                                                         <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 4 }}>
-                                                            <span style={{ fontSize: 12, color: "#F0EDE8", fontWeight: 600 }}>Version {version.versionNumber}</span>
+                                                            <span style={{ fontSize: 12, color: "var(--color-text)", fontWeight: 600 }}>Version {version.versionNumber}</span>
                                                             <span style={{ fontSize: 10, color: "var(--foundry-text-secondary)" }}>{formatShortDate(version.createdAt)}</span>
                                                         </div>
                                                         <div style={{ fontSize: 11, color: "var(--foundry-text-muted)", marginBottom: 4 }}>{version.source}</div>
@@ -236,7 +236,7 @@ export default function VaultDetailPanel(props: {
                                                                         event.stopPropagation();
                                                                         setCompareVersion(version);
                                                                     }}
-                                                                    style={{ padding: "6px 9px", borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#C8C4BE", fontSize: 10, cursor: "pointer" }}
+                                                                    style={{ padding: "6px 9px", borderRadius: 8, background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)", color: "var(--color-text-soft)", fontSize: 10, cursor: "pointer" }}
                                                                 >
                                                                     Compare with Latest
                                                                 </span>
@@ -245,7 +245,7 @@ export default function VaultDetailPanel(props: {
                                                                         event.stopPropagation();
                                                                         onRestoreVersion(version);
                                                                     }}
-                                                                    style={{ padding: "6px 9px", borderRadius: 8, background: "rgba(232,98,42,0.08)", border: "1px solid rgba(232,98,42,0.18)", color: "#E8622A", fontSize: 10, cursor: restoringVersionId === version.id ? "wait" : "pointer", fontWeight: 600 }}
+                                                                    style={{ padding: "6px 9px", borderRadius: 8, background: "rgba(216,155,43,0.08)", border: "1px solid rgba(216,155,43,0.18)", color: "var(--tekori-gold)", fontSize: 10, cursor: restoringVersionId === version.id ? "wait" : "pointer", fontWeight: 600 }}
                                                                 >
                                                                     {restoringVersionId === version.id ? "Restoring..." : "Restore this version"}
                                                                 </span>
@@ -266,23 +266,23 @@ export default function VaultDetailPanel(props: {
                 </>
             )}
             {compareVersion && latestVersion && (
-                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }}>
-                    <div style={{ width: "min(900px, 100%)", maxHeight: "88vh", background: "rgb(12,12,14)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 24, boxSizing: "border-box" }}>
+                <div style={{ position: "fixed", inset: 0, background: "rgba(7,26,47,0.72)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }}>
+                    <div style={{ width: "min(900px, 100%)", maxHeight: "88vh", background: "var(--color-surface)", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 16, padding: 24, boxSizing: "border-box" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 16 }}>
-                            <div style={{ fontSize: 18, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>Compare Versions</div>
+                            <div style={{ fontSize: 18, fontFamily: "var(--tekori-font-brand)", fontWeight: 700 }}>Compare Versions</div>
                             <button
                                 onClick={() => setCompareVersion(null)}
-                                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, color: "rgba(240,237,232,0.62)", padding: "6px 10px", cursor: "pointer" }}
+                                style={{ background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 8, color: "var(--color-text-muted)", padding: "6px 10px", cursor: "pointer" }}
                             >
                                 Close
                             </button>
                         </div>
                         {changedClauseNames(compareVersion.content, latestVersion.content).length > 0 && (
-                            <div style={{ marginBottom: 14, padding: "10px 12px", borderRadius: 12, border: "1px solid rgba(232,98,42,0.14)", background: "rgba(232,98,42,0.06)" }}>
-                                <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 11, color: "#E8622A", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Changed clauses</div>
+                            <div style={{ marginBottom: 14, padding: "10px 12px", borderRadius: 12, border: "1px solid rgba(216,155,43,0.14)", background: "rgba(216,155,43,0.06)" }}>
+                                <div style={{ fontFamily: "var(--tekori-font-ui)", fontSize: 11, color: "var(--tekori-gold)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Changed clauses</div>
                                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                                     {changedClauseNames(compareVersion.content, latestVersion.content).map((name) => (
-                                        <span key={name} style={{ padding: "4px 8px", borderRadius: 999, background: "rgba(255,255,255,0.045)", border: "1px solid rgba(255,255,255,0.08)", color: "#D8C9BC", fontSize: 11 }}>
+                                        <span key={name} style={{ padding: "4px 8px", borderRadius: 999, background: "rgba(7,26,47,0.045)", border: "1px solid rgba(7,26,47,0.08)", color: "var(--color-text-soft)", fontSize: 11 }}>
                                             {name}
                                         </span>
                                     ))}
@@ -291,18 +291,18 @@ export default function VaultDetailPanel(props: {
                         )}
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                             <div>
-                                <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, color: "rgba(240,237,232,0.62)", marginBottom: 8 }}>
+                                <div style={{ fontFamily: "var(--tekori-font-ui)", fontSize: 12, color: "var(--color-text-muted)", marginBottom: 8 }}>
                                     Version {compareVersion.versionNumber} — {formatShortDate(compareVersion.createdAt)}
                                 </div>
-                                <div style={{ maxHeight: "62vh", overflowY: "auto", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: 14, background: "rgba(255,255,255,0.02)" }}>
+                                <div style={{ maxHeight: "62vh", overflowY: "auto", border: "1px solid rgba(7,26,47,0.06)", borderRadius: 12, padding: 14, background: "rgba(7,26,47,0.02)" }}>
                                     {renderParagraphs(compareVersion.content, latestVersion.content, "old")}
                                 </div>
                             </div>
                             <div>
-                                <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, color: "rgba(240,237,232,0.62)", marginBottom: 8 }}>
+                                <div style={{ fontFamily: "var(--tekori-font-ui)", fontSize: 12, color: "var(--color-text-muted)", marginBottom: 8 }}>
                                     Latest — {formatShortDate(latestVersion.createdAt)}
                                 </div>
-                                <div style={{ maxHeight: "62vh", overflowY: "auto", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: 14, background: "rgba(255,255,255,0.02)" }}>
+                                <div style={{ maxHeight: "62vh", overflowY: "auto", border: "1px solid rgba(7,26,47,0.06)", borderRadius: 12, padding: 14, background: "rgba(7,26,47,0.02)" }}>
                                     {renderParagraphs(latestVersion.content, compareVersion.content, "new")}
                                 </div>
                             </div>

@@ -207,7 +207,7 @@ async function generateStageSummary(
   const stageData = STAGES_DATA[stageId - 1];
   const transcript = messages
     .filter(m => m.text && m.text.trim())
-    .map(m => `${m.role === "forge" ? "Forge" : profile.name}: ${m.text.replace(/\[.*?\]/g, "").trim()}`)
+    .map(m => `${m.role === "forge" ? "Navi" : profile.name}: ${m.text.replace(/\[.*?\]/g, "").trim()}`)
     .slice(-20)
     .join("\n");
   const prompt = `Summarize this Stage ${stageId} (${stageData.label}) coaching conversation in 3-4 sentences. Focus on: key decisions made, insights discovered, problems identified, and progress on milestones. Be specific — names, numbers, and concrete findings matter.\n\nConversation:\n${transcript}`;
@@ -315,7 +315,7 @@ ${activeActions.map((action) => `- [${action.priority}/${action.status}] ${actio
 Date: ${formatMemoryDate(latestJournal.createdAt)}
 Mood: ${latestJournal.mood || "not recorded"}
 Themes: ${(latestJournal.themes ?? []).join(", ") || "none recorded"}
-Forge summary: ${latestJournal.forgeSummary || "not summarized yet"}
+Navi summary: ${latestJournal.forgeSummary || "not summarized yet"}
 Entry excerpt: ${clipMemoryText(latestJournal.content, 1200)}`);
   }
 
@@ -328,7 +328,7 @@ ${recentJournal.map((entry) => `- ${formatMemoryDate(entry.createdAt)}: ${clipMe
   const recentStageMessages = Object.entries(messagesByStage ?? {})
     .flatMap(([stageId, messages]) => (messages ?? []).map((message: any) => ({
       stageId: Number(stageId),
-      role: message.role === "forge" ? "Forge" : (profile?.nameNeedsReview ? "Founder" : profile?.name || "Founder"),
+      role: message.role === "forge" ? "Navi" : (profile?.nameNeedsReview ? "Founder" : profile?.name || "Founder"),
       text: message.text,
       createdAt: message.createdAt,
     })))
@@ -376,7 +376,7 @@ ${clipMemoryText(cofoundersContext, 1800)}`);
   return `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 UNIVERSAL FOUNDER MEMORY
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Forge is one continuous partner across every Foundry feature, not a separate assistant per screen. Treat the following as shared memory from the founder's journal, stage chats, saved conversations, decisions, and cofounder workspace.
+Navi is one continuous partner across every Tekori feature, not a separate assistant per screen. Treat the following as shared memory from the founder's journal, stage chats, saved conversations, decisions, and cofounder workspace.
 If the founder asks about something recent, do not say you cannot see it when the relevant memory is below. Use it naturally and mention the specific artifact only when helpful.
 Current active stage: ${activeStage || profile?.currentStage || "unknown"}
 
@@ -531,7 +531,7 @@ Financial note: ${financialSummary.usesEstimatedInputs ? "Some values are estima
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 FOUNDRY METHOD — TARGETED BOOK CONTEXT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-This is selected from The Foundry Method book for the current topic. Use it as teaching depth, not as text to repeat. Answer the founder's question first. Use the book to sharpen your reasoning and reinforce the explanation naturally.
+This is selected from The Tekori Method book for the current topic. Use it as teaching depth, not as text to repeat. Answer the founder's question first. Use the book to sharpen your reasoning and reinforce the explanation naturally.
 
 ${bookContextPackage.context}` : "";
 
@@ -556,7 +556,7 @@ ${workspaceOperationsContext}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ONBOARDING REVIEW NOTE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-${exploringWithoutIdea ? "The founder entered Foundry without a declared business idea yet. This is intentional, not a bad onboarding answer." : "Some onboarding answers were likely jokes or placeholders and need to be re-confirmed naturally in conversation."}
+${exploringWithoutIdea ? "The founder entered Tekori without a declared business idea yet. This is intentional, not a bad onboarding answer." : "Some onboarding answers were likely jokes or placeholders and need to be re-confirmed naturally in conversation."}
 ${profile?.nameNeedsReview ? `- The founder did not give a serious name during onboarding. Current placeholder name: ${profile.name || "Founder"}.` : ""}
 ${profile?.ideaNeedsReview ? `- The founder did not give a serious project, offer, or business description during onboarding. Current placeholder: ${profile.idea || "Still being clarified"}.` : ""}
 - If they have no idea yet, help them formulate one by exploring problems, skills, audiences, constraints, and monetizable opportunities.
@@ -665,7 +665,7 @@ function ScreenLoadingFallback({
 }) {
   return (
     <div style={{
-      background: "#080809",
+      background: "var(--color-bg-soft)",
       minHeight: fullscreen ? "100vh" : "100%",
       height: fullscreen ? "100vh" : "100%",
       display: "flex",
@@ -677,7 +677,7 @@ function ScreenLoadingFallback({
     }}>
       <Logo variant="flame" style={{ width: 48, height: 48, objectFit: "contain", opacity: 0.88 }} />
       <LoadingForgeAnimation size={62} />
-      <div style={{ fontSize: 12, color: "#5B5650", fontFamily: "'Lora', Georgia, serif", letterSpacing: "0.08em" }}>
+      <div style={{ fontSize: 12, color: "var(--color-text-soft)", fontFamily: "var(--tekori-font-ui)", letterSpacing: "0.08em" }}>
         {message}
       </div>
     </div>
@@ -834,7 +834,7 @@ function renderWithBold(text, onStageRef, onGlossaryTap, onConceptTap?, glossary
       if (part.startsWith("**") && part.endsWith("**")) {
         const inner = part.slice(2, -2);
         return (
-          <strong key={key} style={{ color: "#F0EDE8", fontWeight: 700 }}>
+          <strong key={key} style={{ color: "var(--color-text)", fontWeight: 700 }}>
             {applyGlossaryHighlights(inner, onGlossaryTap, glossaryTerms, learnedTerms)}
           </strong>
         );
@@ -898,7 +898,7 @@ function renderWithBold(text, onStageRef, onGlossaryTap, onConceptTap?, glossary
               fontSize: 16,
               lineHeight: 1.35,
               fontWeight: 700,
-              color: "#F0EDE8",
+              color: "var(--color-text)",
             }}
           >
             {renderInlineContent(headingTwoMatch[1], `${keyPrefix}-h2-${blockIndex}`)}
@@ -917,7 +917,7 @@ function renderWithBold(text, onStageRef, onGlossaryTap, onConceptTap?, glossary
               fontSize: 14,
               lineHeight: 1.4,
               fontWeight: 700,
-              color: "#F0EDE8",
+              color: "var(--color-text)",
             }}
           >
             {renderInlineContent(headingThreeMatch[1], `${keyPrefix}-h3-${blockIndex}`)}
@@ -995,12 +995,12 @@ function renderWithBold(text, onStageRef, onGlossaryTap, onConceptTap?, glossary
           key={`stage-ref-${i}`}
           onClick={() => onStageRef && onStageRef(part.stageId)}
           style={{
-            background: "rgba(232,98,42,0.08)",
-            border: "1px solid rgba(232,98,42,0.22)",
+            background: "rgba(216,155,43,0.08)",
+            border: "1px solid rgba(216,155,43,0.22)",
             borderRadius: 8,
             padding: "2px 8px",
             margin: "0 2px",
-            color: "#E8622A",
+            color: "var(--tekori-gold)",
             cursor: "pointer",
             fontSize: "0.95em",
             fontFamily: "inherit",
@@ -1019,8 +1019,8 @@ function renderWithBold(text, onStageRef, onGlossaryTap, onConceptTap?, glossary
           onClick={() => onConceptTap && onConceptTap(conceptName)}
           title={`Explore: ${conceptName}`}
           style={{
-            color: "#9F7AEA",
-            borderBottom: "1px dashed #9F7AEA",
+            color: "var(--tekori-gold)",
+            borderBottom: "1px dashed var(--tekori-gold)",
             cursor: onConceptTap ? "pointer" : "default",
             opacity: 0.9,
             transition: "opacity 0.15s",
@@ -1456,9 +1456,9 @@ function ForgeScreen({
       ].filter(Boolean).join(" ");
 
       if (isFirstVisit && exploringWithoutIdea) {
-        greetingPrompt = `${safeName} just finished onboarding and entered Foundry without a declared business idea yet. Venture mode: ${ventureLabel}. Goal/constraints: ${ventureGoal}. Experience: ${profile.experience}. Budget: $${profile.budget?.total?.toLocaleString() || "unknown"}. Strategy: ${profile.strategyLabel}. ${onboardingReviewNote}
+        greetingPrompt = `${safeName} just finished onboarding and entered Tekori without a declared business idea yet. Venture mode: ${ventureLabel}. Goal/constraints: ${ventureGoal}. Experience: ${profile.experience}. Budget: $${profile.budget?.total?.toLocaleString() || "unknown"}. Strategy: ${profile.strategyLabel}. ${onboardingReviewNote}
 
-Write a 2-3 paragraph welcome that makes them feel fully welcome even without an idea. Explain that Stage 1 is exactly where Forge helps formulate a business idea by looking for problems they understand, skills they have, people they can reach, and opportunities worth testing. Tell them that once a direction becomes clear, they can officially declare or edit their business/project name and market inside Settings. End with one sharp question that starts idea exploration. Use **bold** on 2-3 key words.`;
+Write a 2-3 paragraph welcome that makes them feel fully welcome even without an idea. Explain that Stage 1 is exactly where Navi helps formulate a business idea by looking for problems they understand, skills they have, people they can reach, and opportunities worth testing. Tell them that once a direction becomes clear, they can officially declare or edit their business/project name and market inside Settings. End with one sharp question that starts idea exploration. Use **bold** on 2-3 key words.`;
       } else if (isFirstVisit && pendingUpgradeStage && activeStage === pendingUpgradeStage) {
         greetingPrompt = `${safeName} just finished onboarding and wants to start at Stage ${activeStage}: ${stageData.label}. Venture mode: ${ventureLabel}. Their ${ventureNoun}: "${safeIdea}". Goal/constraints: ${ventureGoal}. Experience: ${profile.experience}. Budget: $${profile.budget?.total?.toLocaleString() || "unknown"}. Strategy: ${profile.strategyLabel}. ${onboardingReviewNote}
 
@@ -1466,7 +1466,7 @@ Write a 2-3 paragraph welcome. First: recap what they shared during onboarding �
       } else if (isFirstVisit && activeStage === 1) {
         greetingPrompt = `${safeName} just finished onboarding and is entering Stage 1 for the first time. Venture mode: ${ventureLabel}. Their ${ventureNoun}: "${safeIdea}". Goal/constraints: ${ventureGoal}. Experience: ${profile.experience}. Budget: $${profile.budget?.total?.toLocaleString() || "unknown"}. Strategy: ${profile.strategyLabel}. ${onboardingReviewNote}
 
-Start with a short recap of what they told Foundry during onboarding: venture mode, idea/offer, goal, experience level, budget, and strategy. Make it sound natural and specific, not like a form readback. Then pivot immediately to Stage 1's core question: is the problem real and will someone pay for relief. If this is a side hustle, frame it as proving a paid offer, not starting a company. End with one sharp, concrete question that gets the conversation moving. Use **bold** on 2-3 key words. Keep it to 2-3 tight paragraphs.`;
+Start with a short recap of what they told Tekori during onboarding: venture mode, idea/offer, goal, experience level, budget, and strategy. Make it sound natural and specific, not like a form readback. Then pivot immediately to Stage 1's core question: is the problem real and will someone pay for relief. If this is a side hustle, frame it as proving a paid offer, not starting a company. End with one sharp, concrete question that gets the conversation moving. Use **bold** on 2-3 key words. Keep it to 2-3 tight paragraphs.`;
       } else if (isLongAbsence && activeStage > 0) {
         const hoursText = hoursSince ? `about ${Math.round(hoursSince)} hours` : "a while";
         greetingPrompt = `${safeName} is returning to Stage ${activeStage}: ${stageData.label} after ${hoursText} away. Welcome them back briefly and warmly — 1 sentence, not more. Reference where they are in this stage and what matters most right now. Then ask one sharp forward-moving question. 3-4 paragraphs max. Use **bold** on 2-3 key words. ${onboardingReviewNote}`;
@@ -1529,7 +1529,7 @@ Start with a short recap of what they told Foundry during onboarding: venture mo
       } catch {
         const fallback =
           isFirstVisit && activeStage === 1
-            ? `${safeName} — welcome to Foundry.
+            ? `${safeName} — welcome to Tekori.
 
 You came in on the **${ventureLabel}** path with **${safeIdea || "a new idea"}**, a ${profile.experience || "builder"} background, a budget of **$${profile.budget?.total?.toLocaleString() || "unknown"}**, and a **${profile.strategyLabel || profile.strategy || "focused"}** approach. That's enough to start pressure-testing this the right way.
 
@@ -1605,7 +1605,7 @@ Where do you want to start?`;
   };
 
   const isAcademyArchive = (entry: any) => String(entry?.title || "").startsWith("Academy —");
-  const isChatRoomArchive = (entry: any) => String(entry?.title || "").startsWith("Chat with Forge");
+  const isChatRoomArchive = (entry: any) => String(entry?.title || "").startsWith("Ask Navi");
   const isQuickChatArchive = (entry: any) => String(entry?.title || "").startsWith("Quick Chat");
   const isPitchPracticeArchive = (entry: any) => String(entry?.title || "").startsWith("Pitch Practice —");
   const isChatStyleArchive = (entry: any) => isChatRoomArchive(entry) || isQuickChatArchive(entry) || isPitchPracticeArchive(entry);
@@ -1702,9 +1702,9 @@ Where do you want to start?`;
             width: 34,
             height: 34,
             borderRadius: 10,
-            border: "1px solid rgba(255,255,255,0.08)",
-            background: "rgba(255,255,255,0.04)",
-            color: "#999",
+            border: "1px solid rgba(7,26,47,0.08)",
+            background: "rgba(7,26,47,0.04)",
+            color: "var(--color-text-muted)",
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
@@ -1723,10 +1723,10 @@ Where do you want to start?`;
               top: 40,
               right: 0,
               minWidth: 190,
-              background: "#111214",
-              border: "1px solid rgba(255,255,255,0.08)",
+              background: "var(--color-surface-elevated)",
+              border: "1px solid rgba(7,26,47,0.08)",
               borderRadius: 12,
-              boxShadow: "0 16px 40px rgba(0,0,0,0.35)",
+              boxShadow: "var(--shadow-premium)",
               padding: 6,
             }}
           >
@@ -1740,7 +1740,7 @@ Where do you want to start?`;
                 background: "transparent",
                 border: "none",
                 borderRadius: 8,
-                color: "#4CAF8A",
+                color: "var(--color-success)",
                 padding: "10px 12px",
                 cursor: "pointer",
                 fontSize: 13,
@@ -1764,7 +1764,7 @@ Where do you want to start?`;
                 background: "transparent",
                 border: "none",
                 borderRadius: 8,
-                color: "#F0EDE8",
+                color: "var(--color-text)",
                 padding: "10px 12px",
                 cursor: "pointer",
                 fontSize: 13,
@@ -1799,11 +1799,11 @@ Where do you want to start?`;
   type ArchiveSourceType = "forge" | "chatroom" | "academy" | "bubble" | "pitchpractice";
 
   const ARCHIVE_SOURCE_CONFIG: Record<ArchiveSourceType, { label: string; color: string; bg: string; borderColor: string }> = {
-    forge:    { label: "Forge Session",  color: "#E8622A", bg: "rgba(232,98,42,0.06)",   borderColor: "rgba(232,98,42,0.28)" },
-    chatroom: { label: "Chat with Forge",color: "#4CAF8A", bg: "rgba(76,175,138,0.06)",  borderColor: "rgba(76,175,138,0.28)" },
-    academy:  { label: "Academy",        color: "#9B8DE8", bg: "rgba(155,141,232,0.06)", borderColor: "rgba(155,141,232,0.28)" },
-    bubble:   { label: "Quick Chat",     color: "#63B3ED", bg: "rgba(99,179,237,0.06)",  borderColor: "rgba(99,179,237,0.28)" },
-    pitchpractice: { label: "Pitch Practice", color: "#D9B15D", bg: "rgba(217,177,93,0.08)", borderColor: "rgba(217,177,93,0.28)" },
+    forge:    { label: "Navi Session",  color: "var(--tekori-gold)", bg: "rgba(216,155,43,0.06)",   borderColor: "rgba(216,155,43,0.28)" },
+    chatroom: { label: "Ask Navi",color: "var(--color-success)", bg: "rgba(76,175,138,0.06)",  borderColor: "rgba(76,175,138,0.28)" },
+    academy:  { label: "Academy",        color: "var(--tekori-gold)", bg: "rgba(216,155,43,0.06)", borderColor: "rgba(216,155,43,0.28)" },
+    bubble:   { label: "Quick Chat",     color: "var(--tekori-muted-text)", bg: "rgba(142,160,181,0.06)",  borderColor: "rgba(142,160,181,0.28)" },
+    pitchpractice: { label: "Pitch Practice", color: "var(--tekori-amber)", bg: "rgba(217,177,93,0.08)", borderColor: "rgba(217,177,93,0.28)" },
   };
 
   const getEntrySourceType = (entry: any): ArchiveSourceType => {
@@ -1829,7 +1829,7 @@ Where do you want to start?`;
           border: `1px solid ${cfg.borderColor}`,
           borderLeft: `4px solid ${cfg.color}`,
           borderRadius: 14,
-          color: "#F0EDE8",
+          color: "var(--color-text)",
           position: "relative",
           overflow: "hidden",
         }}
@@ -1846,7 +1846,7 @@ Where do you want to start?`;
             border: "none",
             borderRadius: 14,
             padding: "14px 56px 14px 16px",
-            color: "#F0EDE8",
+            color: "var(--color-text)",
             cursor: "pointer",
           }}
         >
@@ -1854,13 +1854,13 @@ Where do you want to start?`;
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
             <span style={{
               fontSize: 9,
-              fontFamily: "’DM Sans’, sans-serif",
+              fontFamily: "var(--tekori-font-ui)",
               fontWeight: 700,
               letterSpacing: "0.14em",
               textTransform: "uppercase",
               color: cfg.color,
-              background: `${cfg.color}18`,
-              border: `1px solid ${cfg.color}30`,
+              background: cfg.bg,
+              border: `1px solid ${cfg.borderColor}`,
               borderRadius: 5,
               padding: "2px 7px",
             }}>
@@ -1869,27 +1869,27 @@ Where do you want to start?`;
             {stageData && (
               <span style={{
                 fontSize: 9,
-                fontFamily: "’DM Sans’, sans-serif",
+                fontFamily: "var(--tekori-font-ui)",
                 fontWeight: 600,
                 letterSpacing: "0.1em",
                 textTransform: "uppercase",
                 color: stageData.color,
                 background: `${stageData.color}15`,
-                border: `1px solid ${stageData.color}28`,
+                border: `1px solid color-mix(in srgb, ${stageData.color} 16%, transparent)`,
                 borderRadius: 5,
                 padding: "2px 7px",
               }}>
                 Stage {stageData.id} — {stageData.label}
               </span>
             )}
-            <span style={{ fontSize: 10, color: "rgba(240,237,232,0.55)", fontFamily: "’DM Sans’, sans-serif", marginLeft: "auto" }}>
+            <span style={{ fontSize: 10, color: "rgba(102,112,133,0.74)", fontFamily: "var(--tekori-font-ui)", marginLeft: "auto" }}>
               {dateLabel}
             </span>
           </div>
-          <div style={{ fontSize: 15, fontFamily: "’Playfair Display’, Georgia, serif", fontWeight: 700, marginBottom: 5, lineHeight: 1.3 }}>
+          <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, marginBottom: 5, lineHeight: 1.3 }}>
             {getArchiveDisplayTitle(entry.title, entry.summary, fallbackTitle)}
           </div>
-          <div style={{ fontSize: 12, color: "rgba(240,237,232,0.62)", lineHeight: 1.7 }}>
+          <div style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.7 }}>
             {getSummaryPreview(entry.summary)}
           </div>
         </button>
@@ -1905,12 +1905,12 @@ Where do you want to start?`;
 
     const title = archiveTitleInput.trim() || archiveSession?.entry?.title || `${stage.label} Archive`;
     const transcript = archiveMessages
-      .map((msg: any) => `${msg.role === "forge" ? "Forge" : profile.name}: ${msg.text}`)
+      .map((msg: any) => `${msg.role === "forge" ? "Navi" : profile.name}: ${msg.text}`)
       .join("\n");
 
     const prompt = archiveSession?.entry?.id
-      ? `Update this archived Foundry coaching conversation for ${profile.name} in clear markdown.\n\nExisting archive summary:\n${archiveSession.entry.summary}\n\nNew continuation transcript:\n${transcript}\n\nReturn valid JSON with exactly these keys:\n"title": keep exactly this title: "${title}"\n"summary": a detailed markdown summary with these sections: Key Decisions, Main Insights, Risks or Blockers, Recommended Next Moves. Blend the prior archive context with the new continuation so this replaces the old summary cleanly.`
-      : `Summarize this Foundry coaching conversation for ${profile.name} in clear markdown.\n\nReturn valid JSON with exactly these keys:\n"title": keep exactly this title: "${title}"\n"summary": a detailed markdown summary with these sections: Key Decisions, Main Insights, Risks or Blockers, Recommended Next Moves.\n\nConversation:\n${transcript}`;
+      ? `Update this archived Tekori coaching conversation for ${profile.name} in clear markdown.\n\nExisting archive summary:\n${archiveSession.entry.summary}\n\nNew continuation transcript:\n${transcript}\n\nReturn valid JSON with exactly these keys:\n"title": keep exactly this title: "${title}"\n"summary": a detailed markdown summary with these sections: Key Decisions, Main Insights, Risks or Blockers, Recommended Next Moves. Blend the prior archive context with the new continuation so this replaces the old summary cleanly.`
+      : `Summarize this Tekori coaching conversation for ${profile.name} in clear markdown.\n\nReturn valid JSON with exactly these keys:\n"title": keep exactly this title: "${title}"\n"summary": a detailed markdown summary with these sections: Key Decisions, Main Insights, Risks or Blockers, Recommended Next Moves.\n\nConversation:\n${transcript}`;
 
     setSavingArchive(true);
 
@@ -1949,7 +1949,7 @@ Where do you want to start?`;
         userId,
         archive: saved,
         sourceType: "business",
-        sourceLabel: `Main Forge Stage ${activeStage}`,
+        sourceLabel: `Main Navi Stage ${activeStage}`,
         sourceRefId: archiveSession?.entry?.id || `stage-${activeStage}`,
         stageId: activeStage,
         workspace: activeStageWorkspace,
@@ -2089,7 +2089,7 @@ Where do you want to start?`;
 
       if (canAdvanceNow) setAdvanceReady(true);
     } catch (err) {
-      console.error("Forge error:", err);
+      console.error("Navi error:", err);
       onUpdateMessages(activeStage, (msgs) =>
         msgs.map((m) =>
           m.id === forgeMsg.id ? { ...m, text: "Something went wrong. Try again." } : m
@@ -2145,7 +2145,7 @@ ${contextBlock}
 Latest founder message:
 ${userPrompt}
 
-Latest Forge reply:
+Latest Navi reply:
 ${forgeReply}`;
 
     try {
@@ -2171,7 +2171,7 @@ ${forgeReply}`;
   const saveStageContextMemory = async (context: ActiveForgeContext) => {
     const content = getStageApplyText();
     if (!content) {
-      setApplyStatus("There is no Forge takeaway to save yet.");
+      setApplyStatus("There is no Navi takeaway to save yet.");
       return;
     }
 
@@ -2185,7 +2185,7 @@ ${forgeReply}`;
       title: context.scope === "workspace"
         ? `Stage ${activeStage} takeaway for ${context.workspaceName || "workspace"}`
         : `Stage ${activeStage} personal takeaway`,
-      content: `${profile.name || "The founder"} intentionally applied this Stage ${activeStage} Forge takeaway to ${getForgeContextLabel(context)}.\n\n${content}`,
+      content: `${profile.name || "The founder"} intentionally applied this Stage ${activeStage} Navi takeaway to ${getForgeContextLabel(context)}.\n\n${content}`,
       summary: content.replace(/\s+/g, " ").slice(0, 520),
       customContextLabel: context.scope === "custom" ? context.customLabel ?? null : null,
       confidence: 0.7,
@@ -2201,7 +2201,7 @@ ${forgeReply}`;
     setPendingApplyMessage(null);
     setApplyStatus(context.scope === "workspace"
       ? "Saved as shared workspace memory."
-      : "Saved privately to your Forge memory.");
+      : "Saved privately to your Navi memory.");
   };
 
   const openContextApplyCard = (message: any | null = null) => {
@@ -2216,11 +2216,11 @@ ${forgeReply}`;
       style={{
         position: "fixed",
         inset: 0,
-        background: "#080809",
+        background: "var(--color-bg-soft)",
         display: "flex",
         flexDirection: "column",
-        fontFamily: "'Lora', Georgia, serif",
-        color: "#F0EDE8",
+        fontFamily: "var(--tekori-font-ui)",
+        color: "var(--color-text)",
         zIndex: 20,
       }}
     >
@@ -2235,8 +2235,8 @@ ${forgeReply}`;
       <div
         style={{
           padding: "max(11px, calc(6px + env(safe-area-inset-top))) 12px 11px",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
-          background: "rgba(8,8,9,0.95)",
+          borderBottom: "1px solid rgba(7,26,47,0.06)",
+          background: "rgba(255,252,246,0.94)",
           display: "flex",
           alignItems: "center",
           gap: 8,
@@ -2247,11 +2247,11 @@ ${forgeReply}`;
           <button
             onClick={onBack}
             style={{
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.08)",
+              background: "rgba(7,26,47,0.05)",
+              border: "1px solid rgba(7,26,47,0.08)",
               borderRadius: 8,
               padding: "var(--foundry-forge-header-button-padding)",
-              color: "#F0EDE8",
+              color: "var(--color-text)",
               fontSize: "var(--foundry-forge-header-button-font)",
               fontWeight: 500,
               cursor: "pointer",
@@ -2266,8 +2266,8 @@ ${forgeReply}`;
           <button
             onClick={() => setHubOpen(true)}
             style={{
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.07)",
+              background: "rgba(7,26,47,0.04)",
+              border: "1px solid rgba(7,26,47,0.07)",
               borderRadius: 8,
               padding: "var(--foundry-forge-header-menu-padding)",
               color: "var(--foundry-text-secondary)",
@@ -2304,7 +2304,7 @@ ${forgeReply}`;
               transition: "background 0.15s",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+              e.currentTarget.style.background = "rgba(7,26,47,0.05)";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = "transparent";
@@ -2316,15 +2316,15 @@ ${forgeReply}`;
                 className="forge-screen__stage-title"
                 style={{
                   fontSize: "var(--foundry-forge-header-stage-title-font)",
-                  fontFamily: "'Lora', Georgia, serif",
+                  fontFamily: "var(--tekori-font-ui)",
                   fontWeight: 600,
-                  color: "#F0EDE8",
+                  color: "var(--color-text)",
                   lineHeight: 1.2,
                 }}
               >
                 Stage {activeStage} — {stage.label}
               </div>
-              <div className="forge-screen__stage-meta" style={{ fontSize: "var(--foundry-forge-header-stage-meta-font)", color: "#4CAF8A" }}>
+              <div className="forge-screen__stage-meta" style={{ fontSize: "var(--foundry-forge-header-stage-meta-font)", color: "var(--color-success)" }}>
                 ● Active · {completionPct}% complete
               </div>
             </div>
@@ -2344,12 +2344,12 @@ ${forgeReply}`;
                   left: "50%",
                   transform: "translateX(-50%)",
                   zIndex: 20,
-                  background: "#0E0E10",
-                  border: "1px solid rgba(255,255,255,0.1)",
+                  background: "var(--color-surface)",
+                  border: "1px solid rgba(7,26,47,0.1)",
                   borderRadius: 12,
                   padding: 6,
                   minWidth: 220,
-                  boxShadow: "0 16px 48px rgba(0,0,0,0.6)",
+                  boxShadow: "var(--shadow-premium)",
                   animation: "fadeSlideUp 0.2s ease",
                 }}
               >
@@ -2380,7 +2380,7 @@ ${forgeReply}`;
                         border: "none",
                         background:
                           s.id === activeStage
-                            ? "rgba(232,98,42,0.12)"
+                            ? "rgba(216,155,43,0.12)"
                             : "transparent",
                         cursor: locked ? "default" : "pointer",
                         opacity: locked ? 0.35 : 1,
@@ -2390,14 +2390,14 @@ ${forgeReply}`;
                         if (!locked) {
                           e.currentTarget.style.background =
                             s.id === activeStage
-                              ? "rgba(232,98,42,0.15)"
-                              : "rgba(255,255,255,0.05)";
+                              ? "rgba(216,155,43,0.15)"
+                              : "rgba(7,26,47,0.05)";
                         }
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.background =
                           s.id === activeStage
-                            ? "rgba(232,98,42,0.12)"
+                            ? "rgba(216,155,43,0.12)"
                             : "transparent";
                       }}
                     >
@@ -2407,8 +2407,8 @@ ${forgeReply}`;
                         <div
                           style={{
                             fontSize: 12,
-                            fontFamily: "'Lora', Georgia, serif",
-                            color: s.id === activeStage ? "#E8622A" : "#C8C4BE",
+                            fontFamily: "var(--tekori-font-ui)",
+                            color: s.id === activeStage ? "var(--tekori-gold)" : "var(--color-text-soft)",
                             fontWeight: s.id === activeStage ? 600 : 400,
                           }}
                         >
@@ -2427,7 +2427,7 @@ ${forgeReply}`;
                       </div>
 
                       {s.id === activeStage && (
-                        <span style={{ fontSize: 10, color: "#E8622A" }}><Icons.forge.chat size={16} /></span>
+                        <span style={{ fontSize: 10, color: "var(--tekori-gold)" }}><Icons.forge.chat size={16} /></span>
                       )}
                     </button>
                   );
@@ -2441,8 +2441,8 @@ ${forgeReply}`;
           style={{
             display: "flex",
             gap: 2,
-            background: "rgba(255,255,255,0.07)",
-            border: "1px solid rgba(255,255,255,0.1)",
+            background: "rgba(7,26,47,0.07)",
+            border: "1px solid rgba(7,26,47,0.1)",
             borderRadius: 8,
             padding: 3,
             flexShrink: 0,
@@ -2453,7 +2453,7 @@ ${forgeReply}`;
             msOverflowStyle: "none",
           }}
         >
-          <div className="forge-context-indicator" title="Current Forge memory context">
+          <div className="forge-context-indicator" title="Current Navi memory context">
             {getForgeContextLabel(activeForgeContext)}
           </div>
           <button
@@ -2470,7 +2470,7 @@ ${forgeReply}`;
                 borderRadius: 6,
                 border: "none",
                 background: "transparent",
-                color: "#E8622A",
+                color: "var(--tekori-gold)",
                 fontSize: "var(--foundry-forge-header-secondary-tab-font)",
                 cursor: "pointer",
                 fontWeight: 600,
@@ -2497,9 +2497,9 @@ ${forgeReply}`;
                 border: "none",
                 background:
                   activeTab === tab.id
-                    ? "linear-gradient(135deg, #E8622A, #c9521e)"
+                    ? "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))"
                     : "transparent",
-                color: activeTab === tab.id ? "#fff" : "#A8A4A0",
+                color: activeTab === tab.id ? "var(--color-primary)" : "var(--color-text-muted)",
                 fontSize: tab.id === "chat"
                   ? "var(--foundry-forge-header-tab-font)"
                   : "var(--foundry-forge-header-secondary-tab-font)",
@@ -2519,7 +2519,7 @@ ${forgeReply}`;
       <div
         style={{
           height: 3,
-          background: "rgba(255,255,255,0.06)",
+          background: "rgba(7,26,47,0.06)",
           flexShrink: 0,
           position: "relative",
         }}
@@ -2528,10 +2528,10 @@ ${forgeReply}`;
           style={{
             height: "100%",
             width: `${completionPct}%`,
-            background: "linear-gradient(90deg, #E8622A, #F5A843)",
+            background: "linear-gradient(90deg, var(--tekori-gold), var(--tekori-amber))",
             transition: "width 0.6s ease",
             boxShadow:
-              completionPct > 0 ? "0 0 8px rgba(232,98,42,0.4)" : "none",
+              completionPct > 0 ? "0 0 8px rgba(216,155,43,0.4)" : "none",
           }}
         />
         {stage.milestones.map((_, i) => (
@@ -2543,7 +2543,7 @@ ${forgeReply}`;
               bottom: 0,
               left: `${((i + 1) / stage.milestones.length) * 100}%`,
               width: 1,
-              background: "rgba(0,0,0,0.5)",
+              background: "rgba(7,26,47,0.34)",
             }}
           />
         ))}
@@ -2686,20 +2686,20 @@ ${forgeReply}`;
               >
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 8, alignItems: "center" }}>
                   <div>
-                    <div style={{ fontSize: 10, color: "#4CAF8A", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>
+                    <div style={{ fontSize: 10, color: "var(--color-success)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>
                       Continuing Archive
                     </div>
-                    <div style={{ fontSize: 16, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
+                    <div style={{ fontSize: 16, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, color: "var(--color-text)" }}>
                       {getArchiveDisplayTitle(archiveSession.entry.title, archiveSession.entry.summary, "Saved Archive")}
                     </div>
                   </div>
                   <button
                     onClick={() => setArchiveSession(null)}
                     style={{
-                      background: "rgba(255,255,255,0.04)",
-                      border: "1px solid rgba(255,255,255,0.08)",
+                      background: "rgba(7,26,47,0.04)",
+                      border: "1px solid rgba(7,26,47,0.08)",
                       borderRadius: 10,
-                      color: "#999",
+                      color: "var(--color-text-muted)",
                       padding: "8px 12px",
                       cursor: "pointer",
                       height: "fit-content",
@@ -2711,7 +2711,7 @@ ${forgeReply}`;
                 <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.7 }}>
                   {getSummaryPreview(archiveSession.entry.summary)}
                 </div>
-                <div style={{ fontSize: 11, color: "rgba(240,237,232,0.62)", lineHeight: 1.6, marginTop: 10 }}>
+                <div style={{ fontSize: 11, color: "var(--color-text-muted)", lineHeight: 1.6, marginTop: 10 }}>
                   Ask follow-up questions normally. When you save, this archive card will be updated instead of creating a new one.
                 </div>
               </div>
@@ -2723,14 +2723,14 @@ ${forgeReply}`;
                   onClick={() => onLoadEarlierMessages?.(activeStage)}
                   disabled={loadingEarlierStage === activeStage}
                   style={{
-                    background: "rgba(255,255,255,0.035)",
-                    border: "1px solid rgba(255,255,255,0.08)",
+                    background: "rgba(7,26,47,0.035)",
+                    border: "1px solid rgba(7,26,47,0.08)",
                     borderRadius: 999,
                     padding: "7px 12px",
-                    color: loadingEarlierStage === activeStage ? "#555" : "#C8C4BE",
+                    color: loadingEarlierStage === activeStage ? "var(--color-text-muted)" : "var(--color-text-soft)",
                     cursor: loadingEarlierStage === activeStage ? "default" : "pointer",
                     fontSize: 11,
-                    fontFamily: "'DM Sans', system-ui, sans-serif",
+                    fontFamily: "var(--tekori-font-ui)",
                   }}
                 >
                   {loadingEarlierStage === activeStage ? "Loading..." : "Load earlier messages"}
@@ -2747,12 +2747,12 @@ ${forgeReply}`;
                     key={item.id}
                     style={{ display: "flex", alignItems: "center", gap: 10, padding: "4px 0", margin: "6px 0" }}
                   >
-                    <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.07)" }} />
+                    <div style={{ flex: 1, height: 1, background: "rgba(7,26,47,0.07)" }} />
                     <div style={{
                       display: "flex", alignItems: "center", gap: 6,
                       padding: "4px 12px",
-                      background: "rgba(255,255,255,0.03)",
-                      border: "1px solid rgba(255,255,255,0.08)",
+                      background: "rgba(7,26,47,0.03)",
+                      border: "1px solid rgba(7,26,47,0.08)",
                       borderRadius: 20,
                       fontSize: 10, color: "var(--foundry-text-muted)",
                       letterSpacing: "0.08em", textTransform: "uppercase" as const,
@@ -2761,7 +2761,7 @@ ${forgeReply}`;
                       <MarkerIcon size={10} color={ms.color} />
                       Stage {item.stageId} — {ms.label}
                     </div>
-                    <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.07)" }} />
+                    <div style={{ flex: 1, height: 1, background: "rgba(7,26,47,0.07)" }} />
                   </div>
                 );
               }
@@ -2775,8 +2775,8 @@ ${forgeReply}`;
                   renderWithBold={(t, sr, gt, ct) => renderWithBold(t, sr, gt, ct, glossaryTerms, profile.glossaryLearned || [])}
                   userName={profile?.name || "You"}
                   feedbackContext={{
-                    surface: "Main Forge",
-                    conversationTitle: `Stage ${activeStage} - ${STAGES_DATA[activeStage - 1]?.label || "Foundry"}`,
+                    surface: "Main Navi",
+                    conversationTitle: `Stage ${activeStage} - ${STAGES_DATA[activeStage - 1]?.label || "Tekori"}`,
                     stageId: Number(activeStage) || null,
                     messageId: item.id ? String(item.id) : undefined,
                   }}
@@ -2801,8 +2801,8 @@ ${forgeReply}`;
                 <ForgeAvatar size={30} />
                 <div
                   style={{
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.07)",
+                    background: "rgba(7,26,47,0.04)",
+                    border: "1px solid rgba(7,26,47,0.07)",
                     borderRadius: "4px 16px 16px 16px",
                     padding: "4px 12px",
                   }}
@@ -2826,16 +2826,16 @@ ${forgeReply}`;
                 <div
                   style={{
                     fontSize: 13,
-                    fontFamily: "'Lora', Georgia, serif",
-                    color: "#4CAF8A",
+                    fontFamily: "var(--tekori-font-ui)",
+                    color: "var(--color-success)",
                     fontWeight: 600,
                     marginBottom: 4,
                   }}
                 >
-                  ✓ Forge says you're ready to advance
+                  ✓ Navi says you're ready to advance
                 </div>
 
-                <div style={{ fontSize: 12, color: "rgba(240,237,232,0.62)", marginBottom: 12 }}>
+                <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 12 }}>
                   Stage {activeStage} work is done.
                   {STAGES_DATA[activeStage]
                     ? ` Stage ${activeStage + 1} — ${STAGES_DATA[activeStage].label} — is next.`
@@ -2847,13 +2847,13 @@ ${forgeReply}`;
                     onClick={() => handleAdvance(activeStage + 1)}
                     style={{
                       width: "100%",
-                      background: "linear-gradient(135deg, #4CAF8A, #48BB78)",
+                      background: "linear-gradient(135deg, var(--color-success), var(--color-success))",
                       border: "none",
                       borderRadius: 8,
                       padding: "10px",
                       color: "#fff",
                       fontSize: 13,
-                      fontFamily: "'Lora', Georgia, serif",
+                      fontFamily: "var(--tekori-font-ui)",
                       fontWeight: 600,
                       cursor: "pointer",
                     }}
@@ -2920,9 +2920,9 @@ ${forgeReply}`;
 
           type FilterOption = { key: typeof archiveFilter; label: string; color: string; show: boolean };
           const filterOptions: FilterOption[] = [
-            { key: "all",      label: "All",             color: "#F0EDE8", show: true },
-            { key: "forge",    label: "Forge Sessions",  color: ARCHIVE_SOURCE_CONFIG.forge.color,    show: hasForge },
-            { key: "chatroom", label: "Chat with Forge", color: ARCHIVE_SOURCE_CONFIG.chatroom.color, show: hasChatroom },
+            { key: "all",      label: "All",             color: "var(--color-text)", show: true },
+            { key: "forge",    label: "Navi Sessions",  color: ARCHIVE_SOURCE_CONFIG.forge.color,    show: hasForge },
+            { key: "chatroom", label: "Ask Navi", color: ARCHIVE_SOURCE_CONFIG.chatroom.color, show: hasChatroom },
             { key: "academy",  label: "Academy",         color: ARCHIVE_SOURCE_CONFIG.academy.color,  show: hasAcademy },
             { key: "bubble",   label: "Quick Chat",      color: ARCHIVE_SOURCE_CONFIG.bubble.color,   show: hasBubble },
             { key: "pitchpractice", label: "Pitch Practice", color: ARCHIVE_SOURCE_CONFIG.pitchpractice.color, show: hasPitchPractice },
@@ -2930,11 +2930,11 @@ ${forgeReply}`;
 
           return (
             <div className="forge-screen__archive" style={{ position: "absolute", inset: 0, overflowY: "auto", padding: "16px", maxWidth: "var(--foundry-forge-chat-width)", width: "100%", margin: "0 auto" }}>
-              <div style={{ fontSize: 18, fontFamily: "’Playfair Display’, Georgia, serif", fontWeight: 700, marginBottom: 4 }}>
+              <div style={{ fontSize: 18, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, marginBottom: 4 }}>
                 Full Archive
               </div>
               <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", marginBottom: 16, lineHeight: 1.6 }}>
-                Saved snapshots of your Forge conversations, chat sessions, and Academy lessons — all in one place.
+                Saved snapshots of your Navi conversations, chat sessions, and Academy lessons — all in one place.
               </div>
 
               {/* Filter chips */}
@@ -2947,12 +2947,12 @@ ${forgeReply}`;
                         key={opt.key}
                         onClick={() => setArchiveFilter(opt.key)}
                         style={{
-                          background: active ? `${opt.color}20` : "rgba(255,255,255,0.04)",
-                          border: `1px solid ${active ? opt.color + "50" : "rgba(255,255,255,0.1)"}`,
+                          background: active ? `${opt.color}20` : "rgba(7,26,47,0.04)",
+                          border: `1px solid ${active ? opt.color + "50" : "rgba(7,26,47,0.10)"}`,
                           borderRadius: 20,
-                          color: active ? opt.color : "rgba(240,237,232,0.45)",
+                          color: active ? opt.color : "rgba(102,112,133,0.68)",
                           fontSize: 11,
-                          fontFamily: "’DM Sans’, sans-serif",
+                          fontFamily: "var(--tekori-font-ui)",
                           fontWeight: active ? 700 : 500,
                           padding: "5px 13px",
                           cursor: "pointer",
@@ -2973,11 +2973,11 @@ ${forgeReply}`;
                   {filteredEntries.map((entry) => renderArchiveCard(entry))}
                 </div>
               ) : allEntries.length === 0 ? (
-                <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "18px 16px", color: "rgba(240,237,232,0.62)", fontSize: 13, lineHeight: 1.7 }}>
+                <div style={{ background: "rgba(7,26,47,0.03)", border: "1px solid rgba(7,26,47,0.06)", borderRadius: 14, padding: "18px 16px", color: "var(--color-text-muted)", fontSize: 13, lineHeight: 1.7 }}>
                   No saved archives yet. Use Archive Chat from the chat tab whenever you want to store a named snapshot.
                 </div>
               ) : (
-                <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "18px 16px", color: "rgba(240,237,232,0.62)", fontSize: 13, lineHeight: 1.7 }}>
+                <div style={{ background: "rgba(7,26,47,0.03)", border: "1px solid rgba(7,26,47,0.06)", borderRadius: 14, padding: "18px 16px", color: "var(--color-text-muted)", fontSize: 13, lineHeight: 1.7 }}>
                   No {filterOptions.find((o) => o.key === archiveFilter)?.label} archives saved yet.
                 </div>
               )}
@@ -2987,11 +2987,11 @@ ${forgeReply}`;
       </div>
 
       {summaryModal && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 80, background: "rgba(4,4,5,0.84)", backdropFilter: "blur(12px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }}>
-          <div style={{ width: "min(720px, 100%)", maxHeight: "85vh", overflowY: "auto", background: "#0E0E10", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, padding: "20px 18px 18px" }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 80, background: "rgba(7,26,47,0.42)", backdropFilter: "blur(12px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }}>
+          <div style={{ width: "min(720px, 100%)", maxHeight: "85vh", overflowY: "auto", background: "var(--color-surface)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 18, padding: "20px 18px 18px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 14 }}>
               <div>
-                <div style={{ fontSize: 10, color: "#E8622A", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>
+                <div style={{ fontSize: 10, color: "var(--tekori-gold)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>
                   {getArchiveDisplayDate(summaryModal.date)}
                 </div>
                 {editingSummaryTitle ? (
@@ -3001,24 +3001,24 @@ ${forgeReply}`;
                       onChange={(e) => setSummaryTitleInput(e.target.value)}
                       style={{
                         width: "min(420px, 100%)",
-                        background: "rgba(255,255,255,0.04)",
-                        border: "1px solid rgba(255,255,255,0.08)",
+                        background: "rgba(7,26,47,0.04)",
+                        border: "1px solid rgba(7,26,47,0.08)",
                         borderRadius: 10,
                         padding: "10px 12px",
-                        color: "#F0EDE8",
+                        color: "var(--color-text)",
                         fontSize: 14,
                       }}
                     />
                     <button
                       onClick={handleUpdateSummaryTitle}
                       disabled={updatingSummaryTitle}
-                      style={{ background: "linear-gradient(135deg, #E8622A, #c9521e)", border: "none", borderRadius: 10, color: "#fff", padding: "10px 12px", cursor: updatingSummaryTitle ? "default" : "pointer", fontWeight: 600 }}
+                      style={{ background: "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))", border: "none", borderRadius: 10, color: "var(--color-primary)", padding: "10px 12px", cursor: updatingSummaryTitle ? "default" : "pointer", fontWeight: 800 }}
                     >
                       {updatingSummaryTitle ? "Saving..." : "Save"}
                     </button>
                   </div>
                 ) : (
-                  <div style={{ fontSize: 24, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>
+                  <div style={{ fontSize: 24, fontFamily: "var(--tekori-font-brand)", fontWeight: 700 }}>
                     {getArchiveDisplayTitle(summaryModal.title, summaryModal.summary, `Saved Archive · ${getArchiveDisplayDate(summaryModal.date)}`)}
                   </div>
                 )}
@@ -3028,20 +3028,20 @@ ${forgeReply}`;
                 {editingSummaryTitle && (
                   <button
                     onClick={() => setEditingSummaryTitle(false)}
-                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#999", padding: "8px 12px", cursor: "pointer", height: "fit-content" }}
+                    style={{ background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 10, color: "var(--color-text-muted)", padding: "8px 12px", cursor: "pointer", height: "fit-content" }}
                   >
                     Cancel
                   </button>
                 )}
                 <button
                   onClick={() => setSummaryModal(null)}
-                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#999", padding: "8px 12px", cursor: "pointer", height: "fit-content" }}
+                  style={{ background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 10, color: "var(--color-text-muted)", padding: "8px 12px", cursor: "pointer", height: "fit-content" }}
                 >
                   Close
                 </button>
               </div>
             </div>
-            <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "18px 16px", fontSize: 14, color: "#C8C4BE", lineHeight: 1.8, fontFamily: "'Lora', Georgia, serif", textAlign: "left" }}>
+            <div style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.06)", borderRadius: 14, padding: "18px 16px", fontSize: 14, color: "var(--color-text-soft)", lineHeight: 1.8, fontFamily: "var(--tekori-font-ui)", textAlign: "left" }}>
               {renderWithBold(getArchiveDisplaySummary(summaryModal.summary), () => { }, () => { })}
             </div>
           </div>
@@ -3049,9 +3049,9 @@ ${forgeReply}`;
       )}
 
       {saveArchiveModalOpen && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 85, background: "rgba(4,4,5,0.84)", backdropFilter: "blur(12px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }}>
-          <div style={{ width: "min(520px, 100%)", background: "#0E0E10", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, padding: "20px 18px 18px" }}>
-            <div style={{ fontSize: 22, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 6 }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 85, background: "rgba(7,26,47,0.42)", backdropFilter: "blur(12px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }}>
+          <div style={{ width: "min(520px, 100%)", background: "var(--color-surface)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 18, padding: "20px 18px 18px" }}>
+            <div style={{ fontSize: 22, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, marginBottom: 6 }}>
               {archiveSession?.entry ? "Update Archive" : "Archive Chat"}
             </div>
             <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.6, marginBottom: 14 }}>
@@ -3059,7 +3059,7 @@ ${forgeReply}`;
                 ? "This updates the current archive card with the new continuation. The saved date and summary will be refreshed."
                 : `This saves the current Stage ${activeStage} chat as a named archive entry and clears the live chat.`}
             </div>
-            <div style={{ fontSize: 10, color: "rgba(240,237,232,0.62)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>
+            <div style={{ fontSize: 10, color: "var(--color-text-muted)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>
               Archive Name
             </div>
             <input
@@ -3068,11 +3068,11 @@ ${forgeReply}`;
               placeholder="Stage 1 Archive — Apr 15, 2026"
               style={{
                 width: "100%",
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.08)",
+                background: "rgba(7,26,47,0.04)",
+                border: "1px solid rgba(7,26,47,0.08)",
                 borderRadius: 10,
                 padding: "12px 13px",
-                color: "#F0EDE8",
+                color: "var(--color-text)",
                 fontSize: 13,
                 marginBottom: 16,
               }}
@@ -3081,10 +3081,10 @@ ${forgeReply}`;
               <button
                 onClick={() => !savingArchive && setSaveArchiveModalOpen(false)}
                 style={{
-                  background: "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(255,255,255,0.08)",
+                  background: "rgba(7,26,47,0.04)",
+                  border: "1px solid rgba(7,26,47,0.08)",
                   borderRadius: 10,
-                  color: "#999",
+                  color: "var(--color-text-muted)",
                   padding: "10px 12px",
                   cursor: savingArchive ? "default" : "pointer",
                 }}
@@ -3095,13 +3095,13 @@ ${forgeReply}`;
                 onClick={handleSaveArchive}
                 disabled={savingArchive || messages.length === 0}
                 style={{
-                  background: savingArchive || messages.length === 0 ? "rgba(255,255,255,0.06)" : "linear-gradient(135deg, #E8622A, #c9521e)",
+                  background: savingArchive || messages.length === 0 ? "rgba(7,26,47,0.06)" : "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))",
                   border: "none",
                   borderRadius: 10,
-                  color: "#fff",
+                  color: savingArchive || messages.length === 0 ? "var(--color-text-muted)" : "var(--color-primary)",
                   padding: "10px 14px",
                   cursor: savingArchive || messages.length === 0 ? "default" : "pointer",
-                  fontWeight: 600,
+                  fontWeight: 800,
                 }}
               >
                 {savingArchive ? "Saving..." : archiveSession?.entry ? "Update Archive" : "Save Archive"}
@@ -3119,8 +3119,8 @@ ${forgeReply}`;
               padding: "12px 16px",
               paddingBottom: "max(20px, calc(12px + env(safe-area-inset-bottom)))",
               flexShrink: 0,
-              borderTop: "1px solid rgba(255,255,255,0.05)",
-              background: "rgba(8,8,9,0.95)",
+              borderTop: "1px solid rgba(7,26,47,0.05)",
+              background: "rgba(255,252,246,0.94)",
               maxWidth: "var(--foundry-forge-chat-width)",
               width: "100%",
               alignSelf: "center",
@@ -3134,9 +3134,9 @@ ${forgeReply}`;
                 onClick={openSaveArchiveModal}
                 disabled={loading || savingArchive || messages.length === 0}
                 style={{
-                  border: "1px solid rgba(232,98,42,0.24)",
-                  background: loading || savingArchive || messages.length === 0 ? "rgba(255,255,255,0.04)" : "rgba(232,98,42,0.1)",
-                  color: loading || savingArchive || messages.length === 0 ? "#666" : "#E8622A",
+                  border: "1px solid rgba(216,155,43,0.24)",
+                  background: loading || savingArchive || messages.length === 0 ? "rgba(7,26,47,0.04)" : "rgba(216,155,43,0.1)",
+                  color: loading || savingArchive || messages.length === 0 ? "var(--color-text-muted)" : "var(--tekori-gold)",
                   borderRadius: 8,
                   padding: "8px 12px",
                   fontSize: 11,
@@ -3176,13 +3176,13 @@ ${forgeReply}`;
                 }
               }}
               loading={loading}
-              placeholder={`Talk to Forge about Stage ${activeStage}...`}
+              placeholder={`Talk to Navi about Stage ${activeStage}...`}
               attachedFiles={attachedFiles}
               onFilesChange={setAttachedFiles}
               notice={languageWarning}
             />
-            <div style={{ fontSize: 10, color: "#2b2b2b", textAlign: "center", marginTop: 4 }}>
-              Forge is an AI. Always verify important information before acting on it.
+            <div style={{ fontSize: 10, color: "var(--color-text-muted)", textAlign: "center", marginTop: 4 }}>
+              Navi is an AI. Always verify important information before acting on it.
             </div>
           </div>
         )
@@ -3607,10 +3607,10 @@ export default function FoundryApp() {
         try {
           const transcript = stageMessages
             .slice(-100)
-            .map((message) => `${message.role === "forge" ? "Forge" : profile.name || "Founder"}: ${message.text}`)
+            .map((message) => `${message.role === "forge" ? "Navi" : profile.name || "Founder"}: ${message.text}`)
             .join("\n");
           const summary = await callForgeAPI(
-            [{ role: "user", content: `Summarize this Stage ${stageId} Foundry coaching thread in 4-6 concise bullets. Preserve concrete decisions, blockers, numbers, and next moves.\n\n${transcript}` }],
+            [{ role: "user", content: `Summarize this Stage ${stageId} Tekori coaching thread in 4-6 concise bullets. Preserve concrete decisions, blockers, numbers, and next moves.\n\n${transcript}` }],
             "You summarize founder coaching threads for durable memory. Return only the summary.",
             700,
           );
@@ -4037,7 +4037,7 @@ export default function FoundryApp() {
   const openPitchPractice = () => {
     markMeaningfulActivity();
     if (isFreeTier && pitchPracticeTrialUses >= FREE_TIER_PITCH_PRACTICE_LIMIT) {
-      openFeatureUpgrade("Free-tier founders can use Pitch Practice three times. Unlock paid access to keep rehearsing with Forge.");
+      openFeatureUpgrade("Free-tier founders can use Pitch Practice three times. Unlock paid access to keep rehearsing with Navi.");
       return;
     }
     setShowPitchPractice(true);
@@ -4063,7 +4063,7 @@ export default function FoundryApp() {
   const openBusinessModelCanvas = () => {
     markMeaningfulActivity();
     if (!canAccessStage(2, accountAccess)) {
-      openFeatureUpgrade("The Business Model Canvas opens when you unlock Stage 2. That is where Foundry starts structuring the business model with Forge.");
+      openFeatureUpgrade("The Business Model Canvas opens when you unlock Stage 2. That is where Tekori starts structuring the business model with Navi.");
       return;
     }
     setShowBusinessModelCanvas(true);
@@ -4146,7 +4146,7 @@ export default function FoundryApp() {
 
   const openBusinessModelCanvasViaForge = (section: BusinessModelCanvasSectionKey) => {
     if (!canAccessStage(2, accountAccess)) {
-      openFeatureUpgrade("The Business Model Canvas is part of Stage 2. Unlock it first, then Forge can help you fill and refine the model.");
+      openFeatureUpgrade("The Business Model Canvas is part of Stage 2. Unlock it first, then Navi can help you fill and refine the model.");
       return;
     }
     markMeaningfulActivity();
@@ -4517,7 +4517,7 @@ Start a focused conversation that helps them understand what is actually unresol
     return (
       <>
         <style>{GLOBAL_STYLES}</style>
-        <div style={{ background: "#080809", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10 }}>
+        <div style={{ background: "var(--color-bg-soft)", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10 }}>
           <Logo variant="flame" style={{ width: 52, height: 52, objectFit: "contain", opacity: 0.88 }} />
           <LoadingForgeAnimation size={62} />
         </div>
@@ -4554,10 +4554,10 @@ Start a focused conversation that helps them understand what is actually unresol
     return (
       <>
         <style>{GLOBAL_STYLES}</style>
-        <div style={{ background: "#080809", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
+        <div style={{ background: "var(--color-bg-soft)", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
           <Logo variant="flame" style={{ width: 56, height: 56, objectFit: "contain", opacity: 0.9 }} />
           <LoadingForgeAnimation size={68} />
-          <div style={{ fontSize: 12, color: "#5B5650", fontFamily: "'Lora', Georgia, serif", letterSpacing: "0.1em" }}>Loading your workspace...</div>
+          <div style={{ fontSize: 12, color: "var(--color-text-soft)", fontFamily: "var(--tekori-font-ui)", letterSpacing: "0.1em" }}>Loading your workspace...</div>
         </div>
       </>
     );
@@ -4569,12 +4569,12 @@ Start a focused conversation that helps them understand what is actually unresol
       <>
         <style>{GLOBAL_STYLES}</style>
         <div style={{
-          background: "#080809", minHeight: "100vh", display: "flex", flexDirection: "column",
+          background: "var(--color-bg-soft)", minHeight: "100vh", display: "flex", flexDirection: "column",
           alignItems: "center", justifyContent: "center", gap: 20, padding: 32,
-          fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8", textAlign: "center",
+          fontFamily: "var(--tekori-font-ui)", color: "var(--color-text)", textAlign: "center",
         }}>
           <Logo variant="flame" style={{ width: 36, height: 36, objectFit: "contain", opacity: 0.4 }} />
-          <div style={{ fontSize: 18, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>
+          <div style={{ fontSize: 18, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, color: "var(--color-text)" }}>
             Access Restricted
           </div>
           <div style={{ fontSize: 13, color: "var(--foundry-text-secondary)", maxWidth: 380, lineHeight: 1.7, fontStyle: "italic" }}>
@@ -4584,7 +4584,7 @@ Start a focused conversation that helps them understand what is actually unresol
             onClick={handleLogout}
             style={{
               marginTop: 8, padding: "10px 24px", background: "transparent",
-              border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10,
+              border: "1px solid rgba(7,26,47,0.1)", borderRadius: 10,
               color: "var(--foundry-text-muted)", fontSize: 12, cursor: "pointer",
             }}
           >
@@ -4631,7 +4631,7 @@ Start a focused conversation that helps them understand what is actually unresol
   return (
     <>
       <style>{GLOBAL_STYLES}</style>
-      <div style={{ background: "#080809", minHeight: "100vh", minHeight: "-webkit-fill-available" }}>
+      <div style={{ background: "var(--color-bg-soft)", minHeight: "100vh", minHeight: "-webkit-fill-available" }}>
         {screen === "intro" && <CinematicIntro onComplete={() => setScreenPersisted("onboarding")} />}
         {screen === "onboarding" && (
           <OnboardingScreen
@@ -4795,7 +4795,7 @@ Start a focused conversation that helps them understand what is actually unresol
                 String(entry.title || "").startsWith("Academy —") ? "academy" :
                 String(entry.title || "").startsWith("Pitch Practice —") ? "pitchpractice" :
                 String(entry.title || "").startsWith("Quick Chat") ? "bubble" :
-                String(entry.title || "").startsWith("Chat with Forge") ? "chatroom" :
+                String(entry.title || "").startsWith("Ask Navi") ? "chatroom" :
                 "forge"
               );
               if (sourceType === "pitchpractice") {
@@ -4813,7 +4813,7 @@ Start a focused conversation that helps them understand what is actually unresol
         </Suspense>
       )}
       {showMarketIntel && profile && user && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "#080809", overflowY: "auto" }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "var(--color-bg-soft)", overflowY: "auto" }}>
           <Suspense fallback={<ScreenLoadingFallback message="Loading market intelligence..." />}>
             <MarketIntelligenceScreen
               profile={profile}
@@ -4832,7 +4832,7 @@ Start a focused conversation that helps them understand what is actually unresol
         </div>
       )}
       {showDocuments && profile && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "#080809", overflowY: "auto" }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "var(--color-bg-soft)", overflowY: "auto" }}>
           <Suspense fallback={<ScreenLoadingFallback message="Loading document vault..." />}>
             <DocumentProductionScreen
               userId={(user as any).id}
@@ -4847,7 +4847,7 @@ Start a focused conversation that helps them understand what is actually unresol
         </div>
       )}
       {showPitchPractice && profile && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "#080809", overflowY: "auto" }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "var(--color-bg-soft)", overflowY: "auto" }}>
           <Suspense fallback={<ScreenLoadingFallback message="Loading pitch practice..." />}>
             <PitchPracticeScreen
               userId={(user as any).id}
@@ -4894,7 +4894,7 @@ Start a focused conversation that helps them understand what is actually unresol
         </Suspense>
       )}
       {showAcademy && profile && user && (
-        <Suspense fallback={<ScreenLoadingFallback message="Loading Forge Academy..." />}>
+        <Suspense fallback={<ScreenLoadingFallback message="Loading Navi Academy..." />}>
           <ForgeAcademyScreen
             userId={(user as any).id}
             profile={profile}
@@ -4905,7 +4905,7 @@ Start a focused conversation that helps them understand what is actually unresol
             onContextChange={setAcademyContext}
             onOpenArchive={() => setShowArchivePanel(true)}
             maxPreviewStage={isFreeTier ? FREE_TIER_ACADEMY_STAGE_LIMIT : null}
-            trialNotice={isFreeTier ? "Free preview includes Forge Academy Stage 1 lessons only. The rest of Academy unlocks with paid access." : null}
+            trialNotice={isFreeTier ? "Free preview includes Navi Academy Stage 1 lessons only. The rest of Academy unlocks with paid access." : null}
             onCreateAction={createActionSuggestion}
             onAskForgeAboutAction={askForgeAboutAction}
             completionOverrides={academyCompletionOverrides}
@@ -4928,8 +4928,8 @@ Start a focused conversation that helps them understand what is actually unresol
         </Suspense>
       )}
       {showChatRoom && profile && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "#080809" }}>
-          <Suspense fallback={<ScreenLoadingFallback message="Loading Forge chat room..." />}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "var(--color-bg-soft)" }}>
+          <Suspense fallback={<ScreenLoadingFallback message="Loading Navi chat room..." />}>
             <ForgeChatRoom
               userId={(user as any).id}
               profile={profile}
@@ -4986,7 +4986,7 @@ Start a focused conversation that helps them understand what is actually unresol
         </div>
       )}
       {settingsView === "settings" && profile && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 120, background: "#080809", overflowY: "auto" }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 120, background: "var(--color-bg-soft)", overflowY: "auto" }}>
           <Suspense fallback={<ScreenLoadingFallback message="Loading settings..." />}>
             <SettingsScreen
               profile={profile}
@@ -5013,35 +5013,35 @@ Start a focused conversation that helps them understand what is actually unresol
         </div>
       )}
       {settingsView === "privacy" && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 121, background: "#080809", overflowY: "auto" }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 121, background: "var(--color-bg-soft)", overflowY: "auto" }}>
           <Suspense fallback={<ScreenLoadingFallback message="Loading privacy policy..." />}>
             <PrivacyPolicyScreen onBack={() => setSettingsView("settings")} />
           </Suspense>
         </div>
       )}
       {settingsView === "eula" && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 121, background: "#080809", overflowY: "auto" }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 121, background: "var(--color-bg-soft)", overflowY: "auto" }}>
           <Suspense fallback={<ScreenLoadingFallback message="Loading EULA..." />}>
             <EulaScreen onBack={() => setSettingsView("settings")} />
           </Suspense>
         </div>
       )}
       {settingsView === "termsAndConditions" && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 121, background: "#080809", overflowY: "auto" }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 121, background: "var(--color-bg-soft)", overflowY: "auto" }}>
           <Suspense fallback={<ScreenLoadingFallback message="Loading terms..." />}>
             <TermsAndConditionsScreen onBack={() => setSettingsView("settings")} />
           </Suspense>
         </div>
       )}
       {settingsView === "acceptableUse" && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 121, background: "#080809", overflowY: "auto" }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 121, background: "var(--color-bg-soft)", overflowY: "auto" }}>
           <Suspense fallback={<ScreenLoadingFallback message="Loading acceptable use policy..." />}>
             <AcceptableUsePolicyScreen onBack={() => setSettingsView("settings")} />
           </Suspense>
         </div>
       )}
       {settingsView === "disclaimer" && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 121, background: "#080809", overflowY: "auto" }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 121, background: "var(--color-bg-soft)", overflowY: "auto" }}>
           <Suspense fallback={<ScreenLoadingFallback message="Loading disclaimer..." />}>
             <DisclaimerScreen onBack={() => setSettingsView("settings")} />
           </Suspense>

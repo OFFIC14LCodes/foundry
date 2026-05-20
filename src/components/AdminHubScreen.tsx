@@ -45,7 +45,7 @@ const PRIMARY_TOOLS: Array<{
         view: "accounts",
     },
     {
-        title: "Forge Academy",
+        title: "Navi Academy",
         eyebrow: "Content Ops",
         description: "Academy categories, topic conversations, lesson series, and learning content.",
         accent: "var(--foundry-amber)",
@@ -189,7 +189,7 @@ export default function AdminHubScreen({
                 zIndex: 180,
                 background: "var(--foundry-bg-app)",
                 color: "var(--foundry-text-primary)",
-                fontFamily: "'Lora', Georgia, serif",
+                fontFamily: "var(--tekori-font-ui)",
                 display: "flex",
                 flexDirection: "column",
             }}
@@ -198,7 +198,7 @@ export default function AdminHubScreen({
                 style={{
                     padding: "max(14px, calc(10px + env(safe-area-inset-top))) 16px 12px",
                     borderBottom: "var(--foundry-border-subtle)",
-                    background: "rgba(8,8,9,0.97)",
+                    background: "rgba(255,252,246,0.97)",
                     backdropFilter: "blur(12px)",
                     display: "flex",
                     alignItems: "center",
@@ -266,8 +266,8 @@ export default function AdminHubScreen({
                             <div style={{ display: "flex", justifyContent: "space-between", gap: 14, alignItems: "flex-start", flexWrap: "wrap" }}>
                                 <div style={{ minWidth: 260, maxWidth: 760 }}>
                                     <div className="foundry-label" style={{ color: "var(--foundry-orange)", marginBottom: 8 }}>Internal Control Panel</div>
-                                    <div style={{ fontSize: 28, lineHeight: 1.08, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 8 }}>
-                                        Foundry Admin Hub
+                                    <div style={{ fontSize: 28, lineHeight: 1.08, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, marginBottom: 8 }}>
+                                        Tekori Admin Hub
                                     </div>
                                     <div style={{ fontSize: 13, color: "var(--foundry-text-muted)", lineHeight: 1.65 }}>
                                         Start with Admin Operations for support, access, feedback, and audit work. Use the other surfaces for specialized account and content review.
@@ -296,7 +296,7 @@ export default function AdminHubScreen({
                         </SectionPanel>
 
                         <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 12 }}>
-                            <SectionPanel title="Forge Token Usage" action={<TextButton label="Refresh" onClick={() => void refreshTokenUsage()} />}>
+                            <SectionPanel title="Navi Token Usage" action={<TextButton label="Refresh" onClick={() => void refreshTokenUsage()} />}>
                                 {tokenUsageLoading ? (
                                     <InlineState>Loading token usage...</InlineState>
                                 ) : tokenUsageError ? (
@@ -333,7 +333,7 @@ export default function AdminHubScreen({
                                                     <span>Cycle usage</span>
                                                     <span>{usagePercent}% · reset {formatResetDate(ttsUsage.resetAtUnix)}</span>
                                                 </div>
-                                                <div style={{ height: 8, borderRadius: 999, background: "rgba(255,255,255,0.05)", overflow: "hidden" }}>
+                                                <div style={{ height: 8, borderRadius: 999, background: "rgba(7,26,47,0.05)", overflow: "hidden" }}>
                                                     <div style={{ width: `${usagePercent}%`, height: "100%", background: "linear-gradient(90deg, var(--foundry-orange), var(--foundry-amber))" }} />
                                                 </div>
                                             </div>
@@ -420,8 +420,8 @@ function NavButton({
                 alignItems: "center",
                 justifyContent: "space-between",
                 gap: 10,
-                border: "1px solid rgba(255,255,255,0.075)",
-                background: "rgba(255,255,255,0.025)",
+                border: "1px solid rgba(7,26,47,0.075)",
+                background: "rgba(7,26,47,0.025)",
                 borderRadius: 8,
                 padding: "10px 11px",
                 color: "inherit",
@@ -458,8 +458,8 @@ function WorkflowRow({
                 gridTemplateColumns: "10px minmax(0, 1fr) max-content",
                 gap: 10,
                 alignItems: "center",
-                border: "1px solid rgba(255,255,255,0.07)",
-                background: "rgba(255,255,255,0.025)",
+                border: "1px solid rgba(7,26,47,0.07)",
+                background: "rgba(7,26,47,0.025)",
                 borderRadius: 8,
                 padding: "10px 11px",
                 color: "inherit",
@@ -481,7 +481,7 @@ function WorkflowRow({
 
 function SectionPanel({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
     return (
-        <section style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 8, padding: 14 }}>
+        <section style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.07)", borderRadius: 8, padding: 14 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 12 }}>
                 <div className="foundry-label">{title}</div>
                 {action}
@@ -538,7 +538,7 @@ function TextButton({ label, onClick }: { label: string; onClick: () => void }) 
 
 function MetricTile({ label, value, accent }: { label: string; value: string; accent: string }) {
     return (
-        <div style={{ border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.025)", borderRadius: 8, padding: 10, minWidth: 0 }}>
+        <div style={{ border: "1px solid rgba(7,26,47,0.07)", background: "rgba(7,26,47,0.025)", borderRadius: 8, padding: 10, minWidth: 0 }}>
             <div style={{ fontSize: 14, color: accent, fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{value}</div>
             <div className="foundry-font-ui" style={{ fontSize: 9, color: "var(--foundry-text-muted)", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", marginTop: 5 }}>{label}</div>
         </div>
@@ -552,7 +552,7 @@ function InlineState({ children, tone = "muted" }: { children: ReactNode; tone?:
 
 function ControlCard({ label, control }: { label: string; control: ReactNode }) {
     return (
-        <div style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 8, padding: 12 }}>
+        <div style={{ background: "rgba(7,26,47,0.025)", border: "1px solid rgba(7,26,47,0.07)", borderRadius: 8, padding: 12 }}>
             <div className="foundry-font-ui" style={{ fontSize: 10, color: "var(--foundry-text-muted)", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
                 {label}
             </div>
@@ -570,8 +570,8 @@ function ToggleButton({ enabled, onClick }: { enabled: boolean; onClick: () => v
                 minWidth: 82,
                 padding: "9px 12px",
                 borderRadius: 999,
-                border: enabled ? "1px solid rgba(76,175,138,0.32)" : "1px solid rgba(255,255,255,0.08)",
-                background: enabled ? "rgba(76,175,138,0.14)" : "rgba(255,255,255,0.03)",
+                border: enabled ? "1px solid rgba(76,175,138,0.32)" : "1px solid rgba(7,26,47,0.08)",
+                background: enabled ? "rgba(76,175,138,0.14)" : "rgba(7,26,47,0.03)",
                 color: enabled ? "var(--foundry-green)" : "var(--foundry-text-muted)",
                 fontSize: 11,
                 fontWeight: 800,
@@ -600,8 +600,8 @@ function NumberInput({
             onChange={(event) => onChange(Math.max(min, Number(event.target.value) || min))}
             style={{
                 width: 100,
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.1)",
+                background: "rgba(7,26,47,0.04)",
+                border: "1px solid rgba(7,26,47,0.1)",
                 borderRadius: 8,
                 padding: "9px 11px",
                 color: "var(--foundry-text-primary)",

@@ -17,12 +17,12 @@ export function SettingsScreenShell({
     footer,
 }: SettingsScreenShellProps) {
     return (
-        <div style={{ minHeight: "100vh", background: "var(--foundry-bg-app)", color: "var(--foundry-text-primary)", fontFamily: "'Lora', Georgia, serif" }}>
-            <div style={{ position: "sticky", top: 0, zIndex: 20, background: "rgba(8,8,9,0.94)", backdropFilter: "blur(12px)", borderBottom: "1px solid var(--foundry-border-subtle)" }}>
+        <div style={{ minHeight: "100vh", background: "var(--foundry-bg-app)", color: "var(--foundry-text-primary)", fontFamily: "var(--tekori-font-ui)" }}>
+            <div style={{ position: "sticky", top: 0, zIndex: 20, background: "rgba(255,252,246,0.94)", backdropFilter: "blur(12px)", borderBottom: "1px solid var(--foundry-border-subtle)" }}>
                 <div className="foundry-page settings-shell__header" style={{ paddingTop: "max(18px, calc(10px + env(safe-area-inset-top)))", paddingBottom: 18 }}>
                     <div className="settings-shell__title">
                         <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                            <div style={{ fontSize: 24, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>{title}</div>
+                            <div style={{ fontSize: 24, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, color: "var(--color-text)" }}>{title}</div>
                             {subtitle && <HelpTooltip content={subtitle} side="bottom" />}
                         </div>
                     </div>
@@ -55,7 +55,7 @@ export function SettingsSection({ title, description, children }: SettingsSectio
         <section style={{ marginBottom: 18 }}>
             <div className="settings-section-heading">
                 <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ fontSize: 16, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8" }}>{title}</div>
+                    <div style={{ fontSize: 16, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, color: "var(--color-text)" }}>{title}</div>
                     {description && <HelpTooltip content={description} />}
                 </div>
             </div>
@@ -88,12 +88,12 @@ export function SettingsRow({ label, value, hint, action }: SettingsRowProps) {
         <div className="settings-row">
             <div className="settings-row__copy">
                 <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ fontSize: 13, color: "#F0EDE8", fontWeight: 500 }}>{label}</div>
+                    <div style={{ fontSize: 13, color: "var(--color-text)", fontWeight: 500 }}>{label}</div>
                     {hint && <HelpTooltip content={hint} />}
                 </div>
             </div>
             <div className="settings-row__value">
-                {action ?? <div style={{ fontSize: 13, color: "#C8C4BE" }}>{value ?? "Not set"}</div>}
+                {action ?? <div style={{ fontSize: 13, color: "var(--color-text-soft)" }}>{value ?? "Not set"}</div>}
             </div>
         </div>
     );

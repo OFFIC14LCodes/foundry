@@ -71,10 +71,10 @@ export function applyGlossaryHighlights(
         const matched = m[1];
         const entry = aliasMap.get(matched.toLowerCase());
         const stageColor = entry
-            ? STAGE_COLORS[entry.stage_unlock as keyof typeof STAGE_COLORS] ?? "#F5A843"
-            : "#F5A843";
+            ? STAGE_COLORS[entry.stage_unlock as keyof typeof STAGE_COLORS] ?? "var(--tekori-amber)"
+            : "var(--tekori-amber)";
         const learned = entry ? getAliases(entry).some((alias) => learnedSet.has(alias)) : false;
-        const color = learned ? "#4CAF8A" : stageColor;
+        const color = learned ? "var(--color-success)" : stageColor;
 
         parts.push(
             <span

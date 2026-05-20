@@ -59,9 +59,9 @@ type ForgeAcademyScreenProps = {
     completionOverrides?: Record<string, AcademyUserContentProgress>;
 };
 
-const surface = "rgba(255,255,255,0.03)";
-const border = "1px solid rgba(255,255,255,0.08)";
-const textMuted = "#9D978E";
+const surface = "rgba(7,26,47,0.03)";
+const border = "1px solid rgba(7,26,47,0.08)";
+const textMuted = "var(--color-text-muted)";
 const stageFilterOptions = [{ id: 0, label: "All stages" }, ...STAGES_DATA.map((stage) => ({ id: stage.id, label: `Stage ${stage.id}` }))];
 const PATH_STAGE_DESCRIPTIONS: Record<number, string> = {
     1: "Prove the problem is real before building anything",
@@ -220,7 +220,7 @@ export default function ForgeAcademyScreen({
             ? "all"
             : workspace.categories.find((c) => c.id === selectedCategoryId)?.title ?? selectedCategoryId;
         onContextChange({
-            screen: "ForgeAcademy",
+            screen: "NaviAcademy",
             activeLesson: selectedContent
                 ? {
                     title: selectedContent.title,
@@ -241,7 +241,7 @@ export default function ForgeAcademyScreen({
             const next = await loadAcademyWorkspace(userId);
             setWorkspace(next);
         } catch (loadError) {
-            setError(loadError instanceof Error ? loadError.message : "Unable to load Forge Academy.");
+            setError(loadError instanceof Error ? loadError.message : "Unable to load Navi Academy.");
         } finally {
             setLoading(false);
         }
@@ -812,7 +812,7 @@ export default function ForgeAcademyScreen({
         return (
             <AcademyShell onBack={onBack} onOpenNav={onOpenNav} onOpenArchive={onOpenArchive}>
                 <CenteredState
-                    title="Loading Forge Academy"
+                    title="Loading Navi Academy"
                     body="Pulling together the current curriculum, learning history, and founder progress."
                 />
             </AcademyShell>
@@ -823,7 +823,7 @@ export default function ForgeAcademyScreen({
         return (
             <AcademyShell onBack={onBack} onOpenNav={onOpenNav} onOpenArchive={onOpenArchive}>
                 <CenteredState
-                    title="Forge Academy is unavailable"
+                    title="Navi Academy is unavailable"
                     body={error}
                     action={<InlineButton onClick={() => void refreshWorkspace()}>Retry</InlineButton>}
                 />
@@ -851,7 +851,7 @@ export default function ForgeAcademyScreen({
                 <CertificateCard certificate={activeStageCertificate} />
             )}
             {actionNotice && (
-                <div style={{ maxWidth: 1180, margin: "0 auto 8px", padding: "10px 12px", borderRadius: 10, background: "rgba(76,175,138,0.08)", border: "1px solid rgba(76,175,138,0.2)", color: "#8BD8A9", fontSize: 12 }}>
+                <div style={{ maxWidth: 1180, margin: "0 auto 8px", padding: "10px 12px", borderRadius: 10, background: "rgba(76,175,138,0.08)", border: "1px solid rgba(76,175,138,0.2)", color: "var(--color-success)", fontSize: 12 }}>
                     {actionNotice}
                 </div>
             )}
@@ -907,19 +907,19 @@ export default function ForgeAcademyScreen({
             {false && activeView === "library" && (
             <div style={{ maxWidth: 1180, margin: "0 auto", display: "grid", gap: 18 }}>
                 <div style={{
-                    background: "linear-gradient(180deg, rgba(255,255,255,0.032), rgba(255,255,255,0.016))",
-                    border: "1px solid rgba(255,255,255,0.065)",
+                    background: "linear-gradient(180deg, rgba(7,26,47,0.032), rgba(7,26,47,0.016))",
+                    border: "1px solid rgba(7,26,47,0.065)",
                     borderRadius: 18,
                     padding: "28px 26px 24px",
                 }}>
                     <div style={{ display: "grid", gap: 18, maxWidth: 780, margin: "0 auto", textAlign: "center" }}>
-                        <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#E8622A", letterSpacing: "0.16em", textTransform: "uppercase" }}>
-                            Forge Academy
+                        <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "var(--tekori-gold)", letterSpacing: "0.16em", textTransform: "uppercase" }}>
+                            Navi Academy
                         </div>
-                        <div style={{ fontSize: "clamp(30px, 5vw, 48px)", lineHeight: 0.97, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
+                        <div style={{ fontSize: "clamp(30px, 5vw, 48px)", lineHeight: 0.97, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, color: "var(--color-text)" }}>
                             Sharpen your thinking before the stakes get real
                         </div>
-                        <div style={{ fontSize: 15, color: "#BDAFA2", lineHeight: 1.85, fontStyle: "italic" }}>
+                        <div style={{ fontSize: 15, color: "var(--color-text-muted)", lineHeight: 1.85, fontStyle: "italic" }}>
                             Where founders build better instincts — before the market charges tuition for the lessons.
                         </div>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
@@ -931,21 +931,21 @@ export default function ForgeAcademyScreen({
                             <div style={{
                                 padding: "12px 14px",
                                 borderRadius: 14,
-                                background: "rgba(232,98,42,0.08)",
-                                border: "1px solid rgba(232,98,42,0.18)",
+                                background: "rgba(216,155,43,0.08)",
+                                border: "1px solid rgba(216,155,43,0.18)",
                                 fontSize: 12,
-                                color: "#D9C7B8",
+                                color: "var(--color-text-soft)",
                                 lineHeight: 1.65,
                             }}>
                                 {trialNotice}
                             </div>
                         )}
                         {continueLearning.length > 0 && (
-                            <div style={{ fontSize: 13, color: "#9D978E" }}>
+                            <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
                                 You have {continueLearning.length} lesson{continueLearning.length !== 1 ? "s" : ""} in progress —{" "}
                                 <button
                                     onClick={() => document.getElementById("continue-learning")?.scrollIntoView({ behavior: "smooth" })}
-                                    style={{ background: "none", border: "none", color: "#E8622A", fontSize: 13, cursor: "pointer", padding: 0, fontFamily: "inherit", textDecoration: "underline" }}
+                                    style={{ background: "none", border: "none", color: "var(--tekori-gold)", fontSize: 13, cursor: "pointer", padding: 0, fontFamily: "inherit", textDecoration: "underline" }}
                                 >
                                     {continueLearning[0].title}
                                 </button>
@@ -1024,9 +1024,9 @@ export default function ForgeAcademyScreen({
                     );
                     const sectionDivider = (
                         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                            <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.07)" }} />
-                            <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "#E8622A", letterSpacing: "0.16em", textTransform: "uppercase", fontWeight: 700, whiteSpace: "nowrap" }}>Featured Topics</div>
-                            <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.07)" }} />
+                            <div style={{ flex: 1, height: 1, background: "rgba(7,26,47,0.07)" }} />
+                            <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "var(--tekori-gold)", letterSpacing: "0.16em", textTransform: "uppercase", fontWeight: 700, whiteSpace: "nowrap" }}>Featured Topics</div>
+                            <div style={{ flex: 1, height: 1, background: "rgba(7,26,47,0.07)" }} />
                         </div>
                     );
                     const sectionFeaturedTopics = (
@@ -1162,10 +1162,10 @@ export default function ForgeAcademyScreen({
                         />
                     );
                     const cardAskForge = (
-                        <AsideCard eyebrow="Ask Forge" title="Need a sharper thought partner right now?" description="Guided lessons stay primary. Freeform Forge is for the question that does not fit neatly anywhere yet." tone="ember">
+                        <AsideCard eyebrow="Ask Navi" title="Need a sharper thought partner right now?" description="Guided lessons stay primary. Freeform Navi is for the question that does not fit neatly anywhere yet." tone="ember">
                             <div style={{ display: "grid", gap: 10 }}>
-                                <div style={{ fontSize: 13, color: "#C8C4BE", lineHeight: 1.8 }}>Bring the messy question, the edge case, or the half-formed thought you want turned into something useful.</div>
-                                <InlineButton onClick={onOpenAskForgeAnything}>Ask Forge Anything</InlineButton>
+                                <div style={{ fontSize: 13, color: "var(--color-text-soft)", lineHeight: 1.8 }}>Bring the messy question, the edge case, or the half-formed thought you want turned into something useful.</div>
+                                <InlineButton onClick={onOpenAskForgeAnything}>Ask Navi Anything</InlineButton>
                             </div>
                         </AsideCard>
                     );
@@ -1185,10 +1185,10 @@ export default function ForgeAcademyScreen({
                             ) : (
                                 <div style={{ display: "grid", gap: 10 }}>
                                     {nextSeriesUp.map(({ series, nextItem }) => (
-                                        <button key={series.id} onClick={() => void openSeries(series)} style={{ background: "linear-gradient(135deg, rgba(99,179,237,0.10), rgba(255,255,255,0.03))", border, borderRadius: 16, padding: 14, textAlign: "left", cursor: "pointer", display: "grid", gap: 6 }}>
-                                            <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#63B3ED", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>{series.title}</div>
-                                            <div style={{ fontSize: 14, color: "#F0EDE8", fontWeight: 700 }}>Continue with {getSeriesItemTitle(nextItem!)}</div>
-                                            <div style={{ fontSize: "var(--foundry-academy-md-font)", color: "#9D978E", lineHeight: 1.7 }}>Lesson {nextItem?.position} of {series.items.length}</div>
+                                        <button key={series.id} onClick={() => void openSeries(series)} style={{ background: "linear-gradient(135deg, rgba(142,160,181,0.10), rgba(7,26,47,0.03))", border, borderRadius: 16, padding: 14, textAlign: "left", cursor: "pointer", display: "grid", gap: 6 }}>
+                                            <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "var(--tekori-muted-text)", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>{series.title}</div>
+                                            <div style={{ fontSize: 14, color: "var(--color-text)", fontWeight: 700 }}>Continue with {getSeriesItemTitle(nextItem!)}</div>
+                                            <div style={{ fontSize: "var(--foundry-academy-md-font)", color: "var(--color-text-muted)", lineHeight: 1.7 }}>Lesson {nextItem?.position} of {series.items.length}</div>
                                         </button>
                                     ))}
                                 </div>
@@ -1198,10 +1198,10 @@ export default function ForgeAcademyScreen({
                     const cardUseWell = (
                         <AsideCard eyebrow="Use Academy well" title="A simple rhythm that works" description="The point is not to consume more. It is to let one useful idea change how you operate this week." tone="mindset">
                             <div style={{ display: "grid", gap: 10 }}>
-                                {["Open one topic before you think you need it.", "Use Forge conversations to convert theory into your actual situation.", "Treat mindset entries like operating discipline, not motivation.", "Revisit resources when a decision starts to feel noisy."].map((item) => (
+                                {["Open one topic before you think you need it.", "Use Navi conversations to convert theory into your actual situation.", "Treat mindset entries like operating discipline, not motivation.", "Revisit resources when a decision starts to feel noisy."].map((item) => (
                                     <div key={item} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                                        <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#E8622A", marginTop: 7, flexShrink: 0 }} />
-                                        <div style={{ fontSize: 13, color: "#C8C4BE", lineHeight: 1.7 }}>{item}</div>
+                                        <div style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--tekori-gold)", marginTop: 7, flexShrink: 0 }} />
+                                        <div style={{ fontSize: 13, color: "var(--color-text-soft)", lineHeight: 1.7 }}>{item}</div>
                                     </div>
                                 ))}
                             </div>
@@ -1304,14 +1304,14 @@ function AcademyPageHeader({
 }) {
     return (
         <div style={{ display: "grid", gap: 10 }}>
-            <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700 }}>
+            <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "var(--tekori-gold)", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700 }}>
                 {eyebrow}
             </div>
             <div style={{ maxWidth: 720, display: "grid", gap: 8 }}>
-                <div style={{ fontSize: "clamp(26px, 4vw, 38px)", lineHeight: 1.04, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
+                <div style={{ fontSize: "clamp(26px, 4vw, 38px)", lineHeight: 1.04, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, color: "var(--color-text)" }}>
                     {title}
                 </div>
-                <div style={{ fontSize: 14, color: "#BDAFA2", lineHeight: 1.8 }}>
+                <div style={{ fontSize: 14, color: "var(--color-text-muted)", lineHeight: 1.8 }}>
                     {description}
                 </div>
             </div>
@@ -1331,20 +1331,20 @@ function AcademyPanel({
 }) {
     const tones = {
         default: {
-            background: "rgba(255,255,255,0.024)",
-            borderColor: "rgba(255,255,255,0.065)",
+            background: "rgba(7,26,47,0.024)",
+            borderColor: "rgba(7,26,47,0.065)",
         },
         active: {
-            background: "linear-gradient(180deg, rgba(232,98,42,0.055), rgba(255,255,255,0.02))",
-            borderColor: "rgba(232,98,42,0.16)",
+            background: "linear-gradient(180deg, rgba(216,155,43,0.055), rgba(7,26,47,0.02))",
+            borderColor: "rgba(216,155,43,0.16)",
         },
         success: {
-            background: "linear-gradient(180deg, rgba(76,175,138,0.06), rgba(255,255,255,0.018))",
+            background: "linear-gradient(180deg, rgba(76,175,138,0.06), rgba(7,26,47,0.018))",
             borderColor: "rgba(76,175,138,0.16)",
         },
         muted: {
-            background: "rgba(255,255,255,0.016)",
-            borderColor: "rgba(255,255,255,0.048)",
+            background: "rgba(7,26,47,0.016)",
+            borderColor: "rgba(7,26,47,0.048)",
         },
     } as const;
     const selected = tones[tone];
@@ -1429,7 +1429,7 @@ function LibraryView({
                     />
                     {trialNotice && (
                         <AcademyPanel tone="active" style={{ padding: "11px 13px" }}>
-                            <div style={{ fontSize: 12, color: "#D9C7B8", lineHeight: 1.65 }}>{trialNotice}</div>
+                            <div style={{ fontSize: 12, color: "var(--color-text-soft)", lineHeight: 1.65 }}>{trialNotice}</div>
                         </AcademyPanel>
                     )}
                 </div>
@@ -1446,12 +1446,12 @@ function LibraryView({
                             width: "100%",
                             boxSizing: "border-box",
                             padding: "12px 14px",
-                            background: "rgba(255,255,255,0.035)",
-                            border: "1px solid rgba(255,255,255,0.075)",
+                            background: "rgba(7,26,47,0.035)",
+                            border: "1px solid rgba(7,26,47,0.075)",
                             borderRadius: 12,
-                            color: "#F0EDE8",
+                            color: "var(--color-text)",
                             fontSize: 14,
-                            fontFamily: "'Lora', Georgia, serif",
+                            fontFamily: "var(--tekori-font-ui)",
                             outline: "none",
                         }}
                     />
@@ -1559,15 +1559,15 @@ function AcademyCatalogCard({
                 <ProgressPill status={item.status} />
             </div>
             <div style={{ display: "grid", gap: 8 }}>
-                <div style={{ fontSize: 18, lineHeight: 1.18, color: "#F0EDE8", fontWeight: 700 }}>
+                <div style={{ fontSize: 18, lineHeight: 1.18, color: "var(--color-text)", fontWeight: 700 }}>
                     {item.title}
                 </div>
-                <div style={{ fontSize: 13, color: "#B8B1A8", lineHeight: 1.7 }}>
+                <div style={{ fontSize: 13, color: "var(--color-text-soft)", lineHeight: 1.7 }}>
                     {item.description}
                 </div>
             </div>
             <div style={{ display: "grid", gap: 7, marginTop: "auto" }}>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, color: "#8D857C", fontSize: 12 }}>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, color: "var(--color-text-muted)", fontSize: 12 }}>
                     <span>{item.stageLabel}</span>
                     <span>{item.minutes ? `${item.minutes} min` : "Guided"}</span>
                     {item.kind === "series" && typeof item.completedItems === "number" && typeof item.totalItems === "number" && (
@@ -1575,8 +1575,8 @@ function AcademyCatalogCard({
                     )}
                 </div>
                 {item.nextTitle && (
-                    <div style={{ fontSize: 12, color: "#C8C4BE", lineHeight: 1.55 }}>
-                        Next: <span style={{ color: "#F0EDE8", fontWeight: 700 }}>{item.nextTitle}</span>
+                    <div style={{ fontSize: 12, color: "var(--color-text-soft)", lineHeight: 1.55 }}>
+                        Next: <span style={{ color: "var(--color-text)", fontWeight: 700 }}>{item.nextTitle}</span>
                     </div>
                 )}
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8, paddingTop: 4 }}>
@@ -1627,21 +1627,21 @@ function AcademyStatsBar({
 
 function StatTile({ label, value }: { label: string; value: string }) {
     return (
-        <div style={{ background: "rgba(255,255,255,0.022)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "11px 13px", display: "grid", gap: 4 }}>
-            <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "#8D857C", letterSpacing: "0.10em", textTransform: "uppercase", fontWeight: 700 }}>{label}</div>
-            <div style={{ fontSize: 20, color: "#F0EDE8", fontWeight: 800 }}>{value}</div>
+        <div style={{ background: "rgba(7,26,47,0.022)", border: "1px solid rgba(7,26,47,0.06)", borderRadius: 12, padding: "11px 13px", display: "grid", gap: 4 }}>
+            <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "var(--color-text-muted)", letterSpacing: "0.10em", textTransform: "uppercase", fontWeight: 700 }}>{label}</div>
+            <div style={{ fontSize: 20, color: "var(--color-text)", fontWeight: 800 }}>{value}</div>
         </div>
     );
 }
 
 function CertificateCard({ certificate }: { certificate: StageCertificate }) {
     return (
-        <div style={{ maxWidth: 1180, margin: "0 auto 8px", background: "linear-gradient(135deg, rgba(200,169,110,0.16), rgba(232,98,42,0.08), rgba(255,255,255,0.03))", border: "1px solid rgba(200,169,110,0.24)", borderRadius: 20, padding: "16px 18px", display: "flex", justifyContent: "space-between", gap: 14, flexWrap: "wrap", alignItems: "center" }}>
+        <div style={{ maxWidth: 1180, margin: "0 auto 8px", background: "linear-gradient(135deg, rgba(200,169,110,0.16), rgba(216,155,43,0.08), rgba(7,26,47,0.03))", border: "1px solid rgba(200,169,110,0.24)", borderRadius: 20, padding: "16px 18px", display: "flex", justifyContent: "space-between", gap: 14, flexWrap: "wrap", alignItems: "center" }}>
             <div style={{ display: "grid", gap: 4 }}>
-                <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "#C8A96E", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700 }}>Certificate earned</div>
-                <div style={{ fontSize: 20, color: "#F0EDE8", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>{certificate.founderName} completed {certificate.stageName}</div>
+                <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "var(--tekori-amber)", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700 }}>Certificate earned</div>
+                <div style={{ fontSize: 20, color: "var(--color-text)", fontFamily: "var(--tekori-font-brand)", fontWeight: 700 }}>{certificate.founderName} completed {certificate.stageName}</div>
             </div>
-            <div style={{ fontSize: 12, color: "#BDAFA2" }}>
+            <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
                 {new Date(certificate.completedAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
             </div>
         </div>
@@ -1655,16 +1655,16 @@ function AcademyGuideCard({ activeView }: { activeView: "path" | "library" | "gu
             margin: "0 auto",
             padding: "16px 18px",
             borderRadius: 18,
-            background: "rgba(255,255,255,0.03)",
+            background: "rgba(7,26,47,0.03)",
             border,
             display: "grid",
             gap: 14,
         }}>
             <div style={{ display: "grid", gap: 4 }}>
-                <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700 }}>
-                    How To Use Forge Academy
+                <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "var(--tekori-gold)", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700 }}>
+                    How To Use Navi Academy
                 </div>
-                <div style={{ fontSize: 18, lineHeight: 1.15, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
+                <div style={{ fontSize: 18, lineHeight: 1.15, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, color: "var(--color-text)" }}>
                     Learn the room once, then the whole system makes sense
                 </div>
             </div>
@@ -1684,14 +1684,14 @@ function AcademyGuideCard({ activeView }: { activeView: "path" | "library" | "gu
                 />
                 <GuideBlock
                     title="Dive Deeper"
-                    body="Opens a Forge conversation from the lesson so you can explore the topic freely, apply it to your business, and complete it when you're ready."
+                    body="Opens a Navi conversation from the lesson so you can explore the topic freely, apply it to your business, and complete it when you're ready."
                 />
             </div>
 
             <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
                 <GuideBlock
                     title="Path"
-                    body="The primary roadmap. Use it when you want Forge Academy to show the next stage-based lesson in sequence."
+                    body="The primary roadmap. Use it when you want Navi Academy to show the next stage-based lesson in sequence."
                 />
                 <GuideBlock
                     title="Library"
@@ -1699,7 +1699,7 @@ function AcademyGuideCard({ activeView }: { activeView: "path" | "library" | "gu
                 />
                 <GuideBlock
                     title="Glossary"
-                    body="A quick-reference language bank. Search terms by name or meaning, and use it when Forge uses business language you want to ground more clearly."
+                    body="A quick-reference language bank. Search terms by name or meaning, and use it when Navi uses business language you want to ground more clearly."
                 />
                 <GuideBlock
                     title="Archive"
@@ -1729,15 +1729,15 @@ function AcademyGuideCard({ activeView }: { activeView: "path" | "library" | "gu
             <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
                 <GuideBlock
                     title="Start Learning"
-                    body="Opens the lesson walkthrough first so you get the structured teaching. After the last card, use Dive Deeper to open a Forge conversation."
+                    body="Opens the lesson walkthrough first so you get the structured teaching. After the last card, use Dive Deeper to open a Navi conversation."
                 />
                 <GuideBlock
                     title="Recommendation Card"
-                    body="At the top of Path, Forge Academy suggests the best next lesson based on what is in progress and what core work is still incomplete."
+                    body="At the top of Path, Navi Academy suggests the best next lesson based on what is in progress and what core work is still incomplete."
                 />
                 <GuideBlock
                     title="Progress Status"
-                    body="Not Started means untouched, In Progress means you began the lesson or opened it with Forge, and Completed means you marked it done."
+                    body="Not Started means untouched, In Progress means you began the lesson or opened it with Navi, and Completed means you marked it done."
                 />
                 <GuideBlock
                     title="Filters"
@@ -1748,10 +1748,10 @@ function AcademyGuideCard({ activeView }: { activeView: "path" | "library" | "gu
             <div style={{
                 padding: "12px 14px",
                 borderRadius: 14,
-                background: "rgba(232,98,42,0.06)",
-                border: "1px solid rgba(232,98,42,0.16)",
+                background: "rgba(216,155,43,0.06)",
+                border: "1px solid rgba(216,155,43,0.16)",
                 fontSize: 13,
-                color: "#C8C4BE",
+                color: "var(--color-text-soft)",
                 lineHeight: 1.75,
             }}>
                 {activeView === "path"
@@ -1769,13 +1769,13 @@ function GuideBlock({ title, body }: { title: string; body: string }) {
         <div style={{
             padding: "12px 13px",
             borderRadius: 14,
-            background: "rgba(255,255,255,0.02)",
-            border: "1px solid rgba(255,255,255,0.06)",
+            background: "rgba(7,26,47,0.02)",
+            border: "1px solid rgba(7,26,47,0.06)",
             display: "grid",
             gap: 6,
         }}>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                <div style={{ fontSize: 13, color: "#F0EDE8", fontWeight: 700 }}>
+                <div style={{ fontSize: 13, color: "var(--color-text)", fontWeight: 700 }}>
                     {title}
                 </div>
                 <HelpTooltip content={body} />
@@ -1813,7 +1813,7 @@ function PathView({
         <div style={{ maxWidth: 1180, margin: "0 auto", display: "grid", gap: 16 }}>
             <AcademyPanel style={{ display: "grid", gap: 16 }}>
                 <AcademyPageHeader
-                    eyebrow="Forge Academy Path"
+                    eyebrow="Navi Academy Path"
                     title="A roadmap for learning, applying, and tracking progress"
                     description="Move stage by stage, clear the core path first, and use deeper lessons when the business needs more context."
                     meta={
@@ -1827,21 +1827,21 @@ function PathView({
 
                 {trialNotice && (
                     <AcademyPanel tone="active" style={{ padding: "11px 13px" }}>
-                        <div style={{ fontSize: 12, color: "#D9C7B8", lineHeight: 1.65 }}>
+                        <div style={{ fontSize: 12, color: "var(--color-text-soft)", lineHeight: 1.65 }}>
                         {trialNotice}
                         </div>
                     </AcademyPanel>
                 )}
 
                 <AcademyPanel tone="active" style={{ display: "grid", gap: 12 }}>
-                    <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700 }}>
+                    <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "var(--tekori-gold)", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700 }}>
                         Your next step
                     </div>
                     {loading ? (
                         <div style={{ fontSize: 14, color: textMuted, lineHeight: 1.7 }}>Loading your lesson progress...</div>
                     ) : recommendation ? (
                         <>
-                            <div style={{ fontSize: 26, lineHeight: 1.08, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
+                            <div style={{ fontSize: 26, lineHeight: 1.08, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, color: "var(--color-text)" }}>
                                 {recommendation.lesson.title}
                             </div>
                             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -1849,7 +1849,7 @@ function PathView({
                                 {recommendation.lesson.difficultyLabel && <HeroPill label={recommendation.lesson.difficultyLabel} />}
                                 {recommendation.lesson.estimatedMinutes ? <HeroPill label={`${recommendation.lesson.estimatedMinutes} min`} /> : null}
                             </div>
-                            <div style={{ fontSize: 14, color: "#C8C4BE", lineHeight: 1.8 }}>
+                            <div style={{ fontSize: 14, color: "var(--color-text-soft)", lineHeight: 1.8 }}>
                                 {recommendation.reason}
                             </div>
                             <div>
@@ -1872,7 +1872,7 @@ function PathView({
                     bottom: 12,
                     width: 2,
                     borderRadius: 999,
-                    background: "linear-gradient(180deg, rgba(232,98,42,0.30), rgba(255,255,255,0.08))",
+                    background: "linear-gradient(180deg, rgba(216,155,43,0.30), rgba(7,26,47,0.08))",
                     pointerEvents: "none",
                 }} />
                 {stages.map((stage) => (
@@ -1914,10 +1914,10 @@ function PathStageCard({
 }) {
     const allCoreComplete = stage.totalCoreCount > 0 && stage.completedCoreCount >= stage.totalCoreCount;
     const stageColor = allCoreComplete
-        ? "#4CAF8A"
+        ? "var(--color-success)"
         : stage.stage === activeStage
-            ? "#E8622A"
-            : "rgba(255,255,255,0.2)";
+            ? "var(--tekori-gold)"
+            : "rgba(7,26,47,0.14)";
 
     return (
         <div style={{ position: "relative", paddingLeft: 84 }}>
@@ -1928,9 +1928,9 @@ function PathStageCard({
                 width: 30,
                 height: 30,
                 borderRadius: "50%",
-                background: "rgba(8,8,9,0.96)",
+                background: "var(--color-surface-elevated)",
                 border: `1px solid ${stageColor}`,
-                boxShadow: `0 0 0 5px ${stageColor}10`,
+                boxShadow: `0 0 0 5px color-mix(in srgb, ${stageColor} 6%, transparent)`,
                 zIndex: 1,
             }} />
             <div style={{
@@ -1941,7 +1941,7 @@ function PathStageCard({
                 height: 10,
                 borderRadius: "50%",
                 background: stageColor,
-                boxShadow: `0 0 12px ${stageColor}66`,
+                boxShadow: `0 0 12px color-mix(in srgb, ${stageColor} 40%, transparent)`,
                 zIndex: 2,
             }} />
             <div style={{
@@ -1956,8 +1956,8 @@ function PathStageCard({
             }} />
 
             <div style={{
-                background: stage.stage === activeStage ? "rgba(232,98,42,0.045)" : "rgba(255,255,255,0.022)",
-                border: stage.stage === activeStage ? "1px solid rgba(232,98,42,0.14)" : "1px solid rgba(255,255,255,0.06)",
+                background: stage.stage === activeStage ? "rgba(216,155,43,0.045)" : "rgba(7,26,47,0.022)",
+                border: stage.stage === activeStage ? "1px solid rgba(216,155,43,0.14)" : "1px solid rgba(7,26,47,0.06)",
                 borderRadius: 14,
                 padding: "20px 20px 18px",
                 display: "grid",
@@ -1969,7 +1969,7 @@ function PathStageCard({
                             <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: stageColor, letterSpacing: "0.16em", textTransform: "uppercase", fontWeight: 700 }}>
                                 Stage {stage.stage}
                             </div>
-                            <div style={{ fontSize: 22, lineHeight: 1.12, fontWeight: 700, color: "#F0EDE8" }}>
+                            <div style={{ fontSize: 22, lineHeight: 1.12, fontWeight: 700, color: "var(--color-text)" }}>
                                 {stage.title}
                             </div>
                         </div>
@@ -1979,7 +1979,7 @@ function PathStageCard({
                             {stage.enrichmentLessons.length > 0 ? <HeroPill label={`${stage.enrichmentLessons.length} deeper lesson${stage.enrichmentLessons.length === 1 ? "" : "s"}`} /> : null}
                         </div>
                     </div>
-                    <div style={{ fontSize: 14, color: "#C8C4BE", lineHeight: 1.8 }}>
+                    <div style={{ fontSize: 14, color: "var(--color-text-soft)", lineHeight: 1.8 }}>
                         {stage.description}
                     </div>
                 </div>
@@ -2001,17 +2001,17 @@ function PathStageCard({
                         <button
                             onClick={onToggleEnrichment}
                             style={{
-                                background: "rgba(255,255,255,0.02)",
-                                border: "1px solid rgba(255,255,255,0.06)",
+                                background: "rgba(7,26,47,0.02)",
+                                border: "1px solid rgba(7,26,47,0.06)",
                                 borderRadius: 12,
                                 padding: "12px 14px",
-                                color: "rgba(240,237,232,0.6)",
+                                color: "rgba(102,112,133,0.78)",
                                 cursor: "pointer",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "space-between",
                                 gap: 10,
-                                fontFamily: "'Lora', Georgia, serif",
+                                fontFamily: "var(--tekori-font-ui)",
                                 fontSize: 13,
                             }}
                         >
@@ -2053,8 +2053,8 @@ function PathSeriesGroup({
     const allCompleted = completedItems >= block.items.length && block.items.length > 0;
     return (
         <div style={{
-            background: muted ? "rgba(255,255,255,0.02)" : "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.025))",
-            border: "1px solid rgba(255,255,255,0.07)",
+            background: muted ? "rgba(7,26,47,0.02)" : "linear-gradient(180deg, rgba(7,26,47,0.04), rgba(7,26,47,0.025))",
+            border: "1px solid rgba(7,26,47,0.07)",
             borderRadius: 14,
             padding: "14px 14px 12px 14px",
             display: "grid",
@@ -2063,7 +2063,7 @@ function PathSeriesGroup({
             <div style={{ display: "grid", gap: 6 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                        <div style={{ fontSize: 16, fontWeight: 700, color: muted ? "rgba(240,237,232,0.72)" : "#F0EDE8" }}>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: muted ? "rgba(71,84,103,0.88)" : "var(--color-text)" }}>
                             {block.title}
                         </div>
                         {allCompleted && <CompletionBadge label="Series Complete" />}
@@ -2109,18 +2109,18 @@ function PathLessonNode({
     muted?: boolean;
 }) {
     const status = progress?.status ?? "not_started";
-    const statusColor = status === "completed" ? "#4CAF8A" : status === "in_progress" ? "#E8622A" : "rgba(255,255,255,0.35)";
-    const textColor = muted ? "rgba(240,237,232,0.72)" : "#F0EDE8";
-    const bodyColor = muted ? "rgba(240,237,232,0.6)" : "#C8C4BE";
+    const statusColor = status === "completed" ? "var(--color-success)" : status === "in_progress" ? "var(--tekori-gold)" : "rgba(7,26,47,0.35)";
+    const textColor = muted ? "rgba(71,84,103,0.88)" : "var(--color-text)";
+    const bodyColor = muted ? "rgba(102,112,133,0.78)" : "var(--color-text-soft)";
     const startLabel = status === "in_progress" ? "Continue Learning" : "Start Learning";
 
     return (
         <div style={{ position: "relative", paddingLeft: 34 }}>
-            <div style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", width: 16, height: 16, borderRadius: "50%", background: "rgba(8,8,9,0.98)", border: `1px solid ${statusColor}`, boxShadow: `0 0 0 4px ${statusColor}12` }} />
-            <div style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", width: 6, height: 6, borderRadius: "50%", background: statusColor, boxShadow: `0 0 10px ${statusColor}55` }} />
+            <div style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", width: 16, height: 16, borderRadius: "50%", background: "rgba(255,252,246,0.98)", border: `1px solid ${statusColor}`, boxShadow: `0 0 0 4px color-mix(in srgb, ${statusColor} 7%, transparent)` }} />
+            <div style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", width: 6, height: 6, borderRadius: "50%", background: statusColor, boxShadow: `0 0 10px color-mix(in srgb, ${statusColor} 34%, transparent)` }} />
             <div style={{
-                background: muted ? "rgba(255,255,255,0.015)" : "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(255,255,255,0.06)",
+                background: muted ? "rgba(7,26,47,0.015)" : "rgba(7,26,47,0.03)",
+                border: "1px solid rgba(7,26,47,0.06)",
                 borderRadius: 12,
                 padding: "14px 14px 13px",
                 display: "grid",
@@ -2166,9 +2166,9 @@ function SeriesMetaBadge({ label, muted = false }: { label: string; muted?: bool
         <div style={{
             padding: "5px 10px",
             borderRadius: 999,
-            background: muted ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.045)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            color: muted ? "rgba(240,237,232,0.56)" : "#A8A4A0",
+            background: muted ? "rgba(7,26,47,0.03)" : "rgba(7,26,47,0.045)",
+            border: "1px solid rgba(7,26,47,0.08)",
+            color: muted ? "rgba(16,32,51,0.66)" : "var(--color-text-muted)",
             fontSize: 11,
             lineHeight: 1,
             whiteSpace: "nowrap",
@@ -2253,7 +2253,7 @@ function GlossaryView({ terms, loading }: { terms: GlossaryTerm[]; loading: bool
         <div style={{ maxWidth: 1180, margin: "0 auto", display: "grid", gap: 16 }}>
             <AcademyPanel>
                 <AcademyPageHeader
-                    eyebrow="Forge Glossary"
+                    eyebrow="Navi Glossary"
                     title="A reference tool for founder language"
                     description="Search terms by name, meaning, example, category, or stage so unfamiliar language never slows the lesson down."
                     meta={
@@ -2274,12 +2274,12 @@ function GlossaryView({ terms, loading }: { terms: GlossaryTerm[]; loading: bool
                     style={{
                         width: "100%",
                         padding: "12px 16px",
-                        background: "rgba(255,255,255,0.04)",
-                        border: "1px solid rgba(255,255,255,0.10)",
+                        background: "rgba(7,26,47,0.04)",
+                        border: "1px solid rgba(7,26,47,0.10)",
                         borderRadius: 14,
-                        color: "#F0EDE8",
+                        color: "var(--color-text)",
                         fontSize: 14,
-                        fontFamily: "'Lora', Georgia, serif",
+                        fontFamily: "var(--tekori-font-ui)",
                         outline: "none",
                         boxSizing: "border-box",
                     }}
@@ -2319,28 +2319,28 @@ function GlossaryView({ terms, loading }: { terms: GlossaryTerm[]; loading: bool
                 return (
                     <div key={category} style={{ display: "grid", gap: 14 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                            <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "#E8622A", letterSpacing: "0.16em", textTransform: "uppercase", fontWeight: 700, whiteSpace: "nowrap" }}>
+                            <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "var(--tekori-gold)", letterSpacing: "0.16em", textTransform: "uppercase", fontWeight: 700, whiteSpace: "nowrap" }}>
                                 {category}
                             </div>
-                            <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.07)" }} />
+                            <div style={{ flex: 1, height: 1, background: "rgba(7,26,47,0.07)" }} />
                         </div>
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>
                             {categoryTerms.map((t) => {
-                                const stageColor = STAGE_COLORS[t.stage_unlock as keyof typeof STAGE_COLORS] ?? "#F5A843";
+                                const stageColor = STAGE_COLORS[t.stage_unlock as keyof typeof STAGE_COLORS] ?? "var(--tekori-amber)";
                                 return (
-                                    <div key={t.id} style={{ background: "rgba(255,255,255,0.024)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: 16, display: "grid", gap: 10 }}>
+                                    <div key={t.id} style={{ background: "rgba(7,26,47,0.024)", border: "1px solid rgba(7,26,47,0.06)", borderRadius: 14, padding: 16, display: "grid", gap: 10 }}>
                                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
-                                            <div style={{ fontSize: 16, fontWeight: 700, color: "#F0EDE8", lineHeight: 1.25 }}>
+                                            <div style={{ fontSize: 16, fontWeight: 700, color: "var(--color-text)", lineHeight: 1.25 }}>
                                                 {t.term}
                                             </div>
                                             <div style={{ fontSize: 10, color: stageColor, background: `${stageColor}18`, border: `1px solid ${stageColor}30`, borderRadius: 20, padding: "2px 9px", fontWeight: 500, flexShrink: 0 }}>
                                                 Stage {t.stage_unlock}
                                             </div>
                                         </div>
-                                        <div style={{ fontSize: 13, color: "#C8C4BE", lineHeight: 1.75 }}>
+                                        <div style={{ fontSize: 13, color: "var(--color-text-soft)", lineHeight: 1.75 }}>
                                             {t.definition}
                                         </div>
-                                        <div style={{ fontSize: 12, color: "#7A736B", fontStyle: "italic", lineHeight: 1.7, borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 10 }}>
+                                        <div style={{ fontSize: 12, color: "#7A736B", fontStyle: "italic", lineHeight: 1.7, borderTop: "1px solid rgba(7,26,47,0.06)", paddingTop: 10 }}>
                                             {t.usage_example}
                                         </div>
                                     </div>
@@ -2356,16 +2356,16 @@ function GlossaryView({ terms, loading }: { terms: GlossaryTerm[]; loading: bool
 
 function AcademyShell({ children, onBack, onOpenNav, onOpenArchive }: { children: ReactNode; onBack: () => void; onOpenNav?: () => void; onOpenArchive?: () => void }) {
     return (
-        <div style={{ position: "fixed", inset: 0, zIndex: 110, background: "var(--foundry-bg-app)", color: "var(--foundry-text-primary)", display: "flex", flexDirection: "column", fontFamily: "'Lora', Georgia, serif" }}>
-            <div style={{ padding: "max(14px, calc(10px + env(safe-area-inset-top))) 18px 12px", borderBottom: border, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(16px)", display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 110, background: "var(--foundry-bg-app)", color: "var(--foundry-text-primary)", display: "flex", flexDirection: "column", fontFamily: "var(--tekori-font-ui)" }}>
+            <div style={{ padding: "max(14px, calc(10px + env(safe-area-inset-top))) 18px 12px", borderBottom: border, background: "rgba(255,252,246,0.94)", backdropFilter: "blur(16px)", display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
                 <button className="foundry-btn foundry-btn--ghost" onClick={onOpenNav ?? onBack} style={{ padding: "var(--foundry-app-header-button-padding)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg>
                 </button>
-                <div style={{ width: 34, height: 34, borderRadius: 12, background: "rgba(232,98,42,0.12)", border: "1px solid rgba(232,98,42,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{ width: 34, height: 34, borderRadius: 12, background: "rgba(216,155,43,0.12)", border: "1px solid rgba(216,155,43,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <Logo variant="forge" style={{ width: "var(--foundry-app-header-icon-size)", height: "var(--foundry-app-header-icon-size)", objectFit: "contain" }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: "var(--foundry-app-header-title-font)", fontWeight: 600 }}>Forge Academy</div>
+                    <div style={{ fontSize: "var(--foundry-app-header-title-font)", fontWeight: 600 }}>Navi Academy</div>
                     <div style={{ fontSize: "var(--foundry-app-header-meta-font)", color: "#6E675F" }}>Curated founder education</div>
                 </div>
                 {onOpenArchive && (
@@ -2399,9 +2399,9 @@ function SectionHeader({
 }) {
     return (
         <div style={{ textAlign: align }}>
-            {eyebrow && <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 10 }}>{eyebrow}</div>}
+            {eyebrow && <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "var(--tekori-gold)", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 10 }}>{eyebrow}</div>}
             <div style={{ display: "inline-flex", alignItems: "center", justifyContent: align === "center" ? "center" : "flex-start", gap: 8 }}>
-                <div style={{ fontSize: 28, lineHeight: 1.05, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
+                <div style={{ fontSize: 28, lineHeight: 1.05, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, color: "var(--color-text)" }}>
                     {title}
                 </div>
                 <HelpTooltip content={description} />
@@ -2431,27 +2431,27 @@ function AcademySection({
 }) {
     const sectionStyles = {
         neutral: {
-            panel: "rgba(255,255,255,0.022)",
-            borderColor: "rgba(255,255,255,0.06)",
+            panel: "rgba(7,26,47,0.022)",
+            borderColor: "rgba(7,26,47,0.06)",
         },
         ember: {
-            panel: "linear-gradient(180deg, rgba(232,98,42,0.045), rgba(255,255,255,0.018))",
-            borderColor: "rgba(232,98,42,0.11)",
+            panel: "linear-gradient(180deg, rgba(216,155,43,0.045), rgba(7,26,47,0.018))",
+            borderColor: "rgba(216,155,43,0.11)",
         },
         glow: {
-            panel: "linear-gradient(180deg, rgba(99,179,237,0.055), rgba(255,255,255,0.018))",
-            borderColor: "rgba(99,179,237,0.12)",
+            panel: "linear-gradient(180deg, rgba(142,160,181,0.055), rgba(7,26,47,0.018))",
+            borderColor: "rgba(142,160,181,0.12)",
         },
         blue: {
-            panel: "linear-gradient(180deg, rgba(99,179,237,0.06), rgba(255,255,255,0.018))",
-            borderColor: "rgba(99,179,237,0.12)",
+            panel: "linear-gradient(180deg, rgba(142,160,181,0.06), rgba(7,26,47,0.018))",
+            borderColor: "rgba(142,160,181,0.12)",
         },
         stone: {
-            panel: "linear-gradient(180deg, rgba(217,177,93,0.05), rgba(255,255,255,0.018))",
+            panel: "linear-gradient(180deg, rgba(217,177,93,0.05), rgba(7,26,47,0.018))",
             borderColor: "rgba(217,177,93,0.12)",
         },
         mindset: {
-            panel: "linear-gradient(180deg, rgba(217,106,85,0.06), rgba(255,255,255,0.018))",
+            panel: "linear-gradient(180deg, rgba(217,106,85,0.06), rgba(7,26,47,0.018))",
             borderColor: "rgba(217,106,85,0.12)",
         },
     } as const;
@@ -2463,7 +2463,7 @@ function AcademySection({
             {items.length === 0 ? (
                 <div style={{ background: style.panel, border: `1px solid ${style.borderColor}`, borderRadius: 14, padding: 18 }}>
                     <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                        <div style={{ fontSize: 16, color: "#F0EDE8", fontWeight: 600 }}>{emptyTitle}</div>
+                        <div style={{ fontSize: 16, color: "var(--color-text)", fontWeight: 600 }}>{emptyTitle}</div>
                         <HelpTooltip content={emptyBody} />
                     </div>
                 </div>
@@ -2502,10 +2502,10 @@ function ContentCard({
         <div
             style={{
                 background: emphasis === "mindset"
-                    ? "linear-gradient(180deg, rgba(217,106,85,0.055), rgba(255,255,255,0.02))"
-                    : "linear-gradient(180deg, rgba(255,255,255,0.032), rgba(255,255,255,0.017))",
-                border: isContinueLearning ? "1px solid rgba(99,179,237,0.18)" : "1px solid rgba(255,255,255,0.062)",
-                borderLeft: isContinueLearning ? "2px solid rgba(99,179,237,0.34)" : undefined,
+                    ? "linear-gradient(180deg, rgba(217,106,85,0.055), rgba(7,26,47,0.02))"
+                    : "linear-gradient(180deg, rgba(7,26,47,0.032), rgba(7,26,47,0.017))",
+                border: isContinueLearning ? "1px solid rgba(142,160,181,0.18)" : "1px solid rgba(7,26,47,0.062)",
+                borderLeft: isContinueLearning ? "2px solid rgba(142,160,181,0.34)" : undefined,
                 borderRadius: 14,
                 padding: 18,
                 display: "flex",
@@ -2516,7 +2516,7 @@ function ContentCard({
             }}
         >
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center", alignItems: "center" }}>
-                    <Pill tone={emphasis === "mindset" ? "warm" : "orange"}>{content.category?.title ?? getAcademyContentTypeLabel(content.contentType)}</Pill>
+                    <Pill tone={emphasis === "mindset" ? "warm" : "gold"}>{content.category?.title ?? getAcademyContentTypeLabel(content.contentType)}</Pill>
                     {content.difficultyLabel && <Pill>{content.difficultyLabel}</Pill>}
                 <ProgressPill status={progress?.status} />
                 {status === "completed" && <CompletionBadge label={getCompletionBadgeLabel(content)} />}
@@ -2527,42 +2527,42 @@ function ContentCard({
                     borderRadius: 12,
                     height: 96,
                     overflow: "hidden",
-                    border: "1px solid rgba(255,255,255,0.06)",
+                    border: "1px solid rgba(7,26,47,0.06)",
                     background: thumbnailUrl
-                            ? `linear-gradient(180deg, rgba(8,8,9,0.18), rgba(8,8,9,0.62)), url(${thumbnailUrl}) center/cover`
+                            ? `linear-gradient(180deg, rgba(7,26,47,0.18), rgba(7,26,47,0.62)), url(${thumbnailUrl}) center/cover`
                         : emphasis === "mindset"
-                            ? "linear-gradient(135deg, rgba(217,106,85,0.16), rgba(12,12,14,0.84))"
-                            : "linear-gradient(135deg, rgba(99,179,237,0.13), rgba(232,98,42,0.10), rgba(12,12,14,0.88))",
+                            ? "linear-gradient(135deg, rgba(217,106,85,0.10), rgba(201,137,36,0.14))"
+                            : "linear-gradient(135deg, rgba(7,26,47,0.06), rgba(216,155,43,0.12))",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     padding: "12px 18px",
                 }}
             >
-                <div style={{ fontSize: 18, lineHeight: 1.12, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", textShadow: "0 1px 6px rgba(0,0,0,0.5)", textAlign: "center" }}>
+                <div style={{ fontSize: 18, lineHeight: 1.12, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, color: "var(--color-text)", textShadow: "0 1px 6px rgba(7,26,47,0.34)", textAlign: "center" }}>
                     {content.title}
                 </div>
             </div>
 
             <div style={{ display: "grid", gap: 10, justifyItems: "center" }}>
-                <div style={{ fontSize: 13, color: "#B8B1A8", lineHeight: 1.8, maxWidth: 320 }}>
+                <div style={{ fontSize: 13, color: "var(--color-text-soft)", lineHeight: 1.8, maxWidth: 320 }}>
                     {content.shortDescription}
                 </div>
             </div>
 
             <div style={{ display: "grid", gap: 8 }}>
                 {content.whyThisMatters && (
-                    <div style={{ fontSize: "var(--foundry-academy-md-font)", color: "#E9C7B8", lineHeight: 1.7, textAlign: "left" }}>
-                        <span style={{ color: "#F5A843", fontWeight: 700 }}>Why this matters:</span> {content.whyThisMatters}
+                    <div style={{ fontSize: "var(--foundry-academy-md-font)", color: "var(--color-text-soft)", lineHeight: 1.7, textAlign: "left" }}>
+                        <span style={{ color: "var(--tekori-amber)", fontWeight: 700 }}>Why this matters:</span> {content.whyThisMatters}
                     </div>
                 )}
                 {content.commonMistake && (
-                    <div style={{ fontSize: "var(--foundry-academy-md-font)", color: "#BFB7AE", lineHeight: 1.7, textAlign: "left" }}>
-                        <span style={{ color: "#C8A96E", fontWeight: 700 }}>Common mistake:</span> {content.commonMistake}
+                    <div style={{ fontSize: "var(--foundry-academy-md-font)", color: "var(--color-text-soft)", lineHeight: 1.7, textAlign: "left" }}>
+                        <span style={{ color: "var(--tekori-amber)", fontWeight: 700 }}>Common mistake:</span> {content.commonMistake}
                     </div>
                 )}
                 {stageLabels.length > 0 && (
-                    <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#8D857C", lineHeight: 1.6, textAlign: "center" }}>
+                    <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "var(--color-text-muted)", lineHeight: 1.6, textAlign: "center" }}>
                         {stageLabels.join(" · ")}
                     </div>
                 )}
@@ -2573,7 +2573,7 @@ function ContentCard({
                     {content.estimatedMinutes ? `${content.estimatedMinutes} min` : "Deep dive"}
                 </div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
-                    <button type="button" onClick={onOpen} style={{ background: "rgba(255,255,255,0.04)", border, borderRadius: 999, padding: "8px 12px", color: "#C8C4BE", fontSize: "var(--foundry-academy-sm-font)", fontWeight: 700, cursor: "pointer" }}>
+                    <button type="button" onClick={onOpen} style={{ background: "rgba(7,26,47,0.04)", border, borderRadius: 999, padding: "8px 12px", color: "var(--color-text-soft)", fontSize: "var(--foundry-academy-sm-font)", fontWeight: 700, cursor: "pointer" }}>
                         {startLabel}
                     </button>
                     {canLaunchForgeFromContent(content) && (
@@ -2582,11 +2582,11 @@ function ContentCard({
                             onClick={onLaunchForge}
                             disabled={busy}
                             style={{
-                                background: "rgba(232,98,42,0.12)",
-                                border: "1px solid rgba(232,98,42,0.22)",
+                                background: "rgba(216,155,43,0.12)",
+                                border: "1px solid rgba(216,155,43,0.22)",
                                 borderRadius: 999,
                                 padding: "8px 12px",
-                                color: "#E8622A",
+                                color: "var(--tekori-gold)",
                                 fontSize: "var(--foundry-academy-sm-font)",
                                 fontWeight: 700,
                                 cursor: busy ? "default" : "pointer",
@@ -2621,7 +2621,7 @@ function SeriesCard({
             type="button"
             onClick={onOpen}
             style={{
-                background: "linear-gradient(180deg, rgba(99,179,237,0.06), rgba(255,255,255,0.018))",
+                background: "linear-gradient(180deg, rgba(142,160,181,0.06), rgba(7,26,47,0.018))",
                 border,
                 borderRadius: 14,
                 padding: 18,
@@ -2644,23 +2644,23 @@ function SeriesCard({
                 </div>
             </div>
             <div style={{ display: "grid", gap: 10, justifyItems: "center" }}>
-                <div style={{ fontSize: 22, lineHeight: 1.05, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 10 }}>
+                <div style={{ fontSize: 22, lineHeight: 1.05, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, color: "var(--color-text)", marginBottom: 10 }}>
                     {series.title}
                 </div>
-                <div style={{ fontSize: 13, color: "#B8B1A8", lineHeight: 1.8, maxWidth: 320 }}>
+                <div style={{ fontSize: 13, color: "var(--color-text-soft)", lineHeight: 1.8, maxWidth: 320 }}>
                     {series.shortDescription}
                 </div>
             </div>
             <div style={{ display: "grid", gap: 8, justifyItems: "center" }}>
-                <div style={{ height: 8, borderRadius: 999, background: "rgba(255,255,255,0.06)", overflow: "hidden", marginBottom: 8 }}>
-                    <div style={{ width: `${progress}%`, height: "100%", background: "linear-gradient(90deg, #63B3ED, #E8622A)" }} />
+                <div style={{ height: 8, borderRadius: 999, background: "rgba(7,26,47,0.06)", overflow: "hidden", marginBottom: 8 }}>
+                    <div style={{ width: `${progress}%`, height: "100%", background: "linear-gradient(90deg, var(--tekori-muted-text), var(--tekori-gold))" }} />
                 </div>
                 <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#7A736B" }}>
                     {completedItems} of {series.items.length} complete · {series.estimatedMinutes ? `${series.estimatedMinutes} min total` : "Structured track"}
                 </div>
                 {nextItem && (
-                    <div style={{ marginTop: 8, fontSize: "var(--foundry-academy-md-font)", color: "#C8C4BE", lineHeight: 1.7 }}>
-                        Next lesson: <span style={{ color: "#F0EDE8", fontWeight: 700 }}>{getSeriesItemTitle(nextItem)}</span>
+                    <div style={{ marginTop: 8, fontSize: "var(--foundry-academy-md-font)", color: "var(--color-text-soft)", lineHeight: 1.7 }}>
+                        Next lesson: <span style={{ color: "var(--color-text)", fontWeight: 700 }}>{getSeriesItemTitle(nextItem)}</span>
                     </div>
                 )}
             </div>
@@ -2682,20 +2682,20 @@ function AsideCard({
     tone?: "neutral" | "ember" | "glow" | "blue" | "stone" | "mindset";
 }) {
     const cardStyles = {
-        neutral: { background: surface, borderColor: "rgba(255,255,255,0.08)" },
-        ember: { background: "linear-gradient(180deg, rgba(232,98,42,0.045), rgba(255,255,255,0.018))", borderColor: "rgba(232,98,42,0.11)" },
-        glow: { background: "linear-gradient(180deg, rgba(99,179,237,0.055), rgba(255,255,255,0.018))", borderColor: "rgba(99,179,237,0.12)" },
-        blue: { background: "linear-gradient(180deg, rgba(99,179,237,0.06), rgba(255,255,255,0.018))", borderColor: "rgba(99,179,237,0.12)" },
-        stone: { background: "linear-gradient(180deg, rgba(217,177,93,0.05), rgba(255,255,255,0.018))", borderColor: "rgba(217,177,93,0.12)" },
-        mindset: { background: "linear-gradient(180deg, rgba(217,106,85,0.06), rgba(255,255,255,0.018))", borderColor: "rgba(217,106,85,0.12)" },
+        neutral: { background: surface, borderColor: "rgba(7,26,47,0.08)" },
+        ember: { background: "linear-gradient(180deg, rgba(216,155,43,0.045), rgba(7,26,47,0.018))", borderColor: "rgba(216,155,43,0.11)" },
+        glow: { background: "linear-gradient(180deg, rgba(142,160,181,0.055), rgba(7,26,47,0.018))", borderColor: "rgba(142,160,181,0.12)" },
+        blue: { background: "linear-gradient(180deg, rgba(142,160,181,0.06), rgba(7,26,47,0.018))", borderColor: "rgba(142,160,181,0.12)" },
+        stone: { background: "linear-gradient(180deg, rgba(217,177,93,0.05), rgba(7,26,47,0.018))", borderColor: "rgba(217,177,93,0.12)" },
+        mindset: { background: "linear-gradient(180deg, rgba(217,106,85,0.06), rgba(7,26,47,0.018))", borderColor: "rgba(217,106,85,0.12)" },
     } as const;
     const style = cardStyles[tone];
 
     return (
         <div style={{ background: style.background, border: `1px solid ${style.borderColor}`, borderRadius: 14, padding: 18, display: "grid", gap: 12 }}>
-            <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "rgba(255,255,255,0.48)", letterSpacing: "0.14em", textTransform: "uppercase" }}>{eyebrow}</div>
+            <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "rgba(102,112,133,0.48)", letterSpacing: "0.14em", textTransform: "uppercase" }}>{eyebrow}</div>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                <div style={{ fontSize: 24, lineHeight: 1.06, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>{title}</div>
+                <div style={{ fontSize: 24, lineHeight: 1.06, fontFamily: "var(--tekori-font-brand)", fontWeight: 700 }}>{title}</div>
                 <HelpTooltip content={description} />
             </div>
             {children}
@@ -2713,11 +2713,11 @@ function HistoryRow({
     series: AcademySeries | null;
 }) {
     return (
-        <div style={{ display: "grid", gap: 4, paddingBottom: 10, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-            <div style={{ fontSize: "var(--foundry-academy-md-font)", color: "#F0EDE8", fontWeight: 600 }}>
+        <div style={{ display: "grid", gap: 4, paddingBottom: 10, borderBottom: "1px solid rgba(7,26,47,0.06)" }}>
+            <div style={{ fontSize: "var(--foundry-academy-md-font)", color: "var(--color-text)", fontWeight: 600 }}>
                 {content?.title ?? series?.title ?? String(entry.metadata?.itemTitle ?? "Academy")}
             </div>
-            <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#8D857C" }}>
+            <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "var(--color-text-muted)" }}>
                 {getAcademyHistoryLabel(entry.action)} · {new Date(entry.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
             </div>
         </div>
@@ -2726,9 +2726,9 @@ function HistoryRow({
 
 function MetricRow({ label, value }: { label: string; value: string }) {
     return (
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-            <div style={{ fontSize: "var(--foundry-academy-md-font)", color: "#8D857C" }}>{label}</div>
-            <div style={{ fontSize: "var(--foundry-academy-md-font)", color: "#F0EDE8", fontWeight: 700 }}>{value}</div>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "10px 0", borderBottom: "1px solid rgba(7,26,47,0.05)" }}>
+            <div style={{ fontSize: "var(--foundry-academy-md-font)", color: "var(--color-text-muted)" }}>{label}</div>
+            <div style={{ fontSize: "var(--foundry-academy-md-font)", color: "var(--color-text)", fontWeight: 700 }}>{value}</div>
         </div>
     );
 }
@@ -2739,7 +2739,7 @@ type LessonSlide = {
     body: string;
     bullets?: string[];
     note?: string;
-    tone?: "orange" | "blue" | "warm" | "neutral";
+    tone?: "gold" | "blue" | "warm" | "neutral";
 };
 
 function joinLessonParts(parts: Array<string | null | undefined>) {
@@ -2754,7 +2754,7 @@ function renderSlideBullet(text: string) {
     if (!match) return text;
     return (
         <>
-            <strong style={{ color: "#F0EDE8", fontWeight: 700 }}>{match[1]}</strong>
+            <strong style={{ color: "var(--color-text)", fontWeight: 700 }}>{match[1]}</strong>
             {match[2]}
             <span>{match[3]}</span>
         </>
@@ -2772,7 +2772,7 @@ function buildLessonSlides(content: AcademyContent) {
             content.shortDescription,
             content.description
                 ? "This walkthrough gives you the context first, then the founder-level judgment behind the lesson."
-                : "Use this lesson to build a cleaner working understanding before you pressure-test it with Forge.",
+                : "Use this lesson to build a cleaner working understanding before you pressure-test it with Navi.",
         ]),
         bullets: [
             `Discipline: ${content.category?.title ?? getAcademyContentTypeLabel(content.contentType)}`,
@@ -2780,8 +2780,8 @@ function buildLessonSlides(content: AcademyContent) {
             content.estimatedMinutes ? `Length: ${content.estimatedMinutes} minute lesson` : "Length: Guided deep dive",
             stageLabels.length ? `Stages: ${stageLabels.join(" · ")}` : null,
         ].filter(Boolean) as string[],
-        note: "Move through the cards first, then use Dive Deeper to take it into Forge — test to complete when you're ready.",
-        tone: "orange",
+        note: "Move through the cards first, then use Dive Deeper to take it into Navi — test to complete when you're ready.",
+        tone: "gold",
     });
 
     if (content.learningGoal || content.whoThisIsFor) {
@@ -2833,7 +2833,7 @@ function buildLessonSlides(content: AcademyContent) {
             bullets: [
                 content.commonMistake ? `Common mistake: ${content.commonMistake}` : null,
             ].filter(Boolean) as string[],
-            tone: "orange",
+            tone: "gold",
         });
     }
 
@@ -2867,18 +2867,18 @@ function buildLessonSlides(content: AcademyContent) {
 
     if (content.forgeContext || content.starterPrompt || content.tags.length > 0) {
         slides.push({
-            eyebrow: "Bring it into Forge",
+            eyebrow: "Bring it into Navi",
             title: "Translate the lesson into your company",
             body: joinLessonParts([
                 content.forgeContext
-                    || "You have the lesson framing. Next, use Forge to pressure-test it against your actual startup, decisions, and constraints.",
-                "The strongest Forge conversations happen when you bring one real decision, one weak assumption, or one current situation into the discussion.",
+                    || "You have the lesson framing. Next, use Navi to pressure-test it against your actual startup, decisions, and constraints.",
+                "The strongest Navi conversations happen when you bring one real decision, one weak assumption, or one current situation into the discussion.",
             ]),
             bullets: [
                 content.starterPrompt ? `Suggested prompt: ${content.starterPrompt}` : null,
                 content.tags.length ? `Topics: ${content.tags.map((tag) => tag.name).join(" · ")}` : null,
             ].filter(Boolean) as string[],
-            note: "Once you finish this final card, use Dive Deeper to open a Forge conversation and test to complete the lesson.",
+            note: "Once you finish this final card, use Dive Deeper to open a Navi conversation and test to complete the lesson.",
             tone: "warm",
         });
     }
@@ -2964,26 +2964,26 @@ function ContentDetailModal({
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start" }}>
                     <div style={{ display: "grid", gap: 12 }}>
                         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                            <Pill tone="orange">{content.category?.title ?? getAcademyContentTypeLabel(content.contentType)}</Pill>
+                            <Pill tone="gold">{content.category?.title ?? getAcademyContentTypeLabel(content.contentType)}</Pill>
                             {content.difficultyLabel && <Pill>{content.difficultyLabel}</Pill>}
                             <ProgressPill status={progress?.status} />
                         </div>
-                        <div style={{ fontSize: 34, lineHeight: 0.98, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
+                        <div style={{ fontSize: 34, lineHeight: 0.98, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, color: "var(--color-text)" }}>
                             {content.title}
                         </div>
-                        <div style={{ fontSize: 14, color: "#C8C4BE", lineHeight: 1.9 }}>
-                            Work through the lesson cards first. Use Dive Deeper after the last card to open a Forge conversation and test to complete.
+                        <div style={{ fontSize: 14, color: "var(--color-text-soft)", lineHeight: 1.9 }}>
+                            Work through the lesson cards first. Use Dive Deeper after the last card to open a Navi conversation and test to complete.
                         </div>
                         {completed && <CompletionBadge label={getCompletionBadgeLabel(content)} />}
                     </div>
-                    <button onClick={onClose} style={{ background: "rgba(255,255,255,0.04)", border, borderRadius: 10, padding: "8px 12px", color: "rgba(240,237,232,0.62)", cursor: "pointer" }}>
+                    <button onClick={onClose} style={{ background: "rgba(7,26,47,0.04)", border, borderRadius: 10, padding: "8px 12px", color: "var(--color-text-muted)", cursor: "pointer" }}>
                         Close
                     </button>
                 </div>
 
                 <div style={{ display: "grid", gap: 12 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-                        <div style={{ fontSize: "var(--foundry-academy-md-font)", color: "#A8A4A0", fontWeight: 700 }}>
+                        <div style={{ fontSize: "var(--foundry-academy-md-font)", color: "var(--color-text-muted)", fontWeight: 700 }}>
                             Slide {activeSlideIndex + 1} of {slides.length}
                         </div>
                         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -2997,7 +2997,7 @@ function ContentDetailModal({
                                         height: 8,
                                         borderRadius: 999,
                                         border: "none",
-                                        background: index === activeSlideIndex ? "#E8622A" : "rgba(255,255,255,0.10)",
+                                        background: index === activeSlideIndex ? "var(--tekori-gold)" : "rgba(7,26,47,0.10)",
                                         cursor: "pointer",
                                     }}
                                     aria-label={`Go to slide ${index + 1}`}
@@ -3006,9 +3006,9 @@ function ContentDetailModal({
                         </div>
                     </div>
 
-                    <div style={{ background: "rgba(255,255,255,0.024)", border: "1px solid rgba(255,255,255,0.065)", borderRadius: 14, overflow: "hidden" }}>
+                    <div style={{ background: "rgba(7,26,47,0.024)", border: "1px solid rgba(7,26,47,0.065)", borderRadius: 14, overflow: "hidden" }}>
                         {activeSlideIndex === 0 && (
-                            <div style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                            <div style={{ borderBottom: "1px solid rgba(7,26,47,0.06)" }}>
                                 {embedUrl ? (
                                     <div style={{ position: "relative", paddingTop: "46%", background: "#050506" }}>
                                         <iframe
@@ -3023,20 +3023,20 @@ function ContentDetailModal({
                                     <div
                                         style={{
                                             background: thumbnailUrl
-                                                ? `linear-gradient(180deg, rgba(8,8,9,0.18), rgba(8,8,9,0.62)), url(${thumbnailUrl}) center/cover`
-                                                : "rgba(255,255,255,0.024)",
+                                                ? `linear-gradient(180deg, rgba(7,26,47,0.18), rgba(7,26,47,0.62)), url(${thumbnailUrl}) center/cover`
+                                                : "rgba(7,26,47,0.024)",
                                             display: "grid",
                                             alignContent: "start",
                                             padding: "16px 18px",
                                         }}
                                     >
-                                        <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#C8A96E", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 8 }}>
+                                        <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "var(--tekori-amber)", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 8 }}>
                                             Guided lesson
                                         </div>
                                         <div style={{ fontSize: 13, color: "#D4D0CB", lineHeight: 1.8, maxWidth: 640 }}>
                                             {content.contentType === "video"
-                                                ? "Use the walkthrough below to frame the lesson before jumping into a Forge conversation."
-                                                : "This lesson is now structured as a guided walkthrough before you take it into Forge."}
+                                                ? "Use the walkthrough below to frame the lesson before jumping into a Navi conversation."
+                                                : "This lesson is now structured as a guided walkthrough before you take it into Navi."}
                                         </div>
                                     </div>
                                 )}
@@ -3045,13 +3045,13 @@ function ContentDetailModal({
 
                         <div style={{ padding: 22, display: "grid", gap: 18 }}>
                             <div style={{ display: "grid", gap: 12 }}>
-                                <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase" }}>
+                                <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "var(--tekori-gold)", letterSpacing: "0.14em", textTransform: "uppercase" }}>
                                     {activeSlide.eyebrow}
                                 </div>
-                                <div style={{ fontSize: 28, lineHeight: 1.08, fontWeight: 700, color: "#F0EDE8" }}>
+                                <div style={{ fontSize: 28, lineHeight: 1.08, fontWeight: 700, color: "var(--color-text)" }}>
                                     {activeSlide.title}
                                 </div>
-                                <div style={{ maxWidth: 760, fontSize: 15, color: "#C8C4BE", lineHeight: 1.9, whiteSpace: "pre-wrap" }}>
+                                <div style={{ maxWidth: 760, fontSize: 15, color: "var(--color-text-soft)", lineHeight: 1.9, whiteSpace: "pre-wrap" }}>
                                     {activeSlide.body}
                                 </div>
                             </div>
@@ -3059,7 +3059,7 @@ function ContentDetailModal({
                             {activeSlide.bullets && activeSlide.bullets.length > 0 && (
                                 <div style={{ display: "grid", gap: 10 }}>
                                     {activeSlide.bullets.map((bullet) => (
-                                        <div key={bullet} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "12px 14px", fontSize: 13, color: "#D7D1CA", lineHeight: 1.8 }}>
+                                        <div key={bullet} style={{ background: "rgba(7,26,47,0.03)", border: "1px solid rgba(7,26,47,0.06)", borderRadius: 12, padding: "12px 14px", fontSize: 13, color: "#D7D1CA", lineHeight: 1.8 }}>
                                             {renderSlideBullet(bullet)}
                                         </div>
                                     ))}
@@ -3067,7 +3067,7 @@ function ContentDetailModal({
                             )}
 
                             {activeSlide.note && (
-                                <div style={{ background: "rgba(232,98,42,0.055)", border: "1px solid rgba(232,98,42,0.14)", borderRadius: 12, padding: "12px 14px", fontSize: 13, color: "#E7D5CA", lineHeight: 1.8 }}>
+                                <div style={{ background: "rgba(216,155,43,0.055)", border: "1px solid rgba(216,155,43,0.14)", borderRadius: 12, padding: "12px 14px", fontSize: 13, color: "#E7D5CA", lineHeight: 1.8 }}>
                                     {activeSlide.note}
                                 </div>
                             )}
@@ -3089,7 +3089,7 @@ function ContentDetailModal({
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
                     {canOpenForge && onLaunchForge && (
                         <InlineButton onClick={onLaunchForge} disabled={busy}>
-                            {busy ? "Opening..." : "Dive Deeper with Forge"}
+                            {busy ? "Opening..." : "Dive Deeper with Navi"}
                         </InlineButton>
                     )}
                     {completed && <CompletionBadge label={getCompletionBadgeLabel(content)} />}
@@ -3098,7 +3098,7 @@ function ContentDetailModal({
                             href={content.resourceUrl}
                             target="_blank"
                             rel="noreferrer"
-                            style={{ display: "inline-flex", alignItems: "center", padding: "10px 14px", borderRadius: 999, border, background: "rgba(255,255,255,0.04)", color: "#F0EDE8", textDecoration: "none", fontSize: "var(--foundry-academy-md-font)" }}
+                            style={{ display: "inline-flex", alignItems: "center", padding: "10px 14px", borderRadius: 999, border, background: "rgba(7,26,47,0.04)", color: "var(--color-text)", textDecoration: "none", fontSize: "var(--foundry-academy-md-font)" }}
                         >
                             Open resource
                         </a>
@@ -3106,8 +3106,8 @@ function ContentDetailModal({
                 </div>
 
                 {!isLastSlide && onLaunchForge && (
-                    <div style={{ fontSize: "var(--foundry-academy-md-font)", color: "#8D857C", lineHeight: 1.7 }}>
-                        Finish the full walkthrough to unlock the Forge conversation for this lesson.
+                    <div style={{ fontSize: "var(--foundry-academy-md-font)", color: "var(--color-text-muted)", lineHeight: 1.7 }}>
+                        Finish the full walkthrough to unlock the Navi conversation for this lesson.
                     </div>
                 )}
 
@@ -3140,15 +3140,15 @@ function ApplyLessonCard({
 }) {
     const suggestion = suggestActionFromAcademyLesson(content);
     return (
-        <div style={{ background: "rgba(99,179,237,0.055)", border: "1px solid rgba(99,179,237,0.16)", borderRadius: 14, padding: 18, display: "grid", gap: 10 }}>
-            <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#8FC8F6", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700 }}>Dive Deeper</div>
-            <div style={{ fontSize: 18, color: "#F0EDE8", fontWeight: 700 }}>Take "{content.title}" into a real Forge conversation</div>
-            <div style={{ fontSize: 13, color: "#C8C4BE", lineHeight: 1.8 }}>
-                {content.starterPrompt || content.forgeContext || "Open Forge with this lesson already attached and pressure-test it against your actual company."}
+        <div style={{ background: "rgba(142,160,181,0.055)", border: "1px solid rgba(142,160,181,0.16)", borderRadius: 14, padding: 18, display: "grid", gap: 10 }}>
+            <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "var(--tekori-slate-navy)", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700 }}>Dive Deeper</div>
+            <div style={{ fontSize: 18, color: "var(--color-text)", fontWeight: 700 }}>Take "{content.title}" into a real Navi conversation</div>
+            <div style={{ fontSize: 13, color: "var(--color-text-soft)", lineHeight: 1.8 }}>
+                {content.starterPrompt || content.forgeContext || "Open Navi with this lesson already attached and pressure-test it against your actual company."}
             </div>
             <div>
                 <InlineButton tone="blue" onClick={onApply} disabled={busy}>
-                    {busy ? "Opening..." : "Open Forge prompt"}
+                    {busy ? "Opening..." : "Open Navi prompt"}
                 </InlineButton>
             </div>
             {(onCreateAction || onAskForgeAboutAction) && (
@@ -3187,33 +3187,33 @@ function SeriesDetailModal({
                             {series.difficultyLabel && <Pill>{series.difficultyLabel}</Pill>}
                             <ProgressPill status={completedItems === 0 ? "not_started" : completedItems >= series.items.length ? "completed" : "in_progress"} />
                         </div>
-                        <div style={{ fontSize: 34, lineHeight: 0.98, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
+                        <div style={{ fontSize: 34, lineHeight: 0.98, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, color: "var(--color-text)" }}>
                             {series.title}
                         </div>
-                        <div style={{ fontSize: 14, color: "#C8C4BE", lineHeight: 1.9 }}>
+                        <div style={{ fontSize: 14, color: "var(--color-text-soft)", lineHeight: 1.9 }}>
                             {series.shortDescription}
                         </div>
                     </div>
-                    <button onClick={onClose} style={{ background: "rgba(255,255,255,0.04)", border, borderRadius: 10, padding: "8px 12px", color: "rgba(240,237,232,0.62)", cursor: "pointer" }}>
+                    <button onClick={onClose} style={{ background: "rgba(7,26,47,0.04)", border, borderRadius: 10, padding: "8px 12px", color: "var(--color-text-muted)", cursor: "pointer" }}>
                         Close
                     </button>
                 </div>
 
                 {series.description && (
-                    <div style={{ background: surface, border, borderRadius: 14, padding: 16, fontSize: 14, color: "#C8C4BE", lineHeight: 1.9 }}>
+                    <div style={{ background: surface, border, borderRadius: 14, padding: 16, fontSize: 14, color: "var(--color-text-soft)", lineHeight: 1.9 }}>
                         {series.description}
                     </div>
                 )}
 
                 {nextItem && (
-                    <div style={{ background: "rgba(99,179,237,0.055)", border: "1px solid rgba(99,179,237,0.16)", borderRadius: 14, padding: 16, display: "grid", gap: 6 }}>
-                        <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#63B3ED", letterSpacing: "0.14em", textTransform: "uppercase" }}>
+                    <div style={{ background: "rgba(142,160,181,0.055)", border: "1px solid rgba(142,160,181,0.16)", borderRadius: 14, padding: 16, display: "grid", gap: 6 }}>
+                        <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "var(--tekori-muted-text)", letterSpacing: "0.14em", textTransform: "uppercase" }}>
                             Recommended next step
                         </div>
-                        <div style={{ fontSize: 18, color: "#F0EDE8", fontWeight: 700 }}>
+                        <div style={{ fontSize: 18, color: "var(--color-text)", fontWeight: 700 }}>
                             {getSeriesItemTitle(nextItem)}
                         </div>
-                        <div style={{ fontSize: 13, color: "#C8C4BE", lineHeight: 1.7 }}>
+                        <div style={{ fontSize: 13, color: "var(--color-text-soft)", lineHeight: 1.7 }}>
                             Lesson {nextItem.position} of {series.items.length}. Continue the series in order so each lesson compounds on the previous one.
                         </div>
                     </div>
@@ -3225,16 +3225,16 @@ function SeriesDetailModal({
                         const completed = status === "completed";
                         const isNext = nextItem?.id === item.id;
                         return (
-                            <div key={item.id} style={{ background: isNext ? "rgba(99,179,237,0.055)" : "rgba(255,255,255,0.024)", border: isNext ? "1px solid rgba(99,179,237,0.16)" : "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: 16, display: "grid", gap: 12 }}>
+                            <div key={item.id} style={{ background: isNext ? "rgba(142,160,181,0.055)" : "rgba(7,26,47,0.024)", border: isNext ? "1px solid rgba(142,160,181,0.16)" : "1px solid rgba(7,26,47,0.06)", borderRadius: 14, padding: 16, display: "grid", gap: 12 }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
                                     <div>
-                                        <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 8 }}>
+                                        <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "var(--tekori-gold)", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 8 }}>
                                             Lesson {index + 1}
                                         </div>
-                                        <div style={{ fontSize: 18, color: "#F0EDE8", fontWeight: 700, marginBottom: 6 }}>
+                                        <div style={{ fontSize: 18, color: "var(--color-text)", fontWeight: 700, marginBottom: 6 }}>
                                             {getSeriesItemTitle(item)}
                                         </div>
-                                        <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.7 }}>
+                                        <div style={{ fontSize: 13, color: "var(--color-text-muted)", lineHeight: 1.7 }}>
                                             {item.descriptionOverride || item.content?.shortDescription || "No summary added yet."}
                                         </div>
                                     </div>
@@ -3262,7 +3262,7 @@ function SeriesDetailModal({
 function ModalShell({ children, onClose }: { children: ReactNode; onClose: () => void }) {
     return (
         <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 140, background: "rgba(3,3,4,0.82)", backdropFilter: "blur(10px)", padding: 18, overflowY: "auto" }}>
-            <div onClick={(event) => event.stopPropagation()} style={{ width: "min(920px, 100%)", margin: "40px auto", background: "#0C0C0E", border: "1px solid rgba(255,255,255,0.075)", borderRadius: 16, padding: 20 }}>
+            <div onClick={(event) => event.stopPropagation()} style={{ width: "min(920px, 100%)", margin: "40px auto", background: "var(--color-surface)", border: "1px solid rgba(7,26,47,0.075)", borderRadius: 16, padding: 20 }}>
                 {children}
             </div>
         </div>
@@ -3273,7 +3273,7 @@ function DetailPanel({ title, body }: { title: string; body: string }) {
     return (
         <div style={{ background: surface, border, borderRadius: 18, padding: 16 }}>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase" }}>{title}</div>
+                <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "var(--tekori-gold)", letterSpacing: "0.14em", textTransform: "uppercase" }}>{title}</div>
                 <HelpTooltip content={body} />
             </div>
         </div>
@@ -3282,7 +3282,7 @@ function DetailPanel({ title, body }: { title: string; body: string }) {
 
 function HeroPill({ label }: { label: string }) {
     return (
-        <div style={{ padding: "8px 12px", borderRadius: 999, background: "rgba(255,255,255,0.06)", border, fontSize: "var(--foundry-academy-sm-font)", color: "#DDD6CF", letterSpacing: "0.02em", width: "fit-content", flex: "0 0 auto", alignSelf: "center" }}>
+        <div style={{ padding: "8px 12px", borderRadius: 999, background: "rgba(7,26,47,0.06)", border, fontSize: "var(--foundry-academy-sm-font)", color: "#DDD6CF", letterSpacing: "0.02em", width: "fit-content", flex: "0 0 auto", alignSelf: "center" }}>
             {label}
         </div>
     );
@@ -3290,24 +3290,24 @@ function HeroPill({ label }: { label: string }) {
 
 function SummaryTile({ label, value, hint }: { label: string; value: string; hint: string }) {
     return (
-        <div style={{ background: "rgba(255,255,255,0.045)", border, borderRadius: 18, padding: 16 }}>
+        <div style={{ background: "rgba(7,26,47,0.045)", border, borderRadius: 18, padding: 16 }}>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                 <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "#9B9389", letterSpacing: "0.14em", textTransform: "uppercase" }}>{label}</div>
                 <HelpTooltip content={hint} />
             </div>
-            <div style={{ fontSize: 28, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 8 }}>{value}</div>
+            <div style={{ fontSize: 28, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, color: "var(--color-text)", marginBottom: 8 }}>{value}</div>
         </div>
     );
 }
 
 function AliveEmptyState({ title, body }: { title: string; body: string }) {
     return (
-        <div style={{ background: "linear-gradient(140deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02))", border, borderRadius: 20, padding: 18, display: "grid", gap: 8 }}>
-            <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "#E8622A", letterSpacing: "0.14em", textTransform: "uppercase" }}>
-                Forge Academy
+        <div style={{ background: "linear-gradient(140deg, rgba(7,26,47,0.04), rgba(7,26,47,0.02))", border, borderRadius: 20, padding: 18, display: "grid", gap: 8 }}>
+            <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "var(--tekori-gold)", letterSpacing: "0.14em", textTransform: "uppercase" }}>
+                Navi Academy
             </div>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                <div style={{ fontSize: 20, lineHeight: 1.08, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
+                <div style={{ fontSize: 20, lineHeight: 1.08, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, color: "var(--color-text)" }}>
                     {title}
                 </div>
                 <HelpTooltip content={body} />
@@ -3331,13 +3331,13 @@ function Pill({
     tone = "neutral",
 }: {
     children: ReactNode;
-    tone?: "neutral" | "orange" | "blue" | "success" | "warm";
+    tone?: "neutral" | "gold" | "blue" | "success" | "warm";
 }) {
     const tones: Record<string, { background: string; borderColor: string; color: string }> = {
-        neutral: { background: "rgba(255,255,255,0.05)", borderColor: "rgba(255,255,255,0.08)", color: "#C8C4BE" },
-        orange: { background: "rgba(232,98,42,0.14)", borderColor: "rgba(232,98,42,0.24)", color: "#E8622A" },
-        blue: { background: "rgba(99,179,237,0.14)", borderColor: "rgba(99,179,237,0.24)", color: "#63B3ED" },
-        success: { background: "rgba(76,175,138,0.14)", borderColor: "rgba(76,175,138,0.24)", color: "#4CAF8A" },
+        neutral: { background: "rgba(7,26,47,0.05)", borderColor: "rgba(7,26,47,0.08)", color: "var(--color-text-soft)" },
+        gold: { background: "rgba(216,155,43,0.14)", borderColor: "rgba(216,155,43,0.24)", color: "var(--tekori-gold)" },
+        blue: { background: "rgba(142,160,181,0.14)", borderColor: "rgba(142,160,181,0.24)", color: "var(--tekori-muted-text)" },
+        success: { background: "rgba(76,175,138,0.14)", borderColor: "rgba(76,175,138,0.24)", color: "var(--color-success)" },
         warm: { background: "rgba(199,107,75,0.16)", borderColor: "rgba(199,107,75,0.26)", color: "#E0B09E" },
     };
     const theme = tones[tone];
@@ -3381,9 +3381,9 @@ function FilterPill({
             style={{
                 padding: "8px 12px",
                 borderRadius: 999,
-                border: active ? "1px solid rgba(232,98,42,0.28)" : "1px solid rgba(255,255,255,0.08)",
-                background: active ? "rgba(232,98,42,0.14)" : "rgba(255,255,255,0.03)",
-                color: active ? "#E8622A" : "#A8A4A0",
+                border: active ? "1px solid rgba(216,155,43,0.28)" : "1px solid rgba(7,26,47,0.08)",
+                background: active ? "rgba(216,155,43,0.14)" : "rgba(7,26,47,0.03)",
+                color: active ? "var(--tekori-gold)" : "var(--color-text-muted)",
                 fontSize: "var(--foundry-academy-sm-font)",
                 fontWeight: 700,
                 cursor: "pointer",
@@ -3410,24 +3410,24 @@ function InlineButton({
 }) {
     const styles = {
         primary: {
-            background: "linear-gradient(135deg, #E8622A, #C9521E)",
+            background: "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))",
             border: "none",
-            color: "#fff",
+            color: "var(--color-primary)",
         },
         blue: {
-            background: "rgba(99,179,237,0.14)",
-            border: "1px solid rgba(99,179,237,0.24)",
-            color: "#8FC8F6",
+            background: "rgba(142,160,181,0.14)",
+            border: "1px solid rgba(142,160,181,0.24)",
+            color: "var(--tekori-slate-navy)",
         },
         success: {
             background: "rgba(76,175,138,0.14)",
             border: "1px solid rgba(76,175,138,0.24)",
-            color: "#4CAF8A",
+            color: "var(--color-success)",
         },
         muted: {
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            color: "#C8C4BE",
+            background: "rgba(7,26,47,0.04)",
+            border: "1px solid rgba(7,26,47,0.08)",
+            color: "var(--color-text-soft)",
         },
     } as const;
     const style = styles[tone];
@@ -3463,7 +3463,7 @@ function CenteredState({
         <div style={{ minHeight: "70vh", display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", padding: 24 }}>
             <div style={{ maxWidth: 520, display: "grid", gap: 12 }}>
                 <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                    <div style={{ fontSize: 34, lineHeight: 0.98, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>
+                    <div style={{ fontSize: 34, lineHeight: 0.98, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, color: "var(--color-text)" }}>
                         {title}
                     </div>
                     <HelpTooltip content={body} side="bottom" />

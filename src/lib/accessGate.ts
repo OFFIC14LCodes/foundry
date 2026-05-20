@@ -93,7 +93,7 @@ export function getAccessBlockReason(access: AccountAccess | null): string {
             ? `Your account has been suspended: ${access.suspension_reason}`
             : 'Your account has been temporarily suspended. Contact support for help.';
     }
-    return 'Your access to Foundry has been revoked. Contact support for assistance.';
+    return 'Your access to Tekori has been revoked. Contact support for assistance.';
 }
 
 // ── Derived helpers ───────────────────────────────────────────

@@ -28,7 +28,7 @@ export default function StageBriefing({ stage, stageId, onStart }) {
                 <div
                     style={{
                         fontSize: 11,
-                        color: "#E8622A",
+                        color: "var(--tekori-gold)",
                         letterSpacing: "0.2em",
                         textTransform: "uppercase",
                         marginBottom: 10,
@@ -40,9 +40,9 @@ export default function StageBriefing({ stage, stageId, onStart }) {
                 <h2
                     style={{
                         fontSize: 26,
-                        fontFamily: "'Playfair Display', Georgia, serif",
+                        fontFamily: "var(--tekori-font-brand)",
                         fontWeight: 700,
-                        color: "#F0EDE8",
+                        color: "var(--color-text)",
                         letterSpacing: "-0.5px",
                         lineHeight: 1.2,
                         marginBottom: 10,
@@ -54,8 +54,8 @@ export default function StageBriefing({ stage, stageId, onStart }) {
                 <div
                     style={{
                         fontSize: 13,
-                        color: "#E8622A",
-                        fontFamily: "'Lora', Georgia, serif",
+                        color: "var(--tekori-gold)",
+                        fontFamily: "var(--tekori-font-ui)",
                         fontStyle: "italic",
                         marginBottom: 20,
                     }}
@@ -66,8 +66,8 @@ export default function StageBriefing({ stage, stageId, onStart }) {
                 <div
                     style={{
                         textAlign: "left",
-                        background: "rgba(255,255,255,0.02)",
-                        border: "1px solid rgba(255,255,255,0.06)",
+                        background: "rgba(7,26,47,0.02)",
+                        border: "1px solid rgba(7,26,47,0.06)",
                         borderRadius: 14,
                         padding: "18px 20px",
                         marginBottom: 18,
@@ -78,8 +78,8 @@ export default function StageBriefing({ stage, stageId, onStart }) {
                             key={i}
                             style={{
                                 fontSize: 13,
-                                fontFamily: "'Lora', Georgia, serif",
-                                color: "#C8C4BE",
+                                fontFamily: "var(--tekori-font-ui)",
+                                color: "var(--color-text-soft)",
                                 lineHeight: 1.75,
                                 marginBottom: i < arr.length - 1 ? 12 : 0,
                             }}
@@ -91,8 +91,8 @@ export default function StageBriefing({ stage, stageId, onStart }) {
 
                 <div
                     style={{
-                        background: "rgba(255,255,255,0.02)",
-                        border: "1px solid rgba(255,255,255,0.06)",
+                        background: "rgba(7,26,47,0.02)",
+                        border: "1px solid rgba(7,26,47,0.06)",
                         borderRadius: 12,
                         padding: "14px 16px",
                         marginBottom: 22,
@@ -116,13 +116,13 @@ export default function StageBriefing({ stage, stageId, onStart }) {
                             key={i}
                             style={{
                                 fontSize: 12,
-                                color: "rgba(240,237,232,0.62)",
-                                fontFamily: "'Lora', Georgia, serif",
+                                color: "var(--color-text-muted)",
+                                fontFamily: "var(--tekori-font-ui)",
                                 fontStyle: "italic",
                                 padding: "4px 0",
                                 borderBottom:
                                     i < stage.innerCircle.length - 1
-                                        ? "1px solid rgba(255,255,255,0.04)"
+                                        ? "1px solid rgba(7,26,47,0.04)"
                                         : "none",
                             }}
                         >
@@ -136,15 +136,15 @@ export default function StageBriefing({ stage, stageId, onStart }) {
                     style={{
                         width: "100%",
                         padding: "15px",
-                        background: "linear-gradient(135deg, #E8622A, #c9521e)",
+                        background: "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))",
                         border: "none",
                         borderRadius: 12,
-                        color: "#fff",
+                        color: "var(--color-primary)",
                         fontSize: 14,
-                        fontFamily: "'Lora', Georgia, serif",
+                        fontFamily: "var(--tekori-font-ui)",
                         fontWeight: 600,
                         cursor: "pointer",
-                        boxShadow: "0 8px 32px rgba(232,98,42,0.3)",
+                        boxShadow: "0 8px 32px rgba(216,155,43,0.3)",
                         transition: "transform 0.2s",
                     }}
                     onMouseEnter={(e) => {
@@ -154,7 +154,7 @@ export default function StageBriefing({ stage, stageId, onStart }) {
                         e.currentTarget.style.transform = "translateY(0)";
                     }}
                 >
-                    Start Stage {stageId} with Forge →
+                    Start Stage {stageId} with Navi →
                 </button>
             </div>
         </div>

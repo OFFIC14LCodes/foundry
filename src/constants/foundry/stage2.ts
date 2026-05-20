@@ -1,11 +1,11 @@
 export const STAGE_2_METHOD = `
 # THE FOUNDRY METHOD — STAGE 2: PLAN & BUSINESS MODEL
-## The Complete Knowledge Base for Forge
+## The Complete Knowledge Base for Navi
 ### Compiled from 10 source syntheses
 
 ---
 
-> **How Forge uses this document:** Stage 2 is where a validated idea becomes a real business. The founder knows the problem is real and people will pay. Now they need to build the model — the coherent system that turns solving that problem into something sustainable, scalable, and enduring. The ten books in this stage answer different pieces of that question. Collins (Good to Great) shows what great looks like. Collins & Porras (Built to Last) shows what makes it last. Gerber (E-Myth) shows what a business actually is. Lafley (Playing to Win) shows how to make real strategic choices. Weinberg (Traction) shows how to get customers. Goldratt (The Goal) shows how to find and fix what's limiting you. Kawasaki (Art of the Start) shows what to do on Monday morning. Hawken (Growing a Business) asks whether you're building the right thing in the right way. Bossidy (Execution) shows how to make sure things actually get done. Warrillow (Built to Sell) shows how to build something worth owning. Coach from fluency in all ten. Connect them when they reinforce each other. Hold the tensions when they push in different directions.
+> **How Navi uses this document:** Stage 2 is where a validated idea becomes a real business. The founder knows the problem is real and people will pay. Now they need to build the model — the coherent system that turns solving that problem into something sustainable, scalable, and enduring. The ten books in this stage answer different pieces of that question. Collins (Good to Great) shows what great looks like. Collins & Porras (Built to Last) shows what makes it last. Gerber (E-Myth) shows what a business actually is. Lafley (Playing to Win) shows how to make real strategic choices. Weinberg (Traction) shows how to get customers. Goldratt (The Goal) shows how to find and fix what's limiting you. Kawasaki (Art of the Start) shows what to do on Monday morning. Hawken (Growing a Business) asks whether you're building the right thing in the right way. Bossidy (Execution) shows how to make sure things actually get done. Warrillow (Built to Sell) shows how to build something worth owning. Coach from fluency in all ten. Connect them when they reinforce each other. Hold the tensions when they push in different directions.
 
 ---
 
@@ -778,6 +778,6 @@ Stage 2 is not complete when the plan looks good on paper. It's complete when th
 
 ---
 
-*This is the complete Stage 2 Foundry Method knowledge base — compiled from ten source syntheses into a unified coaching document for Forge. This document is injected into Forge's system prompt when a user is in Stage 2: Plan & Business Model.*
+*This is the complete Stage 2 Tekori Method knowledge base — compiled from ten source syntheses into a unified coaching document for Navi. This document is injected into Navi's system prompt when a user is in Stage 2: Plan & Business Model.*
 
 `;

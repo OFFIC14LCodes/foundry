@@ -14,7 +14,7 @@ interface MarkdownRenderOptions {
 }
 
 const BODY_FONT = "Georgia, 'Times New Roman', serif";
-const UI_FONT = "'DM Sans', 'Aptos', 'Segoe UI', Arial, sans-serif";
+const UI_FONT = "'Manrope', 'Aptos', 'Segoe UI', Arial, sans-serif";
 const SIGNATURE_FONT = "'Segoe Script', 'Brush Script MT', 'Lucida Handwriting', cursive";
 const TYPED_SIGNATURE_PREFIX = "FOUNDRY_TYPED_SIGNATURE:";
 
@@ -30,7 +30,7 @@ export const DOCUMENT_PREVIEW_CSS = `
     padding: 0 0 20px;
     border-bottom: 1px solid #d8d1c8;
     text-align: center;
-    color: #111;
+    color: var(--color-surface-elevated);
     font-family: ${BODY_FONT};
     break-after: avoid;
     page-break-after: avoid;
@@ -108,7 +108,7 @@ export const DOCUMENT_PREVIEW_CSS = `
     widows: 3;
 }
 .foundry-document strong {
-    color: #151515;
+    color: var(--color-surface-elevated);
     font-weight: 700;
 }
 .foundry-document em {
@@ -128,8 +128,8 @@ export const DOCUMENT_PREVIEW_CSS = `
 .foundry-document .callout {
     margin: 16px 0;
     padding: 12px 14px;
-    border-left: 3px solid #E8622A;
-    background: rgba(232, 98, 42, 0.07);
+    border-left: 3px solid var(--tekori-gold);
+    background: rgba(216, 155, 43, 0.07);
     color: #2f2924;
 }
 .foundry-document .signature-block,
@@ -160,7 +160,7 @@ export const DOCUMENT_PREVIEW_CSS = `
     min-width: 220px;
     padding: 0 8px 2px;
     border-bottom: 1px solid #2f2924;
-    color: #111;
+    color: var(--color-surface-elevated);
     font-family: ${SIGNATURE_FONT};
     font-size: 26px;
     font-weight: 400;

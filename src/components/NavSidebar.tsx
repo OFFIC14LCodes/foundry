@@ -52,15 +52,15 @@ function NavItem({
                 alignItems: description ? "flex-start" : "center",
                 gap: 11,
                 padding: isPrimary ? "12px 14px" : "9px 16px",
-                background: isPrimary ? "rgba(232,98,42,0.075)" : "transparent",
-                border: isPrimary ? "1px solid rgba(232,98,42,0.14)" : "none",
-                borderLeft: isPrimary ? "2px solid rgba(232,98,42,0.55)" : "2px solid transparent",
+                background: isPrimary ? "rgba(216,155,43,0.075)" : "transparent",
+                border: isPrimary ? "1px solid rgba(216,155,43,0.14)" : "none",
+                borderLeft: isPrimary ? "2px solid rgba(216,155,43,0.55)" : "2px solid transparent",
                 borderRadius: isPrimary ? 12 : 0,
-                color: isPrimary ? "var(--foundry-text-primary)" : emphasis === "muted" ? "rgba(168,164,160,0.72)" : "var(--foundry-text-secondary)",
+                color: isPrimary ? "var(--foundry-text-primary)" : emphasis === "muted" ? "rgba(102,112,133,0.72)" : "var(--foundry-text-secondary)",
                 fontSize: isPrimary ? 13 : 12,
                 cursor: "pointer",
                 textAlign: "left",
-                fontFamily: "'DM Sans', system-ui, sans-serif",
+                fontFamily: "var(--tekori-font-ui)",
                 fontWeight: isPrimary ? 750 : 650,
                 transition: "color 0.15s, background 0.15s",
                 position: "relative",
@@ -68,12 +68,12 @@ function NavItem({
                 margin: isPrimary ? "0 10px 8px" : 0,
             }}
             onMouseEnter={e => {
-                e.currentTarget.style.color = "#F0EDE8";
-                e.currentTarget.style.background = isPrimary ? "rgba(232,98,42,0.11)" : "rgba(255,255,255,0.04)";
+                e.currentTarget.style.color = "var(--color-text)";
+                e.currentTarget.style.background = isPrimary ? "rgba(216,155,43,0.11)" : "rgba(7,26,47,0.04)";
             }}
             onMouseLeave={e => {
-                e.currentTarget.style.color = isPrimary ? "var(--foundry-text-primary)" : emphasis === "muted" ? "rgba(168,164,160,0.72)" : "var(--foundry-text-secondary)";
-                e.currentTarget.style.background = isPrimary ? "rgba(232,98,42,0.075)" : "transparent";
+                e.currentTarget.style.color = isPrimary ? "var(--foundry-text-primary)" : emphasis === "muted" ? "rgba(102,112,133,0.72)" : "var(--foundry-text-secondary)";
+                e.currentTarget.style.background = isPrimary ? "rgba(216,155,43,0.075)" : "transparent";
             }}
         >
             <span style={{ width: 16, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, opacity: isPrimary ? 0.95 : 0.68, marginTop: description ? 1 : 0 }}>
@@ -82,20 +82,21 @@ function NavItem({
             <span style={{ flex: 1, display: "grid", gap: 2 }}>
                 <span>{label}</span>
                 {description && (
-                    <span style={{ color: "rgba(189,175,162,0.68)", fontSize: 10, lineHeight: 1.45, fontWeight: 500 }}>
+                    <span style={{ color: "rgba(102,112,133,0.72)", fontSize: 10, lineHeight: 1.45, fontWeight: 500 }}>
                         {description}
                     </span>
                 )}
             </span>
             {badge ? (
                 <span style={{
-                    background: "#E8622A",
-                    color: "#fff",
+                    background: "rgba(216,155,43,0.16)",
+                    color: "var(--color-primary)",
+                    border: "1px solid rgba(216,155,43,0.28)",
                     borderRadius: 999,
                     fontSize: 10,
                     fontWeight: 700,
                     padding: "1px 6px",
-                    fontFamily: "'DM Sans', sans-serif",
+                    fontFamily: "var(--tekori-font-ui)",
                     lineHeight: 1.5,
                 }}>
                     {badge}
@@ -110,11 +111,11 @@ function NavSection({ label, children }: { label: string; children: ReactNode })
         <div style={{ padding: "8px 0" }}>
             <div style={{
                 padding: "0 16px 7px",
-                color: "rgba(255,255,255,0.36)",
+                color: "rgba(102,112,133,0.72)",
                 fontSize: 10,
                 letterSpacing: "0.12em",
                 textTransform: "uppercase",
-                fontFamily: "'DM Sans', system-ui, sans-serif",
+                fontFamily: "var(--tekori-font-ui)",
                 fontWeight: 800,
             }}>
                 {label}
@@ -166,7 +167,7 @@ export default function NavSidebar({
                     position: "fixed",
                     inset: 0,
                     zIndex: 300,
-                    background: "rgba(0,0,0,0.5)",
+                    background: "rgba(7,26,47,0.34)",
                     backdropFilter: "blur(4px)",
                     opacity: open ? 1 : 0,
                     pointerEvents: open ? "auto" : "none",
@@ -183,7 +184,7 @@ export default function NavSidebar({
                 width: 272,
                 zIndex: 301,
                     background: "var(--foundry-surface-primary)",
-                borderRight: "1px solid rgba(255,255,255,0.08)",
+                borderRight: "1px solid rgba(7,26,47,0.08)",
                 transform: open ? "translateX(0)" : "translateX(-100%)",
                 transition: "transform 0.32s cubic-bezier(0.16,1,0.3,1)",
                 display: "flex",
@@ -193,7 +194,7 @@ export default function NavSidebar({
                 {/* Header */}
                 <div style={{
                     padding: "max(16px, calc(12px + env(safe-area-inset-top))) 16px 14px",
-                    borderBottom: "1px solid rgba(255,255,255,0.06)",
+                    borderBottom: "1px solid rgba(7,26,47,0.06)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
@@ -201,20 +202,20 @@ export default function NavSidebar({
                 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <Logo variant="flame" style={{ width: 16, height: 16, objectFit: "contain" }} />
-                        <span style={{ fontSize: 15, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "var(--foundry-text-primary)" }}>Foundry</span>
+                        <span style={{ fontSize: 15, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, color: "var(--foundry-text-primary)" }}>Tekori</span>
                     </div>
                     <button
                         onClick={onClose}
                         className="foundry-btn foundry-btn--ghost"
                         style={{
-                            background: "rgba(255,255,255,0.06)",
-                            border: "1px solid rgba(255,255,255,0.08)",
+                            background: "rgba(7,26,47,0.06)",
+                            border: "1px solid rgba(7,26,47,0.08)",
                             borderRadius: 6,
                             padding: "5px 10px",
                             color: "var(--foundry-text-secondary)",
                             fontSize: 11,
                             cursor: "pointer",
-                            fontFamily: "'DM Sans', sans-serif",
+                            fontFamily: "var(--tekori-font-ui)",
                         }}
                     >
                         ✕
@@ -223,11 +224,11 @@ export default function NavSidebar({
 
                 {/* Business info */}
                 {profile && (
-                    <div style={{ padding: "12px 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0 }}>
-                        <div style={{ fontSize: 14, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "var(--foundry-text-primary)", lineHeight: 1.2, marginBottom: 2 }}>
+                    <div style={{ padding: "12px 16px 14px", borderBottom: "1px solid rgba(7,26,47,0.06)", flexShrink: 0 }}>
+                        <div style={{ fontSize: 14, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, color: "var(--foundry-text-primary)", lineHeight: 1.2, marginBottom: 2 }}>
                             {profile.businessName || (profile.idea ? profile.idea.slice(0, 32) + (profile.idea.length > 32 ? "…" : "") : "Your Business")}
                         </div>
-                        <div style={{ fontSize: 11, color: "var(--foundry-text-muted)", fontFamily: "'DM Sans', sans-serif" }}>
+                        <div style={{ fontSize: 11, color: "var(--foundry-text-muted)", fontFamily: "var(--tekori-font-ui)" }}>
                             {profile.strategyLabel || `Stage ${profile.currentStage}`}
                         </div>
                     </div>
@@ -245,7 +246,7 @@ export default function NavSidebar({
                         />
                         <NavItem
                             icon={<ChatIcon size={16} />}
-                            label="Forge"
+                            label="Navi"
                             description="Think, decide, execute"
                             onClick={onOpenForge}
                             emphasis="primary"
@@ -322,7 +323,7 @@ export default function NavSidebar({
                 </div>
 
                 {/* Footer */}
-                <div style={{ padding: "8px 0 max(16px, calc(12px + env(safe-area-inset-bottom)))", borderTop: "1px solid rgba(255,255,255,0.06)", flexShrink: 0 }}>
+                <div style={{ padding: "8px 0 max(16px, calc(12px + env(safe-area-inset-bottom)))", borderTop: "1px solid rgba(7,26,47,0.06)", flexShrink: 0 }}>
                     {isAdmin && onOpenAdminHub && (
                         <NavItem
                             icon={<AdminIcon size={16} />}

@@ -73,8 +73,8 @@ export default function ChatInput({
                                 display: "flex",
                                 alignItems: "center",
                                 gap: 5,
-                                background: "rgba(232,98,42,0.08)",
-                                border: "1px solid rgba(232,98,42,0.2)",
+                                background: "rgba(216,155,43,0.08)",
+                                border: "1px solid rgba(216,155,43,0.2)",
                                 borderRadius: 8,
                                 padding: "4px 8px 4px 5px",
                                 maxWidth: 220,
@@ -94,7 +94,7 @@ export default function ChatInput({
                             <span
                                 style={{
                                     fontSize: 11,
-                                    color: "#C8C4BE",
+                                    color: "var(--color-text-soft)",
                                     overflow: "hidden",
                                     textOverflow: "ellipsis",
                                     whiteSpace: "nowrap",
@@ -109,7 +109,7 @@ export default function ChatInput({
                                 style={{
                                     background: "none",
                                     border: "none",
-                                    color: "rgba(240,237,232,0.62)",
+                                    color: "var(--color-text-muted)",
                                     cursor: "pointer",
                                     padding: 0,
                                     fontSize: 14,
@@ -147,7 +147,7 @@ export default function ChatInput({
                             background: "none",
                             border: "none",
                             cursor: "pointer",
-                            color: attachedFiles.length > 0 ? "#E8622A" : "#555",
+                            color: attachedFiles.length > 0 ? "var(--tekori-gold)" : "var(--color-text-muted)",
                             padding: "4px",
                             flexShrink: 0,
                             display: "flex",
@@ -155,8 +155,8 @@ export default function ChatInput({
                             justifyContent: "center",
                             transition: "color 0.15s",
                         }}
-                        onMouseEnter={e => { if (attachedFiles.length === 0) e.currentTarget.style.color = "#C8C4BE"; }}
-                        onMouseLeave={e => { if (attachedFiles.length === 0) e.currentTarget.style.color = "#555"; }}
+                        onMouseEnter={e => { if (attachedFiles.length === 0) e.currentTarget.style.color = "var(--color-text-soft)"; }}
+                        onMouseLeave={e => { if (attachedFiles.length === 0) e.currentTarget.style.color = "var(--color-text-muted)"; }}
                     >
                         <svg width="18" height="18" viewBox="-1 -1 18 18" fill="none" style={{ overflow: "visible", display: "block" }}>
                             <path
@@ -186,15 +186,15 @@ export default function ChatInput({
                     value={value}
                     onChange={onChange}
                     onKeyDown={onKeyDown}
-                    placeholder={placeholder || "Talk to Forge..."}
+                    placeholder={placeholder || "Talk to Navi..."}
                     rows={1}
                     style={{
                         flex: 1,
                         background: "transparent",
                         border: "none",
-                        color: "#F0EDE8",
+                        color: "var(--color-text)",
                         fontSize: 13,
-                        fontFamily: "'Lora', Georgia, serif",
+                        fontFamily: "var(--tekori-font-ui)",
                         lineHeight: 1.5,
                         height: "auto",
                         minHeight: 20,
@@ -224,10 +224,10 @@ export default function ChatInput({
                         borderRadius: 8,
                         flexShrink: 0,
                         background: canSend
-                            ? "linear-gradient(135deg, #E8622A, #c9521e)"
-                            : "rgba(255,255,255,0.05)",
+                            ? "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))"
+                            : "rgba(7,26,47,0.05)",
                         border: "none",
-                        color: "#fff",
+                        color: canSend ? "var(--color-primary)" : "var(--color-text-muted)",
                         fontSize: 14,
                         opacity: canSend ? 1 : 0.4,
                         cursor: canSend ? "pointer" : "default",
@@ -245,7 +245,7 @@ export default function ChatInput({
                     style={{
                         fontSize: 11,
                         lineHeight: 1.5,
-                        color: "#D3A48D",
+                        color: "var(--color-danger)",
                         paddingLeft: 2,
                     }}
                 >

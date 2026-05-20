@@ -14,7 +14,7 @@ function getAuthRedirectUrl() {
 type AuthMode = "login" | "signup" | "forgot" | "reset";
 
 // ─────────────────────────────────────────────────────────────
-// AUTH SCREEN — Foundry Login / Signup / Password Reset
+// AUTH SCREEN — Tekori Login / Signup / Password Reset
 // ─────────────────────────────────────────────────────────────
 export default function AuthScreen({
     onAuth,
@@ -144,28 +144,28 @@ export default function AuthScreen({
         width: "100%",
         padding: "13px 14px",
         marginBottom: 10,
-        background: "rgba(255,255,255,0.04)",
-        border: "1px solid rgba(255,255,255,0.08)",
+        background: "rgba(7,26,47,0.04)",
+        border: "1px solid rgba(7,26,47,0.08)",
         borderRadius: 10,
-        color: "#F0EDE8",
+        color: "var(--color-text)",
         fontSize: 16,
-        fontFamily: "'Lora', Georgia, serif",
+        fontFamily: "var(--tekori-font-ui)",
         boxSizing: "border-box",
     };
     const authInputClassName = "foundry-auth-input";
 
     return (
         <div className="foundry-auth-shell" style={{
-            background: "#080809",
+            background: "var(--color-bg-soft)",
             display: "flex", flexDirection: "column", alignItems: "center",
-            justifyContent: "center", fontFamily: "'Lora', Georgia, serif",
+            justifyContent: "center", fontFamily: "var(--tekori-font-ui)",
             zIndex: 200
         }}>
 
             {/* Glow */}
             <div style={{
                 position: "absolute", width: 500, height: 500, borderRadius: "50%",
-                background: "radial-gradient(circle, rgba(232,98,42,0.08) 0%, transparent 70%)",
+                background: "radial-gradient(circle, rgba(216,155,43,0.08) 0%, transparent 70%)",
                 pointerEvents: "none"
             }} />
 
@@ -180,16 +180,16 @@ export default function AuthScreen({
                 />
                 <div className="foundry-auth-brand-title" style={{
                     fontSize: "clamp(26px, 7vw, 34px)",
-                    color: "#F0EDE8",
-                    fontFamily: "'Playfair Display', Georgia, serif",
+                    color: "var(--color-text)",
+                    fontFamily: "var(--tekori-font-brand)",
                     fontWeight: 700,
                     letterSpacing: "0.02em",
                     lineHeight: 1,
-                }}>Foundry</div>
+                }}>Tekori</div>
                 <div className="foundry-auth-brand-tagline" style={{
-                    fontSize: 11, color: "#E8622A", letterSpacing: "0.25em",
+                    fontSize: 11, color: "var(--tekori-gold)", letterSpacing: "0.25em",
                     textTransform: "uppercase", marginTop: 8
-                }}>Build Something Real</div>
+                }}>The Builder&apos;s Light</div>
             </div>
 
             {/* Card */}
@@ -203,8 +203,8 @@ export default function AuthScreen({
                     <>
                         <div style={{ marginBottom: 20, textAlign: "center" }}>
                             <div style={{
-                                fontSize: 16, fontWeight: 600, color: "#F0EDE8",
-                                fontFamily: "'Playfair Display', Georgia, serif",
+                                fontSize: 16, fontWeight: 600, color: "var(--color-text)",
+                                fontFamily: "var(--tekori-font-brand)",
                                 marginBottom: 6
                             }}>Set a new password</div>
                             <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.5 }}>
@@ -215,8 +215,8 @@ export default function AuthScreen({
                         {successMsg ? (
                             <div style={{
                                 textAlign: "center", padding: "24px 0",
-                                color: "#4CAF8A", fontSize: 14,
-                                fontFamily: "'Lora', Georgia, serif", lineHeight: 1.7
+                                color: "var(--color-success)", fontSize: 14,
+                                fontFamily: "var(--tekori-font-ui)", lineHeight: 1.7
                             }}>
                                 ✓ {successMsg}
                             </div>
@@ -243,7 +243,7 @@ export default function AuthScreen({
                                     <div style={{
                                         fontSize: 12, color: "#FF6B6B",
                                         marginBottom: 12, textAlign: "center",
-                                        fontFamily: "'Lora', Georgia, serif"
+                                        fontFamily: "var(--tekori-font-ui)"
                                     }}>{error}</div>
                                 )}
                                 <button
@@ -252,11 +252,11 @@ export default function AuthScreen({
                                     className="foundry-btn foundry-btn--primary"
                                     style={{
                                         width: "100%", padding: "13px",
-                                        background: loading ? "rgba(232,98,42,0.4)" : "linear-gradient(135deg, #E8622A, #c9521e)",
+                                        background: loading ? "rgba(7,26,47,0.38)" : "linear-gradient(135deg, var(--color-primary), var(--color-primary-hover))",
                                         border: "none", borderRadius: 12, color: "#fff",
                                         fontSize: 13, fontWeight: 600, cursor: loading ? "default" : "pointer",
-                                        fontFamily: "'Lora', Georgia, serif",
-                                        boxShadow: loading ? "none" : "0 4px 20px rgba(232,98,42,0.3)",
+                                        fontFamily: "var(--tekori-font-ui)",
+                                        boxShadow: loading ? "none" : "0 14px 28px rgba(7,26,47,0.18)",
                                         transition: "all 0.2s"
                                     }}>
                                     {loading ? "..." : "Update Password"}
@@ -282,8 +282,8 @@ export default function AuthScreen({
 
                         <div style={{ marginBottom: 20, textAlign: "center" }}>
                             <div style={{
-                                fontSize: 16, fontWeight: 600, color: "#F0EDE8",
-                                fontFamily: "'Playfair Display', Georgia, serif",
+                                fontSize: 16, fontWeight: 600, color: "var(--color-text)",
+                                fontFamily: "var(--tekori-font-brand)",
                                 marginBottom: 6
                             }}>Reset your password</div>
                             <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.5 }}>
@@ -295,8 +295,8 @@ export default function AuthScreen({
                         {successMsg ? (
                             <div style={{
                                 textAlign: "center", padding: "24px 0",
-                                color: "#4CAF8A", fontSize: 14,
-                                fontFamily: "'Lora', Georgia, serif", lineHeight: 1.7
+                                color: "var(--color-success)", fontSize: 14,
+                                fontFamily: "var(--tekori-font-ui)", lineHeight: 1.7
                             }}>
                                 ✓ {successMsg}
                             </div>
@@ -315,7 +315,7 @@ export default function AuthScreen({
                                     <div style={{
                                         fontSize: 12, color: "#FF6B6B",
                                         marginBottom: 12, textAlign: "center",
-                                        fontFamily: "'Lora', Georgia, serif"
+                                        fontFamily: "var(--tekori-font-ui)"
                                     }}>{error}</div>
                                 )}
                                 <button
@@ -324,11 +324,11 @@ export default function AuthScreen({
                                     className="foundry-btn foundry-btn--primary"
                                     style={{
                                         width: "100%", padding: "13px",
-                                        background: loading ? "rgba(232,98,42,0.4)" : "linear-gradient(135deg, #E8622A, #c9521e)",
+                                        background: loading ? "rgba(7,26,47,0.38)" : "linear-gradient(135deg, var(--color-primary), var(--color-primary-hover))",
                                         border: "none", borderRadius: 12, color: "#fff",
                                         fontSize: 13, fontWeight: 600, cursor: loading ? "default" : "pointer",
-                                        fontFamily: "'Lora', Georgia, serif",
-                                        boxShadow: loading ? "none" : "0 4px 20px rgba(232,98,42,0.3)",
+                                        fontFamily: "var(--tekori-font-ui)",
+                                        boxShadow: loading ? "none" : "0 14px 28px rgba(7,26,47,0.18)",
                                         transition: "all 0.2s"
                                     }}>
                                     {loading ? "..." : "Send Reset Link"}
@@ -343,18 +343,18 @@ export default function AuthScreen({
                     <>
                         {/* Mode toggle */}
                         <div className="foundry-auth-mode-toggle" style={{
-                            display: "flex", background: "rgba(255,255,255,0.04)",
+                            display: "flex", background: "rgba(7,26,47,0.04)",
                             borderRadius: 10, padding: 3, marginBottom: 24
                         }}>
                             {(["login", "signup"] as const).map(m => (
                                 <button className="foundry-auth-mode-button" key={m} onClick={() => switchMode(m)}
                                     style={{
                                         flex: 1, padding: "8px", border: "none", borderRadius: 8,
-                                        background: mode === m ? "rgba(232,98,42,0.15)" : "transparent",
-                                        color: mode === m ? "#E8622A" : "#555",
+                                        background: mode === m ? "rgba(216,155,43,0.15)" : "transparent",
+                                        color: mode === m ? "var(--tekori-gold)" : "var(--color-text-muted)",
                                         fontSize: 13, fontWeight: 500, cursor: "pointer",
                                         transition: "all 0.2s",
-                                        borderBottom: mode === m ? "1px solid rgba(232,98,42,0.4)" : "1px solid transparent"
+                                        borderBottom: mode === m ? "1px solid rgba(216,155,43,0.4)" : "1px solid transparent"
                                     }}>
                                     {m === "login" ? "Sign In" : "Create Account"}
                                 </button>
@@ -364,8 +364,8 @@ export default function AuthScreen({
                         {successMsg ? (
                             <div style={{
                                 textAlign: "center", padding: "24px 0",
-                                color: "#4CAF8A", fontSize: 14,
-                                fontFamily: "'Lora', Georgia, serif", lineHeight: 1.7
+                                color: "var(--color-success)", fontSize: 14,
+                                fontFamily: "var(--tekori-font-ui)", lineHeight: 1.7
                             }}>
                                 ✓ {successMsg}
                             </div>
@@ -374,15 +374,15 @@ export default function AuthScreen({
                                 {/* Google */}
                                 <button onClick={handleGoogle} className="foundry-btn foundry-btn--secondary foundry-auth-google-button" style={{
                                     width: "100%", padding: "12px", marginBottom: 16,
-                                    background: "rgba(255,255,255,0.05)",
-                                    border: "1px solid rgba(255,255,255,0.1)",
-                                    borderRadius: 12, color: "#F0EDE8", fontSize: 13,
+                                    background: "rgba(7,26,47,0.05)",
+                                    border: "1px solid rgba(7,26,47,0.1)",
+                                    borderRadius: 12, color: "var(--color-text)", fontSize: 13,
                                     fontWeight: 500, cursor: "pointer", display: "flex",
                                     alignItems: "center", justifyContent: "center", gap: 10,
                                     transition: "all 0.2s"
                                 }}
-                                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.08)"}
-                                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.05)"}
+                                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "rgba(7,26,47,0.08)"}
+                                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "rgba(7,26,47,0.05)"}
                                 >
                                     <svg width="18" height="18" viewBox="0 0 48 48">
                                         <path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 33.1 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.8 1.1 7.9 3l5.7-5.7C34.1 6.5 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 20-9 20-20 0-1.3-.1-2.7-.4-4z" />
@@ -397,9 +397,9 @@ export default function AuthScreen({
                                 <div className="foundry-auth-divider" style={{
                                     display: "flex", alignItems: "center", gap: 12, marginBottom: 16
                                 }}>
-                                    <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.07)" }} />
+                                    <div style={{ flex: 1, height: 1, background: "rgba(7,26,47,0.07)" }} />
                                     <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)" }}>or</div>
-                                    <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.07)" }} />
+                                    <div style={{ flex: 1, height: 1, background: "rgba(7,26,47,0.07)" }} />
                                 </div>
 
                                 {/* Name field (signup only) */}
@@ -438,10 +438,10 @@ export default function AuthScreen({
                                                 background: "none", border: "none",
                                                 color: "var(--foundry-text-muted)", fontSize: 11,
                                                 cursor: "pointer", padding: 0,
-                                                fontFamily: "'Lora', Georgia, serif",
+                                                fontFamily: "var(--tekori-font-ui)",
                                             }}
-                                            onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#E8622A"}
-                                            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "#555"}
+                                            onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "var(--tekori-gold)"}
+                                            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "var(--color-text-muted)"}
                                         >
                                             Forgot password?
                                         </button>
@@ -453,18 +453,18 @@ export default function AuthScreen({
                                     <div style={{
                                         fontSize: 12, color: "#FF6B6B",
                                         marginBottom: 12, textAlign: "center",
-                                        fontFamily: "'Lora', Georgia, serif"
+                                        fontFamily: "var(--tekori-font-ui)"
                                     }}>{error}</div>
                                 )}
 
                                 {/* Submit */}
                                 <button onClick={handleEmailAuth} disabled={loading} className="foundry-btn foundry-btn--primary foundry-auth-submit-button" style={{
                                     width: "100%", padding: "13px",
-                                    background: loading ? "rgba(232,98,42,0.4)" : "linear-gradient(135deg, #E8622A, #c9521e)",
+                                    background: loading ? "rgba(7,26,47,0.38)" : "linear-gradient(135deg, var(--color-primary), var(--color-primary-hover))",
                                     border: "none", borderRadius: 12, color: "#fff",
                                     fontSize: 13, fontWeight: 600, cursor: loading ? "default" : "pointer",
-                                    fontFamily: "'Lora', Georgia, serif",
-                                    boxShadow: loading ? "none" : "0 4px 20px rgba(232,98,42,0.3)",
+                                    fontFamily: "var(--tekori-font-ui)",
+                                    boxShadow: loading ? "none" : "0 14px 28px rgba(7,26,47,0.18)",
                                     transition: "all 0.2s"
                                 }}>
                                     {loading ? "..." : mode === "login" ? "Sign In" : "Create Account"}
@@ -475,8 +475,8 @@ export default function AuthScreen({
                 )}
             </div>
 
-            <div className="foundry-auth-footer" style={{ fontSize: 11, color: "#333" }}>
-                By continuing you agree to Foundry's Terms of Service and Privacy Policy
+            <div className="foundry-auth-footer" style={{ fontSize: 11, color: "var(--color-text-muted)" }}>
+                By continuing you agree to Tekori's Terms of Service and Privacy Policy
             </div>
         </div>
     );

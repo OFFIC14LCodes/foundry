@@ -127,7 +127,7 @@ function toActionPayload(userId: string, suggestion: FoundryActionSuggestion) {
 
 export function buildForgePromptForAction(action: FoundryAction | FoundryActionSuggestion) {
     const dueLine = action.dueDate ? `\nDue date: ${action.dueDate}` : "";
-    return `Help me execute this Foundry action.
+    return `Help me execute this Tekori action.
 
 Action: ${action.title}
 Source module: ${formatActionModule(action.sourceModule)}
@@ -163,7 +163,7 @@ export async function createFoundryAction(userId: string, suggestion: FoundryAct
             .maybeSingle();
 
         if (lookupError) {
-            console.error("createFoundryAction lookup error:", lookupError.message);
+            console.error("createTekoriAction lookup error:", lookupError.message);
             return null;
         }
 
@@ -174,7 +174,7 @@ export async function createFoundryAction(userId: string, suggestion: FoundryAct
         ? suggestion
         : await applyOutcomeAwareSuggestion(userId, suggestion);
     if (!outcomeAwareSuggestion) {
-        console.info("createFoundryAction suppressed by recent failed outcomes:", suggestion.title);
+        console.info("createTekoriAction suppressed by recent failed outcomes:", suggestion.title);
         return null;
     }
     const payload = toActionPayload(userId, outcomeAwareSuggestion);
@@ -185,7 +185,7 @@ export async function createFoundryAction(userId: string, suggestion: FoundryAct
         .select("*")
         .single();
     if (error) {
-        console.error("createFoundryAction error:", error.message);
+        console.error("createTekoriAction error:", error.message);
         return null;
     }
     return data ? mapAction(data) : null;
@@ -316,7 +316,7 @@ export async function loadFoundryAction(userId: string, actionId: string): Promi
         .eq("id", actionId)
         .maybeSingle();
     if (error) {
-        console.error("loadFoundryAction error:", error.message);
+        console.error("loadTekoriAction error:", error.message);
         return null;
     }
     return data ? mapAction(data) : null;
@@ -329,7 +329,7 @@ export async function loadFoundryActionsByUser(userId: string): Promise<FoundryA
         .eq("user_id", userId)
         .order("updated_at", { ascending: false });
     if (error) {
-        console.error("loadFoundryActionsByUser error:", error.message);
+        console.error("loadTekoriActionsByUser error:", error.message);
         throw error;
     }
     return (data ?? []).map(mapAction);
@@ -344,7 +344,7 @@ export async function loadOpenFoundryActionsByUser(userId: string): Promise<Foun
         .order("priority", { ascending: false })
         .order("updated_at", { ascending: false });
     if (error) {
-        console.error("loadOpenFoundryActionsByUser error:", error.message);
+        console.error("loadOpenTekoriActionsByUser error:", error.message);
         return [];
     }
     return (data ?? []).map(mapAction);
@@ -356,7 +356,7 @@ export async function updateFoundryActionStatus(userId: string, actionId: string
     if (!current) return null;
 
     if ((current.status === "completed" || current.status === "dismissed") && current.status !== status) {
-        console.warn("updateFoundryActionStatus blocked terminal transition:", {
+        console.warn("updateTekoriActionStatus blocked terminal transition:", {
             actionId,
             from: current.status,
             to: status,
@@ -376,7 +376,7 @@ export async function updateFoundryActionStatus(userId: string, actionId: string
         .select("*")
         .single();
     if (error) {
-        console.error("updateFoundryActionStatus error:", error.message);
+        console.error("updateTekoriActionStatus error:", error.message);
         return null;
     }
     return data ? mapAction(data) : null;
@@ -453,7 +453,7 @@ export async function loadRecentActionOutcomesForForge(userId: string, limit = 8
         .limit(Math.max(1, Math.min(10, limit)));
 
     if (error) {
-        console.error("loadRecentActionOutcomesForForge error:", error.message);
+        console.error("loadRecentActionOutcomesForNavi error:", error.message);
         return [];
     }
 
@@ -500,7 +500,7 @@ export async function deleteFoundryAction(userId: string, actionId: string): Pro
         .eq("user_id", userId)
         .eq("id", actionId);
     if (error) {
-        console.error("deleteFoundryAction error:", error.message);
+        console.error("deleteTekoriAction error:", error.message);
         return false;
     }
     return true;
@@ -614,8 +614,8 @@ export function suggestActionFromCanvasWeakness(weakness: BusinessModelCanvasWea
 
 export function formatActionModule(module: FoundryActionSourceModule) {
     const labels: Record<FoundryActionSourceModule, string> = {
-        forge: "Forge Chat",
-        academy: "Forge Academy",
+        forge: "Navi",
+        academy: "Navi Academy",
         market_intelligence: "Market Intelligence",
         weekly_intelligence: "Weekly Intelligence",
         finance: "Finance",
@@ -637,7 +637,7 @@ export function formatActionType(type: FoundryActionType) {
         market_followup: "Market follow-up",
         academy_apply: "Apply lesson",
         journal_reflection: "Journal reflection",
-        forge_followup: "Forge follow-up",
+        forge_followup: "Navi follow-up",
         stage_gate: "Stage gate",
     };
     return labels[type];

@@ -940,7 +940,7 @@ export async function loadAcademyWeeklyActivity(userId: string, daysBack = 7): P
         .slice(0, 3);
 
     const mostRecentActivity = recentActivity[0]
-        ? `${recentActivity[0].action === "completed" ? "Completed" : recentActivity[0].action === "opened_forge" ? "Opened with Forge" : "Viewed"} ${recentActivity[0].title}`
+        ? `${recentActivity[0].action === "completed" ? "Completed" : recentActivity[0].action === "opened_forge" ? "Opened with Navi" : "Viewed"} ${recentActivity[0].title}`
         : null;
 
     return {

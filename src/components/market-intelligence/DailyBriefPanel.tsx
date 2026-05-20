@@ -104,10 +104,10 @@ export default function DailyBriefPanel({
                     marginBottom: 14,
                     padding: "12px 14px",
                     borderRadius: 12,
-                    background: hasReachedLimit ? "rgba(217,177,93,0.08)" : "rgba(99,179,237,0.055)",
-                    border: hasReachedLimit ? "1px solid rgba(217,177,93,0.2)" : "1px solid rgba(99,179,237,0.15)",
+                    background: hasReachedLimit ? "rgba(217,177,93,0.08)" : "rgba(142,160,181,0.055)",
+                    border: hasReachedLimit ? "1px solid rgba(217,177,93,0.2)" : "1px solid rgba(142,160,181,0.15)",
                     fontSize: 12,
-                    color: hasReachedLimit ? "#D9B15D" : "#BDAFA2",
+                    color: hasReachedLimit ? "var(--tekori-amber)" : "var(--color-text-muted)",
                     lineHeight: 1.65,
                 }}>
                     {hasReachedLimit
@@ -119,34 +119,34 @@ export default function DailyBriefPanel({
             {!hasSavedReport && !generating && (
                 <div style={{ opacity: mounted ? 1 : 0, transition: "opacity 0.4s ease" }}>
                     <div style={{ marginBottom: 28, animation: "fadeSlideUp 0.4s ease both", textAlign: "left" }}>
-                        <div style={{ fontSize: 22, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 6, lineHeight: 1.25 }}>
+                        <div style={{ fontSize: 22, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, marginBottom: 6, lineHeight: 1.25 }}>
                             Daily Market Brief
                         </div>
-                        <div style={{ fontSize: 13, color: "var(--foundry-text-secondary)", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", lineHeight: 1.75, maxWidth: 480, margin: 0 }}>
-                            Forge generates a focused intelligence report on your market — trends, competitors, risks, and opportunities — tailored to your stage and business context.
+                        <div style={{ fontSize: 13, color: "var(--foundry-text-secondary)", fontFamily: "var(--tekori-font-ui)", fontStyle: "italic", lineHeight: 1.75, maxWidth: 480, margin: 0 }}>
+                            Navi generates a focused intelligence report on your market — trends, competitors, risks, and opportunities — tailored to your stage and business context.
                         </div>
                     </div>
 
-                    <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "18px 20px", marginBottom: 20, animation: "fadeSlideUp 0.4s ease 0.05s both" }}>
+                    <div style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.06)", borderRadius: 14, padding: "18px 20px", marginBottom: 20, animation: "fadeSlideUp 0.4s ease 0.05s both" }}>
                         <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>What you'll get</div>
                         {["Market overview for your specific industry", "Key trends reshaping the space", "Competitive landscape at your stage", "Financial and funding signals", "Risks and opportunities right now", "What matters most — given your stage and strategy"].map((item, i) => (
                             <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8 }}>
-                                <div style={{ width: 14, height: 14, borderRadius: "50%", background: "rgba(99,179,237,0.12)", border: "1px solid rgba(99,179,237,0.22)", flexShrink: 0, marginTop: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                    <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#63B3ED" }} />
+                                <div style={{ width: 14, height: 14, borderRadius: "50%", background: "rgba(142,160,181,0.12)", border: "1px solid rgba(142,160,181,0.22)", flexShrink: 0, marginTop: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                    <div style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--tekori-muted-text)" }} />
                                 </div>
-                                <span style={{ fontSize: 12, color: "rgba(240,237,232,0.62)", lineHeight: 1.5 }}>{item}</span>
+                                <span style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.5 }}>{item}</span>
                             </div>
                         ))}
                     </div>
 
-                    <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", marginBottom: 18, lineHeight: 1.6, animation: "fadeSlideUp 0.4s ease 0.1s both" }}>
-                        Based on Forge's knowledge of your industry — not a live data feed. Generated once per day, then available to Forge in your conversations.
+                    <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", fontFamily: "var(--tekori-font-ui)", fontStyle: "italic", marginBottom: 18, lineHeight: 1.6, animation: "fadeSlideUp 0.4s ease 0.1s both" }}>
+                        Based on Navi's knowledge of your industry — not a live data feed. Generated once per day, then available to Navi in your conversations.
                     </div>
 
                     <button
                         onClick={onGenerate}
                         disabled={!canGenerateReport}
-                        style={{ width: "100%", padding: "15px", background: canGenerateReport ? "linear-gradient(135deg, #E8622A, #c9521e)" : "rgba(255,255,255,0.06)", border: "none", borderRadius: 14, color: canGenerateReport ? "#fff" : "#555", fontSize: 15, fontWeight: 700, cursor: canGenerateReport ? "pointer" : "default", fontFamily: "'Lora', Georgia, serif", animation: "fadeSlideUp 0.4s ease 0.15s both" }}
+                        style={{ width: "100%", padding: "15px", background: canGenerateReport ? "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))" : "rgba(7,26,47,0.06)", border: "none", borderRadius: 14, color: canGenerateReport ? "var(--color-primary)" : "var(--color-text-muted)", fontSize: 15, fontWeight: 800, cursor: canGenerateReport ? "pointer" : "default", fontFamily: "var(--tekori-font-ui)", animation: "fadeSlideUp 0.4s ease 0.15s both" }}
                     >
                         {hasReachedLimit ? "Preview limit reached" : "Generate Today's Report →"}
                     </button>
@@ -154,15 +154,15 @@ export default function DailyBriefPanel({
             )}
 
             {hasOutdatedReport && !generating && currentReport && (
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 14px", background: "rgba(245,168,67,0.05)", border: "1px solid rgba(245,168,67,0.15)", borderRadius: 10, marginBottom: 18, animation: "fadeSlideUp 0.3s ease both" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 14px", background: "rgba(244,182,66,0.05)", border: "1px solid rgba(244,182,66,0.15)", borderRadius: 10, marginBottom: 18, animation: "fadeSlideUp 0.3s ease both" }}>
                     <div>
-                        <div style={{ fontSize: 11, color: "#F5A843", fontWeight: 600, marginBottom: 2 }}>Report from {formatReportDate(currentReport.date)}</div>
+                        <div style={{ fontSize: 11, color: "var(--tekori-amber)", fontWeight: 600, marginBottom: 2 }}>Report from {formatReportDate(currentReport.date)}</div>
                         <div style={{ fontSize: 10, color: "var(--foundry-text-muted)" }}>Generate a fresh report for today</div>
                     </div>
                     <button
                         onClick={onGenerate}
                         disabled={!canGenerateReport}
-                        style={{ background: canGenerateReport ? "rgba(245,168,67,0.12)" : "rgba(255,255,255,0.04)", border: canGenerateReport ? "1px solid rgba(245,168,67,0.25)" : "1px solid rgba(255,255,255,0.06)", borderRadius: 8, padding: "6px 14px", color: canGenerateReport ? "#F5A843" : "#555", fontSize: 11, fontWeight: 600, cursor: canGenerateReport ? "pointer" : "default", flexShrink: 0 }}
+                        style={{ background: canGenerateReport ? "rgba(244,182,66,0.12)" : "rgba(7,26,47,0.04)", border: canGenerateReport ? "1px solid rgba(244,182,66,0.25)" : "1px solid rgba(7,26,47,0.06)", borderRadius: 8, padding: "6px 14px", color: canGenerateReport ? "var(--tekori-amber)" : "var(--color-text-muted)", fontSize: 11, fontWeight: 600, cursor: canGenerateReport ? "pointer" : "default", flexShrink: 0 }}
                     >
                         {hasReachedLimit ? "Preview limit reached" : "Refresh"}
                     </button>
@@ -173,10 +173,10 @@ export default function DailyBriefPanel({
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 14, padding: "70px 0", animation: "fadeIn 0.3s ease" }}>
                     <div style={{ display: "flex", gap: 6 }}>
                         {[0, 1, 2].map(i => (
-                            <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: "#63B3ED", animation: "forgePulse 1.4s infinite ease-in-out", animationDelay: `${i * 0.2}s` }} />
+                            <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--tekori-muted-text)", animation: "forgePulse 1.4s infinite ease-in-out", animationDelay: `${i * 0.2}s` }} />
                         ))}
                     </div>
-                    <div style={{ fontSize: 13, color: "var(--foundry-text-muted)", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic" }}>
+                    <div style={{ fontSize: 13, color: "var(--foundry-text-muted)", fontFamily: "var(--tekori-font-ui)", fontStyle: "italic" }}>
                         {loadingText}
                     </div>
                 </div>
@@ -185,19 +185,19 @@ export default function DailyBriefPanel({
             {displayContent && (
                 <div style={{ animation: "fadeSlideUp 0.4s ease both" }}>
                     <div style={{ marginBottom: 18 }}>
-                        <div style={{ fontSize: 20, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, lineHeight: 1.25, marginBottom: 4 }}>
+                        <div style={{ fontSize: 20, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, lineHeight: 1.25, marginBottom: 4 }}>
                             {profileIndustry || "Market"} Intelligence
                         </div>
                         <div style={{ fontSize: 11, color: "var(--foundry-text-muted)" }}>
                             {generating ? "Writing..." : currentReportDate ? formatReportDate(currentReportDate) : "Today"}
-                            {generating && <span style={{ marginLeft: 8, color: "#63B3ED" }}>● Live</span>}
+                            {generating && <span style={{ marginLeft: 8, color: "var(--tekori-muted-text)" }}>● Live</span>}
                         </div>
                     </div>
 
-                    <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "20px 18px", marginBottom: 14 }}>
+                    <div style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.06)", borderRadius: 14, padding: "20px 18px", marginBottom: 14 }}>
                         <ReportSection content={displayContent} />
                         {!generating && (
-                            <div style={{ marginTop: 18, paddingTop: 14, background: "rgba(255,255,255,0.03)", borderTop: "1px solid rgba(255,255,255,0.08)", display: "grid", gap: 12 }}>
+                            <div style={{ marginTop: 18, paddingTop: 14, background: "rgba(7,26,47,0.03)", borderTop: "1px solid rgba(7,26,47,0.08)", display: "grid", gap: 12 }}>
                                 <button
                                     onClick={() => setSourcesState((state) => ({
                                         reportKey,
@@ -212,40 +212,40 @@ export default function DailyBriefPanel({
                                         background: "transparent",
                                         border: "none",
                                         padding: "0 0 2px",
-                                        color: "#C8C4BE",
+                                        color: "var(--color-text-soft)",
                                         cursor: "pointer",
-                                        fontFamily: "'DM Sans', system-ui, sans-serif",
+                                        fontFamily: "var(--tekori-font-ui)",
                                         fontSize: 12,
                                         fontWeight: 700,
                                     }}
                                 >
                                     <span>View Sources ({citations.length})</span>
-                                    <span style={{ color: "#77716A", fontSize: 11 }}>{sourcesOpen ? "Hide" : "Show"}</span>
+                                    <span style={{ color: "var(--color-text-muted)", fontSize: 11 }}>{sourcesOpen ? "Hide" : "Show"}</span>
                                 </button>
                                 {sourcesOpen && (
                                     citations.length > 0 ? (
                                         <ol style={{ margin: "10px 0 0 18px", padding: 0 }}>
                                             {citations.map((source) => (
-                                                <li key={source.url} style={{ color: "#77716A", fontSize: 12, lineHeight: 1.7, marginBottom: 6, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+                                                <li key={source.url} style={{ color: "var(--color-text-muted)", fontSize: 12, lineHeight: 1.7, marginBottom: 6, fontFamily: "var(--tekori-font-ui)" }}>
                                                     <a
                                                         href={source.url}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        style={{ color: "#63B3ED", textDecoration: "none", fontSize: 12, fontFamily: "'DM Sans', system-ui, sans-serif" }}
+                                                        style={{ color: "var(--tekori-muted-text)", textDecoration: "none", fontSize: 12, fontFamily: "var(--tekori-font-ui)" }}
                                                     >
                                                         {source.title}
                                                     </a>
-                                                    <span style={{ color: "rgba(240,237,232,0.58)" }}> - {source.url}</span>
+                                                    <span style={{ color: "rgba(16,32,51,0.58)" }}> - {source.url}</span>
                                                 </li>
                                             ))}
                                         </ol>
                                     ) : (
-                                        <div style={{ marginTop: 10, color: "rgba(240,237,232,0.58)", fontSize: 12, lineHeight: 1.6, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+                                        <div style={{ marginTop: 10, color: "rgba(16,32,51,0.58)", fontSize: 12, lineHeight: 1.6, fontFamily: "var(--tekori-font-ui)" }}>
                                             This report was generated from AI training data synthesis. Live source data was unavailable.
                                         </div>
                                     )
                                 )}
-                                <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 12 }}>
+                                <div style={{ borderTop: "1px solid rgba(7,26,47,0.06)", paddingTop: 12 }}>
                                     <button
                                         onClick={() => setResearchState((state) => ({
                                             reportKey,
@@ -260,27 +260,27 @@ export default function DailyBriefPanel({
                                             background: "transparent",
                                             border: "none",
                                             padding: 0,
-                                            color: "#C8C4BE",
+                                            color: "var(--color-text-soft)",
                                             cursor: "pointer",
-                                            fontFamily: "'DM Sans', system-ui, sans-serif",
+                                            fontFamily: "var(--tekori-font-ui)",
                                             fontSize: 12,
                                             fontWeight: 700,
                                         }}
                                     >
                                         <span>How this was researched</span>
-                                        <span style={{ color: "#77716A", fontSize: 11 }}>{researchOpen ? "Hide" : "Show"}</span>
+                                        <span style={{ color: "var(--color-text-muted)", fontSize: 11 }}>{researchOpen ? "Hide" : "Show"}</span>
                                     </button>
                                     {researchOpen && (
                                         searchQueries.length > 0 ? (
                                             <ol style={{ margin: "10px 0 0 18px", padding: 0 }}>
                                                 {searchQueries.slice(0, 5).map((query) => (
-                                                    <li key={query} style={{ color: "#77716A", fontSize: 12, lineHeight: 1.7, marginBottom: 4, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+                                                    <li key={query} style={{ color: "var(--color-text-muted)", fontSize: 12, lineHeight: 1.7, marginBottom: 4, fontFamily: "var(--tekori-font-ui)" }}>
                                                         {query}
                                                     </li>
                                                 ))}
                                             </ol>
                                         ) : (
-                                            <div style={{ marginTop: 10, color: "rgba(240,237,232,0.58)", fontSize: 12, lineHeight: 1.6, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+                                            <div style={{ marginTop: 10, color: "rgba(16,32,51,0.58)", fontSize: 12, lineHeight: 1.6, fontFamily: "var(--tekori-font-ui)" }}>
                                                 Search query history is not available for this saved report.
                                             </div>
                                         )
@@ -292,17 +292,17 @@ export default function DailyBriefPanel({
 
                     {!generating && isCurrentReport && (
                         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "rgba(76,175,138,0.05)", border: "1px solid rgba(76,175,138,0.12)", borderRadius: 10, marginBottom: 14, animation: "fadeSlideUp 0.3s ease both" }}>
-                            <div style={{ width: 7, height: 7, borderRadius: "50%", background: "#4CAF8A", flexShrink: 0 }} />
-                            <div style={{ fontSize: 12, color: "#4CAF8A" }}>
-                                Forge can now reference this report in your conversations.
+                            <div style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--color-success)", flexShrink: 0 }} />
+                            <div style={{ fontSize: 12, color: "var(--color-success)" }}>
+                                Navi can now reference this report in your conversations.
                             </div>
                         </div>
                     )}
 
-                    {saveError && <div style={{ fontSize: 11, color: "#F5A843", lineHeight: 1.6, marginBottom: 12 }}>{saveError}</div>}
+                    {saveError && <div style={{ fontSize: 11, color: "var(--tekori-amber)", lineHeight: 1.6, marginBottom: 12 }}>{saveError}</div>}
 
                     {!generating && (
-                        <div style={{ fontSize: 10, color: "#333", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", textAlign: "left", paddingTop: 8 }}>
+                        <div style={{ fontSize: 10, color: "var(--color-text-muted)", fontFamily: "var(--tekori-font-ui)", fontStyle: "italic", textAlign: "left", paddingTop: 8 }}>
                             Market intelligence generated from live research when available, with AI synthesis layered on top
                         </div>
                     )}

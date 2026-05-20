@@ -150,7 +150,7 @@ export default function SettingsScreen({
 
     const planName = accessSummary?.planName ?? "Free";
     const billingStatus = accessSummary?.statusLabel ?? "Pending";
-    const version = "Foundry v1";
+    const version = "Tekori v1";
     const intervalLabel = billingSubscription?.billing_interval
         ? billingSubscription.billing_interval === "yearly" ? "Yearly" : "Monthly"
         : "Not set";
@@ -173,24 +173,24 @@ export default function SettingsScreen({
             <div style={{ display: "grid", gap: 18 }}>
                 <SettingsSection
                     title="Account Details"
-                    description="Core account identity and the venture context Foundry uses across the workspace."
+                    description="Core account identity and the venture context Tekori uses across the workspace."
                 >
                     <SettingsCard>
                         <SettingsRow label="Signed-in email" value={email} />
                         <SettingsRow label="Role" value={roleLabel(profile?.role)} />
                         <SettingsRow
                             label="Display name"
-                            hint="Your name shown across the Foundry workspace."
+                            hint="Your name shown across the Tekori workspace."
                             action={
                                 <input
                                     value={displayName}
                                     onChange={(e) => setDisplayName(e.target.value)}
                                     placeholder="Enter your name"
                                     style={{
-                                        background: "rgba(255,255,255,0.04)",
-                                        border: "1px solid rgba(255,255,255,0.1)",
+                                        background: "rgba(7,26,47,0.04)",
+                                        border: "1px solid rgba(7,26,47,0.1)",
                                         borderRadius: 8,
-                                        color: "#F0EDE8",
+                                        color: "var(--color-text)",
                                         fontSize: 13,
                                         padding: "8px 12px",
                                         outline: "none",
@@ -202,17 +202,17 @@ export default function SettingsScreen({
                         />
                         <SettingsRow
                             label="Business name"
-                            hint="This is where you officially declare or update the startup, company, project, or side hustle name Forge should use."
+                            hint="This is where you officially declare or update the startup, company, project, or side hustle name Navi should use."
                             action={
                                 <input
                                     value={businessName}
                                     onChange={(e) => setBusinessName(e.target.value)}
                                     placeholder="Enter name when ready"
                                     style={{
-                                        background: "rgba(255,255,255,0.04)",
-                                        border: "1px solid rgba(255,255,255,0.1)",
+                                        background: "rgba(7,26,47,0.04)",
+                                        border: "1px solid rgba(7,26,47,0.1)",
                                         borderRadius: 8,
-                                        color: "#F0EDE8",
+                                        color: "var(--color-text)",
                                         fontSize: 13,
                                         padding: "8px 12px",
                                         outline: "none",
@@ -224,17 +224,17 @@ export default function SettingsScreen({
                         />
                         <SettingsRow
                             label="Business / market"
-                            hint="Use this to declare the market, audience, or business direction once Forge helps you clarify it."
+                            hint="Use this to declare the market, audience, or business direction once Navi helps you clarify it."
                             action={
                                 <input
                                     value={marketFocus}
                                     onChange={(e) => setMarketFocus(e.target.value)}
                                     placeholder="Example: B2B SaaS for law firms"
                                     style={{
-                                        background: "rgba(255,255,255,0.04)",
-                                        border: "1px solid rgba(255,255,255,0.1)",
+                                        background: "rgba(7,26,47,0.04)",
+                                        border: "1px solid rgba(7,26,47,0.1)",
                                         borderRadius: 8,
-                                        color: "#F0EDE8",
+                                        color: "var(--color-text)",
                                         fontSize: 13,
                                         padding: "8px 12px",
                                         outline: "none",
@@ -246,16 +246,16 @@ export default function SettingsScreen({
                         />
                         <SettingsRow
                             label="Path"
-                            hint="This changes how Forge frames advice: company, side hustle, full-time transition, or exploration."
+                            hint="This changes how Navi frames advice: company, side hustle, full-time transition, or exploration."
                             action={
                                 <select
                                     value={ventureMode}
                                     onChange={(e) => setVentureMode(normalizeVentureMode(e.target.value))}
                                     style={{
-                                        background: "rgba(255,255,255,0.04)",
-                                        border: "1px solid rgba(255,255,255,0.1)",
+                                        background: "rgba(7,26,47,0.04)",
+                                        border: "1px solid rgba(7,26,47,0.1)",
                                         borderRadius: 8,
-                                        color: "#F0EDE8",
+                                        color: "var(--color-text)",
                                         fontSize: 13,
                                         padding: "8px 12px",
                                         outline: "none",
@@ -263,7 +263,7 @@ export default function SettingsScreen({
                                     }}
                                 >
                                     {VENTURE_MODE_CARDS.map((card) => (
-                                        <option key={card.id} value={card.id} style={{ background: "#111214", color: "#F0EDE8" }}>
+                                        <option key={card.id} value={card.id} style={{ background: "var(--color-surface-elevated)", color: "var(--color-text)" }}>
                                             {card.label}
                                         </option>
                                     ))}
@@ -279,10 +279,10 @@ export default function SettingsScreen({
                                     onChange={(e) => setVentureGoal(e.target.value)}
                                     placeholder="What would make this a win?"
                                     style={{
-                                        background: "rgba(255,255,255,0.04)",
-                                        border: "1px solid rgba(255,255,255,0.1)",
+                                        background: "rgba(7,26,47,0.04)",
+                                        border: "1px solid rgba(7,26,47,0.1)",
                                         borderRadius: 8,
-                                        color: "#F0EDE8",
+                                        color: "var(--color-text)",
                                         fontSize: 13,
                                         padding: "8px 12px",
                                         outline: "none",
@@ -294,7 +294,7 @@ export default function SettingsScreen({
                         />
                         <SettingsRow
                             label="Weekly hours"
-                            hint="For side hustles, this helps Forge protect your schedule and calculate whether the work is worth it."
+                            hint="For side hustles, this helps Navi protect your schedule and calculate whether the work is worth it."
                             action={
                                 <input
                                     type="number"
@@ -304,10 +304,10 @@ export default function SettingsScreen({
                                     onChange={(e) => setWeeklyHoursAvailable(e.target.value)}
                                     placeholder="8"
                                     style={{
-                                        background: "rgba(255,255,255,0.04)",
-                                        border: "1px solid rgba(255,255,255,0.1)",
+                                        background: "rgba(7,26,47,0.04)",
+                                        border: "1px solid rgba(7,26,47,0.1)",
                                         borderRadius: 8,
-                                        color: "#F0EDE8",
+                                        color: "var(--color-text)",
                                         fontSize: 13,
                                         padding: "8px 12px",
                                         outline: "none",
@@ -328,10 +328,10 @@ export default function SettingsScreen({
                                     onChange={(e) => setTargetMonthlyIncome(e.target.value)}
                                     placeholder="2000"
                                     style={{
-                                        background: "rgba(255,255,255,0.04)",
-                                        border: "1px solid rgba(255,255,255,0.1)",
+                                        background: "rgba(7,26,47,0.04)",
+                                        border: "1px solid rgba(7,26,47,0.1)",
                                         borderRadius: 8,
-                                        color: "#F0EDE8",
+                                        color: "var(--color-text)",
                                         fontSize: 13,
                                         padding: "8px 12px",
                                         outline: "none",
@@ -350,7 +350,7 @@ export default function SettingsScreen({
                                 {profileSaving ? "Saving…" : "Save Changes"}
                             </SettingsButton>
                             {profileSaved && (
-                                <span style={{ fontSize: 12, color: "#4CAF8A" }}>Saved</span>
+                                <span style={{ fontSize: 12, color: "var(--color-success)" }}>Saved</span>
                             )}
                         </div>
                     </SettingsCard>
@@ -373,7 +373,7 @@ export default function SettingsScreen({
                         <SettingsRow label="Refund policy" value={REFUND_POLICY.summary} />
                         <SettingsRow label="Billing support" value={SUPPORT_EMAIL} />
                         {billingActionMessage && (
-                            <div style={{ fontSize: 12, color: "#C8C4BE", lineHeight: 1.7 }}>
+                            <div style={{ fontSize: 12, color: "var(--color-text-soft)", lineHeight: 1.7 }}>
                                 {billingActionMessage}
                             </div>
                         )}
@@ -383,17 +383,17 @@ export default function SettingsScreen({
                 <div className="foundry-grid-2">
                     <SettingsSection title="Privacy Policy" description="How account, workspace, and AI-processed data are handled.">
                         <SettingsCard>
-                            <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.7, marginBottom: 14 }}>
+                            <div style={{ fontSize: 13, color: "var(--color-text-muted)", lineHeight: 1.7, marginBottom: 14 }}>
                                 View the current privacy policy for data collection, storage, and AI processing.
                             </div>
                             <SettingsButton onClick={onOpenPrivacy}>Open Privacy Policy</SettingsButton>
                         </SettingsCard>
                     </SettingsSection>
 
-                    <SettingsSection title="Terms & Conditions" description="The terms and conditions governing your use of Foundry.">
+                    <SettingsSection title="Terms & Conditions" description="The terms and conditions governing your use of Tekori.">
                         <SettingsCard>
-                            <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.7, marginBottom: 14 }}>
-                                Review the Terms & Conditions for Foundry.
+                            <div style={{ fontSize: 13, color: "var(--color-text-muted)", lineHeight: 1.7, marginBottom: 14 }}>
+                                Review the Terms & Conditions for Tekori.
                             </div>
                             <SettingsButton onClick={onOpenTermsAndConditions}>Open Terms & Conditions</SettingsButton>
                         </SettingsCard>
@@ -401,19 +401,19 @@ export default function SettingsScreen({
                 </div>
 
                 <div className="foundry-grid-2">
-                    <SettingsSection title="End User License Agreement" description="The EULA governing your license to use the Foundry platform.">
+                    <SettingsSection title="End User License Agreement" description="The EULA governing your license to use the Tekori platform.">
                         <SettingsCard>
-                            <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.7, marginBottom: 14 }}>
-                                Review the End User License Agreement for Foundry.
+                            <div style={{ fontSize: 13, color: "var(--color-text-muted)", lineHeight: 1.7, marginBottom: 14 }}>
+                                Review the End User License Agreement for Tekori.
                             </div>
                             <SettingsButton onClick={onOpenEula}>Open EULA</SettingsButton>
                         </SettingsCard>
                     </SettingsSection>
 
-                    <SettingsSection title="Acceptable Use Policy" description="Guidelines for appropriate use of the Foundry platform.">
+                    <SettingsSection title="Acceptable Use Policy" description="Guidelines for appropriate use of the Tekori platform.">
                         <SettingsCard>
-                            <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.7, marginBottom: 14 }}>
-                                Review the Acceptable Use Policy for Foundry.
+                            <div style={{ fontSize: 13, color: "var(--color-text-muted)", lineHeight: 1.7, marginBottom: 14 }}>
+                                Review the Acceptable Use Policy for Tekori.
                             </div>
                             <SettingsButton onClick={onOpenAcceptableUse}>Open Acceptable Use Policy</SettingsButton>
                         </SettingsCard>
@@ -421,10 +421,10 @@ export default function SettingsScreen({
                 </div>
 
                 <div className="foundry-grid-2">
-                    <SettingsSection title="Disclaimer" description="Important disclaimers regarding the use of Foundry.">
+                    <SettingsSection title="Disclaimer" description="Important disclaimers regarding the use of Tekori.">
                         <SettingsCard>
-                            <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.7, marginBottom: 14 }}>
-                                Review the Disclaimer for Foundry.
+                            <div style={{ fontSize: 13, color: "var(--color-text-muted)", lineHeight: 1.7, marginBottom: 14 }}>
+                                Review the Disclaimer for Tekori.
                             </div>
                             <SettingsButton onClick={onOpenDisclaimer}>Open Disclaimer</SettingsButton>
                         </SettingsCard>
@@ -475,7 +475,7 @@ export default function SettingsScreen({
                             />
                             <SettingsRow
                                 label="Email notifications"
-                                hint="Controls whether Foundry can deliver notification emails to this account."
+                                hint="Controls whether Tekori can deliver notification emails to this account."
                                 action={
                                     <PreferenceToggle
                                         enabled={notificationPreferences.emailNotificationsEnabled}
@@ -494,7 +494,7 @@ export default function SettingsScreen({
                     <SettingsSection title="Support Ticket" description="Send a message inside the app when you need help with billing, access, or product issues.">
                         <SettingsCard>
                             <div style={{ display: "grid", gap: 12 }}>
-                                <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.7 }}>
+                                <div style={{ fontSize: 13, color: "var(--color-text-muted)", lineHeight: 1.7 }}>
                                     This sends an email directly to {SUPPORT_EMAIL}. Include what happened, what screen you were on, and what you expected instead.
                                 </div>
                                 <div style={{ position: "relative" }}>
@@ -506,10 +506,10 @@ export default function SettingsScreen({
                                         style={{
                                             width: "100%",
                                             resize: "vertical",
-                                            background: "rgba(255,255,255,0.04)",
-                                            border: "1px solid rgba(255,255,255,0.1)",
+                                            background: "rgba(7,26,47,0.04)",
+                                            border: "1px solid rgba(7,26,47,0.1)",
                                             borderRadius: 12,
-                                            color: "#F0EDE8",
+                                            color: "var(--color-text)",
                                             fontSize: 13,
                                             lineHeight: 1.7,
                                             padding: 14,
@@ -520,7 +520,7 @@ export default function SettingsScreen({
                                         }}
                                     />
                                     <div style={{ position: "absolute", top: 8, right: 8 }}>
-                                        <MicButton value={supportMessage} onChange={setSupportMessage} size={16} idleColor="#555" />
+                                        <MicButton value={supportMessage} onChange={setSupportMessage} size={16} idleColor="var(--color-text-muted)" />
                                     </div>
                                 </div>
                                 <div className="foundry-inline-actions">
@@ -528,7 +528,7 @@ export default function SettingsScreen({
                                         {supportSubmitting ? "Sending..." : "Submit Support Ticket"}
                                     </SettingsButton>
                                     {supportStatus && (
-                                        <span style={{ fontSize: 12, color: supportStatus === "Support ticket sent." ? "#4CAF8A" : "#D28B76" }}>
+                                        <span style={{ fontSize: 12, color: supportStatus === "Support ticket sent." ? "var(--color-success)" : "#D28B76" }}>
                                             {supportStatus}
                                         </span>
                                     )}
@@ -537,25 +537,25 @@ export default function SettingsScreen({
                         </SettingsCard>
                     </SettingsSection>
 
-                    <SettingsSection title="Suggestions" description="Tell us what would make Foundry more useful from a founder's perspective.">
+                    <SettingsSection title="Suggestions" description="Tell us what would make Tekori more useful from a founder's perspective.">
                         <SettingsCard>
                             <div style={{ display: "grid", gap: 12 }}>
-                                <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.7 }}>
-                                    If there is a feature, workflow, or improvement you want in Foundry, send it here.
+                                <div style={{ fontSize: 13, color: "var(--color-text-muted)", lineHeight: 1.7 }}>
+                                    If there is a feature, workflow, or improvement you want in Tekori, send it here.
                                 </div>
                                 <div style={{ position: "relative" }}>
                                     <textarea
                                         value={suggestionMessage}
                                         onChange={(event) => setSuggestionMessage(event.target.value)}
-                                        placeholder="What would be a strong addition to Foundry?"
+                                        placeholder="What would be a strong addition to Tekori?"
                                         rows={6}
                                         style={{
                                             width: "100%",
                                             resize: "vertical",
-                                            background: "rgba(255,255,255,0.04)",
-                                            border: "1px solid rgba(255,255,255,0.1)",
+                                            background: "rgba(7,26,47,0.04)",
+                                            border: "1px solid rgba(7,26,47,0.1)",
                                             borderRadius: 12,
-                                            color: "#F0EDE8",
+                                            color: "var(--color-text)",
                                             fontSize: 13,
                                             lineHeight: 1.7,
                                             padding: 14,
@@ -566,7 +566,7 @@ export default function SettingsScreen({
                                         }}
                                     />
                                     <div style={{ position: "absolute", top: 8, right: 8 }}>
-                                        <MicButton value={suggestionMessage} onChange={setSuggestionMessage} size={16} idleColor="#555" />
+                                        <MicButton value={suggestionMessage} onChange={setSuggestionMessage} size={16} idleColor="var(--color-text-muted)" />
                                     </div>
                                 </div>
                                 <div className="foundry-inline-actions">
@@ -574,7 +574,7 @@ export default function SettingsScreen({
                                         {suggestionSubmitting ? "Sending..." : "Submit Suggestion"}
                                     </SettingsButton>
                                     {suggestionStatus && (
-                                        <span style={{ fontSize: 12, color: suggestionStatus === "Suggestion sent." ? "#4CAF8A" : "#D28B76" }}>
+                                        <span style={{ fontSize: 12, color: suggestionStatus === "Suggestion sent." ? "var(--color-success)" : "#D28B76" }}>
                                             {suggestionStatus}
                                         </span>
                                     )}
@@ -587,8 +587,8 @@ export default function SettingsScreen({
                 <SettingsSection title="Log Out" description="End the current session and return to sign in.">
                     <SettingsCard>
                         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "center", gap: 16, flexWrap: "wrap", textAlign: "left" }}>
-                            <div style={{ fontSize: 13, color: "#A8A4A0", lineHeight: 1.7, maxWidth: 620 }}>
-                                Signing out clears local Foundry state for this session and routes you back to the sign-in screen.
+                            <div style={{ fontSize: 13, color: "var(--color-text-muted)", lineHeight: 1.7, maxWidth: 620 }}>
+                                Signing out clears local Tekori state for this session and routes you back to the sign-in screen.
                             </div>
                             <SettingsButton onClick={onLogout} tone="danger">Log Out</SettingsButton>
                         </div>
@@ -604,11 +604,11 @@ export default function SettingsScreen({
                         ) : (
                             <div style={{ display: "grid", gap: 10 }}>
                                 {notifications.slice(0, 5).map((notification) => (
-                                    <div key={notification.id} style={{ paddingBottom: 10, borderBottom: "1px solid rgba(255,255,255,0.05)", textAlign: "left" }}>
+                                    <div key={notification.id} style={{ paddingBottom: 10, borderBottom: "1px solid rgba(7,26,47,0.05)", textAlign: "left" }}>
                                         <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 8, marginBottom: 6, alignItems: "flex-start" }}>
-                                            <div style={{ fontSize: 13, color: "#F0EDE8", fontWeight: 600 }}>{notification.title}</div>
+                                            <div style={{ fontSize: 13, color: "var(--color-text)", fontWeight: 600 }}>{notification.title}</div>
                                             <div className="foundry-inline-actions">
-                                                <div style={{ fontSize: 10, color: notification.readAt ? "#666" : "#E8622A", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                                                <div style={{ fontSize: 10, color: notification.readAt ? "var(--color-text-muted)" : "var(--tekori-gold)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
                                                     {notification.readAt ? "Read" : "Unread"}
                                                 </div>
                                                 {!notification.readAt && (
@@ -616,7 +616,7 @@ export default function SettingsScreen({
                                                 )}
                                             </div>
                                         </div>
-                                        <div style={{ fontSize: 12, color: "#A8A4A0", lineHeight: 1.7, marginBottom: 4 }}>
+                                        <div style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.7, marginBottom: 4 }}>
                                             {notification.message}
                                         </div>
                                         <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)" }}>
@@ -647,9 +647,9 @@ function PreferenceToggle({
                 minWidth: 68,
                 padding: "8px 12px",
                 borderRadius: 999,
-                border: enabled ? "1px solid rgba(76,175,138,0.3)" : "1px solid rgba(255,255,255,0.08)",
-                background: enabled ? "rgba(76,175,138,0.14)" : "rgba(255,255,255,0.03)",
-                color: enabled ? "#4CAF8A" : "#888",
+                border: enabled ? "1px solid rgba(76,175,138,0.3)" : "1px solid rgba(7,26,47,0.08)",
+                background: enabled ? "rgba(76,175,138,0.14)" : "rgba(7,26,47,0.03)",
+                color: enabled ? "var(--color-success)" : "var(--color-text-muted)",
                 fontSize: 11,
                 fontWeight: 700,
                 cursor: "pointer",

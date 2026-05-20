@@ -43,13 +43,11 @@ import {
     UserSound,
 } from "@phosphor-icons/react";
 
-import currentFoundryLogo from "./assets/logos/Foundry_Logo.svg";
-
 export const Icons = {
     logos: {
-        foundryFlame: currentFoundryLogo,
-        foundryAndForge: currentFoundryLogo,
-        forge: currentFoundryLogo,
+        foundryFlame: "/brand/tekori/tekori-mark.svg",
+        foundryAndForge: "/brand/tekori/tekori-logo.svg",
+        forge: "/brand/navi/navi-mark.svg",
     },
 
     stages: {

@@ -156,7 +156,7 @@ export function buildWorkspaceArchiveContext(workspace?: ConversationWorkspaceSn
     const lines = [
         getWorkspaceSummary(workspace) ? `Focus: ${getWorkspaceSummary(workspace)}` : "",
         workspace.user.notes.length ? `Founder notes: ${workspace.user.notes.join(" | ")}` : "",
-        workspace.generated.notes.length ? `Forge notes: ${workspace.generated.notes.join(" | ")}` : "",
+        workspace.generated.notes.length ? `Navi notes: ${workspace.generated.notes.join(" | ")}` : "",
         workspace.generated.nextSteps.length ? `Next actions: ${workspace.generated.nextSteps.join(" | ")}` : "",
         workspace.generated.openQuestions.length ? `Open questions: ${workspace.generated.openQuestions.join(" | ")}` : "",
     ].filter(Boolean);

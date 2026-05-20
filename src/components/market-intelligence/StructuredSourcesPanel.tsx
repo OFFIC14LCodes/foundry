@@ -11,7 +11,7 @@ export default function StructuredSourcesPanel({ sources }: { sources: MarketRep
 
     return (
         <div>
-            <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(240,237,232,0.58)", marginBottom: 14 }}>
+            <div style={{ fontFamily: "var(--tekori-font-ui)", fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(16,32,51,0.58)", marginBottom: 14 }}>
                 {sources.length} source{sources.length === 1 ? "" : "s"} referenced in this report
             </div>
             <div>
@@ -23,10 +23,10 @@ export default function StructuredSourcesPanel({ sources }: { sources: MarketRep
                             gridTemplateColumns: "24px minmax(0, 1fr)",
                             columnGap: 10,
                             padding: "12px 0",
-                            borderTop: index === 0 ? "none" : "1px solid rgba(255,255,255,0.05)",
+                            borderTop: index === 0 ? "none" : "1px solid rgba(7,26,47,0.05)",
                         }}
                     >
-                        <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, color: "rgba(240,237,232,0.58)", textAlign: "right", lineHeight: 1.7 }}>
+                        <div style={{ fontFamily: "var(--tekori-font-ui)", fontSize: 12, color: "rgba(16,32,51,0.58)", textAlign: "right", lineHeight: 1.7 }}>
                             {index + 1}.
                         </div>
                         <div>
@@ -37,8 +37,8 @@ export default function StructuredSourcesPanel({ sources }: { sources: MarketRep
                                 onMouseEnter={() => setHoveredUrl(source.url)}
                                 onMouseLeave={() => setHoveredUrl(null)}
                                 style={{
-                                    color: "#E8622A",
-                                    fontFamily: "'DM Sans', system-ui, sans-serif",
+                                    color: "var(--tekori-gold)",
+                                    fontFamily: "var(--tekori-font-ui)",
                                     fontSize: 14,
                                     textDecoration: hoveredUrl === source.url ? "underline" : "none",
                                     textUnderlineOffset: 3,
@@ -47,7 +47,7 @@ export default function StructuredSourcesPanel({ sources }: { sources: MarketRep
                             >
                                 {source.title}
                             </a>
-                            <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, color: "rgba(240,237,232,0.7)", lineHeight: 1.6, marginTop: 4 }}>
+                            <div style={{ fontFamily: "var(--tekori-font-ui)", fontSize: 12, color: "rgba(71,84,103,0.88)", lineHeight: 1.6, marginTop: 4 }}>
                                 {source.snippet || "Saved source reference."}
                             </div>
                         </div>

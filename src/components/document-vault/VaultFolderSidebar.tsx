@@ -38,8 +38,8 @@ export default function VaultFolderSidebar(props: {
         <>
             <div style={{
                 borderRadius: 16,
-                border: "1px solid rgba(255,255,255,0.07)",
-                background: "rgba(255,255,255,0.025)",
+                border: "1px solid rgba(7,26,47,0.07)",
+                background: "rgba(7,26,47,0.025)",
                 padding: 16,
             }}>
                 <div style={{ fontSize: 11, color: "var(--foundry-text-muted)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>
@@ -48,13 +48,13 @@ export default function VaultFolderSidebar(props: {
                 <div style={{ display: "grid", gap: 8, marginBottom: 10 }}>
                     <button
                         onClick={() => onSelectFolder("all")}
-                        style={{ width: "100%", textAlign: "left", padding: "9px 11px", borderRadius: 10, border: selectedFolderFilter === "all" ? "1px solid rgba(232,98,42,0.2)" : "1px solid rgba(255,255,255,0.07)", background: selectedFolderFilter === "all" ? "rgba(232,98,42,0.08)" : "rgba(255,255,255,0.018)", color: selectedFolderFilter === "all" ? "#E8622A" : "#C8C4BE", fontSize: 12, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}
+                        style={{ width: "100%", textAlign: "left", padding: "9px 11px", borderRadius: 10, border: selectedFolderFilter === "all" ? "1px solid rgba(216,155,43,0.2)" : "1px solid rgba(7,26,47,0.07)", background: selectedFolderFilter === "all" ? "rgba(216,155,43,0.08)" : "rgba(7,26,47,0.018)", color: selectedFolderFilter === "all" ? "var(--tekori-gold)" : "var(--color-text-soft)", fontSize: 12, cursor: "pointer", fontFamily: "var(--tekori-font-ui)" }}
                     >
                         All documents
                     </button>
                     <button
                         onClick={() => onSelectFolder("unfiled")}
-                        style={{ width: "100%", textAlign: "left", padding: "9px 11px", borderRadius: 10, border: selectedFolderFilter === "unfiled" ? "1px solid rgba(232,98,42,0.2)" : "1px solid rgba(255,255,255,0.07)", background: selectedFolderFilter === "unfiled" ? "rgba(232,98,42,0.08)" : "rgba(255,255,255,0.018)", color: selectedFolderFilter === "unfiled" ? "#E8622A" : "#C8C4BE", fontSize: 12, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}
+                        style={{ width: "100%", textAlign: "left", padding: "9px 11px", borderRadius: 10, border: selectedFolderFilter === "unfiled" ? "1px solid rgba(216,155,43,0.2)" : "1px solid rgba(7,26,47,0.07)", background: selectedFolderFilter === "unfiled" ? "rgba(216,155,43,0.08)" : "rgba(7,26,47,0.018)", color: selectedFolderFilter === "unfiled" ? "var(--tekori-gold)" : "var(--color-text-soft)", fontSize: 12, cursor: "pointer", fontFamily: "var(--tekori-font-ui)" }}
                     >
                         Unfiled
                     </button>
@@ -69,7 +69,7 @@ export default function VaultFolderSidebar(props: {
                         <div key={folder.id} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, alignItems: "center" }}>
                             <button
                                 onClick={() => onSelectFolder(folder.id)}
-                                style={{ width: "100%", textAlign: "left", padding: "9px 11px", borderRadius: 10, border: selectedFolderFilter === folder.id ? "1px solid rgba(232,98,42,0.2)" : "1px solid rgba(255,255,255,0.07)", background: selectedFolderFilter === folder.id ? "rgba(232,98,42,0.08)" : "rgba(255,255,255,0.018)", color: selectedFolderFilter === folder.id ? "#E8622A" : "#C8C4BE", fontSize: 12, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}
+                                style={{ width: "100%", textAlign: "left", padding: "9px 11px", borderRadius: 10, border: selectedFolderFilter === folder.id ? "1px solid rgba(216,155,43,0.2)" : "1px solid rgba(7,26,47,0.07)", background: selectedFolderFilter === folder.id ? "rgba(216,155,43,0.08)" : "rgba(7,26,47,0.018)", color: selectedFolderFilter === folder.id ? "var(--tekori-gold)" : "var(--color-text-soft)", fontSize: 12, cursor: "pointer", fontFamily: "var(--tekori-font-ui)" }}
                             >
                                 {folder.name}
                             </button>
@@ -77,14 +77,14 @@ export default function VaultFolderSidebar(props: {
                                 <button
                                     onClick={() => onRenameFolder(folder)}
                                     disabled={folderActionId === folder.id}
-                                    style={{ padding: "5px 8px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, color: "rgba(240,237,232,0.62)", fontSize: 10, cursor: folderActionId === folder.id ? "wait" : "pointer", fontFamily: "'Lora', Georgia, serif" }}
+                                    style={{ padding: "5px 8px", background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 8, color: "var(--color-text-muted)", fontSize: 10, cursor: folderActionId === folder.id ? "wait" : "pointer", fontFamily: "var(--tekori-font-ui)" }}
                                 >
                                     Rename
                                 </button>
                                 <button
                                     onClick={() => onDeleteFolder(folder)}
                                     disabled={folderActionId === folder.id}
-                                    style={{ padding: "5px 8px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, color: "rgba(240,237,232,0.62)", fontSize: 10, cursor: folderActionId === folder.id ? "wait" : "pointer", fontFamily: "'Lora', Georgia, serif" }}
+                                    style={{ padding: "5px 8px", background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 8, color: "var(--color-text-muted)", fontSize: 10, cursor: folderActionId === folder.id ? "wait" : "pointer", fontFamily: "var(--tekori-font-ui)" }}
                                 >
                                     Delete
                                 </button>
@@ -97,12 +97,12 @@ export default function VaultFolderSidebar(props: {
                         value={newFolderName}
                         onChange={(event: ChangeEvent<HTMLInputElement>) => onNewFolderNameChange(event.target.value)}
                         placeholder="Create folder"
-                        style={{ width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 10, padding: "9px 11px", color: "#F0EDE8", fontSize: 12, fontFamily: "'Lora', Georgia, serif", boxSizing: "border-box" }}
+                        style={{ width: "100%", background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.09)", borderRadius: 10, padding: "9px 11px", color: "var(--color-text)", fontSize: 12, fontFamily: "var(--tekori-font-ui)", boxSizing: "border-box" }}
                     />
                     <button
                         onClick={onCreateFolder}
                         disabled={creatingFolder}
-                        style={{ padding: "9px 11px", background: creatingFolder ? "rgba(255,255,255,0.06)" : "rgba(232,98,42,0.08)", border: creatingFolder ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(232,98,42,0.18)", borderRadius: 10, color: creatingFolder ? "#777" : "#E8622A", fontSize: 11, fontWeight: 600, cursor: creatingFolder ? "wait" : "pointer", fontFamily: "'Lora', Georgia, serif" }}
+                        style={{ padding: "9px 11px", background: creatingFolder ? "rgba(7,26,47,0.06)" : "rgba(216,155,43,0.08)", border: creatingFolder ? "1px solid rgba(7,26,47,0.08)" : "1px solid rgba(216,155,43,0.18)", borderRadius: 10, color: creatingFolder ? "var(--color-text-muted)" : "var(--tekori-gold)", fontSize: 11, fontWeight: 600, cursor: creatingFolder ? "wait" : "pointer", fontFamily: "var(--tekori-font-ui)" }}
                     >
                         {creatingFolder ? "Creating..." : "Create"}
                     </button>
@@ -111,8 +111,8 @@ export default function VaultFolderSidebar(props: {
 
             <div style={{
                 borderRadius: 16,
-                border: "1px solid rgba(255,255,255,0.07)",
-                background: "rgba(255,255,255,0.025)",
+                border: "1px solid rgba(7,26,47,0.07)",
+                background: "rgba(7,26,47,0.025)",
                 padding: 16,
             }}>
                 <div style={{ fontSize: 11, color: "var(--foundry-text-muted)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10 }}>
@@ -127,13 +127,13 @@ export default function VaultFolderSidebar(props: {
                         placeholder="Search title, doc type, or category"
                         style={{
                             width: "100%",
-                            background: "rgba(255,255,255,0.04)",
-                            border: "1px solid rgba(255,255,255,0.09)",
+                            background: "rgba(7,26,47,0.04)",
+                            border: "1px solid rgba(7,26,47,0.09)",
                             borderRadius: 12,
                             padding: "10px 12px 10px 38px",
-                            color: "#F0EDE8",
+                            color: "var(--color-text)",
                             fontSize: 13,
-                            fontFamily: "'Lora', Georgia, serif",
+                            fontFamily: "var(--tekori-font-ui)",
                             boxSizing: "border-box",
                         }}
                     />
@@ -144,15 +144,15 @@ export default function VaultFolderSidebar(props: {
                         onChange={(event) => onStatusFilterChange(event.target.value as VaultStatusFilter)}
                         style={{
                             width: "100%",
-                            background: "rgba(255,255,255,0.04)",
-                            border: "1px solid rgba(255,255,255,0.09)",
+                            background: "rgba(7,26,47,0.04)",
+                            border: "1px solid rgba(7,26,47,0.09)",
                             borderRadius: 12,
                             padding: "10px 12px",
-                            color: "#F0EDE8",
+                            color: "var(--color-text)",
                             fontSize: 12,
-                            fontFamily: "'Lora', Georgia, serif",
+                            fontFamily: "var(--tekori-font-ui)",
                             boxSizing: "border-box",
-                            colorScheme: "dark",
+                            colorScheme: "light",
                         }}
                     >
                         <option value="active">Active documents</option>
@@ -166,15 +166,15 @@ export default function VaultFolderSidebar(props: {
                         onChange={(event) => onCategoryFilterChange(event.target.value)}
                         style={{
                             width: "100%",
-                            background: "rgba(255,255,255,0.04)",
-                            border: "1px solid rgba(255,255,255,0.09)",
+                            background: "rgba(7,26,47,0.04)",
+                            border: "1px solid rgba(7,26,47,0.09)",
                             borderRadius: 12,
                             padding: "10px 12px",
-                            color: "#F0EDE8",
+                            color: "var(--color-text)",
                             fontSize: 12,
-                            fontFamily: "'Lora', Georgia, serif",
+                            fontFamily: "var(--tekori-font-ui)",
                             boxSizing: "border-box",
-                            colorScheme: "dark",
+                            colorScheme: "light",
                         }}
                     >
                         <option value="all">All categories</option>
@@ -188,15 +188,15 @@ export default function VaultFolderSidebar(props: {
                     onChange={(event) => onStageFilterChange(event.target.value as StageFilter)}
                     style={{
                         width: "100%",
-                        background: "rgba(255,255,255,0.04)",
-                        border: "1px solid rgba(255,255,255,0.09)",
+                        background: "rgba(7,26,47,0.04)",
+                        border: "1px solid rgba(7,26,47,0.09)",
                         borderRadius: 12,
                         padding: "10px 12px",
-                        color: "#F0EDE8",
+                        color: "var(--color-text)",
                         fontSize: 12,
-                        fontFamily: "'Lora', Georgia, serif",
+                        fontFamily: "var(--tekori-font-ui)",
                         boxSizing: "border-box",
-                        colorScheme: "dark",
+                        colorScheme: "light",
                     }}
                 >
                     <option value="all">All stages</option>

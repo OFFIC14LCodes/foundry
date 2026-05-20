@@ -76,7 +76,7 @@ export function formatEstimatedCost(amount: number) {
 }
 
 export function tokenUsageEstimateNote() {
-    return `Estimate based on saved message text. Input tokens use $${SONNET_INPUT_COST_PER_MILLION}/MTok and Forge output tokens use $${SONNET_OUTPUT_COST_PER_MILLION}/MTok for Claude Sonnet. It does not include repeated system/context prompts, prompt cache effects, file/image processing, or unsaved legacy calls.`;
+    return `Estimate based on saved message text. Input tokens use $${SONNET_INPUT_COST_PER_MILLION}/MTok and Navi output tokens use $${SONNET_OUTPUT_COST_PER_MILLION}/MTok for Claude Sonnet. It does not include repeated system/context prompts, prompt cache effects, file/image processing, or unsaved legacy calls.`;
 }
 
 export async function loadAdminTokenUsageSummary(options: {

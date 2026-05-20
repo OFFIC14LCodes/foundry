@@ -69,7 +69,7 @@ const SUPPORT_NOTE_TYPES: Array<{ value: AdminSupportNoteType; label: string }> 
 ];
 
 const NOTIFICATION_TYPES: Array<{ value: AdminNotificationType; label: string; description: string }> = [
-    { value: "admin_support", label: "Admin Support", description: "Support message from the Foundry team" },
+    { value: "admin_support", label: "Admin Support", description: "Support message from the Tekori team" },
     { value: "system", label: "System", description: "System or platform announcement" },
     { value: "milestone", label: "Milestone", description: "Achievement or milestone recognition" },
 ];
@@ -203,14 +203,14 @@ export default function AdminOperationsScreen({ onBack }: Props) {
                 color: "var(--foundry-text-primary)",
                 display: "flex",
                 flexDirection: "column",
-                fontFamily: "'Lora', Georgia, serif",
+                fontFamily: "var(--tekori-font-ui)",
             }}
         >
             <div
                 style={{
                     padding: "max(14px, calc(10px + env(safe-area-inset-top))) 16px 12px",
                     borderBottom: "var(--foundry-border-subtle)",
-                    background: "rgba(8,8,9,0.97)",
+                    background: "rgba(255,252,246,0.97)",
                     backdropFilter: "blur(12px)",
                     display: "flex",
                     alignItems: "center",
@@ -230,7 +230,7 @@ export default function AdminOperationsScreen({ onBack }: Props) {
                 </div>
             </div>
 
-            <div style={{ display: "flex", gap: 2, padding: "0 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(8,8,9,0.97)", backdropFilter: "blur(12px)", flexShrink: 0 }}>
+            <div style={{ display: "flex", gap: 2, padding: "0 16px", borderBottom: "1px solid rgba(7,26,47,0.06)", background: "rgba(255,252,246,0.97)", backdropFilter: "blur(12px)", flexShrink: 0 }}>
                 <TabButton label="Founders" active={activeTab === "founders"} onClick={() => { setActiveTab("founders"); setSelectedFounder(null); }} />
                 <TabButton label="Feedback Inbox" active={activeTab === "feedback"} onClick={() => { setActiveTab("feedback"); setSelectedFounder(null); }} />
                 <TabButton label="Audit Log" active={activeTab === "audit"} onClick={() => { setActiveTab("audit"); setSelectedFounder(null); }} />
@@ -243,7 +243,7 @@ export default function AdminOperationsScreen({ onBack }: Props) {
                         <div className="foundry-label" style={{ color: "var(--foundry-orange)", marginBottom: 9 }}>Observe</div>
                         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 18, flexWrap: "wrap" }}>
                             <div style={{ minWidth: 260, maxWidth: 700 }}>
-                                <div style={{ fontSize: 30, lineHeight: 1.05, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 10 }}>
+                                <div style={{ fontSize: 30, lineHeight: 1.05, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, marginBottom: 10 }}>
                                     Founder Operations Console
                                 </div>
                                 <div style={{ fontSize: 13, color: "var(--foundry-text-muted)", lineHeight: 1.7 }}>
@@ -394,7 +394,7 @@ function FounderTable({ founders, onSelect }: { founders: AdminFounderListItem[]
                             alignItems: "center",
                             padding: "13px 14px",
                             border: "none",
-                            borderBottom: "1px solid rgba(255,255,255,0.045)",
+                            borderBottom: "1px solid rgba(7,26,47,0.045)",
                             background: "transparent",
                             color: "inherit",
                             textAlign: "left",
@@ -710,7 +710,7 @@ function FounderDetailDrawer({ founder, onClose }: { founder: AdminFounderListIt
     };
 
     return (
-        <div style={{ position: "fixed", inset: 0, zIndex: 220, background: "rgba(0,0,0,0.62)", display: "flex", justifyContent: "flex-end" }} onClick={onClose}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 220, background: "rgba(7,26,47,0.40)", display: "flex", justifyContent: "flex-end" }} onClick={onClose}>
             <div
                 className="foundry-modal-surface"
                 style={{ width: "min(760px, 100vw)", height: "100%", borderRadius: 0, overflowY: "auto", padding: 18 }}
@@ -719,7 +719,7 @@ function FounderDetailDrawer({ founder, onClose }: { founder: AdminFounderListIt
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
                     <div style={{ minWidth: 0 }}>
                         <div className="foundry-label" style={{ color: "var(--foundry-orange)", marginBottom: 8 }}>Founder Detail</div>
-                        <div style={{ fontSize: 25, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, lineHeight: 1.12 }}>
+                        <div style={{ fontSize: 25, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, lineHeight: 1.12 }}>
                             {founder.display_name || founder.name || "Unnamed founder"}
                         </div>
                         <div style={{ fontSize: 12, color: "var(--foundry-text-muted)", marginTop: 5 }}>{founder.email || "No email on profile"}</div>
@@ -876,7 +876,7 @@ function BillingAccessOperations({
                         <div>
                             <div style={{ fontSize: 14, color: "var(--foundry-text-primary)", fontWeight: 800 }}>Access state</div>
                             <div style={{ fontSize: 11, color: "var(--foundry-text-muted)", marginTop: 3, lineHeight: 1.55 }}>
-                                Foundry access controls are manual overrides. Stripe subscription state remains read-only here.
+                                Tekori access controls are manual overrides. Stripe subscription state remains read-only here.
                             </div>
                         </div>
                         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -1089,7 +1089,7 @@ function AcademyLessonRow({
     ];
 
     return (
-        <div style={{ borderTop: "1px solid rgba(255,255,255,0.055)", paddingTop: 9 }}>
+        <div style={{ borderTop: "1px solid rgba(7,26,47,0.055)", paddingTop: 9 }}>
             <div style={{ display: "grid", gridTemplateColumns: "minmax(180px, 1fr) 132px 118px 92px minmax(132px, max-content)", gap: 9, alignItems: "center" }}>
                 <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 12, color: "var(--foundry-text-primary)", fontWeight: 700, overflowWrap: "anywhere" }}>{lesson.lesson_title}</div>
@@ -1116,8 +1116,8 @@ function AcademyLessonRow({
                                     listStyle: "none",
                                     cursor: lesson.content_id ? "pointer" : "not-allowed",
                                     pointerEvents: lesson.content_id ? "auto" : "none",
-                                    border: "1px solid rgba(255,255,255,0.09)",
-                                    background: "rgba(255,255,255,0.045)",
+                                    border: "1px solid rgba(7,26,47,0.09)",
+                                    background: "rgba(7,26,47,0.045)",
                                     color: "var(--foundry-text-secondary)",
                                     borderRadius: 9,
                                     padding: "7px 10px",
@@ -1139,7 +1139,7 @@ function AcademyLessonRow({
                                     padding: 6,
                                     display: "grid",
                                     gap: 4,
-                                    boxShadow: "0 16px 40px rgba(0,0,0,0.35)",
+                                    boxShadow: "var(--shadow-premium)",
                                 }}
                             >
                                 {actions.map((action) => {
@@ -1156,8 +1156,8 @@ function AcademyLessonRow({
                                                 onRepair(lesson, action);
                                             }}
                                             style={{
-                                                border: "1px solid rgba(255,255,255,0.075)",
-                                                background: isDanger ? "rgba(191, 74, 57, 0.12)" : "rgba(255,255,255,0.035)",
+                                                border: "1px solid rgba(7,26,47,0.075)",
+                                                background: isDanger ? "rgba(191, 74, 57, 0.12)" : "rgba(7,26,47,0.035)",
                                                 color: disabledReason ? "var(--foundry-text-muted)" : isDanger ? "var(--foundry-red)" : "var(--foundry-text-primary)",
                                                 borderRadius: 7,
                                                 padding: "8px 9px",
@@ -1225,7 +1225,7 @@ function AcademyRepairModal({
                 position: "fixed",
                 inset: 0,
                 zIndex: 320,
-                background: "rgba(0,0,0,0.66)",
+                background: "rgba(7,26,47,0.62)",
                 display: "grid",
                 placeItems: "center",
                 padding: 18,
@@ -1240,7 +1240,7 @@ function AcademyRepairModal({
                 <div className="foundry-label" style={{ color: isReset ? "var(--foundry-red)" : "var(--foundry-orange)", marginBottom: 10 }}>
                     Admin Override
                 </div>
-                <div style={{ fontSize: 22, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, lineHeight: 1.15 }}>
+                <div style={{ fontSize: 22, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, lineHeight: 1.15 }}>
                     {pendingRepair.action.label}
                 </div>
                 <div style={{ marginTop: 10, display: "grid", gap: 8 }}>
@@ -1389,7 +1389,7 @@ function AccessActionModal({
 
     return (
         <div
-            style={{ position: "fixed", inset: 0, zIndex: 330, background: "rgba(0,0,0,0.68)", display: "grid", placeItems: "center", padding: 18 }}
+            style={{ position: "fixed", inset: 0, zIndex: 330, background: "rgba(7,26,47,0.62)", display: "grid", placeItems: "center", padding: 18 }}
             onClick={onCancel}
         >
             <div
@@ -1400,12 +1400,12 @@ function AccessActionModal({
                 <div className="foundry-label" style={{ color: isDanger ? "var(--foundry-red)" : "var(--foundry-orange)", marginBottom: 10 }}>
                     Audited Access Control
                 </div>
-                <div style={{ fontSize: 22, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, lineHeight: 1.15 }}>
+                <div style={{ fontSize: 22, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, lineHeight: 1.15 }}>
                     {action.label}
                 </div>
                 <div style={{ marginTop: 10, display: "grid", gap: 8 }}>
                     <InfoLine label="Founder" value={`${founderName}${founderEmail ? ` (${founderEmail})` : ""}`} />
-                    <InfoLine label="Scope" value={isChurn ? "Internal retention note" : "Foundry account_access manual override"} />
+                    <InfoLine label="Scope" value={isChurn ? "Internal retention note" : "Tekori account_access manual override"} />
                     <InfoLine label="Stripe" value="Read-only. This action will not mutate Stripe subscriptions." />
                 </div>
 
@@ -1524,7 +1524,7 @@ function AccessActionModal({
 
 function MiniMeta({ label, value }: { label: string; value: string }) {
     return (
-        <span className="foundry-font-ui" style={{ fontSize: 10, color: "var(--foundry-text-muted)", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 999, padding: "4px 7px" }}>
+        <span className="foundry-font-ui" style={{ fontSize: 10, color: "var(--foundry-text-muted)", background: "rgba(7,26,47,0.03)", border: "1px solid rgba(7,26,47,0.06)", borderRadius: 999, padding: "4px 7px" }}>
             {label}: <span style={{ color: "var(--foundry-text-secondary)" }}>{value}</span>
         </span>
     );
@@ -1578,7 +1578,7 @@ function AdminSendNotificationSection({
                         <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 3 }}>
                             <span style={{
                                 fontSize: 9,
-                                fontFamily: "'DM Sans', sans-serif",
+                                fontFamily: "var(--tekori-font-ui)",
                                 fontWeight: 800,
                                 letterSpacing: "0.1em",
                                 textTransform: "uppercase",
@@ -1874,8 +1874,8 @@ function StatusPill({ label, accent }: { label: string; accent: string }) {
                 justifyContent: "center",
                 padding: "5px 8px",
                 borderRadius: 999,
-                background: "rgba(255,255,255,0.035)",
-                border: "1px solid rgba(255,255,255,0.07)",
+                background: "rgba(7,26,47,0.035)",
+                border: "1px solid rgba(7,26,47,0.07)",
                 color: accent,
                 fontSize: 10,
                 fontWeight: 800,
@@ -1983,7 +1983,7 @@ function TabButton({ label, active, onClick }: { label: string; active: boolean;
             style={{
                 padding: "10px 14px",
                 fontSize: 12,
-                fontFamily: "'DM Sans', system-ui, sans-serif",
+                fontFamily: "var(--tekori-font-ui)",
                 fontWeight: 700,
                 color: active ? "var(--foundry-text-primary)" : "var(--foundry-text-muted)",
                 background: "transparent",
@@ -2075,7 +2075,7 @@ function AuditLogPanel() {
                     <div className="foundry-label" style={{ color: "var(--foundry-orange)", marginBottom: 9 }}>Forensics</div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
                         <div style={{ minWidth: 260, maxWidth: 720 }}>
-                            <div style={{ fontSize: 26, lineHeight: 1.1, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 8 }}>
+                            <div style={{ fontSize: 26, lineHeight: 1.1, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, marginBottom: 8 }}>
                                 Admin Audit Log
                             </div>
                             <div style={{ fontSize: 13, color: "var(--foundry-text-muted)", lineHeight: 1.65 }}>
@@ -2158,7 +2158,7 @@ function AuditLogTable({ items, expandedId, onToggle }: { items: AdminAuditLogEn
                     <span>Actor</span>
                 </div>
                 {items.map((item) => (
-                    <div key={item.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.045)" }}>
+                    <div key={item.id} style={{ borderBottom: "1px solid rgba(7,26,47,0.045)" }}>
                         <button
                             type="button"
                             onClick={() => onToggle(item.id)}
@@ -2171,7 +2171,7 @@ function AuditLogTable({ items, expandedId, onToggle }: { items: AdminAuditLogEn
                                 alignItems: "center",
                                 padding: "12px 14px",
                                 border: "none",
-                                background: expandedId === item.id ? "rgba(255,255,255,0.035)" : "transparent",
+                                background: expandedId === item.id ? "rgba(7,26,47,0.035)" : "transparent",
                                 color: "inherit",
                                 textAlign: "left",
                                 cursor: "pointer",
@@ -2224,7 +2224,7 @@ function AuditDetail({ item }: { item: AdminAuditLogEntry }) {
                 ]} />
                 <div>
                     <div className="foundry-label" style={{ marginBottom: 8 }}>Reason</div>
-                    <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.6, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8, padding: "10px 12px", overflowWrap: "anywhere" }}>
+                    <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.6, background: "rgba(7,26,47,0.025)", border: "1px solid rgba(7,26,47,0.06)", borderRadius: 8, padding: "10px 12px", overflowWrap: "anywhere" }}>
                         {item.reason || "No reason captured."}
                     </div>
                 </div>
@@ -2242,7 +2242,7 @@ function JsonBlock({ title, value }: { title: string; value: unknown }) {
     return (
         <div>
             <div className="foundry-label" style={{ marginBottom: 8 }}>{title}</div>
-            <pre style={{ margin: 0, maxHeight: 280, overflow: "auto", background: "rgba(0,0,0,0.28)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: 12, color: "var(--foundry-text-secondary)", fontSize: 11, lineHeight: 1.55, fontFamily: "'DM Mono', 'SFMono-Regular', Consolas, monospace", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
+            <pre style={{ margin: 0, maxHeight: 280, overflow: "auto", background: "rgba(7,26,47,0.045)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 8, padding: 12, color: "var(--foundry-text-secondary)", fontSize: 11, lineHeight: 1.55, fontFamily: "'DM Mono', 'SFMono-Regular', Consolas, monospace", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
                 {JSON.stringify(value ?? null, null, 2)}
             </pre>
         </div>
@@ -2252,7 +2252,7 @@ function JsonBlock({ title, value }: { title: string; value: unknown }) {
 function AuditCategoryBadge({ category }: { category: string }) {
     const accent = auditCategoryAccent(category);
     return (
-        <span className="foundry-font-ui" style={{ justifySelf: "flex-start", fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: accent, background: "rgba(255,255,255,0.035)", border: `1px solid ${accent}`, borderRadius: 4, padding: "4px 7px" }}>
+        <span className="foundry-font-ui" style={{ justifySelf: "flex-start", fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: accent, background: "rgba(7,26,47,0.035)", border: `1px solid ${accent}`, borderRadius: 4, padding: "4px 7px" }}>
             {category}
         </span>
     );
@@ -2336,7 +2336,7 @@ function FeedbackInboxPanel() {
                 <div style={{ maxWidth: 1180, margin: "0 auto", display: "grid", gap: 16 }}>
                     <div className="foundry-command-panel foundry-panel-in" style={{ padding: 20 }}>
                         <div className="foundry-label" style={{ color: "var(--foundry-orange)", marginBottom: 9 }}>Review</div>
-                        <div style={{ fontSize: 26, lineHeight: 1.1, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 8 }}>
+                        <div style={{ fontSize: 26, lineHeight: 1.1, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, marginBottom: 8 }}>
                             Message Feedback Inbox
                         </div>
                         <div style={{ fontSize: 13, color: "var(--foundry-text-muted)", lineHeight: 1.65 }}>
@@ -2423,8 +2423,8 @@ function FeedbackListItem({ item, onSelect }: { item: AdminFeedbackItem; onSelec
             role="button"
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === "Enter") onSelect(item); }}
-            style={{ display: "grid", gridTemplateColumns: "48px minmax(160px,1fr) minmax(220px,2fr) 110px 100px 120px", gap: 10, padding: "12px 14px", borderBottom: "1px solid rgba(255,255,255,0.04)", cursor: "pointer", transition: "background 0.12s" }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
+            style={{ display: "grid", gridTemplateColumns: "48px minmax(160px,1fr) minmax(220px,2fr) 110px 100px 120px", gap: 10, padding: "12px 14px", borderBottom: "1px solid rgba(7,26,47,0.04)", cursor: "pointer", transition: "background 0.12s" }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(7,26,47,0.03)"; }}
             onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
         >
             <div style={{ display: "flex", alignItems: "center" }}>
@@ -2442,7 +2442,7 @@ function FeedbackListItem({ item, onSelect }: { item: AdminFeedbackItem; onSelec
                 {item.message_text ? item.message_text.slice(0, 120) : "—"}
             </div>
             <div style={{ display: "flex", alignItems: "center" }}>
-                <span style={{ fontSize: 10, color: "var(--foundry-text-muted)", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 4, padding: "3px 6px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>
+                <span style={{ fontSize: 10, color: "var(--foundry-text-muted)", background: "rgba(7,26,47,0.05)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 4, padding: "3px 6px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>
                     {item.surface || "—"}
                 </span>
             </div>
@@ -2484,7 +2484,7 @@ function FeedbackStatusBadge({ status }: { status: string }) {
     };
     const c = config[status] ?? config.new;
     return (
-        <span style={{ fontSize: 10, fontFamily: "'DM Sans', sans-serif", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: c.color, background: c.bg, border: `1px solid ${c.color}`, borderRadius: 4, padding: "3px 6px" }}>
+        <span style={{ fontSize: 10, fontFamily: "var(--tekori-font-ui)", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: c.color, background: c.bg, border: `1px solid ${c.color}`, borderRadius: 4, padding: "3px 6px" }}>
             {c.label}
         </span>
     );
@@ -2529,7 +2529,7 @@ function FeedbackDetailDrawer({
 
     return (
         <div
-            style={{ position: "fixed", inset: 0, zIndex: 220, background: "rgba(0,0,0,0.62)", display: "flex", justifyContent: "flex-end" }}
+            style={{ position: "fixed", inset: 0, zIndex: 220, background: "rgba(7,26,47,0.40)", display: "flex", justifyContent: "flex-end" }}
             onClick={onClose}
         >
             <div
@@ -2542,7 +2542,7 @@ function FeedbackDetailDrawer({
                         <div className="foundry-label" style={{ color: item.reaction === "down" ? "var(--foundry-red)" : "var(--foundry-green)", marginBottom: 8 }}>
                             {item.reaction === "down" ? "👎 Thumbs Down" : "👍 Thumbs Up"} Feedback
                         </div>
-                        <div style={{ fontSize: 20, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, lineHeight: 1.15 }}>
+                        <div style={{ fontSize: 20, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, lineHeight: 1.15 }}>
                             {item.conversation_title || item.surface || "Feedback Detail"}
                         </div>
                         <div style={{ fontSize: 11, color: "var(--foundry-text-muted)", marginTop: 4 }}>
@@ -2564,7 +2564,7 @@ function FeedbackDetailDrawer({
                     )}
 
                     <Section title="Message">
-                        <div style={{ fontSize: 13, color: "var(--foundry-text-secondary)", lineHeight: 1.7, whiteSpace: "pre-wrap", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 8, padding: "12px 14px" }}>
+                        <div style={{ fontSize: 13, color: "var(--foundry-text-secondary)", lineHeight: 1.7, whiteSpace: "pre-wrap", background: "rgba(7,26,47,0.03)", border: "1px solid rgba(7,26,47,0.07)", borderRadius: 8, padding: "12px 14px" }}>
                             {item.message_text || "(No message text captured)"}
                         </div>
                     </Section>
@@ -2628,8 +2628,8 @@ function FeedbackDetailDrawer({
 const inputStyle = {
     width: "100%",
     minWidth: 220,
-    background: "rgba(255,255,255,0.045)",
-    border: "1px solid rgba(255,255,255,0.09)",
+    background: "rgba(7,26,47,0.045)",
+    border: "1px solid rgba(7,26,47,0.09)",
     borderRadius: 10,
     padding: "10px 12px",
     color: "var(--foundry-text-primary)",
@@ -2638,8 +2638,8 @@ const inputStyle = {
 } as const;
 
 const selectStyle = {
-    background: "rgba(255,255,255,0.045)",
-    border: "1px solid rgba(255,255,255,0.09)",
+    background: "rgba(7,26,47,0.045)",
+    border: "1px solid rgba(7,26,47,0.09)",
     borderRadius: 10,
     padding: "10px 12px",
     color: "var(--foundry-text-primary)",

@@ -119,8 +119,8 @@ function ModeTabs({
             display: "flex",
             gap: 8,
             padding: "12px 16px",
-            borderBottom: "1px solid rgba(255,255,255,0.05)",
-            background: "rgba(8,8,9,0.94)",
+            borderBottom: "1px solid rgba(7,26,47,0.05)",
+            background: "rgba(255,252,246,0.94)",
             position: "sticky",
             top: 69,
             zIndex: 9,
@@ -137,13 +137,13 @@ function ModeTabs({
                     style={{
                         padding: "8px 14px",
                         borderRadius: 999,
-                        border: mode === tab.id ? "1px solid rgba(232,98,42,0.28)" : "1px solid rgba(255,255,255,0.08)",
-                        background: mode === tab.id ? "rgba(232,98,42,0.1)" : "rgba(255,255,255,0.025)",
-                        color: mode === tab.id ? "#E8622A" : "#777",
+                        border: mode === tab.id ? "1px solid rgba(216,155,43,0.28)" : "1px solid rgba(7,26,47,0.08)",
+                        background: mode === tab.id ? "rgba(216,155,43,0.1)" : "rgba(7,26,47,0.025)",
+                        color: mode === tab.id ? "var(--tekori-gold)" : "var(--color-text-muted)",
                         fontSize: 12,
                         fontWeight: mode === tab.id ? 700 : 500,
                         cursor: "pointer",
-                        fontFamily: "'DM Sans', system-ui, sans-serif",
+                        fontFamily: "var(--tekori-font-ui)",
                     }}
                 >
                     {tab.label}
@@ -239,14 +239,14 @@ function ChipRow({ options, selected, onSelect }: { options: string[]; selected:
                     style={{
                         padding: "5px 13px",
                         borderRadius: 20,
-                        border: selected === opt ? "1px solid rgba(232,98,42,0.5)" : "1px solid rgba(255,255,255,0.08)",
-                        background: selected === opt ? "rgba(232,98,42,0.12)" : "rgba(255,255,255,0.03)",
-                        color: selected === opt ? "#E8622A" : "#888",
+                        border: selected === opt ? "1px solid rgba(216,155,43,0.5)" : "1px solid rgba(7,26,47,0.08)",
+                        background: selected === opt ? "rgba(216,155,43,0.12)" : "rgba(7,26,47,0.03)",
+                        color: selected === opt ? "var(--tekori-gold)" : "var(--color-text-muted)",
                         fontSize: 12,
                         fontWeight: selected === opt ? 600 : 400,
                         cursor: "pointer",
                         transition: "all 0.15s",
-                        fontFamily: "'Lora', Georgia, serif",
+                        fontFamily: "var(--tekori-font-ui)",
                     }}
                 >
                     {opt}
@@ -265,20 +265,20 @@ function TypedSignaturePanel({
 }) {
     return (
         <div style={{
-            border: "1px solid rgba(99,179,237,0.16)",
-            background: "rgba(99,179,237,0.06)",
+            border: "1px solid rgba(142,160,181,0.16)",
+            background: "rgba(142,160,181,0.06)",
             borderRadius: 12,
             padding: "12px 14px",
             marginBottom: 12,
         }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline", marginBottom: 8 }}>
                 <div>
-                    <div style={{ fontSize: 12, color: "#F0EDE8", fontWeight: 700 }}>Typed Signature</div>
+                    <div style={{ fontSize: 12, color: "var(--color-text)", fontWeight: 700 }}>Typed Signature</div>
                     <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", lineHeight: 1.5, marginTop: 2 }}>
                         Local only. This fills the document signature line in a handwriting-style font for preview and export.
                     </div>
                 </div>
-                <div style={{ fontSize: 10, color: "#8FC8F6", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", whiteSpace: "nowrap" }}>
+                <div style={{ fontSize: 10, color: "var(--tekori-slate-navy)", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", whiteSpace: "nowrap" }}>
                     Coming soon: e-sign
                 </div>
             </div>
@@ -290,11 +290,11 @@ function TypedSignaturePanel({
                     style={{
                         minWidth: 0,
                         width: "100%",
-                        background: "rgba(255,255,255,0.045)",
-                        border: "1px solid rgba(255,255,255,0.1)",
+                        background: "rgba(7,26,47,0.045)",
+                        border: "1px solid rgba(7,26,47,0.1)",
                         borderRadius: 10,
                         padding: "9px 11px",
-                        color: "#F0EDE8",
+                        color: "var(--color-text)",
                         fontSize: 13,
                         outline: "none",
                         boxSizing: "border-box",
@@ -303,8 +303,8 @@ function TypedSignaturePanel({
                 <div style={{
                     minWidth: 132,
                     padding: "4px 10px 7px",
-                    borderBottom: "1px solid rgba(240,237,232,0.5)",
-                    color: value.trim() ? "#F0EDE8" : "rgba(240,237,232,0.28)",
+                    borderBottom: "1px solid rgba(16,32,51,0.5)",
+                    color: value.trim() ? "var(--color-text)" : "rgba(102,112,133,0.42)",
                     fontFamily: "'Segoe Script', 'Brush Script MT', 'Lucida Handwriting', cursive",
                     fontSize: 21,
                     lineHeight: 1.15,
@@ -339,10 +339,10 @@ function ScreenHeader({
     return (
         <div style={{
             padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px",
-            borderBottom: "1px solid rgba(255,255,255,0.05)",
+            borderBottom: "1px solid rgba(7,26,47,0.05)",
             display: "flex", alignItems: "center", justifyContent: "space-between",
             position: "sticky", top: 0,
-            background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)", zIndex: 10,
+            background: "rgba(255,252,246,0.94)", backdropFilter: "blur(12px)", zIndex: 10,
         }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 {onOpenNav ? (
@@ -350,8 +350,8 @@ function ScreenHeader({
                         onClick={onOpenNav}
                         style={{
                             display: "flex", alignItems: "center", justifyContent: "center",
-                            background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
-                            borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "rgba(240,237,232,0.62)", cursor: "pointer",
+                            background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)",
+                            borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "var(--color-text-muted)", cursor: "pointer",
                         }}
                     >
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg>
@@ -361,9 +361,9 @@ function ScreenHeader({
                     onClick={onBack}
                     style={{
                         display: "flex", alignItems: "center", gap: 5,
-                        background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
-                        borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "rgba(240,237,232,0.62)", fontSize: "var(--foundry-app-header-button-font)", cursor: "pointer",
-                        fontFamily: "'Lora', Georgia, serif",
+                        background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)",
+                        borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "var(--color-text-muted)", fontSize: "var(--foundry-app-header-button-font)", cursor: "pointer",
+                        fontFamily: "var(--tekori-font-ui)",
                     }}
                 >
                     <ArrowLeft size={"var(--foundry-app-header-icon-size)"} /> {backLabel}
@@ -371,7 +371,7 @@ function ScreenHeader({
                 )}
                 <div>
                     <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                        <div style={{ fontSize: "var(--foundry-app-header-title-font)", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, lineHeight: 1.2 }}>{title}</div>
+                        <div style={{ fontSize: "var(--foundry-app-header-title-font)", fontFamily: "var(--tekori-font-brand)", fontWeight: 700, lineHeight: 1.2 }}>{title}</div>
                         {subtitle && <HelpTooltip content={subtitle} side="bottom" />}
                     </div>
                 </div>
@@ -391,7 +391,7 @@ function StateAwareBadge() {
             padding: "2px 7px", borderRadius: 10,
             background: "rgba(234,179,8,0.1)", border: "1px solid rgba(234,179,8,0.3)",
             fontSize: 9, color: "#EAB308", fontWeight: 600, letterSpacing: "0.04em",
-            fontFamily: "'Lora', Georgia, serif", whiteSpace: "nowrap", flexShrink: 0,
+            fontFamily: "var(--tekori-font-ui)", whiteSpace: "nowrap", flexShrink: 0,
         }}>
             <MapPin size={8} weight="fill" /> State-Aware
         </span>
@@ -403,9 +403,9 @@ function PopularBadge() {
         <span style={{
             display: "inline-flex", alignItems: "center", gap: 3,
             padding: "2px 7px", borderRadius: 10,
-            background: "rgba(232,98,42,0.1)", border: "1px solid rgba(232,98,42,0.25)",
-            fontSize: 9, color: "#E8622A", fontWeight: 600,
-            fontFamily: "'Lora', Georgia, serif", whiteSpace: "nowrap", flexShrink: 0,
+            background: "rgba(216,155,43,0.1)", border: "1px solid rgba(216,155,43,0.25)",
+            fontSize: 9, color: "var(--tekori-gold)", fontWeight: 600,
+            fontFamily: "var(--tekori-font-ui)", whiteSpace: "nowrap", flexShrink: 0,
         }}>
             <Star size={8} weight="fill" /> Most Popular
         </span>
@@ -1403,7 +1403,7 @@ export default function DocumentProductionScreen({
             }
         } catch {
             setNeedsResult(buildDocumentNeedFallbackRecommendations(wizardInput, vaultDocuments));
-            setNeedsError("Forge could not finish the recommendation pass, so Foundry used its built-in document checklist instead.");
+            setNeedsError("Navi could not finish the recommendation pass, so Tekori used its built-in document checklist instead.");
         } finally {
             setNeedsLoading(false);
         }
@@ -1507,7 +1507,7 @@ export default function DocumentProductionScreen({
                     legalDate: formatLegalDate(docInputs.documentDate || getIsoDate()),
                 });
                 const nextHistory = [{
-                    instruction: `${userContent}\n\n[Generation interrupted before Forge finished.]`,
+                    instruction: `${userContent}\n\n[Generation interrupted before Navi finished.]`,
                     doc: safePartial,
                 }];
                 setCurrentDoc(safePartial);
@@ -1515,15 +1515,15 @@ export default function DocumentProductionScreen({
                 await persistDocument(safePartial, nextHistory, null);
                 setStudioLaunchNotice(
                     isTimeout
-                        ? "Forge timed out before finishing, but your partial draft was preserved and saved. You can copy, download, or refine it from here."
-                        : "Forge stopped before finishing, but your partial draft was preserved and saved. You can copy, download, or refine it from here."
+                        ? "Navi timed out before finishing, but your partial draft was preserved and saved. You can copy, download, or refine it from here."
+                        : "Navi stopped before finishing, but your partial draft was preserved and saved. You can copy, download, or refine it from here."
                 );
             } else {
                 setCurrentDoc("");
                 setStudioLaunchNotice(
                     isTimeout
-                        ? "Forge timed out before any draft text came back. Your setup details are still here; go back and try again with a narrower request."
-                        : "Forge could not generate this document. Your setup details are still here; go back and try again or adjust your request."
+                        ? "Navi timed out before any draft text came back. Your setup details are still here; go back and try again with a narrower request."
+                        : "Navi could not generate this document. Your setup details are still here; go back and try again or adjust your request."
                 );
             }
         }
@@ -1579,7 +1579,7 @@ export default function DocumentProductionScreen({
                     legalDate: formatLegalDate(docInputs.documentDate || getIsoDate()),
                 });
                 const nextHistory = [...history, {
-                    instruction: `${instruction}\n\n[Refinement interrupted before Forge finished.]`,
+                    instruction: `${instruction}\n\n[Refinement interrupted before Navi finished.]`,
                     doc: safePartial,
                 }];
                 setCurrentDoc(safePartial);
@@ -1588,15 +1588,15 @@ export default function DocumentProductionScreen({
                 await persistDocument(safePartial, nextHistory, savedId);
                 setStudioLaunchNotice(
                     isTimeout
-                        ? "Forge timed out during refinement, but the partial revision was preserved and saved. Your previous version is still in refinement history."
-                        : "Forge stopped during refinement, but the partial revision was preserved and saved. Your previous version is still in refinement history."
+                        ? "Navi timed out during refinement, but the partial revision was preserved and saved. Your previous version is still in refinement history."
+                        : "Navi stopped during refinement, but the partial revision was preserved and saved. Your previous version is still in refinement history."
                 );
             } else {
                 setCurrentDoc(previousDoc);
                 setStudioLaunchNotice(
                     isTimeout
-                        ? "Forge timed out before producing a revision. Your previous document was preserved."
-                        : "Forge could not complete the refinement. Your previous document was preserved."
+                        ? "Navi timed out before producing a revision. Your previous document was preserved."
+                        : "Navi could not complete the refinement. Your previous document was preserved."
                 );
             }
         }
@@ -1759,7 +1759,7 @@ export default function DocumentProductionScreen({
             ].join("\n");
             const summary = await callForgeAPI(
                 [{ role: "user", content: prompt }],
-                "You are Forge, a concise founder operating partner. Return only the summary text.",
+                "You are Navi, a concise founder operating partner. Return only the summary text.",
                 120,
             );
             setVaultHealthSummary(summary.trim());
@@ -1797,7 +1797,7 @@ export default function DocumentProductionScreen({
         const hasSearchOrFilter = vaultSearch.trim().length > 0 || vaultStatusFilter !== "active" || vaultCategoryFilter !== "all" || vaultStageFilter !== "all";
 
         return (
-            <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8" }}>
+            <div style={{ minHeight: "100vh", background: "var(--color-bg-soft)", fontFamily: "var(--tekori-font-ui)", color: "var(--color-text)" }}>
                 <ScreenHeader
                     onBack={onBack}
                     onOpenNav={onOpenNav}
@@ -1832,11 +1832,11 @@ export default function DocumentProductionScreen({
                     />
 
                     {vaultDocuments.length >= 3 && (
-                        <div style={{ marginBottom: 18, padding: 16, borderRadius: 12, background: "rgba(232,98,42,0.06)", border: "1px solid rgba(232,98,42,0.15)", position: "relative" }}>
+                        <div style={{ marginBottom: 18, padding: 16, borderRadius: 12, background: "rgba(216,155,43,0.06)", border: "1px solid rgba(216,155,43,0.15)", position: "relative" }}>
                             <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 8 }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(240,237,232,0.58)" }}>
-                                    <span style={{ width: 18, height: 18, borderRadius: "50%", background: "rgba(232,98,42,0.16)", display: "inline-flex", alignItems: "center", justifyContent: "center", color: "#E8622A", fontSize: 11 }}>F</span>
-                                    Forge
+                                <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--tekori-font-ui)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(16,32,51,0.58)" }}>
+                                    <span style={{ width: 18, height: 18, borderRadius: "50%", background: "rgba(216,155,43,0.16)", display: "inline-flex", alignItems: "center", justifyContent: "center", color: "var(--tekori-gold)", fontSize: 11 }}>F</span>
+                                    Navi
                                 </div>
                                 <button
                                     onClick={() => {
@@ -1845,13 +1845,13 @@ export default function DocumentProductionScreen({
                                     }}
                                     disabled={vaultHealthLoading}
                                     aria-label="Refresh vault summary"
-                                    style={{ background: "transparent", border: "none", color: "rgba(240,237,232,0.55)", cursor: vaultHealthLoading ? "wait" : "pointer", fontSize: 18, lineHeight: 1 }}
+                                    style={{ background: "transparent", border: "none", color: "rgba(102,112,133,0.74)", cursor: vaultHealthLoading ? "wait" : "pointer", fontSize: 18, lineHeight: 1 }}
                                 >
                                     ↻
                                 </button>
                             </div>
-                            <div style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 14, color: "#F0EDE8", lineHeight: 1.7 }}>
-                                {vaultHealthSummary || (vaultHealthLoading ? "Forge is reading your vault..." : "Refresh to generate a vault summary.")}
+                            <div style={{ fontFamily: "var(--tekori-font-ui)", fontSize: 14, color: "var(--color-text)", lineHeight: 1.7 }}>
+                                {vaultHealthSummary || (vaultHealthLoading ? "Navi is reading your vault..." : "Refresh to generate a vault summary.")}
                             </div>
                         </div>
                     )}
@@ -1917,10 +1917,10 @@ export default function DocumentProductionScreen({
                             onRestoreVersion={handleRestoreVaultVersion}
                             restoringVersionId={restoringVersionId}
                             previewNode={(
-                                <div style={{ border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, background: "rgba(255,255,255,0.018)", overflow: "hidden" }}>
-                                    <div style={{ padding: "12px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
+                                <div style={{ border: "1px solid rgba(7,26,47,0.06)", borderRadius: 14, background: "rgba(7,26,47,0.018)", overflow: "hidden" }}>
+                                    <div style={{ padding: "12px 14px", borderBottom: "1px solid rgba(7,26,47,0.05)", display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
                                         <div>
-                                            <div style={{ fontSize: 13, color: "#F0EDE8", fontWeight: 600 }}>Latest Content Preview</div>
+                                            <div style={{ fontSize: 13, color: "var(--color-text)", fontWeight: 600 }}>Latest Content Preview</div>
                                             <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", marginTop: 2 }}>
                                                 {selectedVaultVersion ? `Version ${selectedVaultVersion.versionNumber} · ${selectedVaultVersion.source}` : "No linked version selected yet"}
                                             </div>
@@ -1928,7 +1928,7 @@ export default function DocumentProductionScreen({
                                         {selectedVaultVersion && effectiveSelectedVaultDocument && (
                                             <button
                                                 onClick={() => openVaultVersionInStudio(effectiveSelectedVaultDocument, selectedVaultVersion)}
-                                                style={{ background: "rgba(232,98,42,0.08)", border: "1px solid rgba(232,98,42,0.18)", borderRadius: 8, padding: "7px 10px", color: "#E8622A", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}
+                                                style={{ background: "rgba(216,155,43,0.08)", border: "1px solid rgba(216,155,43,0.18)", borderRadius: 8, padding: "7px 10px", color: "var(--tekori-gold)", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "var(--tekori-font-ui)" }}
                                             >
                                                 {selectedVaultVersion.id === vaultVersions[0]?.id ? "Open Latest in Studio" : `Open Version ${selectedVaultVersion.versionNumber} in Studio`}
                                             </button>
@@ -1936,21 +1936,21 @@ export default function DocumentProductionScreen({
                                     </div>
                                     <div style={{ padding: 16 }}>
                                         {!legalDisclaimerDismissed && (
-                                            <div style={{ marginBottom: 12, background: "rgba(232,98,42,0.08)", border: "1px solid rgba(232,98,42,0.25)", borderRadius: 8, padding: "12px 14px", color: "rgba(240,237,232,0.7)", fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, lineHeight: 1.6, display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start" }}>
+                                            <div style={{ marginBottom: 12, background: "rgba(216,155,43,0.08)", border: "1px solid rgba(216,155,43,0.25)", borderRadius: 8, padding: "12px 14px", color: "rgba(71,84,103,0.88)", fontFamily: "var(--tekori-font-ui)", fontSize: 12, lineHeight: 1.6, display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start" }}>
                                                 <div>
-                                                    <strong style={{ color: "#F0EDE8" }}>⚠ AI-Generated Document</strong>
-                                                    <div>{selectedVaultRiskNote} This document was created by Forge and has not been reviewed by an attorney.</div>
+                                                    <strong style={{ color: "var(--color-text)" }}>⚠ AI-Generated Document</strong>
+                                                    <div>{selectedVaultRiskNote} This document was created by Navi and has not been reviewed by an attorney.</div>
                                                 </div>
                                                 <button
                                                     onClick={() => setLegalDisclaimerDismissed(true)}
-                                                    style={{ background: "transparent", border: "none", color: "rgba(240,237,232,0.7)", cursor: "pointer", fontSize: 13 }}
+                                                    style={{ background: "transparent", border: "none", color: "rgba(71,84,103,0.88)", cursor: "pointer", fontSize: 13 }}
                                                 >
                                                     X
                                                 </button>
                                             </div>
                                         )}
                                         {versionRestoreMessage && (
-                                            <div style={{ marginBottom: 12, padding: "10px 12px", borderRadius: 8, background: "rgba(76,175,138,0.08)", border: "1px solid rgba(76,175,138,0.2)", color: "#4CAF8A", fontSize: 12, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+                                            <div style={{ marginBottom: 12, padding: "10px 12px", borderRadius: 8, background: "rgba(76,175,138,0.08)", border: "1px solid rgba(76,175,138,0.2)", color: "var(--color-success)", fontSize: 12, fontFamily: "var(--tekori-font-ui)" }}>
                                                 {versionRestoreMessage}
                                             </div>
                                         )}
@@ -1973,19 +1973,19 @@ export default function DocumentProductionScreen({
                                                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
                                                     <button
                                                         onClick={() => printStyledPdf(signedLatestVaultContent, latestVaultMeta)}
-                                                        style={{ padding: "9px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#C8C4BE", fontSize: 12, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}
+                                                        style={{ padding: "9px 12px", background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 10, color: "var(--color-text-soft)", fontSize: 12, cursor: "pointer", fontFamily: "var(--tekori-font-ui)" }}
                                                     >
                                                         Download PDF
                                                     </button>
                                                     <button
                                                         onClick={() => downloadStyledDocx(signedLatestVaultContent, latestVaultMeta)}
-                                                        style={{ padding: "9px 12px", background: "rgba(232,98,42,0.08)", border: "1px solid rgba(232,98,42,0.18)", borderRadius: 10, color: "#E8622A", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}
+                                                        style={{ padding: "9px 12px", background: "rgba(216,155,43,0.08)", border: "1px solid rgba(216,155,43,0.18)", borderRadius: 10, color: "var(--tekori-gold)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "var(--tekori-font-ui)" }}
                                                     >
                                                         Download DOCX
                                                     </button>
                                                     <button
                                                         onClick={() => downloadStyledHtml(signedLatestVaultContent, latestVaultMeta)}
-                                                        style={{ padding: "9px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#C8C4BE", fontSize: 12, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}
+                                                        style={{ padding: "9px 12px", background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 10, color: "var(--color-text-soft)", fontSize: 12, cursor: "pointer", fontFamily: "var(--tekori-font-ui)" }}
                                                     >
                                                         Styled HTML
                                                     </button>
@@ -1994,14 +1994,14 @@ export default function DocumentProductionScreen({
                                                     <button
                                                         onClick={() => handleSaveVaultArtifact("generated_docx")}
                                                         disabled={artifactSavingKind !== null}
-                                                        style={{ padding: "8px 11px", background: "rgba(232,98,42,0.08)", border: "1px solid rgba(232,98,42,0.16)", borderRadius: 10, color: artifactSavingKind === "generated_docx" ? "#F0EDE8" : "#E8622A", fontSize: 11, fontWeight: 600, cursor: artifactSavingKind ? "wait" : "pointer", fontFamily: "'Lora', Georgia, serif" }}
+                                                        style={{ padding: "8px 11px", background: "rgba(216,155,43,0.08)", border: "1px solid rgba(216,155,43,0.16)", borderRadius: 10, color: artifactSavingKind === "generated_docx" ? "var(--color-text)" : "var(--tekori-gold)", fontSize: 11, fontWeight: 600, cursor: artifactSavingKind ? "wait" : "pointer", fontFamily: "var(--tekori-font-ui)" }}
                                                     >
                                                         {artifactSavingKind === "generated_docx" ? "Saving DOCX..." : "Save DOCX Artifact"}
                                                     </button>
                                                     <button
                                                         onClick={() => handleSaveVaultArtifact("generated_html")}
                                                         disabled={artifactSavingKind !== null}
-                                                        style={{ padding: "8px 11px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: artifactSavingKind === "generated_html" ? "#F0EDE8" : "#C8C4BE", fontSize: 11, cursor: artifactSavingKind ? "wait" : "pointer", fontFamily: "'Lora', Georgia, serif" }}
+                                                        style={{ padding: "8px 11px", background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 10, color: artifactSavingKind === "generated_html" ? "var(--color-text)" : "var(--color-text-soft)", fontSize: 11, cursor: artifactSavingKind ? "wait" : "pointer", fontFamily: "var(--tekori-font-ui)" }}
                                                     >
                                                         {artifactSavingKind === "generated_html" ? "Saving HTML..." : "Save HTML Artifact"}
                                                     </button>
@@ -2018,7 +2018,7 @@ export default function DocumentProductionScreen({
                                                 {linkedProducedDocumentForVault && (
                                                     <button
                                                         onClick={() => openSavedDocument(linkedProducedDocumentForVault)}
-                                                        style={{ padding: "8px 11px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#C8C4BE", fontSize: 11, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}
+                                                        style={{ padding: "8px 11px", background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 10, color: "var(--color-text-soft)", fontSize: 11, cursor: "pointer", fontFamily: "var(--tekori-font-ui)" }}
                                                     >
                                                         Open original saved document
                                                     </button>
@@ -2090,28 +2090,28 @@ export default function DocumentProductionScreen({
     // ═══════════════════════════════════════════════════════════
     if (phase === "categories") {
         return (
-            <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8" }}>
+            <div style={{ minHeight: "100vh", background: "var(--color-bg-soft)", fontFamily: "var(--tekori-font-ui)", color: "var(--color-text)" }}>
                 {/* Header */}
                 <div style={{
                     padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px",
-                    borderBottom: "1px solid rgba(255,255,255,0.05)",
+                    borderBottom: "1px solid rgba(7,26,47,0.05)",
                     display: "flex", alignItems: "center", gap: 12,
                     position: "sticky", top: 0,
-                    background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)", zIndex: 10,
+                    background: "rgba(255,252,246,0.94)", backdropFilter: "blur(12px)", zIndex: 10,
                 }}>
                     <button
                         onClick={onBack}
                         style={{
                             display: "flex", alignItems: "center", gap: 5,
-                            background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
-                            borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "rgba(240,237,232,0.62)", fontSize: "var(--foundry-app-header-button-font)", cursor: "pointer",
+                            background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)",
+                            borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "var(--color-text-muted)", fontSize: "var(--foundry-app-header-button-font)", cursor: "pointer",
                         }}
                     >
                         <ArrowLeft size={"var(--foundry-app-header-icon-size)"} /> Hub
                     </button>
                     <div>
-                        <div style={{ fontSize: "var(--foundry-app-header-title-font)", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>Document Vault</div>
-                        <div style={{ fontSize: "var(--foundry-app-header-meta-font)", color: "var(--foundry-text-muted)" }}>Vault dashboard plus Forge generation · {DOC_CATEGORIES.reduce((n, c) => n + c.documents.length, 0)} documents</div>
+                        <div style={{ fontSize: "var(--foundry-app-header-title-font)", fontFamily: "var(--tekori-font-brand)", fontWeight: 700 }}>Document Vault</div>
+                        <div style={{ fontSize: "var(--foundry-app-header-meta-font)", color: "var(--foundry-text-muted)" }}>Vault dashboard plus Navi generation · {DOC_CATEGORIES.reduce((n, c) => n + c.documents.length, 0)} documents</div>
                     </div>
                 </div>
                 <ModeTabs mode={surfaceMode} onChange={setSurfaceMode} />
@@ -2119,11 +2119,11 @@ export default function DocumentProductionScreen({
                 <div className="foundry-app-page__content" style={{ maxWidth: "var(--foundry-doc-content-width)", margin: "0 auto", padding: "24px 16px 80px" }}>
                     {/* Intro */}
                     <div style={{ marginBottom: 28, animation: "fadeSlideUp 0.4s ease both", textAlign: "center" }}>
-                        <div style={{ fontSize: "clamp(22px, 2vw, 24px)", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 6, lineHeight: 1.25 }}>
+                        <div style={{ fontSize: "clamp(22px, 2vw, 24px)", fontFamily: "var(--tekori-font-brand)", fontWeight: 700, marginBottom: 6, lineHeight: 1.25 }}>
                             What do you need?
                         </div>
-                        <div style={{ fontSize: "var(--foundry-doc-card-body-font)", color: "var(--foundry-text-secondary)", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", lineHeight: 1.7 }}>
-                            Every document a founder needs, from day one through exit — generated by Forge and tailored to your business.
+                        <div style={{ fontSize: "var(--foundry-doc-card-body-font)", color: "var(--foundry-text-secondary)", fontFamily: "var(--tekori-font-ui)", fontStyle: "italic", lineHeight: 1.7 }}>
+                            Every document a founder needs, from day one through exit — generated by Navi and tailored to your business.
                         </div>
                     </div>
 
@@ -2143,13 +2143,13 @@ export default function DocumentProductionScreen({
                                             onClick={() => openSavedDocument(doc)}
                                             style={{
                                                 width: "100%", padding: "12px 15px", borderRadius: 10, textAlign: "left",
-                                                border: "1px solid rgba(255,255,255,0.07)",
-                                                background: "rgba(255,255,255,0.025)",
-                                                cursor: "pointer", fontFamily: "'Lora', Georgia, serif",
+                                                border: "1px solid rgba(7,26,47,0.07)",
+                                                background: "rgba(7,26,47,0.025)",
+                                                cursor: "pointer", fontFamily: "var(--tekori-font-ui)",
                                             }}
                                         >
                                             <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 2 }}>
-                                                <span style={{ fontSize: "var(--foundry-doc-card-large-font)", color: "#C8C4BE", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.title}</span>
+                                                <span style={{ fontSize: "var(--foundry-doc-card-large-font)", color: "var(--color-text-soft)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{doc.title}</span>
                                                 <span style={{ fontSize: "var(--foundry-doc-card-meta-font)", color: "var(--foundry-text-muted)", flexShrink: 0 }}>{new Date(doc.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
                                             </div>
                                             <div style={{ fontSize: "var(--foundry-doc-card-meta-font)", color: "var(--foundry-text-muted)" }}>{doc.docType} · {doc.audience} · {doc.tone}</div>
@@ -2177,27 +2177,27 @@ export default function DocumentProductionScreen({
                                 style={{
                                     display: "flex", alignItems: "center", gap: 14,
                                     padding: "14px 16px", borderRadius: 14, textAlign: "left",
-                                    border: "1px solid rgba(255,255,255,0.07)",
-                                    background: "rgba(255,255,255,0.025)",
+                                    border: "1px solid rgba(7,26,47,0.07)",
+                                    background: "rgba(7,26,47,0.025)",
                                     cursor: "pointer", width: "100%",
                                     transition: "all 0.15s",
                                     animation: `fadeSlideUp 0.4s ease ${0.03 + index * 0.02}s both`,
-                                    fontFamily: "'Lora', Georgia, serif",
+                                    fontFamily: "var(--tekori-font-ui)",
                                 }}
                             >
                                 {/* Icon */}
                                 <div style={{
                                     width: 48, height: 48, borderRadius: 12, flexShrink: 0,
-                                    background: "rgba(232,98,42,0.08)", border: "1px solid rgba(232,98,42,0.15)",
+                                    background: "rgba(216,155,43,0.08)", border: "1px solid rgba(216,155,43,0.15)",
                                     display: "flex", alignItems: "center", justifyContent: "center",
                                 }}>
-                                    <CategoryIcon name={cat.icon} size={22} color="#E8622A" />
+                                    <CategoryIcon name={cat.icon} size={22} color="var(--tekori-gold)" />
                                 </div>
 
                                 {/* Text */}
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                     <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3, flexWrap: "wrap" }}>
-                                        <span style={{ fontSize: "var(--foundry-doc-card-title-font)", color: "#C8C4BE", fontWeight: 600 }}>{cat.name}</span>
+                                        <span style={{ fontSize: "var(--foundry-doc-card-title-font)", color: "var(--color-text-soft)", fontWeight: 600 }}>{cat.name}</span>
                                         {cat.isStateAware && <StateAwareBadge />}
                                     </div>
                                     <div style={{ marginTop: 6 }}>
@@ -2208,7 +2208,7 @@ export default function DocumentProductionScreen({
                                 {/* Count badge */}
                                 <div style={{
                                     flexShrink: 0, padding: "3px 9px", borderRadius: 20,
-                                    background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
+                                    background: "rgba(7,26,47,0.05)", border: "1px solid rgba(7,26,47,0.08)",
                                     fontSize: "var(--foundry-doc-card-body-font)", color: "var(--foundry-text-secondary)", fontWeight: 600,
                                 }}>
                                     {cat.documents.length}
@@ -2226,7 +2226,7 @@ export default function DocumentProductionScreen({
     // ═══════════════════════════════════════════════════════════
     if (phase === "documents" && selectedCategory) {
         return (
-            <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8" }}>
+            <div style={{ minHeight: "100vh", background: "var(--color-bg-soft)", fontFamily: "var(--tekori-font-ui)", color: "var(--color-text)" }}>
                 <ScreenHeader
                     onBack={() => setPhase("categories")}
                     backLabel="Categories"
@@ -2243,8 +2243,8 @@ export default function DocumentProductionScreen({
                 <div className="foundry-app-page__content" style={{ maxWidth: "var(--foundry-doc-content-width)", margin: "0 auto", padding: "20px 16px 80px" }}>
                     {/* Category context */}
                     <div style={{ marginBottom: 20, animation: "fadeSlideUp 0.3s ease both" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px", borderRadius: 12, background: "rgba(232,98,42,0.05)", border: "1px solid rgba(232,98,42,0.1)" }}>
-                            <CategoryIcon name={selectedCategory.icon} size={22} color="#E8622A" />
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px", borderRadius: 12, background: "rgba(216,155,43,0.05)", border: "1px solid rgba(216,155,43,0.1)" }}>
+                            <CategoryIcon name={selectedCategory.icon} size={22} color="var(--tekori-gold)" />
                             <HelpTooltip content={selectedCategory.description} />
                         </div>
                     </div>
@@ -2264,17 +2264,17 @@ export default function DocumentProductionScreen({
                                 onClick={() => selectDoc(doc)}
                                 style={{
                                     padding: "14px 16px", borderRadius: 12, textAlign: "left",
-                                    border: "1px solid rgba(255,255,255,0.07)",
-                                    background: "rgba(255,255,255,0.025)",
+                                    border: "1px solid rgba(7,26,47,0.07)",
+                                    background: "rgba(7,26,47,0.025)",
                                     cursor: "pointer", width: "100%",
                                     transition: "all 0.15s",
                                     animation: `fadeSlideUp 0.35s ease ${0.05 + index * 0.02}s both`,
-                                    fontFamily: "'Lora', Georgia, serif",
+                                    fontFamily: "var(--tekori-font-ui)",
                                 }}
                             >
                                 {/* Name + badges */}
                                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
-                                    <span style={{ fontSize: "var(--foundry-doc-card-title-font)", color: "#D0CCC6", fontWeight: 600, lineHeight: 1.35 }}>{doc.name}</span>
+                                    <span style={{ fontSize: "var(--foundry-doc-card-title-font)", color: "var(--color-text-muted)", fontWeight: 600, lineHeight: 1.35 }}>{doc.name}</span>
                                     <div style={{ display: "flex", gap: 5, flexShrink: 0, flexWrap: "wrap", justifyContent: "flex-end" }}>
                                         {doc.isMostPopular && <PopularBadge />}
                                         {doc.isStateAware && <StateAwareBadge />}
@@ -2298,7 +2298,7 @@ export default function DocumentProductionScreen({
         const canGenerate = currentValidation.valid && !generationLocked;
 
         return (
-            <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8" }}>
+            <div style={{ minHeight: "100vh", background: "var(--color-bg-soft)", fontFamily: "var(--tekori-font-ui)", color: "var(--color-text)" }}>
                 <ScreenHeader
                     onBack={() => setPhase("documents")}
                     backLabel={selectedCategory.name}
@@ -2313,10 +2313,10 @@ export default function DocumentProductionScreen({
                             marginBottom: 18,
                             padding: "14px 16px",
                             borderRadius: 12,
-                            background: "rgba(232,98,42,0.06)",
-                            border: "1px solid rgba(232,98,42,0.18)",
+                            background: "rgba(216,155,43,0.06)",
+                            border: "1px solid rgba(216,155,43,0.18)",
                             fontSize: "var(--foundry-doc-card-body-font)",
-                            color: "#D8C9BC",
+                            color: "var(--color-text-soft)",
                             lineHeight: 1.65,
                         }}>
                             {generationLockMessage}
@@ -2324,12 +2324,12 @@ export default function DocumentProductionScreen({
                     )}
 
                     {/* Document identity block */}
-                    <div style={{ marginBottom: 24, padding: "16px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.02)", animation: "fadeSlideUp 0.3s ease both" }}>
+                    <div style={{ marginBottom: 24, padding: "16px", borderRadius: 12, border: "1px solid rgba(7,26,47,0.07)", background: "rgba(7,26,47,0.02)", animation: "fadeSlideUp 0.3s ease both" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                            <CategoryIcon name={selectedCategory.icon} size={16} color="#E8622A" />
+                            <CategoryIcon name={selectedCategory.icon} size={16} color="var(--tekori-gold)" />
                             <span style={{ fontSize: "var(--foundry-doc-card-meta-font)", color: "var(--foundry-text-muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>{selectedCategory.name}</span>
                         </div>
-                        <div style={{ fontSize: "calc(var(--foundry-doc-card-title-font) + 1px)", color: "#C8C4BE", fontWeight: 600, marginBottom: 8 }}>{selectedDoc.name}</div>
+                        <div style={{ fontSize: "calc(var(--foundry-doc-card-title-font) + 1px)", color: "var(--color-text-soft)", fontWeight: 600, marginBottom: 8 }}>{selectedDoc.name}</div>
                         <div style={{ fontSize: "var(--foundry-doc-card-body-font)", color: "var(--foundry-text-secondary)", lineHeight: 1.6 }}>{selectedDoc.whenToUse}</div>
                         <div style={{ display: "flex", gap: 5, marginTop: 8, flexWrap: "wrap" }}>
                             {selectedDoc.isMostPopular && <PopularBadge />}
@@ -2342,7 +2342,7 @@ export default function DocumentProductionScreen({
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 8 }}>
                             <div style={{ fontSize: "var(--foundry-doc-card-meta-font)", color: "var(--foundry-text-muted)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Audience</div>
                             {suggestedSettings && (
-                                <div style={{ fontSize: "var(--foundry-doc-card-meta-font)", color: "#E8622A" }}>Suggested: {suggestedSettings.audience}</div>
+                                <div style={{ fontSize: "var(--foundry-doc-card-meta-font)", color: "var(--tekori-gold)" }}>Suggested: {suggestedSettings.audience}</div>
                             )}
                         </div>
                         <ChipRow options={AUDIENCES} selected={audience} onSelect={setAudience} />
@@ -2353,7 +2353,7 @@ export default function DocumentProductionScreen({
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 8 }}>
                             <div style={{ fontSize: "var(--foundry-doc-card-meta-font)", color: "var(--foundry-text-muted)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Tone</div>
                             {suggestedSettings && (
-                                <div style={{ fontSize: "var(--foundry-doc-card-meta-font)", color: "#E8622A" }}>Suggested: {suggestedSettings.tone}</div>
+                                <div style={{ fontSize: "var(--foundry-doc-card-meta-font)", color: "var(--tekori-gold)" }}>Suggested: {suggestedSettings.tone}</div>
                             )}
                         </div>
                         <ChipRow options={TONES} selected={tone} onSelect={setTone} />
@@ -2368,10 +2368,10 @@ export default function DocumentProductionScreen({
                                 background: "rgba(76,175,138,0.06)",
                                 border: "1px solid rgba(76,175,138,0.18)",
                                 fontSize: "var(--foundry-doc-card-body-font)",
-                                color: "#A8A4A0",
+                                color: "var(--color-text-muted)",
                                 lineHeight: 1.65,
                             }}>
-                                <strong style={{ color: "#D8D4CE" }}>One-time use:</strong> these fill-in fields are used for this document and are not saved as reusable profile memory. The finished generated document may still be saved in your document history and can contain the details you choose to include.
+                                <strong style={{ color: "var(--color-text)" }}>One-time use:</strong> these fill-in fields are used for this document and are not saved as reusable profile memory. The finished generated document may still be saved in your document history and can contain the details you choose to include.
                             </div>
                             <div style={{
                                 display: "flex",
@@ -2381,18 +2381,18 @@ export default function DocumentProductionScreen({
                                 marginBottom: 12,
                                 padding: "12px 14px",
                                 borderRadius: 12,
-                                background: currentValidation.valid ? "rgba(76,175,138,0.08)" : "rgba(232,98,42,0.07)",
-                                border: currentValidation.valid ? "1px solid rgba(76,175,138,0.2)" : "1px solid rgba(232,98,42,0.18)",
+                                background: currentValidation.valid ? "rgba(76,175,138,0.08)" : "rgba(216,155,43,0.07)",
+                                border: currentValidation.valid ? "1px solid rgba(76,175,138,0.2)" : "1px solid rgba(216,155,43,0.18)",
                             }}>
                                 <div>
-                                    <div style={{ fontSize: 12, color: "#F0EDE8", fontWeight: 700, marginBottom: 3 }}>
+                                    <div style={{ fontSize: 12, color: "var(--color-text)", fontWeight: 700, marginBottom: 3 }}>
                                         Document readiness
                                     </div>
                                     <div style={{ fontSize: 11, color: "var(--foundry-text-muted)", lineHeight: 1.5 }}>
                                         {completedRequiredCount} of {requiredFieldCount} required fields complete
                                     </div>
                                 </div>
-                                <div style={{ fontSize: 11, color: currentValidation.valid ? "#4CAF8A" : "#E8622A", fontWeight: 700, flexShrink: 0 }}>
+                                <div style={{ fontSize: 11, color: currentValidation.valid ? "var(--color-success)" : "var(--tekori-gold)", fontWeight: 700, flexShrink: 0 }}>
                                     {currentValidation.valid ? "Ready to generate" : "Missing info"}
                                 </div>
                             </div>
@@ -2411,12 +2411,12 @@ export default function DocumentProductionScreen({
                                 marginBottom: 12,
                                 padding: "11px 13px",
                                 borderRadius: 12,
-                                background: "rgba(255,255,255,0.025)",
-                                border: "1px solid rgba(255,255,255,0.07)",
+                                background: "rgba(7,26,47,0.025)",
+                                border: "1px solid rgba(7,26,47,0.07)",
                                 cursor: "pointer",
                             }}>
                                 <span>
-                                    <span style={{ display: "block", fontSize: 12, color: "#D8D4CE", fontWeight: 700, marginBottom: 2 }}>
+                                    <span style={{ display: "block", fontSize: 12, color: "var(--color-text)", fontWeight: 700, marginBottom: 2 }}>
                                         Auto-fill current date
                                     </span>
                                     <span style={{ display: "block", fontSize: 10, color: "var(--foundry-text-secondary)", lineHeight: 1.5 }}>
@@ -2427,7 +2427,7 @@ export default function DocumentProductionScreen({
                                     type="checkbox"
                                     checked={autoFillCurrentDate}
                                     onChange={(event) => handleAutoFillCurrentDateChange(event.target.checked)}
-                                    style={{ accentColor: "#E8622A", width: 17, height: 17, flexShrink: 0 }}
+                                    style={{ accentColor: "var(--tekori-gold)", width: 17, height: 17, flexShrink: 0 }}
                                 />
                             </label>
 
@@ -2450,10 +2450,10 @@ export default function DocumentProductionScreen({
                                     onClick={() => setRequest(prev => prev ? `${prev} ${p}` : p)}
                                     style={{
                                         padding: "5px 12px", borderRadius: 20,
-                                        border: request.includes(p) ? "1px solid rgba(232,98,42,0.4)" : "1px solid rgba(255,255,255,0.08)",
-                                        background: request.includes(p) ? "rgba(232,98,42,0.08)" : "rgba(255,255,255,0.025)",
-                                        color: request.includes(p) ? "#E8622A" : "#777",
-                                        fontSize: 11, cursor: "pointer", fontFamily: "'Lora', Georgia, serif",
+                                        border: request.includes(p) ? "1px solid rgba(216,155,43,0.4)" : "1px solid rgba(7,26,47,0.08)",
+                                        background: request.includes(p) ? "rgba(216,155,43,0.08)" : "rgba(7,26,47,0.025)",
+                                        color: request.includes(p) ? "var(--tekori-gold)" : "var(--color-text-muted)",
+                                        fontSize: 11, cursor: "pointer", fontFamily: "var(--tekori-font-ui)",
                                         transition: "all 0.15s",
                                     }}
                                 >
@@ -2465,13 +2465,13 @@ export default function DocumentProductionScreen({
                         <textarea
                             value={request}
                             onChange={e => setRequest(e.target.value)}
-                            placeholder={`Or describe anything specific:\n— key points to include\n— special requirements\n— purpose or context\n\nLeave blank to let Forge decide based on your profile.`}
+                            placeholder={`Or describe anything specific:\n— key points to include\n— special requirements\n— purpose or context\n\nLeave blank to let Navi decide based on your profile.`}
                             rows={4}
                             style={{
-                                width: "100%", background: "rgba(255,255,255,0.03)",
-                                border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12,
-                                padding: "12px 14px", color: "#F0EDE8", fontSize: 13,
-                                fontFamily: "'Lora', Georgia, serif", lineHeight: 1.6, boxSizing: "border-box",
+                                width: "100%", background: "rgba(7,26,47,0.03)",
+                                border: "1px solid rgba(7,26,47,0.08)", borderRadius: 12,
+                                padding: "12px 14px", color: "var(--color-text)", fontSize: 13,
+                                fontFamily: "var(--tekori-font-ui)", lineHeight: 1.6, boxSizing: "border-box",
                             }}
                         />
                     </div>
@@ -2482,11 +2482,11 @@ export default function DocumentProductionScreen({
                         disabled={generating || generationLocked}
                         style={{
                             width: "100%", padding: "15px",
-                            background: canGenerate ? "linear-gradient(135deg, #E8622A, #c9521e)" : "rgba(255,255,255,0.06)",
+                            background: canGenerate ? "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))" : "rgba(7,26,47,0.06)",
                             border: "none", borderRadius: 14,
-                            color: canGenerate ? "#fff" : "#444",
-                            fontSize: 15, fontWeight: 700, cursor: generating ? "not-allowed" : "pointer",
-                            fontFamily: "'Lora', Georgia, serif",
+                            color: canGenerate ? "var(--color-primary)" : "var(--color-text-muted)",
+                            fontSize: 15, fontWeight: 800, cursor: generating ? "not-allowed" : "pointer",
+                            fontFamily: "var(--tekori-font-ui)",
                             animation: "fadeSlideUp 0.3s ease 0.18s both",
                             transition: "all 0.15s",
                         }}
@@ -2502,13 +2502,13 @@ export default function DocumentProductionScreen({
     // SCREEN 4 — STUDIO (preview + refine)
     // ═══════════════════════════════════════════════════════════
     return (
-        <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8", display: "flex", flexDirection: "column" }}>
+        <div style={{ minHeight: "100vh", background: "var(--color-bg-soft)", fontFamily: "var(--tekori-font-ui)", color: "var(--color-text)", display: "flex", flexDirection: "column" }}>
             {/* Studio Header */}
             <div style={{
                 padding: "max(12px, calc(6px + env(safe-area-inset-top))) 16px 12px",
-                borderBottom: "1px solid rgba(255,255,255,0.05)",
+                borderBottom: "1px solid rgba(7,26,47,0.05)",
                 display: "flex", alignItems: "center", justifyContent: "space-between",
-                flexShrink: 0, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)",
+                flexShrink: 0, background: "rgba(255,252,246,0.94)", backdropFilter: "blur(12px)",
                 zIndex: 10, position: "sticky", top: 0,
             }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -2516,14 +2516,14 @@ export default function DocumentProductionScreen({
                         onClick={resetToCategories}
                         style={{
                             display: "flex", alignItems: "center", gap: 5,
-                            background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
-                            borderRadius: 8, padding: "5px 11px", color: "rgba(240,237,232,0.62)", fontSize: 12, cursor: "pointer",
+                            background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)",
+                            borderRadius: 8, padding: "5px 11px", color: "var(--color-text-muted)", fontSize: 12, cursor: "pointer",
                         }}
                     >
                         <ArrowLeft size={12} /> Hub
                     </button>
                     <div>
-                        <div style={{ fontSize: 14, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, lineHeight: 1.2 }}>Document Studio</div>
+                        <div style={{ fontSize: 14, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, lineHeight: 1.2 }}>Document Studio</div>
                         <div style={{ fontSize: 10, color: "var(--foundry-text-muted)" }}>
                             {docType} · {audience} · {tone}{docState ? ` · ${docState}` : ""}{saveLabel ? ` · ${saveLabel}` : ""}
                         </div>
@@ -2531,7 +2531,7 @@ export default function DocumentProductionScreen({
                 </div>
                 <button
                     onClick={resetToCategories}
-                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 8, padding: "5px 12px", color: "var(--foundry-text-secondary)", fontSize: 11, cursor: "pointer" }}
+                    style={{ background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.07)", borderRadius: 8, padding: "5px 12px", color: "var(--foundry-text-secondary)", fontSize: 11, cursor: "pointer" }}
                 >
                     New Doc
                 </button>
@@ -2540,24 +2540,24 @@ export default function DocumentProductionScreen({
             <ModeTabs mode={surfaceMode} onChange={setSurfaceMode} />
 
             {studioLaunchNotice && (
-                <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(99,179,237,0.14)", background: "rgba(99,179,237,0.08)", fontSize: 11, color: "#CFE5F5", lineHeight: 1.6 }}>
+                <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(142,160,181,0.14)", background: "rgba(142,160,181,0.08)", fontSize: 11, color: "#CFE5F5", lineHeight: 1.6 }}>
                     {studioLaunchNotice}
                 </div>
             )}
 
             {/* Tab bar */}
-            <div style={{ display: "flex", borderBottom: "1px solid rgba(255,255,255,0.05)", flexShrink: 0 }}>
+            <div style={{ display: "flex", borderBottom: "1px solid rgba(7,26,47,0.05)", flexShrink: 0 }}>
                 {(["preview", "refine"] as const).map(tab => (
                     <button
                         key={tab}
                         onClick={() => setActiveTab(tab)}
                         style={{
                             flex: 1, padding: "10px", background: "none", border: "none",
-                            borderBottom: activeTab === tab ? "2px solid #E8622A" : "2px solid transparent",
-                            color: activeTab === tab ? "#E8622A" : "#555",
+                            borderBottom: activeTab === tab ? "2px solid var(--tekori-gold)" : "2px solid transparent",
+                            color: activeTab === tab ? "var(--tekori-gold)" : "var(--color-text-muted)",
                             fontSize: 12, fontWeight: activeTab === tab ? 600 : 400,
                             cursor: "pointer", textTransform: "capitalize", transition: "all 0.15s",
-                            fontFamily: "'Lora', Georgia, serif",
+                            fontFamily: "var(--tekori-font-ui)",
                         }}
                     >
                         {tab === "preview" ? "Document Preview" : `Refine${history.length > 1 ? ` (${history.length - 1})` : ""}`}
@@ -2574,10 +2574,10 @@ export default function DocumentProductionScreen({
                             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, padding: "80px 0", color: "var(--foundry-text-muted)" }}>
                                 <div style={{ display: "flex", gap: 6 }}>
                                     {[0, 1, 2].map(i => (
-                                        <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: "#E8622A", animation: "forgePulse 1.4s infinite ease-in-out", animationDelay: `${i * 0.2}s` }} />
+                                        <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--tekori-gold)", animation: "forgePulse 1.4s infinite ease-in-out", animationDelay: `${i * 0.2}s` }} />
                                     ))}
                                 </div>
-                                <div style={{ fontSize: 13, color: "var(--foundry-text-muted)", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic" }}>Forge is drafting your document...</div>
+                                <div style={{ fontSize: 13, color: "var(--foundry-text-muted)", fontFamily: "var(--tekori-font-ui)", fontStyle: "italic" }}>Navi is drafting your document...</div>
                             </div>
                         )}
 
@@ -2592,15 +2592,15 @@ export default function DocumentProductionScreen({
                                 {/* Paper */}
                                 <div style={{
                                     background: "#F8F5F0", borderRadius: 12,
-                                    padding: "36px 40px", boxShadow: "0 4px 40px rgba(0,0,0,0.5)",
+                                    padding: "36px 40px", boxShadow: "0 4px 40px rgba(7,26,47,0.34)",
                                     marginBottom: 16,
                                     animation: generating ? "none" : "fadeSlideUp 0.4s ease both",
                                     position: "relative",
                                 }}>
                                     {generating && (
-                                        <div style={{ position: "absolute", top: 12, right: 12, display: "flex", alignItems: "center", gap: 5, background: "rgba(232,98,42,0.1)", border: "1px solid rgba(232,98,42,0.3)", borderRadius: 20, padding: "3px 10px" }}>
-                                            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#E8622A", animation: "forgePulse 1.2s infinite" }} />
-                                            <span style={{ fontSize: 10, color: "#E8622A", fontFamily: "'Lora', Georgia, serif" }}>Writing</span>
+                                        <div style={{ position: "absolute", top: 12, right: 12, display: "flex", alignItems: "center", gap: 5, background: "rgba(216,155,43,0.1)", border: "1px solid rgba(216,155,43,0.3)", borderRadius: 20, padding: "3px 10px" }}>
+                                            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--tekori-gold)", animation: "forgePulse 1.2s infinite" }} />
+                                            <span style={{ fontSize: 10, color: "var(--tekori-gold)", fontFamily: "var(--tekori-font-ui)" }}>Writing</span>
                                         </div>
                                     )}
 
@@ -2613,7 +2613,7 @@ export default function DocumentProductionScreen({
                                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 24, animation: "fadeSlideUp 0.3s ease 0.1s both" }}>
                                         <button
                                             onClick={handleCopy}
-                                            style={{ flex: 1, minWidth: 80, padding: "10px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: copied ? "#4CAF8A" : "#C8C4BE", fontSize: 12, cursor: "pointer", transition: "all 0.2s", fontFamily: "'Lora', Georgia, serif" }}
+                                            style={{ flex: 1, minWidth: 80, padding: "10px 14px", background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 10, color: copied ? "var(--color-success)" : "var(--color-text-soft)", fontSize: 12, cursor: "pointer", transition: "all 0.2s", fontFamily: "var(--tekori-font-ui)" }}
                                         >
                                             {copied ? "✓ Copied" : "Copy"}
                                         </button>
@@ -2621,7 +2621,7 @@ export default function DocumentProductionScreen({
                                             onClick={() => printStyledPdf(signedCurrentDoc, exportMeta)}
                                             disabled={!canExportOfficialDocument}
                                             title={!canExportOfficialDocument ? "Legal Business Name is required before export." : undefined}
-                                            style={{ flex: 1, minWidth: 110, padding: "10px 14px", background: canExportOfficialDocument ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: canExportOfficialDocument ? "#C8C4BE" : "#555", fontSize: 12, cursor: canExportOfficialDocument ? "pointer" : "not-allowed", fontFamily: "'Lora', Georgia, serif" }}
+                                            style={{ flex: 1, minWidth: 110, padding: "10px 14px", background: canExportOfficialDocument ? "rgba(7,26,47,0.04)" : "rgba(7,26,47,0.025)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 10, color: canExportOfficialDocument ? "var(--color-text-soft)" : "var(--color-text-muted)", fontSize: 12, cursor: canExportOfficialDocument ? "pointer" : "not-allowed", fontFamily: "var(--tekori-font-ui)" }}
                                         >
                                             Download PDF
                                         </button>
@@ -2629,7 +2629,7 @@ export default function DocumentProductionScreen({
                                             onClick={() => downloadStyledDocx(signedCurrentDoc, exportMeta)}
                                             disabled={!canExportOfficialDocument}
                                             title={!canExportOfficialDocument ? "Legal Business Name is required before export." : undefined}
-                                            style={{ flex: 1, minWidth: 120, padding: "10px 14px", background: canExportOfficialDocument ? "rgba(232,98,42,0.08)" : "rgba(255,255,255,0.025)", border: canExportOfficialDocument ? "1px solid rgba(232,98,42,0.2)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: canExportOfficialDocument ? "#E8622A" : "#555", fontSize: 12, cursor: canExportOfficialDocument ? "pointer" : "not-allowed", fontWeight: 600, fontFamily: "'Lora', Georgia, serif" }}
+                                            style={{ flex: 1, minWidth: 120, padding: "10px 14px", background: canExportOfficialDocument ? "rgba(216,155,43,0.08)" : "rgba(7,26,47,0.025)", border: canExportOfficialDocument ? "1px solid rgba(216,155,43,0.2)" : "1px solid rgba(7,26,47,0.08)", borderRadius: 10, color: canExportOfficialDocument ? "var(--tekori-gold)" : "var(--color-text-muted)", fontSize: 12, cursor: canExportOfficialDocument ? "pointer" : "not-allowed", fontWeight: 600, fontFamily: "var(--tekori-font-ui)" }}
                                         >
                                             Download DOCX
                                         </button>
@@ -2637,7 +2637,7 @@ export default function DocumentProductionScreen({
                                             onClick={() => downloadStyledHtml(signedCurrentDoc, exportMeta)}
                                             disabled={!canExportOfficialDocument}
                                             title={!canExportOfficialDocument ? "Legal Business Name is required before export." : undefined}
-                                            style={{ flex: 1, minWidth: 110, padding: "10px 14px", background: canExportOfficialDocument ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: canExportOfficialDocument ? "#C8C4BE" : "#555", fontSize: 12, cursor: canExportOfficialDocument ? "pointer" : "not-allowed", fontFamily: "'Lora', Georgia, serif" }}
+                                            style={{ flex: 1, minWidth: 110, padding: "10px 14px", background: canExportOfficialDocument ? "rgba(7,26,47,0.04)" : "rgba(7,26,47,0.025)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 10, color: canExportOfficialDocument ? "var(--color-text-soft)" : "var(--color-text-muted)", fontSize: 12, cursor: canExportOfficialDocument ? "pointer" : "not-allowed", fontFamily: "var(--tekori-font-ui)" }}
                                         >
                                             Styled HTML
                                         </button>
@@ -2652,9 +2652,9 @@ export default function DocumentProductionScreen({
                 {activeTab === "refine" && (
                     <div style={{ maxWidth: 600, margin: "0 auto" }}>
                         <div style={{ marginBottom: 20, animation: "fadeSlideUp 0.3s ease both" }}>
-                            <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, color: "#F0EDE8", marginBottom: 4 }}>Refine your document</div>
+                            <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, color: "var(--color-text)", marginBottom: 4 }}>Refine your document</div>
                             <div style={{ fontSize: 12, color: "var(--foundry-text-muted)", lineHeight: 1.6 }}>
-                                Give Forge a direction and it will revise the entire document. Your previous version is preserved in history.
+                                Give Navi a direction and it will revise the entire document. Your previous version is preserved in history.
                             </div>
                         </div>
 
@@ -2674,7 +2674,7 @@ export default function DocumentProductionScreen({
                                 <button
                                     key={chip}
                                     onClick={() => setRefineInput(chip)}
-                                    style={{ padding: "5px 12px", borderRadius: 20, border: "1px solid rgba(255,255,255,0.07)", background: refineInput === chip ? "rgba(232,98,42,0.1)" : "rgba(255,255,255,0.02)", color: refineInput === chip ? "#E8622A" : "#666", fontSize: 11, cursor: "pointer", fontFamily: "'Lora', Georgia, serif", transition: "all 0.15s" }}
+                                    style={{ padding: "5px 12px", borderRadius: 20, border: "1px solid rgba(7,26,47,0.07)", background: refineInput === chip ? "rgba(216,155,43,0.1)" : "rgba(7,26,47,0.02)", color: refineInput === chip ? "var(--tekori-gold)" : "var(--color-text-muted)", fontSize: 11, cursor: "pointer", fontFamily: "var(--tekori-font-ui)", transition: "all 0.15s" }}
                                 >
                                     {chip}
                                 </button>
@@ -2689,20 +2689,20 @@ export default function DocumentProductionScreen({
                             placeholder="Or describe your own refinement instruction..."
                             rows={4}
                             disabled={refining}
-                            style={{ width: "100%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "12px 14px", color: "#F0EDE8", fontSize: 13, fontFamily: "'Lora', Georgia, serif", lineHeight: 1.6, boxSizing: "border-box", opacity: refining ? 0.5 : 1, marginBottom: 10, animation: "fadeSlideUp 0.3s ease 0.1s both" }}
+                            style={{ width: "100%", background: "rgba(7,26,47,0.03)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 12, padding: "12px 14px", color: "var(--color-text)", fontSize: 13, fontFamily: "var(--tekori-font-ui)", lineHeight: 1.6, boxSizing: "border-box", opacity: refining ? 0.5 : 1, marginBottom: 10, animation: "fadeSlideUp 0.3s ease 0.1s both" }}
                         />
 
                         <div style={{ display: "flex", gap: 8, animation: "fadeSlideUp 0.3s ease 0.15s both" }}>
                             <button
                                 onClick={() => setActiveTab("preview")}
-                                style={{ flex: 1, padding: "12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "var(--foundry-text-secondary)", fontSize: 13, cursor: "pointer" }}
+                                style={{ flex: 1, padding: "12px", background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 10, color: "var(--foundry-text-secondary)", fontSize: 13, cursor: "pointer" }}
                             >
                                 View Current
                             </button>
                             <button
                                 onClick={refine}
                                 disabled={!refineInput.trim() || refining}
-                                style={{ flex: 2, padding: "12px", background: refineInput.trim() && !refining ? "linear-gradient(135deg, #E8622A, #c9521e)" : "rgba(255,255,255,0.06)", border: "none", borderRadius: 10, color: refineInput.trim() && !refining ? "#fff" : "#444", fontSize: 13, fontWeight: 600, cursor: refineInput.trim() && !refining ? "pointer" : "not-allowed", transition: "all 0.15s", fontFamily: "'Lora', Georgia, serif" }}
+                                style={{ flex: 2, padding: "12px", background: refineInput.trim() && !refining ? "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))" : "rgba(7,26,47,0.06)", border: "none", borderRadius: 10, color: refineInput.trim() && !refining ? "var(--color-primary)" : "var(--color-text-muted)", fontSize: 13, fontWeight: 800, cursor: refineInput.trim() && !refining ? "pointer" : "not-allowed", transition: "all 0.15s", fontFamily: "var(--tekori-font-ui)" }}
                             >
                                 {refining ? "Refining..." : "Refine Document"}
                             </button>
@@ -2712,7 +2712,7 @@ export default function DocumentProductionScreen({
                             <div style={{ marginTop: 28 }}>
                                 <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>Refinement History</div>
                                 {history.slice(1).map((rec, i) => (
-                                    <div key={i} style={{ padding: "10px 12px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 10, marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+                                    <div key={i} style={{ padding: "10px 12px", background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.05)", borderRadius: 10, marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
                                         <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", flex: 1 }}>"{rec.instruction}"</div>
                                         <button
                                             onClick={() => {
@@ -2721,7 +2721,7 @@ export default function DocumentProductionScreen({
                                                 setHistory(nextHistory);
                                                 persistDocument(rec.doc, nextHistory);
                                             }}
-                                            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 6, padding: "3px 10px", color: "var(--foundry-text-muted)", fontSize: 10, cursor: "pointer", flexShrink: 0 }}
+                                            style={{ background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.07)", borderRadius: 6, padding: "3px 10px", color: "var(--foundry-text-muted)", fontSize: 10, cursor: "pointer", flexShrink: 0 }}
                                         >
                                             Restore
                                         </button>

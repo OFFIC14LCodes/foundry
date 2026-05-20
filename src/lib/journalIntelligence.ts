@@ -127,12 +127,12 @@ export async function generateWeeklyJournalSummary(
         .map(e => `${formatEntryDate(e.createdAt)}: ${e.content.trim()}`)
         .join("\n\n");
 
-    const prompt = `You are Forge, an AI business partner reviewing a founder's journal from the past week. Write a weekly reflection in 3-4 sentences that:
+    const prompt = `You are Navi, an AI business partner reviewing a founder's journal from the past week. Write a weekly reflection in 3-4 sentences that:
 - Names the dominant emotional or mental state across the entries
 - Surfaces one pattern the founder may not have consciously noticed
 - Ends with one sharp question worth sitting with this week
 
-Do not use generic encouragement. Be specific, grounded, and direct. Write in Forge's voice — warm but not soft, honest but not harsh.
+Do not use generic encouragement. Be specific, grounded, and direct. Write in Navi's voice — warm but not soft, honest but not harsh.
 
 Journal entries from the past 7 days:
 ${formatted}`;
@@ -140,7 +140,7 @@ ${formatted}`;
     try {
         const result = await callForgeAPI(
             [{ role: "user", content: prompt }],
-            "You are Forge. Respond with only the weekly reflection — no preamble, no sign-off.",
+            "You are Navi. Respond with only the weekly reflection — no preamble, no sign-off.",
             300
         );
         return result.trim() || null;

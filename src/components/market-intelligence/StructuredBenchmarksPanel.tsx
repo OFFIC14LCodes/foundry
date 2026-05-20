@@ -31,10 +31,10 @@ export default function StructuredBenchmarksPanel({
 
     return (
         <div>
-            <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(240,237,232,0.58)", marginBottom: 6 }}>
+            <div style={{ fontFamily: "var(--tekori-font-ui)", fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(16,32,51,0.58)", marginBottom: 6 }}>
                 Industry benchmarks — know your numbers
             </div>
-            <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, color: "rgba(240,237,232,0.58)", fontStyle: "italic", lineHeight: 1.6, marginBottom: 14 }}>
+            <div style={{ fontFamily: "var(--tekori-font-ui)", fontSize: 12, color: "rgba(16,32,51,0.58)", fontStyle: "italic", lineHeight: 1.6, marginBottom: 14 }}>
                 These numbers define what healthy looks like in your market. Use them to pressure-test your own projections.
             </div>
             <div style={{ display: "grid", gap: 10 }}>
@@ -46,14 +46,14 @@ export default function StructuredBenchmarksPanel({
                         description: benchmark.description,
                     });
                     return (
-                    <div key={benchmark.id} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderLeft: "3px solid rgba(99,179,237,0.38)", borderRadius: 12, padding: "16px 16px 14px" }}>
-                        <div style={{ fontSize: 15, fontWeight: 700, color: "#F0EDE8", fontFamily: "'Lora', Georgia, serif", lineHeight: 1.35, marginBottom: 8 }}>
+                    <div key={benchmark.id} style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.06)", borderLeft: "3px solid rgba(142,160,181,0.38)", borderRadius: 12, padding: "16px 16px 14px" }}>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: "var(--color-text)", fontFamily: "var(--tekori-font-ui)", lineHeight: 1.35, marginBottom: 8 }}>
                             {benchmark.metric}
                         </div>
-                        <div style={{ color: "#63B3ED", fontFamily: "'Playfair Display', Georgia, serif", fontSize: 24, fontWeight: 700, lineHeight: 1.1, marginBottom: 8 }}>
+                        <div style={{ color: "var(--tekori-muted-text)", fontFamily: "var(--tekori-font-brand)", fontSize: 24, fontWeight: 700, lineHeight: 1.1, marginBottom: 8 }}>
                             {formatBenchmarkValue(benchmark.value, benchmark.unit)}
                         </div>
-                        <div style={{ fontSize: 12, color: "rgba(240,237,232,0.7)", lineHeight: 1.6, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+                        <div style={{ fontSize: 12, color: "rgba(71,84,103,0.88)", lineHeight: 1.6, fontFamily: "var(--tekori-font-ui)" }}>
                             {benchmark.description || "Saved benchmark."}
                         </div>
                         {(onCreateAction || onAskForgeAboutAction) && (

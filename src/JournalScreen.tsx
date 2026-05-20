@@ -52,8 +52,8 @@ const ENTRY_TEMPLATES = [
     },
 ];
 
-const JOURNAL_QUICK_CHAT_SYSTEM = `You are Forge, a direct but thoughtful founder coach.
-You are responding inside a private journal quick chat. The founder clicked "Ask Forge" on one journal entry.
+const JOURNAL_QUICK_CHAT_SYSTEM = `You are Navi, a direct but thoughtful founder coach.
+You are responding inside a private journal quick chat. The founder clicked "Ask Navi" on one journal entry.
 Respond first. Do not ask what they want to talk about.
 If the entry contains a decision, fear, tension, blocker, or pattern, reflect the real issue back and ask one or two focused follow-up questions.
 If the entry is mostly a status update, identify the useful signal and suggest one practical next thought.
@@ -172,7 +172,7 @@ function HighlightText({ text, query }: { text: string; query: string }) {
         <>
             {parts.map((part, index) => (
                 part.toLowerCase() === normalizedQuery
-                    ? <mark key={index} style={{ background: "rgba(232,98,42,0.2)", color: "inherit", padding: "0 2px", borderRadius: 3 }}>{part}</mark>
+                    ? <mark key={index} style={{ background: "rgba(216,155,43,0.2)", color: "inherit", padding: "0 2px", borderRadius: 3 }}>{part}</mark>
                     : <span key={index}>{part}</span>
             ))}
         </>
@@ -189,12 +189,12 @@ function ThemePills({ themes }: { themes?: string[] }) {
         <div style={{ display: "flex", gap: 5, flexWrap: "wrap", justifyContent: "flex-end" }}>
             {visible.map(theme => (
                 <span key={theme} style={{
-                    fontFamily: "'DM Sans', sans-serif",
+                    fontFamily: "var(--tekori-font-ui)",
                     fontSize: 9,
                     textTransform: "uppercase",
-                    background: "rgba(255,255,255,0.06)",
-                    border: "1px solid rgba(255,255,255,0.12)",
-                    color: "rgba(240,237,232,0.7)",
+                    background: "rgba(7,26,47,0.06)",
+                    border: "1px solid rgba(7,26,47,0.12)",
+                    color: "rgba(71,84,103,0.88)",
                     borderRadius: 3,
                     padding: "3px 7px",
                     lineHeight: 1.1,
@@ -204,12 +204,12 @@ function ThemePills({ themes }: { themes?: string[] }) {
             ))}
             {moreCount > 0 && (
                 <span style={{
-                    fontFamily: "'DM Sans', sans-serif",
+                    fontFamily: "var(--tekori-font-ui)",
                     fontSize: 9,
                     textTransform: "uppercase",
-                    background: "rgba(255,255,255,0.06)",
-                    border: "1px solid rgba(255,255,255,0.12)",
-                    color: "rgba(240,237,232,0.7)",
+                    background: "rgba(7,26,47,0.06)",
+                    border: "1px solid rgba(7,26,47,0.12)",
+                    color: "rgba(71,84,103,0.88)",
                     borderRadius: 3,
                     padding: "3px 7px",
                     lineHeight: 1.1,
@@ -480,7 +480,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
             lines.push(entry.content);
             if (entry.forgeSummary) {
                 lines.push("");
-                lines.push(`> **Forge's reflection:** ${entry.forgeSummary}`);
+                lines.push(`> **Navi's reflection:** ${entry.forgeSummary}`);
             }
             lines.push("");
             lines.push("---");
@@ -527,7 +527,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
             ]);
         } catch (error) {
             console.error("journal quick chat open error:", error);
-            setQuickChatError("Forge could not respond to this entry right now.");
+            setQuickChatError("Navi could not respond to this entry right now.");
         } finally {
             setQuickChatLoading(false);
         }
@@ -568,7 +568,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
             ]);
         } catch (error) {
             console.error("journal quick chat send error:", error);
-            setQuickChatError("Forge could not send a response. Try again.");
+            setQuickChatError("Navi could not send a response. Try again.");
         } finally {
             setQuickChatLoading(false);
         }
@@ -599,28 +599,28 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
 
     return (
         <div style={{
-            position: "fixed", inset: 0, background: "#080809",
+            position: "fixed", inset: 0, background: "var(--color-bg-soft)",
             display: "flex", flexDirection: "column",
-            fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8", zIndex: 200,
+            fontFamily: "var(--tekori-font-ui)", color: "var(--color-text)", zIndex: 200,
         }}>
             <div style={{
                 padding: "max(11px, calc(6px + env(safe-area-inset-top))) 16px 11px",
-                borderBottom: "1px solid rgba(255,255,255,0.06)",
-                background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)",
+                borderBottom: "1px solid rgba(7,26,47,0.06)",
+                background: "rgba(255,252,246,0.94)", backdropFilter: "blur(12px)",
                 display: "flex", alignItems: "center", justifyContent: "space-between",
                 flexShrink: 0,
             }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <button onClick={onOpenNav} style={{
-                        background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
-                        borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "#F0EDE8",
+                        background: "rgba(7,26,47,0.05)", border: "1px solid rgba(7,26,47,0.08)",
+                        borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "var(--color-text)",
                         cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                     }}><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg></button>
                 </div>
                 <div style={{ textAlign: "left", flex: 1, marginLeft: 12 }}>
                     <div style={{
-                        fontSize: "var(--foundry-app-header-title-font)", fontFamily: "'Lora', Georgia, serif",
-                        fontWeight: 600, color: "#F0EDE8",
+                        fontSize: "var(--foundry-app-header-title-font)", fontFamily: "var(--tekori-font-ui)",
+                        fontWeight: 600, color: "var(--color-text)",
                     }}>Founder's Journal</div>
                     <div style={{ fontSize: "var(--foundry-app-header-meta-font)", color: "var(--foundry-text-muted)" }}>
                         {typedEntries.length} {typedEntries.length === 1 ? "entry" : "entries"}
@@ -629,14 +629,14 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                 <div style={{ display: "flex", gap: 8 }}>
                     {typedEntries.length > 0 && (
                         <button onClick={handleExport} title="Export journal as Markdown" style={{
-                            background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
-                            borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "rgba(240,237,232,0.7)",
+                            background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)",
+                            borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "rgba(71,84,103,0.88)",
                             fontSize: "var(--foundry-app-header-button-font)", cursor: "pointer",
                         }}>Export</button>
                     )}
                     <button onClick={openWritingOverlay} style={{
-                        background: "rgba(232,98,42,0.1)", border: "1px solid rgba(232,98,42,0.25)",
-                        borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "#E8622A",
+                        background: "rgba(216,155,43,0.1)", border: "1px solid rgba(216,155,43,0.25)",
+                        borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "var(--tekori-gold)",
                         fontSize: "var(--foundry-app-header-button-font)", fontWeight: 500, cursor: "pointer",
                     }}>+ New</button>
                 </div>
@@ -655,11 +655,11 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                     return (
                         <div style={{ marginBottom: 14 }}>
                             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                                <span style={{ fontSize: 11, color: "rgba(240,237,232,0.58)", fontFamily: "'DM Sans', sans-serif" }}>
+                                <span style={{ fontSize: 11, color: "rgba(16,32,51,0.58)", fontFamily: "var(--tekori-font-ui)" }}>
                                     {calendarMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
                                 </span>
                                 {selectedDay && (
-                                    <button onClick={() => setSelectedDay(null)} style={{ fontSize: 11, color: "#E8622A", background: "none", border: "none", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+                                    <button onClick={() => setSelectedDay(null)} style={{ fontSize: 11, color: "var(--tekori-gold)", background: "none", border: "none", cursor: "pointer", fontFamily: "var(--tekori-font-ui)" }}>
                                         Clear filter ×
                                     </button>
                                 )}
@@ -680,8 +680,8 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                                 width: 32,
                                                 height: 44,
                                                 borderRadius: 8,
-                                                border: isToday ? "1px solid rgba(232,98,42,0.4)" : isSelected ? "1px solid rgba(232,98,42,0.6)" : "1px solid rgba(255,255,255,0.06)",
-                                                background: isSelected ? "rgba(232,98,42,0.15)" : isToday ? "rgba(232,98,42,0.06)" : "rgba(255,255,255,0.02)",
+                                                border: isToday ? "1px solid rgba(216,155,43,0.4)" : isSelected ? "1px solid rgba(216,155,43,0.6)" : "1px solid rgba(7,26,47,0.06)",
+                                                background: isSelected ? "rgba(216,155,43,0.15)" : isToday ? "rgba(216,155,43,0.06)" : "rgba(7,26,47,0.02)",
                                                 cursor: "pointer",
                                                 display: "flex",
                                                 flexDirection: "column",
@@ -690,8 +690,8 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                                 gap: 3,
                                             }}
                                         >
-                                            <span style={{ fontSize: 11, color: isSelected ? "#E8622A" : isToday ? "#E8622A" : hasEntry ? "rgba(240,237,232,0.7)" : "rgba(240,237,232,0.25)", fontFamily: "'DM Sans', sans-serif", fontWeight: isToday || isSelected ? 600 : 400 }}>{day}</span>
-                                            {hasEntry && <div style={{ width: 4, height: 4, borderRadius: "50%", background: isSelected ? "#E8622A" : "rgba(232,98,42,0.6)" }} />}
+                                            <span style={{ fontSize: 11, color: isSelected ? "var(--tekori-gold)" : isToday ? "var(--tekori-gold)" : hasEntry ? "rgba(71,84,103,0.88)" : "rgba(102,112,133,0.45)", fontFamily: "var(--tekori-font-ui)", fontWeight: isToday || isSelected ? 600 : 400 }}>{day}</span>
+                                            {hasEntry && <div style={{ width: 4, height: 4, borderRadius: "50%", background: isSelected ? "var(--tekori-gold)" : "rgba(216,155,43,0.6)" }} />}
                                         </button>
                                     );
                                 })}
@@ -701,7 +701,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                 })()}
 
                 <div style={{ position: "relative", marginBottom: 14 }}>
-                    <span style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "rgba(240,237,232,0.55)", fontSize: 13 }}>⌕</span>
+                    <span style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "rgba(102,112,133,0.74)", fontSize: 13 }}>⌕</span>
                     <input
                         ref={searchInputRef}
                         value={searchTerm}
@@ -709,26 +709,26 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                         placeholder="Search your journal..."
                         style={{
                             width: "100%",
-                            background: "rgba(255,255,255,0.04)",
-                            border: "1px solid rgba(255,255,255,0.08)",
+                            background: "rgba(7,26,47,0.04)",
+                            border: "1px solid rgba(7,26,47,0.08)",
                             borderRadius: 10,
                             padding: "10px 34px",
-                            color: "#F0EDE8",
+                            color: "var(--color-text)",
                             fontSize: 14,
-                            fontFamily: "'DM Sans', sans-serif",
+                            fontFamily: "var(--tekori-font-ui)",
                             boxSizing: "border-box",
                             outline: "none",
                         }}
                     />
                     {searchTerm && (
-                        <button onClick={() => setSearchTerm("")} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "transparent", border: "none", color: "rgba(240,237,232,0.58)", fontSize: 18, cursor: "pointer" }}>×</button>
+                        <button onClick={() => setSearchTerm("")} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "transparent", border: "none", color: "rgba(16,32,51,0.58)", fontSize: 18, cursor: "pointer" }}>×</button>
                     )}
                 </div>
 
                 {(weeklySummary || loadingWeekly) && (
                     <div style={{
-                        background: "rgba(232,98,42,0.05)",
-                        border: "1px solid rgba(232,98,42,0.15)",
+                        background: "rgba(216,155,43,0.05)",
+                        border: "1px solid rgba(216,155,43,0.15)",
                         borderRadius: 14,
                         marginBottom: 16,
                         overflow: "hidden",
@@ -736,31 +736,31 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                     }}>
                         <div style={{ padding: "14px 16px 12px", display: "flex", justifyContent: "space-between", gap: 12 }}>
                             <div>
-                                <div style={{ fontSize: 15, color: "#F0EDE8", fontWeight: 600, fontFamily: "'Lora', Georgia, serif" }}>
+                                <div style={{ fontSize: 15, color: "var(--color-text)", fontWeight: 600, fontFamily: "var(--tekori-font-ui)" }}>
                                     🔥 This Week's Reflection
                                 </div>
-                                <div style={{ marginTop: 3, fontSize: 12, color: "rgba(240,237,232,0.58)", fontFamily: "'DM Sans', sans-serif" }}>
+                                <div style={{ marginTop: 3, fontSize: 12, color: "rgba(16,32,51,0.58)", fontFamily: "var(--tekori-font-ui)" }}>
                                     {getWeekRangeLabel()}
                                 </div>
                             </div>
                             <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-                                <button onClick={regenerateWeeklyReflection} disabled={loadingWeekly || recentEntries.length < 2} style={{ background: "transparent", border: "none", color: "rgba(240,237,232,0.62)", fontSize: 16, cursor: loadingWeekly ? "default" : "pointer" }}>↻</button>
-                                <button onClick={() => setWeeklyExpanded(prev => !prev)} style={{ background: "transparent", border: "none", color: "rgba(240,237,232,0.62)", fontSize: 16, cursor: "pointer" }}>{weeklyExpanded ? "↑" : "↓"}</button>
+                                <button onClick={regenerateWeeklyReflection} disabled={loadingWeekly || recentEntries.length < 2} style={{ background: "transparent", border: "none", color: "var(--color-text-muted)", fontSize: 16, cursor: loadingWeekly ? "default" : "pointer" }}>↻</button>
+                                <button onClick={() => setWeeklyExpanded(prev => !prev)} style={{ background: "transparent", border: "none", color: "var(--color-text-muted)", fontSize: 16, cursor: "pointer" }}>{weeklyExpanded ? "↑" : "↓"}</button>
                             </div>
                         </div>
                         {weeklyExpanded && (
-                            <div style={{ borderTop: "1px solid rgba(255,255,255,0.05)", padding: "14px 16px 16px" }}>
+                            <div style={{ borderTop: "1px solid rgba(7,26,47,0.05)", padding: "14px 16px 16px" }}>
                                 {loadingWeekly ? (
-                                    <div style={{ display: "flex", alignItems: "center", gap: 8, color: "rgba(240,237,232,0.62)", fontSize: 13, fontFamily: "'DM Sans', sans-serif" }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-text-muted)", fontSize: 13, fontFamily: "var(--tekori-font-ui)" }}>
                                         <span style={{ display: "inline-flex", gap: 4 }}>
                                             {[0, 1, 2].map(index => (
-                                                <span key={index} style={{ width: 5, height: 5, borderRadius: "50%", background: "#E8622A", animation: "forgePulse 1.2s ease-in-out infinite", animationDelay: `${index * 0.18}s` }} />
+                                                <span key={index} style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--tekori-gold)", animation: "forgePulse 1.2s ease-in-out infinite", animationDelay: `${index * 0.18}s` }} />
                                             ))}
                                         </span>
-                                        Forge is reflecting on your week...
+                                        Navi is reflecting on your week...
                                     </div>
                                 ) : (
-                                    <div style={{ fontSize: 14, color: "rgba(240,237,232,0.8)", lineHeight: 1.8, fontFamily: "'Lora', Georgia, serif", fontStyle: "italic" }}>
+                                    <div style={{ fontSize: 14, color: "rgba(16,32,51,0.8)", lineHeight: 1.8, fontFamily: "var(--tekori-font-ui)", fontStyle: "italic" }}>
                                         {weeklySummary}
                                     </div>
                                 )}
@@ -771,7 +771,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                     if (moodEntries.length < 2) return null;
                                     return (
                                         <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                                            <span style={{ fontSize: 10, color: "rgba(240,237,232,0.55)", fontFamily: "'DM Sans', sans-serif" }}>Mood this week:</span>
+                                            <span style={{ fontSize: 10, color: "rgba(102,112,133,0.74)", fontFamily: "var(--tekori-font-ui)" }}>Mood this week:</span>
                                             <div style={{ display: "flex", gap: 2 }}>
                                                 {moodEntries.map((e, i) => (
                                                     <span key={i} title={new Date(e.createdAt).toLocaleDateString("en-US", { weekday: "short" })} style={{ fontSize: 14 }}>{e.mood}</span>
@@ -780,7 +780,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                         </div>
                                     );
                                 })()}
-                                <div style={{ marginTop: 8, fontSize: 11, color: "rgba(240,237,232,0.58)", fontFamily: "'DM Sans', sans-serif" }}>
+                                <div style={{ marginTop: 8, fontSize: 11, color: "rgba(16,32,51,0.58)", fontFamily: "var(--tekori-font-ui)" }}>
                                     Based on {recentEntries.length} entries this week
                                 </div>
                             </div>
@@ -790,7 +790,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
 
                 {recurringThemes.length > 0 && (
                     <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                        <span style={{ fontSize: 12, color: "rgba(240,237,232,0.62)", fontFamily: "'DM Sans', sans-serif" }}>Your recurring themes:</span>
+                        <span style={{ fontSize: 12, color: "var(--color-text-muted)", fontFamily: "var(--tekori-font-ui)" }}>Your recurring themes:</span>
                         {recurringThemes.map(([theme, count]) => {
                             const active = selectedTheme === theme;
                             return (
@@ -798,13 +798,13 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                     key={theme}
                                     onClick={() => setSelectedTheme(active ? null : theme)}
                                     style={{
-                                        background: active ? "rgba(232,98,42,0.15)" : "rgba(255,255,255,0.06)",
-                                        border: active ? "1px solid rgba(232,98,42,0.4)" : "1px solid rgba(255,255,255,0.12)",
-                                        color: active ? "#E8622A" : "rgba(240,237,232,0.6)",
+                                        background: active ? "rgba(216,155,43,0.15)" : "rgba(7,26,47,0.06)",
+                                        border: active ? "1px solid rgba(216,155,43,0.4)" : "1px solid rgba(7,26,47,0.12)",
+                                        color: active ? "var(--tekori-gold)" : "rgba(102,112,133,0.78)",
                                         borderRadius: 999,
                                         padding: "5px 10px",
                                         fontSize: 11,
-                                        fontFamily: "'DM Sans', sans-serif",
+                                        fontFamily: "var(--tekori-font-ui)",
                                         cursor: "pointer",
                                     }}
                                 >
@@ -822,27 +822,27 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                     }}>
                         <div style={{ fontSize: 48, marginBottom: 16 }}>📓</div>
                         <div style={{
-                            fontSize: 20, fontFamily: "'Playfair Display', Georgia, serif",
-                            fontWeight: 700, color: "#F0EDE8", marginBottom: 10,
+                            fontSize: 20, fontFamily: "var(--tekori-font-brand)",
+                            fontWeight: 700, color: "var(--color-text)", marginBottom: 10,
                         }}>Your journal is empty</div>
                         <div style={{
-                            fontSize: 13, color: "var(--foundry-text-muted)", fontFamily: "'Lora', Georgia, serif",
+                            fontSize: 13, color: "var(--foundry-text-muted)", fontFamily: "var(--tekori-font-ui)",
                             fontStyle: "italic", lineHeight: 1.7, maxWidth: 300, margin: "0 0 24px",
                         }}>
                             This is your private space. Write about wins, fears, decisions, or anything on your mind as you build.
                         </div>
                         <button onClick={openWritingOverlay} style={{
-                            background: "linear-gradient(135deg, #E8622A, #c9521e)",
+                            background: "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))",
                             border: "none", borderRadius: 12, padding: "12px 24px",
-                            color: "#fff", fontSize: 13, fontFamily: "'Lora', Georgia, serif",
+                            color: "#fff", fontSize: 13, fontFamily: "var(--tekori-font-ui)",
                             fontWeight: 600, cursor: "pointer",
-                            boxShadow: "0 4px 20px rgba(232,98,42,0.3)",
+                            boxShadow: "0 4px 20px rgba(216,155,43,0.3)",
                         }}>Write your first entry</button>
                     </div>
                 )}
 
                 {(searchTerm.trim() || selectedTheme) && displayedEntries.length === 0 && (
-                    <div style={{ padding: "36px 10px", color: "rgba(240,237,232,0.42)", fontSize: 14, fontFamily: "'DM Sans', sans-serif", textAlign: "center" }}>
+                    <div style={{ padding: "36px 10px", color: "rgba(16,32,51,0.42)", fontSize: 14, fontFamily: "var(--tekori-font-ui)", textAlign: "center" }}>
                         {searchTerm.trim() ? `No entries match "${searchTerm.trim()}"` : `No entries match ${selectedTheme}`}
                     </div>
                 )}
@@ -859,8 +859,8 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
 
                         return (
                             <article key={entry.id} style={{
-                                background: "rgba(255,255,255,0.025)",
-                                border: "1px solid rgba(255,255,255,0.07)",
+                                background: "rgba(7,26,47,0.025)",
+                                border: "1px solid rgba(7,26,47,0.07)",
                                 borderRadius: 14,
                                 overflow: "hidden",
                                 animation: i === 0 && isNew ? "fadeSlideUp 0.4s ease" : "none",
@@ -869,16 +869,16 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                             }}>
                                 <div style={{
                                     padding: "14px 20px 12px",
-                                    borderBottom: "1px solid rgba(255,255,255,0.045)",
+                                    borderBottom: "1px solid rgba(7,26,47,0.045)",
                                     display: "grid",
                                     gridTemplateColumns: "1fr auto",
                                     gap: 10,
                                 }}>
                                     <div style={{ minWidth: 0 }}>
-                                        <div style={{ fontSize: 15, color: "#F0EDE8", fontWeight: 600, lineHeight: 1.35 }}>
+                                        <div style={{ fontSize: 15, color: "var(--color-text)", fontWeight: 600, lineHeight: 1.35 }}>
                                             {formatDate(entry.createdAt)}
                                         </div>
-                                        <div style={{ fontSize: 12, color: "rgba(240,237,232,0.58)", marginTop: 4, lineHeight: 1.3, fontFamily: "'DM Sans', sans-serif" }}>
+                                        <div style={{ fontSize: 12, color: "rgba(16,32,51,0.58)", marginTop: 4, lineHeight: 1.3, fontFamily: "var(--tekori-font-ui)" }}>
                                             {formatTime(entry.createdAt)}
                                             {entry.wordCount ? ` · ${entry.wordCount} words` : ""}
                                         </div>
@@ -893,9 +893,9 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                                 background: "transparent",
                                                 border: "none", color: "#5F5952", fontSize: 12, fontWeight: 500,
                                                 cursor: "pointer", padding: "2px 4px", borderRadius: 8,
-                                                transition: "color 0.15s", fontFamily: "'DM Sans', sans-serif",
+                                                transition: "color 0.15s", fontFamily: "var(--tekori-font-ui)",
                                             }}
-                                            onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#E8622A"}
+                                            onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "var(--tekori-gold)"}
                                             onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "#5F5952"}
                                         >Edit</button>
                                         <button
@@ -915,16 +915,16 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
 
                                 <div style={{ padding: "18px 20px" }}>
                                     <div style={{
-                                        fontSize: 15, fontFamily: "'Lora', Georgia, serif",
-                                        color: "#C8C4BE", lineHeight: 1.9, whiteSpace: "pre-wrap",
+                                        fontSize: 15, fontFamily: "var(--tekori-font-ui)",
+                                        color: "var(--color-text-soft)", lineHeight: 1.9, whiteSpace: "pre-wrap",
                                     }}>
                                         <HighlightText text={preview} query={searchTerm} />
                                     </div>
                                     {isLong && (
                                         <button onClick={() => setExpandedId(isExpanded ? null : entry.id)} style={{
                                             background: "transparent", border: "none",
-                                            color: "#E8622A", fontSize: 13, cursor: "pointer",
-                                            padding: "10px 0 0", fontFamily: "'Lora', Georgia, serif",
+                                            color: "var(--tekori-gold)", fontSize: 13, cursor: "pointer",
+                                            padding: "10px 0 0", fontFamily: "var(--tekori-font-ui)",
                                         }}>
                                             {isExpanded ? "Show less ↑" : "Read more ↓"}
                                         </button>
@@ -933,23 +933,23 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                     {entry.forgeSummary ? (
                                         <div style={{
                                             marginTop: 16,
-                                            background: "rgba(232,98,42,0.04)",
+                                            background: "rgba(216,155,43,0.04)",
                                             borderRadius: 8,
                                             padding: "10px 12px",
                                         }}>
                                             <div style={{
-                                                color: "rgba(232,98,42,0.7)",
+                                                color: "rgba(216,155,43,0.7)",
                                                 fontSize: 11,
-                                                fontFamily: "'DM Sans', sans-serif",
+                                                fontFamily: "var(--tekori-font-ui)",
                                                 textTransform: "uppercase",
                                                 marginBottom: 5,
                                                 letterSpacing: "0.04em",
-                                            }}>🔥 Forge read this:</div>
+                                            }}>🔥 Navi read this:</div>
                                             <div style={{
                                                 fontSize: 13,
                                                 fontStyle: "italic",
-                                                color: "rgba(240,237,232,0.65)",
-                                                fontFamily: "'Lora', Georgia, serif",
+                                                color: "rgba(16,32,51,0.65)",
+                                                fontFamily: "var(--tekori-font-ui)",
                                                 lineHeight: 1.75,
                                             }}>
                                                 {entry.forgeSummary}
@@ -962,18 +962,18 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                                 marginTop: 14,
                                                 width: "100%",
                                                 textAlign: "left",
-                                                background: "rgba(255,255,255,0.02)",
+                                                background: "rgba(7,26,47,0.02)",
                                                 border: "none",
                                                 borderRadius: 8,
                                                 padding: "10px 12px",
-                                                color: "rgba(240,237,232,0.55)",
+                                                color: "rgba(102,112,133,0.74)",
                                                 fontSize: 12,
-                                                fontFamily: "'DM Sans', sans-serif",
+                                                fontFamily: "var(--tekori-font-ui)",
                                                 fontStyle: "italic",
                                                 cursor: "pointer",
                                             }}
                                         >
-                                            Forge couldn't read this entry — tap to retry
+                                            Navi couldn't read this entry — tap to retry
                                         </button>
                                     ) : justSaved ? (
                                         <div style={{
@@ -982,16 +982,16 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                             alignItems: "center",
                                             gap: 8,
                                             fontSize: 12,
-                                            color: "rgba(240,237,232,0.55)",
-                                            fontFamily: "'DM Sans', sans-serif",
+                                            color: "rgba(102,112,133,0.74)",
+                                            fontFamily: "var(--tekori-font-ui)",
                                             fontStyle: "italic",
                                         }}>
                                             <span style={{ display: "inline-flex", gap: 4 }}>
                                                 {[0, 1, 2].map(index => (
-                                                    <span key={index} style={{ width: 5, height: 5, borderRadius: "50%", background: "#E8622A", animation: "forgePulse 1.2s ease-in-out infinite", animationDelay: `${index * 0.18}s` }} />
+                                                    <span key={index} style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--tekori-gold)", animation: "forgePulse 1.2s ease-in-out infinite", animationDelay: `${index * 0.18}s` }} />
                                                 ))}
                                             </span>
-                                            Forge is reading this
+                                            Navi is reading this
                                         </div>
                                     ) : null}
                                 </div>
@@ -1001,30 +1001,30 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                     display: "flex",
                                     justifyContent: "space-between",
                                     alignItems: "center",
-                                    borderTop: "1px solid rgba(255,255,255,0.04)",
+                                    borderTop: "1px solid rgba(7,26,47,0.04)",
                                 }}>
                                     <button
                                         onClick={() => void openQuickChat(entry)}
                                         style={{
                                             background: "transparent",
                                             border: "none",
-                                            color: "#E8622A",
+                                            color: "var(--tekori-gold)",
                                             fontSize: 12,
-                                            fontFamily: "'DM Sans', sans-serif",
+                                            fontFamily: "var(--tekori-font-ui)",
                                             cursor: "pointer",
                                             padding: "4px 0",
                                         }}
                                     >
-                                        Ask Forge →
+                                        Ask Navi →
                                     </button>
                                     <button
                                         onClick={() => void copyEntry(entry)}
                                         style={{
                                             background: "transparent",
                                             border: "none",
-                                            color: copiedEntryId === entry.id ? "#4CAF8A" : "rgba(240,237,232,0.3)",
+                                            color: copiedEntryId === entry.id ? "var(--color-success)" : "rgba(102,112,133,0.45)",
                                             fontSize: 12,
-                                            fontFamily: "'DM Sans', sans-serif",
+                                            fontFamily: "var(--tekori-font-ui)",
                                             cursor: "pointer",
                                             padding: "4px 0",
                                         }}
@@ -1045,16 +1045,16 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                     position: "fixed",
                     inset: 0,
                     zIndex: 270,
-                    background: "rgba(8,8,9,0.94)",
+                    background: "rgba(255,252,246,0.94)",
                     backdropFilter: "blur(16px)",
                     display: "flex",
                     flexDirection: "column",
-                    color: "#F0EDE8",
+                    color: "var(--color-text)",
                 }}>
                     <div style={{
                         padding: "max(13px, calc(9px + env(safe-area-inset-top))) 16px 13px",
-                        borderBottom: "1px solid rgba(255,255,255,0.07)",
-                        background: "rgba(8,8,9,0.9)",
+                        borderBottom: "1px solid rgba(7,26,47,0.07)",
+                        background: "rgba(255,252,246,0.94)",
                         flexShrink: 0,
                     }}>
                         <div style={{
@@ -1068,8 +1068,8 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                             <div style={{ minWidth: 0 }}>
                                 <div style={{
                                     fontSize: 11,
-                                    color: "rgba(232,98,42,0.8)",
-                                    fontFamily: "'DM Sans', sans-serif",
+                                    color: "rgba(216,155,43,0.8)",
+                                    fontFamily: "var(--tekori-font-ui)",
                                     textTransform: "uppercase",
                                     letterSpacing: "0.08em",
                                     marginBottom: 3,
@@ -1078,8 +1078,8 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                 </div>
                                 <div style={{
                                     fontSize: 14,
-                                    color: "rgba(240,237,232,0.72)",
-                                    fontFamily: "'Lora', Georgia, serif",
+                                    color: "rgba(71,84,103,0.88)",
+                                    fontFamily: "var(--tekori-font-ui)",
                                     whiteSpace: "nowrap",
                                     overflow: "hidden",
                                     textOverflow: "ellipsis",
@@ -1090,12 +1090,12 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                             <button
                                 onClick={closeQuickChat}
                                 style={{
-                                    background: "rgba(255,255,255,0.04)",
-                                    border: "1px solid rgba(255,255,255,0.08)",
+                                    background: "rgba(7,26,47,0.04)",
+                                    border: "1px solid rgba(7,26,47,0.08)",
                                     borderRadius: 9,
-                                    color: "rgba(240,237,232,0.58)",
+                                    color: "rgba(16,32,51,0.58)",
                                     fontSize: 13,
-                                    fontFamily: "'DM Sans', sans-serif",
+                                    fontFamily: "var(--tekori-font-ui)",
                                     cursor: "pointer",
                                     padding: "8px 12px",
                                 }}
@@ -1108,15 +1108,15 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                     <div ref={quickChatScrollRef} style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
                         <div style={{ maxWidth: 820, margin: "0 auto", display: "grid", gap: 14 }}>
                             <div style={{
-                                background: "rgba(255,255,255,0.025)",
-                                border: "1px solid rgba(255,255,255,0.07)",
+                                background: "rgba(7,26,47,0.025)",
+                                border: "1px solid rgba(7,26,47,0.07)",
                                 borderRadius: 14,
                                 padding: "14px 16px",
                             }}>
                                 <div style={{
                                     fontSize: 10,
-                                    color: "rgba(240,237,232,0.34)",
-                                    fontFamily: "'DM Sans', sans-serif",
+                                    color: "rgba(102,112,133,0.50)",
+                                    fontFamily: "var(--tekori-font-ui)",
                                     textTransform: "uppercase",
                                     letterSpacing: "0.08em",
                                     marginBottom: 8,
@@ -1125,7 +1125,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                 </div>
                                 <div style={{
                                     fontSize: 13,
-                                    color: "rgba(240,237,232,0.62)",
+                                    color: "var(--color-text-muted)",
                                     lineHeight: 1.75,
                                     whiteSpace: "pre-wrap",
                                     maxHeight: 170,
@@ -1145,15 +1145,15 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                 >
                                     <div style={{
                                         maxWidth: "min(680px, 88%)",
-                                        background: message.role === "user" ? "rgba(232,98,42,0.12)" : "rgba(255,255,255,0.04)",
-                                        border: message.role === "user" ? "1px solid rgba(232,98,42,0.25)" : "1px solid rgba(255,255,255,0.08)",
+                                        background: message.role === "user" ? "rgba(216,155,43,0.12)" : "rgba(7,26,47,0.04)",
+                                        border: message.role === "user" ? "1px solid rgba(216,155,43,0.25)" : "1px solid rgba(7,26,47,0.08)",
                                         borderRadius: 14,
                                         padding: "12px 14px",
-                                        color: message.role === "user" ? "#F0EDE8" : "rgba(240,237,232,0.82)",
+                                        color: message.role === "user" ? "var(--color-text)" : "rgba(16,32,51,0.82)",
                                         fontSize: 14,
                                         lineHeight: 1.75,
                                         whiteSpace: "pre-wrap",
-                                        fontFamily: message.role === "user" ? "'DM Sans', sans-serif" : "'Lora', Georgia, serif",
+                                        fontFamily: message.role === "user" ? "var(--tekori-font-ui)" : "var(--tekori-font-ui)",
                                     }}>
                                         {message.text}
                                     </div>
@@ -1161,18 +1161,18 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                             ))}
 
                             {quickChatLoading && (
-                                <div style={{ display: "flex", alignItems: "center", gap: 7, color: "rgba(240,237,232,0.42)", fontSize: 12, fontFamily: "'DM Sans', sans-serif", padding: "4px 2px" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 7, color: "rgba(16,32,51,0.42)", fontSize: 12, fontFamily: "var(--tekori-font-ui)", padding: "4px 2px" }}>
                                     <span style={{ display: "inline-flex", gap: 4 }}>
                                         {[0, 1, 2].map(index => (
-                                            <span key={index} style={{ width: 6, height: 6, borderRadius: "50%", background: "#E8622A", animation: "forgePulse 1.2s ease-in-out infinite", animationDelay: `${index * 0.18}s` }} />
+                                            <span key={index} style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--tekori-gold)", animation: "forgePulse 1.2s ease-in-out infinite", animationDelay: `${index * 0.18}s` }} />
                                         ))}
                                     </span>
-                                    Forge is reading this
+                                    Navi is reading this
                                 </div>
                             )}
 
                             {quickChatError && (
-                                <div style={{ color: "#F5A843", fontSize: 12, lineHeight: 1.6, fontFamily: "'DM Sans', sans-serif" }}>
+                                <div style={{ color: "var(--tekori-amber)", fontSize: 12, lineHeight: 1.6, fontFamily: "var(--tekori-font-ui)" }}>
                                     {quickChatError}
                                 </div>
                             )}
@@ -1181,8 +1181,8 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
 
                     <div style={{
                         flexShrink: 0,
-                        borderTop: "1px solid rgba(255,255,255,0.07)",
-                        background: "rgba(8,8,9,0.96)",
+                        borderTop: "1px solid rgba(7,26,47,0.07)",
+                        background: "rgba(255,252,246,0.96)",
                         padding: "12px 16px max(12px, env(safe-area-inset-bottom))",
                     }}>
                         <form
@@ -1195,16 +1195,16 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                             <input
                                 value={quickChatDraft}
                                 onChange={(event) => setQuickChatDraft(event.target.value)}
-                                placeholder="Reply to Forge..."
+                                placeholder="Reply to Navi..."
                                 disabled={quickChatLoading}
                                 style={{
                                     width: "100%",
-                                    background: "rgba(255,255,255,0.04)",
-                                    border: "1px solid rgba(255,255,255,0.08)",
+                                    background: "rgba(7,26,47,0.04)",
+                                    border: "1px solid rgba(7,26,47,0.08)",
                                     borderRadius: 12,
-                                    color: "#F0EDE8",
+                                    color: "var(--color-text)",
                                     fontSize: 14,
-                                    fontFamily: "'DM Sans', sans-serif",
+                                    fontFamily: "var(--tekori-font-ui)",
                                     padding: "12px 13px",
                                     outline: "none",
                                     boxSizing: "border-box",
@@ -1214,13 +1214,13 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                 type="submit"
                                 disabled={!quickChatDraft.trim() || quickChatLoading}
                                 style={{
-                                    background: !quickChatDraft.trim() || quickChatLoading ? "rgba(232,98,42,0.08)" : "linear-gradient(135deg, #E8622A, #c9521e)",
-                                    border: !quickChatDraft.trim() || quickChatLoading ? "1px solid rgba(232,98,42,0.14)" : "1px solid rgba(232,98,42,0.35)",
+                                    background: !quickChatDraft.trim() || quickChatLoading ? "rgba(216,155,43,0.08)" : "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))",
+                                    border: !quickChatDraft.trim() || quickChatLoading ? "1px solid rgba(216,155,43,0.14)" : "1px solid rgba(216,155,43,0.35)",
                                     borderRadius: 12,
-                                    color: !quickChatDraft.trim() || quickChatLoading ? "rgba(232,98,42,0.38)" : "#fff",
+                                    color: !quickChatDraft.trim() || quickChatLoading ? "rgba(216,155,43,0.38)" : "#fff",
                                     fontSize: 13,
                                     fontWeight: 700,
-                                    fontFamily: "'DM Sans', sans-serif",
+                                    fontFamily: "var(--tekori-font-ui)",
                                     cursor: !quickChatDraft.trim() || quickChatLoading ? "default" : "pointer",
                                     padding: "12px 15px",
                                 }}
@@ -1237,15 +1237,15 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                     position: "fixed",
                     inset: 0,
                     zIndex: 260,
-                    background: "radial-gradient(circle at top, rgba(232,98,42,0.06), transparent 34%), rgb(8,8,9)",
+                    background: "radial-gradient(circle at top, rgba(216,155,43,0.06), transparent 34%), rgb(8,8,9)",
                     display: "flex",
                     flexDirection: "column",
-                    color: "#F0EDE8",
+                    color: "var(--color-text)",
                 }}>
                     <div style={{
                         padding: "max(14px, calc(10px + env(safe-area-inset-top))) 18px 14px",
-                        borderBottom: "1px solid rgba(255,255,255,0.06)",
-                        background: "rgba(8,8,9,0.86)",
+                        borderBottom: "1px solid rgba(7,26,47,0.06)",
+                        background: "rgba(255,252,246,0.90)",
                         backdropFilter: "blur(14px)",
                     }}>
                         <div style={{
@@ -1257,19 +1257,19 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                             gap: 12,
                         }}>
                             <div style={{ minWidth: 0 }}>
-                                <div style={{ fontSize: 11, color: "rgba(240,237,232,0.55)", fontFamily: "'DM Sans', sans-serif", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 3 }}>
+                                <div style={{ fontSize: 11, color: "rgba(102,112,133,0.74)", fontFamily: "var(--tekori-font-ui)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 3 }}>
                                     {editingEntry ? "Edit entry" : "New journal entry"}
                                 </div>
-                                <div style={{ fontSize: 15, color: "rgba(240,237,232,0.72)", fontFamily: "'Lora', Georgia, serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                <div style={{ fontSize: 15, color: "rgba(71,84,103,0.88)", fontFamily: "var(--tekori-font-ui)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                                     {editingEntry ? formatDate(editingEntry.createdAt) : new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
                                 </div>
                             </div>
                             <div style={{
                                 fontSize: 12,
-                                color: "rgba(240,237,232,0.42)",
-                                fontFamily: "'DM Sans', sans-serif",
-                                background: "rgba(255,255,255,0.04)",
-                                border: "1px solid rgba(255,255,255,0.07)",
+                                color: "rgba(16,32,51,0.42)",
+                                fontFamily: "var(--tekori-font-ui)",
+                                background: "rgba(7,26,47,0.04)",
+                                border: "1px solid rgba(7,26,47,0.07)",
                                 borderRadius: 999,
                                 padding: "6px 10px",
                                 whiteSpace: "nowrap",
@@ -1280,12 +1280,12 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                 <button
                                     onClick={() => { setWriting(false); setDraft(""); setEditingEntry(null); setSelectedMood(null); }}
                                     style={{
-                                        background: "rgba(255,255,255,0.04)",
-                                        border: "1px solid rgba(255,255,255,0.08)",
+                                        background: "rgba(7,26,47,0.04)",
+                                        border: "1px solid rgba(7,26,47,0.08)",
                                         borderRadius: 9,
-                                        color: "rgba(240,237,232,0.55)",
+                                        color: "rgba(102,112,133,0.74)",
                                         fontSize: 13,
-                                        fontFamily: "'DM Sans', sans-serif",
+                                        fontFamily: "var(--tekori-font-ui)",
                                         cursor: "pointer",
                                         padding: "8px 12px",
                                     }}
@@ -1296,16 +1296,16 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                     onClick={handleSave}
                                     disabled={!draft.trim() || saving}
                                     style={{
-                                        background: !draft.trim() || saving ? "rgba(232,98,42,0.08)" : "linear-gradient(135deg, #E8622A, #c9521e)",
-                                        border: !draft.trim() || saving ? "1px solid rgba(232,98,42,0.14)" : "1px solid rgba(232,98,42,0.35)",
+                                        background: !draft.trim() || saving ? "rgba(216,155,43,0.08)" : "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))",
+                                        border: !draft.trim() || saving ? "1px solid rgba(216,155,43,0.14)" : "1px solid rgba(216,155,43,0.35)",
                                         borderRadius: 9,
-                                        color: !draft.trim() || saving ? "rgba(232,98,42,0.38)" : "#fff",
+                                        color: !draft.trim() || saving ? "rgba(216,155,43,0.38)" : "#fff",
                                         fontSize: 13,
                                         fontWeight: 700,
-                                        fontFamily: "'DM Sans', sans-serif",
+                                        fontFamily: "var(--tekori-font-ui)",
                                         cursor: !draft.trim() || saving ? "default" : "pointer",
                                         padding: "8px 14px",
-                                        boxShadow: !draft.trim() || saving ? "none" : "0 8px 28px rgba(232,98,42,0.24)",
+                                        boxShadow: !draft.trim() || saving ? "none" : "0 8px 28px rgba(216,155,43,0.24)",
                                     }}
                                 >
                                     {saving ? "Saving..." : "Save"}
@@ -1318,7 +1318,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
 
                             {/* Mood selector */}
                             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                                <span style={{ fontSize: 11, color: "rgba(240,237,232,0.55)", fontFamily: "'DM Sans', sans-serif" }}>How are you feeling?</span>
+                                <span style={{ fontSize: 11, color: "rgba(102,112,133,0.74)", fontFamily: "var(--tekori-font-ui)" }}>How are you feeling?</span>
                                 <div style={{ display: "flex", gap: 6 }}>
                                     {MOOD_OPTIONS.map(m => (
                                         <button
@@ -1327,8 +1327,8 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                             title={m.label}
                                             style={{
                                                 fontSize: 20,
-                                                background: selectedMood === m.emoji ? "rgba(232,98,42,0.15)" : "rgba(255,255,255,0.03)",
-                                                border: selectedMood === m.emoji ? "1px solid rgba(232,98,42,0.35)" : "1px solid rgba(255,255,255,0.07)",
+                                                background: selectedMood === m.emoji ? "rgba(216,155,43,0.15)" : "rgba(7,26,47,0.03)",
+                                                border: selectedMood === m.emoji ? "1px solid rgba(216,155,43,0.35)" : "1px solid rgba(7,26,47,0.07)",
                                                 borderRadius: 8,
                                                 width: 36,
                                                 height: 36,
@@ -1352,18 +1352,18 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                             onClick={() => setDraft(t.content)}
                                             style={{
                                                 display: "flex", alignItems: "center", gap: 5,
-                                                background: "rgba(255,255,255,0.03)",
-                                                border: "1px solid rgba(255,255,255,0.08)",
+                                                background: "rgba(7,26,47,0.03)",
+                                                border: "1px solid rgba(7,26,47,0.08)",
                                                 borderRadius: 20,
                                                 padding: "5px 12px",
                                                 fontSize: 11,
-                                                color: "rgba(240,237,232,0.55)",
+                                                color: "rgba(102,112,133,0.74)",
                                                 cursor: "pointer",
-                                                fontFamily: "'DM Sans', sans-serif",
+                                                fontFamily: "var(--tekori-font-ui)",
                                                 transition: "all 0.15s",
                                             }}
-                                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(232,98,42,0.08)"; (e.currentTarget as HTMLElement).style.borderColor = "rgba(232,98,42,0.2)"; (e.currentTarget as HTMLElement).style.color = "#E8622A"; }}
-                                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.03)"; (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.08)"; (e.currentTarget as HTMLElement).style.color = "rgba(240,237,232,0.55)"; }}
+                                            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(216,155,43,0.08)"; (e.currentTarget as HTMLElement).style.borderColor = "rgba(216,155,43,0.2)"; (e.currentTarget as HTMLElement).style.color = "var(--tekori-gold)"; }}
+                                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(7,26,47,0.03)"; (e.currentTarget as HTMLElement).style.borderColor = "rgba(7,26,47,0.08)"; (e.currentTarget as HTMLElement).style.color = "rgba(102,112,133,0.74)"; }}
                                         >
                                             <span>{t.icon}</span>{t.name}
                                         </button>
@@ -1375,8 +1375,8 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                 position: "relative",
                                 minHeight: "calc(100vh - 220px)",
                                 borderRadius: 18,
-                                background: "rgba(255,255,255,0.018)",
-                                border: "1px solid rgba(255,255,255,0.055)",
+                                background: "rgba(7,26,47,0.018)",
+                                border: "1px solid rgba(7,26,47,0.055)",
                                 boxShadow: "0 24px 80px rgba(0,0,0,0.28)",
                                 overflow: "hidden",
                             }}>
@@ -1390,9 +1390,9 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                         minHeight: "62vh",
                                         background: "transparent",
                                         border: "none",
-                                        color: "#F0EDE8",
+                                        color: "var(--color-text)",
                                         fontSize: 18,
-                                        fontFamily: "'Lora', Georgia, serif",
+                                        fontFamily: "var(--tekori-font-ui)",
                                         lineHeight: 2,
                                         padding: "30px 30px 110px",
                                         boxSizing: "border-box",
@@ -1403,19 +1403,19 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                 {!draft.trim() && (
                                     <div style={{
                                         margin: "-76px 30px 96px",
-                                        background: "rgba(255,255,255,0.035)",
-                                        border: "1px solid rgba(255,255,255,0.075)",
+                                        background: "rgba(7,26,47,0.035)",
+                                        border: "1px solid rgba(7,26,47,0.075)",
                                         borderRadius: 14,
                                         padding: "14px 16px",
-                                        color: "rgba(240,237,232,0.42)",
-                                        fontFamily: "'DM Sans', sans-serif",
+                                        color: "rgba(16,32,51,0.42)",
+                                        fontFamily: "var(--tekori-font-ui)",
                                         position: "relative",
                                         zIndex: 1,
                                     }}>
-                                        <div style={{ fontSize: 11, marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(240,237,232,0.32)" }}>Try writing about</div>
+                                        <div style={{ fontSize: 11, marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(102,112,133,0.54)" }}>Try writing about</div>
                                         <div style={{ display: "grid", gap: 8 }}>
                                             {writingPrompts.map(prompt => (
-                                                <div key={prompt} style={{ fontSize: 13, lineHeight: 1.5, color: "rgba(240,237,232,0.7)" }}>
+                                                <div key={prompt} style={{ fontSize: 13, lineHeight: 1.5, color: "rgba(71,84,103,0.88)" }}>
                                                     {prompt}
                                                 </div>
                                             ))}
@@ -1432,23 +1432,23 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                     alignItems: "center",
                                     gap: 12,
                                     padding: "14px 18px",
-                                    background: "linear-gradient(to top, rgba(8,8,9,0.98), rgba(8,8,9,0.72))",
-                                    borderTop: "1px solid rgba(255,255,255,0.055)",
+                                    background: "linear-gradient(to top, rgba(255,252,246,0.98), rgba(7,26,47,0.28))",
+                                    borderTop: "1px solid rgba(7,26,47,0.055)",
                                 }}>
-                                    <div style={{ fontSize: 12, color: "rgba(240,237,232,0.32)", fontFamily: "'DM Sans', sans-serif" }}>
+                                    <div style={{ fontSize: 12, color: "rgba(102,112,133,0.54)", fontFamily: "var(--tekori-font-ui)" }}>
                                         Private founder note
                                     </div>
                                     <div style={{
                                         width: 38,
                                         height: 38,
                                         borderRadius: "50%",
-                                        background: "rgba(232,98,42,0.1)",
-                                        border: "1px solid rgba(232,98,42,0.22)",
+                                        background: "rgba(216,155,43,0.1)",
+                                        border: "1px solid rgba(216,155,43,0.22)",
                                         display: "flex",
                                         alignItems: "center",
                                         justifyContent: "center",
                                     }}>
-                                        <MicButton value={draft} onChange={setDraft} size={20} idleColor="#E8622A" />
+                                        <MicButton value={draft} onChange={setDraft} size={20} idleColor="var(--tekori-gold)" />
                                     </div>
                                 </div>
                             </div>

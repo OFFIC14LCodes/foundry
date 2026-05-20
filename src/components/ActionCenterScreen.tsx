@@ -31,7 +31,7 @@ const priorityOptions: Array<FoundryActionPriority | "all"> = ["all", "critical"
 const manualPriorityOptions: FoundryActionPriority[] = ["medium", "high", "critical", "low"];
 const manualActionTypeOptions: Array<{ value: FoundryActionType; label: string }> = [
     { value: "task", label: "Task" },
-    { value: "forge_followup", label: "Forge follow-up" },
+    { value: "forge_followup", label: "Navi follow-up" },
     { value: "market_followup", label: "Market follow-up" },
     { value: "canvas_update", label: "Canvas update" },
     { value: "document_create", label: "Create document" },
@@ -238,15 +238,15 @@ export default function ActionCenterScreen({ userId, onBack, onOpenNav, onAskFor
     };
 
     return (
-        <div style={{ position: "fixed", inset: 0, zIndex: 130, background: "var(--foundry-bg-app)", color: "var(--foundry-text-primary)", fontFamily: "'Lora', Georgia, serif", display: "flex", flexDirection: "column" }}>
-            <div style={{ padding: "max(12px, calc(7px + env(safe-area-inset-top))) 16px 12px", borderBottom: "1px solid var(--foundry-border-subtle)", display: "flex", alignItems: "center", gap: 12, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)" }}>
+        <div style={{ position: "fixed", inset: 0, zIndex: 130, background: "var(--foundry-bg-app)", color: "var(--foundry-text-primary)", fontFamily: "var(--tekori-font-ui)", display: "flex", flexDirection: "column" }}>
+            <div style={{ padding: "max(12px, calc(7px + env(safe-area-inset-top))) 16px 12px", borderBottom: "1px solid var(--foundry-border-subtle)", display: "flex", alignItems: "center", gap: 12, background: "rgba(255,252,246,0.94)", backdropFilter: "blur(12px)" }}>
                 <button className="foundry-btn foundry-btn--ghost" onClick={onOpenNav ?? onBack} style={{ padding: "8px 11px", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg>
                 </button>
                 <Logo variant="flame" style={{ width: 34, height: 34, objectFit: "contain" }} />
                 <div style={{ minWidth: 0 }}>
                     <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                        <div style={{ fontSize: 28, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 800, lineHeight: 1 }}>Action Center</div>
+                        <div style={{ fontSize: 28, fontFamily: "var(--tekori-font-brand)", fontWeight: 800, lineHeight: 1 }}>Action Center</div>
                         <HelpTooltip content="The bridge from insight to what happens next." side="bottom" />
                     </div>
                 </div>
@@ -265,11 +265,11 @@ export default function ActionCenterScreen({ userId, onBack, onOpenNav, onAskFor
                         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
                             <div>
                                 <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                                    <div style={{ fontSize: 17, color: "#F0EDE8", fontWeight: 900 }}>Add action manually</div>
+                                    <div style={{ fontSize: 17, color: "var(--color-text)", fontWeight: 900 }}>Add action manually</div>
                                     <HelpTooltip content="Create an action directly when you already know what needs to happen." />
                                 </div>
                             </div>
-                            {manualNotice && <div style={{ color: manualNotice.includes("added") ? "#4CAF8A" : "#C8A96E", fontSize: 12, fontWeight: 800 }}>{manualNotice}</div>}
+                            {manualNotice && <div style={{ color: manualNotice.includes("added") ? "var(--color-success)" : "var(--tekori-amber)", fontSize: 12, fontWeight: 800 }}>{manualNotice}</div>}
                         </div>
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
                             <TextField label="Action title" value={manualTitle} onChange={setManualTitle} placeholder="Follow up with three discovery leads" />
@@ -292,20 +292,20 @@ export default function ActionCenterScreen({ userId, onBack, onOpenNav, onAskFor
                     </div>
 
                     {loading ? (
-                        <div style={{ color: "#77716A", fontSize: 13, padding: 24 }}>Loading actions...</div>
+                        <div style={{ color: "var(--color-text-muted)", fontSize: 13, padding: 24 }}>Loading actions...</div>
                     ) : error ? (
                         <div className="foundry-module-card" style={{ padding: 22 }}>
-                            <div style={{ fontSize: 22, fontWeight: 800, color: "#F0EDE8", marginBottom: 8 }}>Actions did not load</div>
-                            <div style={{ fontSize: 13, color: "#9D978E", lineHeight: 1.7, marginBottom: 14 }}>{error}</div>
+                            <div style={{ fontSize: 22, fontWeight: 800, color: "var(--color-text)", marginBottom: 8 }}>Actions did not load</div>
+                            <div style={{ fontSize: 13, color: "var(--color-text-muted)", lineHeight: 1.7, marginBottom: 14 }}>{error}</div>
                             <button className="foundry-btn foundry-btn--primary" type="button" onClick={reload} style={{ padding: "8px 12px", fontSize: 12 }}>
                                 Retry
                             </button>
                         </div>
                     ) : filteredActions.length === 0 ? (
                         <div className="foundry-module-card" style={{ padding: 22 }}>
-                            <div style={{ fontSize: 22, fontWeight: 800, color: "#F0EDE8", marginBottom: 8 }}>{actions.length === 0 ? "No actions yet" : "No actions match these filters"}</div>
+                            <div style={{ fontSize: 22, fontWeight: 800, color: "var(--color-text)", marginBottom: 8 }}>{actions.length === 0 ? "No actions yet" : "No actions match these filters"}</div>
                             <HelpTooltip content={actions.length === 0
-                                ? "Actions start inside Market Intelligence, Weekly Intelligence, Forge Academy, and the Business Model Canvas. Look for the next-action card when an insight needs a decision or follow-up."
+                                ? "Actions start inside Market Intelligence, Weekly Intelligence, Navi Academy, and the Business Model Canvas. Look for the next-action card when an insight needs a decision or follow-up."
                                 : "Adjust the status, priority, or source filters to find the work you want to review."} />
                         </div>
                     ) : (
@@ -315,11 +315,11 @@ export default function ActionCenterScreen({ userId, onBack, onOpenNav, onAskFor
                                     <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "end", padding: "4px 2px 0" }}>
                                         <div>
                                             <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                                                <div style={{ fontSize: 17, color: "#F0EDE8", fontWeight: 900 }}>{section.title}</div>
+                                                <div style={{ fontSize: 17, color: "var(--color-text)", fontWeight: 900 }}>{section.title}</div>
                                                 <HelpTooltip content={section.description} />
                                             </div>
                                         </div>
-                                        <div style={{ fontSize: 11, color: "#8FC8F6", fontWeight: 900, fontFamily: "'DM Sans', system-ui, sans-serif" }}>{section.actions.length}</div>
+                                        <div style={{ fontSize: 11, color: "var(--tekori-slate-navy)", fontWeight: 900, fontFamily: "var(--tekori-font-ui)" }}>{section.actions.length}</div>
                                     </div>
                                     {section.actions.map((action) => {
                                         const nextStatus = getNextActionStatus(action.status);
@@ -342,10 +342,10 @@ export default function ActionCenterScreen({ userId, onBack, onOpenNav, onAskFor
                                                     onAskForge={() => onAskForge(buildForgePromptForAction(action))}
                                                 />
                                                 {showOutcomePrompt && (
-                                                    <div style={{ marginLeft: 10, borderLeft: "2px solid rgba(255,255,255,0.08)", padding: "10px 0 10px 12px", display: "grid", gap: 9 }}>
+                                                    <div style={{ marginLeft: 10, borderLeft: "2px solid rgba(7,26,47,0.08)", padding: "10px 0 10px 12px", display: "grid", gap: 9 }}>
                                                         <div>
                                                             <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                                                                <div style={{ fontSize: 14, fontWeight: 900, color: "#F0EDE8" }}>Did this work?</div>
+                                                                <div style={{ fontSize: 14, fontWeight: 900, color: "var(--color-text)" }}>Did this work?</div>
                                                                 <HelpTooltip content="Optional. Capture the result while it is still fresh." />
                                                             </div>
                                                         </div>
@@ -354,7 +354,7 @@ export default function ActionCenterScreen({ userId, onBack, onOpenNav, onAskFor
                                                             onChange={(event) => setOutcomeNotes(event.target.value)}
                                                             placeholder="Short note, optional"
                                                             rows={2}
-                                                            style={{ width: "100%", boxSizing: "border-box", resize: "vertical", borderRadius: 12, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.035)", color: "#F0EDE8", padding: 10, fontSize: 12, fontFamily: "'DM Sans', system-ui, sans-serif", outline: "none" }}
+                                                            style={{ width: "100%", boxSizing: "border-box", resize: "vertical", borderRadius: 12, border: "1px solid rgba(7,26,47,0.08)", background: "rgba(7,26,47,0.035)", color: "var(--color-text)", padding: 10, fontSize: 12, fontFamily: "var(--tekori-font-ui)", outline: "none" }}
                                                         />
                                                         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                                                             <OutcomeButton label="Yes" tone="success" onClick={() => saveOutcome(action, "success")} />
@@ -381,8 +381,8 @@ export default function ActionCenterScreen({ userId, onBack, onOpenNav, onAskFor
 
 function OutcomeButton({ label, tone, onClick }: { label: string; tone: "success" | "partial" | "failed"; onClick: () => void }) {
     const styles = {
-        success: { border: "1px solid rgba(76,175,138,0.32)", background: "rgba(76,175,138,0.12)", color: "#4CAF8A" },
-        partial: { border: "1px solid rgba(200,169,110,0.32)", background: "rgba(200,169,110,0.12)", color: "#C8A96E" },
+        success: { border: "1px solid rgba(76,175,138,0.32)", background: "rgba(76,175,138,0.12)", color: "var(--color-success)" },
+        partial: { border: "1px solid rgba(200,169,110,0.32)", background: "rgba(200,169,110,0.12)", color: "var(--tekori-amber)" },
         failed: { border: "1px solid rgba(240,93,94,0.32)", background: "rgba(240,93,94,0.12)", color: "#F05D5E" },
     };
     return (
@@ -410,8 +410,8 @@ function getStatusDescription(status: FoundryActionStatus) {
 function Metric({ label, value }: { label: string; value: number }) {
     return (
         <div className="foundry-module-card foundry-panel-in" style={{ padding: "13px 14px" }}>
-            <div style={{ fontSize: 11, color: "#8D857C", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 5, fontFamily: "'DM Sans', system-ui, sans-serif", fontWeight: 800 }}>{label}</div>
-            <div style={{ fontSize: 24, color: "#F0EDE8", fontWeight: 900 }}>{value}</div>
+            <div style={{ fontSize: 11, color: "var(--color-text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 5, fontFamily: "var(--tekori-font-ui)", fontWeight: 800 }}>{label}</div>
+            <div style={{ fontSize: 24, color: "var(--color-text)", fontWeight: 900 }}>{value}</div>
         </div>
     );
 }
@@ -498,11 +498,11 @@ function SelectField({
 }
 
 const fieldLabelStyle = {
-    color: "#8D857C",
+    color: "var(--color-text-muted)",
     fontSize: 11,
     textTransform: "uppercase",
     letterSpacing: "0.1em",
-    fontFamily: "'DM Sans', system-ui, sans-serif",
+    fontFamily: "var(--tekori-font-ui)",
     fontWeight: 800,
 } as const;
 
@@ -510,19 +510,19 @@ const fieldInputStyle = {
     width: "100%",
     boxSizing: "border-box",
     borderRadius: 10,
-    border: "1px solid rgba(255,255,255,0.08)",
-    background: "rgba(255,255,255,0.035)",
-    color: "#F0EDE8",
+    border: "1px solid rgba(7,26,47,0.08)",
+    background: "rgba(7,26,47,0.035)",
+    color: "var(--color-text)",
     padding: "10px 11px",
     fontSize: 13,
-    fontFamily: "'DM Sans', system-ui, sans-serif",
+    fontFamily: "var(--tekori-font-ui)",
     outline: "none",
 } as const;
 
 function FilterRow({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (value: string) => void }) {
     return (
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-            <div style={{ width: 58, color: "#77716A", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "'DM Sans', system-ui, sans-serif", fontWeight: 800 }}>{label}</div>
+            <div style={{ width: 58, color: "var(--color-text-muted)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "var(--tekori-font-ui)", fontWeight: 800 }}>{label}</div>
             {options.map((option) => (
                 <button
                     key={option}
@@ -531,9 +531,9 @@ function FilterRow({ label, value, options, onChange }: { label: string; value: 
                     className="foundry-interactive"
                     style={{
                         borderRadius: 999,
-                        border: value === option ? "1px solid rgba(99,179,237,0.24)" : "1px solid rgba(255,255,255,0.08)",
-                        background: value === option ? "rgba(99,179,237,0.1)" : "rgba(255,255,255,0.03)",
-                        color: value === option ? "#8FC8F6" : "#9D978E",
+                        border: value === option ? "1px solid rgba(142,160,181,0.24)" : "1px solid rgba(7,26,47,0.08)",
+                        background: value === option ? "rgba(142,160,181,0.1)" : "rgba(7,26,47,0.03)",
+                        color: value === option ? "var(--tekori-slate-navy)" : "var(--color-text-muted)",
                         padding: "6px 9px",
                         fontSize: 11,
                         cursor: "pointer",

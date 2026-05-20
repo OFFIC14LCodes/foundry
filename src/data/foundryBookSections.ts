@@ -25,14 +25,14 @@ export type FoundryBookSection = {
 export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   {
     "id": "s1_intro",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 1,
     "stage_label": "Idea",
     "chapter_name": "The Most Expensive Mistake in Business",
     "section_name": "The Most Expensive Mistake in Business",
-    "content": "The most expensive mistake in business is building something nobody wants. Not building it badly. Not building it slowly. Building the wrong thing entirely.\n\nThis mistake destroys more startups than bad code, difficult partnerships, regulatory challenges, and economic downturns combined. It's the silent killer that looks like progress right up until the moment you realize you've spent eighteen months and half a million dollars creating something that solves a problem nobody actually has.\n\nThe pattern is always the same. A founder has an elegant idea for software that automates a workflow they're certain people hate doing manually. The assumptions are logical. The execution is flawless. The technology works perfectly.\n\nNobody buys it.\n\nThey spend months in customer meetings where people nod enthusiastically, compliment the vision, and ask intelligent questions about implementation. This gets interpreted as validation. Money gets raised, engineers get hired, and the product gets built exactly as those customers said they wanted.\n\nWhen it launches, crickets. The same people who praised the concept suddenly discover they're \"evaluating other solutions\" or \"waiting for next quarter's budget cycle.\" The company burns through funding desperately trying to figure out what went wrong.\n\nThe answer is always simple: they confused politeness for demand. They mistook theoretical problems for real pain. They built a solution before proving the problem existed.\n\nThis is the validation trap, and it's where most founders get stuck. You have an idea. You talk to potential customers. They say they like it. You build it. Then you discover that \"liking\" an idea and \"paying for\" a solution are completely different things.\n\nThe problem isn't that customers lie to you — it's that they don't know what they'll actually do until they have to decide. Everyone thinks they want to eat healthier until they're standing in front of the refrigerator at 9 PM. Everyone thinks they'd pay for software that saves them time until they have to choose between your invoice and their mortgage payment.\n\nStage 1 of The Foundry Method exists to prevent this mistake. Before you write a line of code, before you hire anyone, before you quit your job or raise money or rent office space, you're going to prove that the problem you want to solve is real and that people will pay you to solve it.\n\nThis isn't market research. It's not focus groups or surveys or competitive analysis. It's detective work. You're looking for evidence — not opinions — that your potential customers are already spending time, money, or attention trying to solve the problem you think you can solve better.\n\nThe companies that survive Stage 1 don't have better ideas than the ones that fail. They have better evidence. They've done the hard work of separating what people say they want from what people actually need. They've found customers who aren't just interested in their solution — they're actively looking for it.\n\nThis changes everything that comes after. When you build something people genuinely want, marketing becomes easier because you're describing a solution to a problem they already know they have. Sales becomes easier because you're talking to people who are already spending money on inferior alternatives. Fundraising becomes easier because you have proof, not just projections.\n\nBut if you skip this validation, if you build first and validate later, you'll spend the next two years trying to convince people they have a problem you've already decided to solve. That's not building a business. That's building a very expensive hobby.\n\nThe stakes are real. According to CB Insights, 42% of startups fail because there's no market need for their product. Not because the product was bad, because the market didn't exist. These weren't lazy founders or incompetent teams. They were smart people who made the most expensive mistake in business.\n\nThe good news is this mistake is completely preventable. You just have to be willing to do the work before the work feels important. You have to validate the problem before you fall in love with your solution. You have to prove demand exists before you commit everything to creating supply.\n\nThat's what Stage 1 teaches you to do. Not just how to have conversations with customers, but how to structure those conversations so they reveal truth instead of collecting polite lies. Not just how to identify problems, but how to distinguish between problems people have and problems people will pay to solve. Not just how to test demand, but how to recognize real commitment versus enthusiastic curiosity.\n\nBy the end of Stage 1, you'll know whether you have a business worth building. Not because you've built it yet, but because you've proven the market is already looking for what you want to create. You'll have evidence that the problem is real, the customer is specific, and the willingness to pay exists.\n\nAnd if you discover your initial idea doesn't validate? You'll know that too, before you've spent a year and a fortune building something nobody wants. That's not failure. That's the system working exactly as designed.\n\nThe most expensive mistake in business is building something nobody wants. Stage 1 makes sure that never happens to you.",
+    "content": "The most expensive mistake in business is building something nobody wants. Not building it badly. Not building it slowly. Building the wrong thing entirely.\n\nThis mistake destroys more startups than bad code, difficult partnerships, regulatory challenges, and economic downturns combined. It's the silent killer that looks like progress right up until the moment you realize you've spent eighteen months and half a million dollars creating something that solves a problem nobody actually has.\n\nThe pattern is always the same. A founder has an elegant idea for software that automates a workflow they're certain people hate doing manually. The assumptions are logical. The execution is flawless. The technology works perfectly.\n\nNobody buys it.\n\nThey spend months in customer meetings where people nod enthusiastically, compliment the vision, and ask intelligent questions about implementation. This gets interpreted as validation. Money gets raised, engineers get hired, and the product gets built exactly as those customers said they wanted.\n\nWhen it launches, crickets. The same people who praised the concept suddenly discover they're \"evaluating other solutions\" or \"waiting for next quarter's budget cycle.\" The company burns through funding desperately trying to figure out what went wrong.\n\nThe answer is always simple: they confused politeness for demand. They mistook theoretical problems for real pain. They built a solution before proving the problem existed.\n\nThis is the validation trap, and it's where most founders get stuck. You have an idea. You talk to potential customers. They say they like it. You build it. Then you discover that \"liking\" an idea and \"paying for\" a solution are completely different things.\n\nThe problem isn't that customers lie to you — it's that they don't know what they'll actually do until they have to decide. Everyone thinks they want to eat healthier until they're standing in front of the refrigerator at 9 PM. Everyone thinks they'd pay for software that saves them time until they have to choose between your invoice and their mortgage payment.\n\nStage 1 of The Tekori Method exists to prevent this mistake. Before you write a line of code, before you hire anyone, before you quit your job or raise money or rent office space, you're going to prove that the problem you want to solve is real and that people will pay you to solve it.\n\nThis isn't market research. It's not focus groups or surveys or competitive analysis. It's detective work. You're looking for evidence — not opinions — that your potential customers are already spending time, money, or attention trying to solve the problem you think you can solve better.\n\nThe companies that survive Stage 1 don't have better ideas than the ones that fail. They have better evidence. They've done the hard work of separating what people say they want from what people actually need. They've found customers who aren't just interested in their solution — they're actively looking for it.\n\nThis changes everything that comes after. When you build something people genuinely want, marketing becomes easier because you're describing a solution to a problem they already know they have. Sales becomes easier because you're talking to people who are already spending money on inferior alternatives. Fundraising becomes easier because you have proof, not just projections.\n\nBut if you skip this validation, if you build first and validate later, you'll spend the next two years trying to convince people they have a problem you've already decided to solve. That's not building a business. That's building a very expensive hobby.\n\nThe stakes are real. According to CB Insights, 42% of startups fail because there's no market need for their product. Not because the product was bad, because the market didn't exist. These weren't lazy founders or incompetent teams. They were smart people who made the most expensive mistake in business.\n\nThe good news is this mistake is completely preventable. You just have to be willing to do the work before the work feels important. You have to validate the problem before you fall in love with your solution. You have to prove demand exists before you commit everything to creating supply.\n\nThat's what Stage 1 teaches you to do. Not just how to have conversations with customers, but how to structure those conversations so they reveal truth instead of collecting polite lies. Not just how to identify problems, but how to distinguish between problems people have and problems people will pay to solve. Not just how to test demand, but how to recognize real commitment versus enthusiastic curiosity.\n\nBy the end of Stage 1, you'll know whether you have a business worth building. Not because you've built it yet, but because you've proven the market is already looking for what you want to create. You'll have evidence that the problem is real, the customer is specific, and the willingness to pay exists.\n\nAnd if you discover your initial idea doesn't validate? You'll know that too, before you've spent a year and a fortune building something nobody wants. That's not failure. That's the system working exactly as designed.\n\nThe most expensive mistake in business is building something nobody wants. Stage 1 makes sure that never happens to you.",
     "page_start": null,
     "page_end": null,
     "paragraph_start": 1,
@@ -96,7 +96,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
         "paragraph_number": 10,
         "page": null,
         "chunk_index": 10,
-        "content": "Stage 1 of The Foundry Method exists to prevent this mistake. Before you write a line of code, before you hire anyone, before you quit your job or raise money or rent office space, you're going to prove that the problem you want to solve is real and that people will pay you to solve it."
+        "content": "Stage 1 of The Tekori Method exists to prevent this mistake. Before you write a line of code, before you hire anyone, before you quit your job or raise money or rent office space, you're going to prove that the problem you want to solve is real and that people will pay you to solve it."
       },
       {
         "paragraph_number": 11,
@@ -162,7 +162,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s1_problem",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 1,
@@ -293,7 +293,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s1_customer",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 1,
@@ -448,7 +448,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s1_discovery",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 1,
@@ -603,7 +603,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s1_signals",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 1,
@@ -782,7 +782,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s1_validation",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 1,
@@ -931,7 +931,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s1_pmf",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 1,
@@ -1038,7 +1038,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s1_pivot",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 1,
@@ -1199,7 +1199,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s1_ready",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 1,
@@ -1342,7 +1342,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s2_intro",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 2,
@@ -1575,7 +1575,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s2_model",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 2,
@@ -1820,7 +1820,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s2_canvas",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 2,
@@ -1957,7 +1957,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s2_revenue",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 2,
@@ -2142,7 +2142,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s2_competition",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 2,
@@ -2279,7 +2279,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s2_advantage",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 2,
@@ -2422,7 +2422,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s2_hedgehog",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 2,
@@ -2589,7 +2589,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s2_traction",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 2,
@@ -2792,7 +2792,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s2_ready",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 2,
@@ -3001,7 +3001,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s3_intro",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 3,
@@ -3192,7 +3192,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s3_entities",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 3,
@@ -3401,7 +3401,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s3_llc",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 3,
@@ -3598,7 +3598,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s3_tax",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 3,
@@ -3807,7 +3807,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s3_ip",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 3,
@@ -4010,7 +4010,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s3_contracts",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 3,
@@ -4171,7 +4171,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s3_banking",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 3,
@@ -4338,7 +4338,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s3_ready",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 3,
@@ -4529,7 +4529,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s4_intro",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 4,
@@ -4636,7 +4636,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s4_basics",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 4,
@@ -4809,7 +4809,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s4_cashflow",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 4,
@@ -4928,7 +4928,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s4_runway",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 4,
@@ -5101,7 +5101,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s4_pricing",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 4,
@@ -5232,7 +5232,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s4_unit",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 4,
@@ -5405,7 +5405,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s4_profit",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 4,
@@ -5590,7 +5590,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s4_projections",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 4,
@@ -5769,7 +5769,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s4_ready",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 4,
@@ -5936,7 +5936,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s5_intro",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 5,
@@ -6055,7 +6055,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s5_offer",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 5,
@@ -6210,7 +6210,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s5_beachhead",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 5,
@@ -6431,7 +6431,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s5_sales",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 5,
@@ -6622,7 +6622,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s5_leads",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 5,
@@ -6765,7 +6765,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s5_launch",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 5,
@@ -6926,7 +6926,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s5_retention",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 5,
@@ -7147,7 +7147,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s5_ready",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 5,
@@ -7326,7 +7326,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s6_intro",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 6,
@@ -7439,7 +7439,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s6_systems",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 6,
@@ -7630,7 +7630,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s6_people",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 6,
@@ -7803,7 +7803,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s6_culture",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 6,
@@ -7982,7 +7982,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s6_mentality",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 6,
@@ -8173,7 +8173,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s6_metrics",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 6,
@@ -8412,7 +8412,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s6_inflection",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 6,
@@ -8549,7 +8549,7 @@ export const FOUNDRY_BOOK_SECTIONS: FoundryBookSection[] = [
   },
   {
     "id": "s6_legacy",
-    "source_title": "The Foundry Method",
+    "source_title": "The Tekori Method",
     "source_version": "tfm-locked-text-v1",
     "source_edition": "Locked text snapshot with stable section and paragraph numbering; page citations unavailable in this edition.",
     "stage_id": 6,

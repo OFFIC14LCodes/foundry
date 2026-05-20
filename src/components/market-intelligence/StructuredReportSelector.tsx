@@ -34,17 +34,17 @@ export default function StructuredReportSelector({
                     display: "flex",
                     alignItems: "center",
                     gap: 6,
-                    background: open ? "rgba(99,179,237,0.08)" : "rgba(255,255,255,0.03)",
-                    border: open ? "1px solid rgba(99,179,237,0.2)" : "1px solid rgba(255,255,255,0.08)",
+                    background: open ? "rgba(142,160,181,0.08)" : "rgba(7,26,47,0.03)",
+                    border: open ? "1px solid rgba(142,160,181,0.2)" : "1px solid rgba(7,26,47,0.08)",
                     borderRadius: 8,
                     padding: "7px 11px",
                     cursor: "pointer",
                     whiteSpace: "nowrap",
-                    fontFamily: "'DM Sans', system-ui, sans-serif",
+                    fontFamily: "var(--tekori-font-ui)",
                 }}
             >
                 <span style={{ fontSize: 11, color: "var(--foundry-text-secondary)", fontWeight: 500 }}>Report:</span>
-                <span style={{ fontSize: 12, color: "#63B3ED", fontWeight: 700 }}>
+                <span style={{ fontSize: 12, color: "var(--tekori-muted-text)", fontWeight: 700 }}>
                     {currentReport ? formatReportDate(currentReport.date) : "None"}
                 </span>
                 <span style={{ fontSize: 9, color: "var(--foundry-text-muted)", marginLeft: 2 }}>{open ? "▲" : "▼"}</span>
@@ -55,8 +55,8 @@ export default function StructuredReportSelector({
                     position: "absolute",
                     top: "calc(100% + 6px)",
                     right: 0,
-                    background: "#111213",
-                    border: "1px solid rgba(255,255,255,0.1)",
+                    background: "var(--color-surface-elevated)",
+                    border: "1px solid rgba(7,26,47,0.1)",
                     borderRadius: 12,
                     padding: 8,
                     zIndex: 200,
@@ -76,19 +76,19 @@ export default function StructuredReportSelector({
                                 style={{
                                     width: "100%",
                                     textAlign: "left",
-                                    background: selected ? "rgba(99,179,237,0.1)" : "transparent",
-                                    border: selected ? "1px solid rgba(99,179,237,0.22)" : "1px solid transparent",
+                                    background: selected ? "rgba(142,160,181,0.1)" : "transparent",
+                                    border: selected ? "1px solid rgba(142,160,181,0.22)" : "1px solid transparent",
                                     borderRadius: 8,
                                     padding: "9px 11px",
-                                    color: "#F0EDE8",
+                                    color: "var(--color-text)",
                                     cursor: "pointer",
                                 }}
                             >
                                 <div style={{
                                     fontSize: 13,
                                     fontWeight: 600,
-                                    color: selected ? "#63B3ED" : "#C8C4BE",
-                                    fontFamily: "'DM Sans', system-ui, sans-serif",
+                                    color: selected ? "var(--tekori-muted-text)" : "var(--color-text-soft)",
+                                    fontFamily: "var(--tekori-font-ui)",
                                 }}>
                                     {formatReportDate(entry.date)}
                                 </div>

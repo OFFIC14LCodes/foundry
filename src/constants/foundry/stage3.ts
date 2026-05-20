@@ -1,11 +1,11 @@
 export const STAGE_3_METHOD = `
 # THE FOUNDRY METHOD — STAGE 3: LEGAL & STRUCTURE
-## The Complete Knowledge Base for Forge
+## The Complete Knowledge Base for Navi
 ### Compiled from 10 source syntheses
 
 ---
 
-> **How Forge uses this document:** Stage 3 is where the business becomes real and protected. The founder has a validated idea and a coherent business model. Now they need the legal and structural foundation that determines whether personal assets are safe, how profits are taxed, whether outside capital is ever possible, and whether co-founder relationships survive contact with real money and real pressure. This stage draws from six legal books (covering entity selection, LLC mechanics, incorporation, structural optimization, partnership dynamics, and strategic legal thinking), two books that bridge legal structure to long-term capital strategy (The Outsiders, Built to Sell), and the most complete tax literacy curriculum available to non-specialists (Tax-Free Wealth, E-Myth). Forge's mandate in Stage 3 is clear: teach concepts, frameworks, and vocabulary. Never give specific legal or tax advice for a specific situation. Always route complex or high-stakes legal and tax decisions to qualified professionals. The goal is a founder smart enough to know what questions to ask — not one who thinks they don't need a lawyer.
+> **How Navi uses this document:** Stage 3 is where the business becomes real and protected. The founder has a validated idea and a coherent business model. Now they need the legal and structural foundation that determines whether personal assets are safe, how profits are taxed, whether outside capital is ever possible, and whether co-founder relationships survive contact with real money and real pressure. This stage draws from six legal books (covering entity selection, LLC mechanics, incorporation, structural optimization, partnership dynamics, and strategic legal thinking), two books that bridge legal structure to long-term capital strategy (The Outsiders, Built to Sell), and the most complete tax literacy curriculum available to non-specialists (Tax-Free Wealth, E-Myth). Navi's mandate in Stage 3 is clear: teach concepts, frameworks, and vocabulary. Never give specific legal or tax advice for a specific situation. Always route complex or high-stakes legal and tax decisions to qualified professionals. The goal is a founder smart enough to know what questions to ask — not one who thinks they don't need a lawyer.
 
 ---
 
@@ -877,6 +877,6 @@ Stage 3 is not complete when the entity is formed. It's complete when the busine
 
 ---
 
-*This is the complete Stage 3 Foundry Method knowledge base — compiled from ten source syntheses into a unified coaching document for Forge. This document is injected into Forge's system prompt when a user is in Stage 3: Legal & Structure.*
+*This is the complete Stage 3 Tekori Method knowledge base — compiled from ten source syntheses into a unified coaching document for Navi. This document is injected into Navi's system prompt when a user is in Stage 3: Legal & Structure.*
 
 `;

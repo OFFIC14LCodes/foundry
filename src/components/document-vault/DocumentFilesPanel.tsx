@@ -22,23 +22,23 @@ export default function DocumentFilesPanel(props: {
     } = props;
 
     return (
-        <div style={{ border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, background: "rgba(255,255,255,0.018)", overflow: "hidden" }}>
-            <div style={{ padding: "12px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
+        <div style={{ border: "1px solid rgba(7,26,47,0.06)", borderRadius: 14, background: "rgba(7,26,47,0.018)", overflow: "hidden" }}>
+            <div style={{ padding: "12px 14px", borderBottom: "1px solid rgba(7,26,47,0.05)", display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
                 <div>
-                    <div style={{ fontSize: 13, color: "#F0EDE8", fontWeight: 600 }}>Files</div>
+                    <div style={{ fontSize: 13, color: "var(--color-text)", fontWeight: 600 }}>Files</div>
                     <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", marginTop: 2 }}>Attachments plus saved vault artifacts</div>
                 </div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     <button
                         onClick={onOpenUploadPicker}
                         disabled={disabled || uploadingFile}
-                        style={{ padding: "7px 10px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, color: "#C8C4BE", fontSize: 11, cursor: uploadingFile ? "wait" : "pointer", fontFamily: "'Lora', Georgia, serif" }}
+                        style={{ padding: "7px 10px", background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 8, color: "var(--color-text-soft)", fontSize: 11, cursor: uploadingFile ? "wait" : "pointer", fontFamily: "var(--tekori-font-ui)" }}
                     >
                         {uploadingFile ? "Uploading..." : "Upload Attachment"}
                     </button>
                     <button
                         onClick={onRefresh}
-                        style={{ padding: "7px 10px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, color: "rgba(240,237,232,0.62)", fontSize: 11, cursor: "pointer", fontFamily: "'Lora', Georgia, serif" }}
+                        style={{ padding: "7px 10px", background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 8, color: "var(--color-text-muted)", fontSize: 11, cursor: "pointer", fontFamily: "var(--tekori-font-ui)" }}
                     >
                         Refresh
                     </button>
@@ -64,14 +64,14 @@ export default function DocumentFilesPanel(props: {
                         style={{
                             padding: "11px 12px",
                             borderRadius: 12,
-                            border: "1px solid rgba(255,255,255,0.06)",
-                            background: "rgba(255,255,255,0.018)",
+                            border: "1px solid rgba(7,26,47,0.06)",
+                            background: "rgba(7,26,47,0.018)",
                             marginBottom: 8,
                         }}
                     >
                         <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginBottom: 4, alignItems: "flex-start" }}>
                             <div style={{ minWidth: 0 }}>
-                                <div style={{ fontSize: 12, color: "#F0EDE8", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{file.filename}</div>
+                                <div style={{ fontSize: 12, color: "var(--color-text)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{file.filename}</div>
                                 <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", marginTop: 3 }}>
                                     <NeutralBadge label={FILE_KIND_LABELS[file.fileKind]} />
                                     <span style={{ fontSize: 10, color: "var(--foundry-text-muted)" }}>{formatFileSize(file.fileSize)}</span>
@@ -85,14 +85,14 @@ export default function DocumentFilesPanel(props: {
                                 <button
                                     onClick={() => onOpenFile(file.id)}
                                     disabled={fileActionId === file.id}
-                                    style={{ padding: "5px 9px", background: "rgba(232,98,42,0.08)", border: "1px solid rgba(232,98,42,0.18)", borderRadius: 8, color: "#E8622A", fontSize: 10, cursor: fileActionId === file.id ? "wait" : "pointer", fontFamily: "'Lora', Georgia, serif" }}
+                                    style={{ padding: "5px 9px", background: "rgba(216,155,43,0.08)", border: "1px solid rgba(216,155,43,0.18)", borderRadius: 8, color: "var(--tekori-gold)", fontSize: 10, cursor: fileActionId === file.id ? "wait" : "pointer", fontFamily: "var(--tekori-font-ui)" }}
                                 >
                                     {fileActionId === file.id ? "Opening..." : "Open"}
                                 </button>
                                 <button
                                     onClick={() => onDeleteFile(file.id)}
                                     disabled={fileActionId === file.id}
-                                    style={{ padding: "5px 9px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, color: "rgba(240,237,232,0.62)", fontSize: 10, cursor: fileActionId === file.id ? "wait" : "pointer", fontFamily: "'Lora', Georgia, serif" }}
+                                    style={{ padding: "5px 9px", background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 8, color: "var(--color-text-muted)", fontSize: 10, cursor: fileActionId === file.id ? "wait" : "pointer", fontFamily: "var(--tekori-font-ui)" }}
                                 >
                                     Delete
                                 </button>

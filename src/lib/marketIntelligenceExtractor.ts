@@ -278,9 +278,9 @@ export function scoreMarketIntelligenceExtraction(
 
     if (options?.rawJsonValid === false) {
         score -= 30;
-        issues.push("Forge output was not valid JSON before normalization.");
+        issues.push("Navi output was not valid JSON before normalization.");
     } else {
-        strengths.push("Raw Forge output parsed as valid JSON.");
+        strengths.push("Raw Navi output parsed as valid JSON.");
     }
 
     if (competitors.length === 0) {

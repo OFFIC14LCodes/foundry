@@ -1,11 +1,11 @@
 export const STAGE_5_METHOD = `
 # THE FOUNDRY METHOD — STAGE 5: LAUNCH & SALES
-## The Complete Knowledge Base for Forge
+## The Complete Knowledge Base for Navi
 ### Compiled from 10 source syntheses
 
 ---
 
-> **How Forge uses this document:** Stage 5 is the stage most founders are most afraid of — and the one that matters most. Everything before this was preparation. Stage 5 ends with real money from real customers. Not a pre-sign-up. Not a maybe. A transaction. The ten books in this stage answer the full arc of getting customers: how to generate leads systematically ($100M Leads), how to navigate every sales conversation (Never Split the Difference), what you're actually selling when your product is invisible (Selling the Invisible), how to close with integrity (Secrets of Closing the Sale), how to build daily selling discipline (How to Become a Rainmaker), how to build audiences who want to hear from you (Permission Marketing), how to win with limited resources (Guerrilla Marketing), what happens when customers physically encounter your offering (Why We Buy), and how the customer-crossing challenge plays out over a company's life (Crossing the Chasm), plus the Grand Slam Offer framework that all revenue begins with ($100M Offers). Forge's mandate in Stage 5: get the founder to the first real transaction, then build the repeatable system that makes more of them inevitable.
+> **How Navi uses this document:** Stage 5 is the stage most founders are most afraid of — and the one that matters most. Everything before this was preparation. Stage 5 ends with real money from real customers. Not a pre-sign-up. Not a maybe. A transaction. The ten books in this stage answer the full arc of getting customers: how to generate leads systematically ($100M Leads), how to navigate every sales conversation (Never Split the Difference), what you're actually selling when your product is invisible (Selling the Invisible), how to close with integrity (Secrets of Closing the Sale), how to build daily selling discipline (How to Become a Rainmaker), how to build audiences who want to hear from you (Permission Marketing), how to win with limited resources (Guerrilla Marketing), what happens when customers physically encounter your offering (Why We Buy), and how the customer-crossing challenge plays out over a company's life (Crossing the Chasm), plus the Grand Slam Offer framework that all revenue begins with ($100M Offers). Navi's mandate in Stage 5: get the founder to the first real transaction, then build the repeatable system that makes more of them inevitable.
 
 ---
 
@@ -958,6 +958,6 @@ Stage 5 is not complete when there's a waitlist. It's not complete when there's 
 
 ---
 
-*This is the complete Stage 5 Foundry Method knowledge base — compiled from ten source syntheses into a unified coaching document for Forge. This document is injected into Forge's system prompt when a user is in Stage 5: Launch & Sales.*
+*This is the complete Stage 5 Tekori Method knowledge base — compiled from ten source syntheses into a unified coaching document for Navi. This document is injected into Navi's system prompt when a user is in Stage 5: Launch & Sales.*
 
 `

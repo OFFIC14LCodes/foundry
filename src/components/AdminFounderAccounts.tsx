@@ -91,7 +91,7 @@ function currentStage(stageProgress: StageProgressRow[]): number {
 // ── Sub-components ─────────────────────────────────────────────
 
 function StageBadge({ stage }: { stage: number }) {
-    const color = (STAGE_COLORS as Record<number, string>)[stage] ?? "#888";
+    const color = (STAGE_COLORS as Record<number, string>)[stage] ?? "var(--color-text-muted)";
     return (
         <span
             style={{
@@ -99,8 +99,8 @@ function StageBadge({ stage }: { stage: number }) {
                 alignItems: "center",
                 padding: "3px 9px",
                 borderRadius: 999,
-                background: `${color}18`,
-                border: `1px solid ${color}30`,
+                background: `color-mix(in srgb, ${color} 10%, transparent)`,
+                border: `1px solid color-mix(in srgb, ${color} 18%, transparent)`,
                 color,
                 fontSize: 10,
                 fontWeight: 700,
@@ -121,9 +121,9 @@ function PaidPill({ paid }: { paid: boolean }) {
                 alignItems: "center",
                 padding: "3px 9px",
                 borderRadius: 999,
-                background: paid ? "rgba(76,175,138,0.14)" : "rgba(255,255,255,0.05)",
-                border: paid ? "1px solid rgba(76,175,138,0.32)" : "1px solid rgba(255,255,255,0.1)",
-                color: paid ? "#4CAF8A" : "#666",
+                background: paid ? "rgba(76,175,138,0.14)" : "rgba(7,26,47,0.05)",
+                border: paid ? "1px solid rgba(76,175,138,0.32)" : "1px solid rgba(7,26,47,0.1)",
+                color: paid ? "var(--color-success)" : "var(--color-text-muted)",
                 fontSize: 10,
                 fontWeight: 700,
                 whiteSpace: "nowrap",
@@ -199,7 +199,7 @@ function UserDetailPanel({
                 ? detail.recentSummaries.map(s => `[${formatDate(s.created_at)}] ${s.title ?? "Untitled"}: ${s.summary ?? "—"}`).join("\n\n")
                 : "No archive summaries available.";
 
-            const prompt = `Generate a concise founder account summary for the Foundry admin team based on the following data. Focus on engagement level, progress milestones reached, and any notable patterns. Be specific and factual. 3–5 paragraphs.
+            const prompt = `Generate a concise founder account summary for the Tekori admin team based on the following data. Focus on engagement level, progress milestones reached, and any notable patterns. Be specific and factual. 3–5 paragraphs.
 
 FOUNDER PROFILE:
 - Name: ${user.name ?? "Unknown"}
@@ -211,8 +211,8 @@ FOUNDER PROFILE:
 - Stripe Status: ${user.billing?.stripe_status ?? "None"}
 - Cancel at period end: ${user.billing?.cancel_at_period_end ? "Yes" : "No"}
 - Total messages: ${detail.messageCount}
-- Estimated Forge tokens last 30 days: ${formatTokenCount(detail.tokenUsage30d.totalTokens)}
-- Estimated Forge model cost last 30 days: ${formatEstimatedCost(detail.tokenUsage30d.estimatedCostUsd)}
+- Estimated Navi tokens last 30 days: ${formatTokenCount(detail.tokenUsage30d.totalTokens)}
+- Estimated Navi model cost last 30 days: ${formatEstimatedCost(detail.tokenUsage30d.estimatedCostUsd)}
 
 CURRENT STAGE: Stage ${stage} — ${STAGE_LABELS[stage] ?? ""}
 
@@ -224,7 +224,7 @@ ${summariesText}`;
 
             const result = await callForgeAPI(
                 [{ role: "user", content: prompt }],
-                "You are Foundry's internal AI analyst. You help the admin team understand founder engagement, progress, and health at a glance. Generate clear, professional account summaries.",
+                "You are Tekori's internal AI analyst. You help the admin team understand founder engagement, progress, and health at a glance. Generate clear, professional account summaries.",
                 1200,
             );
             setSummary({ text: result, generatedAt: new Date().toISOString() });
@@ -244,7 +244,7 @@ ${summariesText}`;
                 position: "fixed",
                 inset: 0,
                 zIndex: 200,
-                background: "rgba(0,0,0,0.7)",
+                background: "rgba(7,26,47,0.42)",
                 display: "flex",
                 alignItems: "flex-start",
                 justifyContent: "center",
@@ -256,7 +256,7 @@ ${summariesText}`;
             <div
                 style={{
                     background: "#0d0d0e",
-                    border: "1px solid rgba(255,255,255,0.1)",
+                    border: "1px solid rgba(7,26,47,0.1)",
                     borderRadius: 22,
                     padding: 24,
                     width: "100%",
@@ -270,15 +270,15 @@ ${summariesText}`;
                 {/* Header */}
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
                     <div>
-                        <div style={{ fontSize: 22, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 4 }}>
+                        <div style={{ fontSize: 22, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, color: "var(--color-text)", marginBottom: 4 }}>
                             {user.name ?? "Unnamed Founder"}
                         </div>
-                        <div style={{ fontSize: 13, color: "rgba(240,237,232,0.62)", marginBottom: 8 }}>{user.email ?? "—"}</div>
+                        <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginBottom: 8 }}>{user.email ?? "—"}</div>
                         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                             <StageBadge stage={stage} />
                             <PaidPill paid={paid} />
                             {user.business_name && (
-                                <span style={{ fontSize: 10, color: "#A8A4A0", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 999, padding: "3px 9px" }}>
+                                <span style={{ fontSize: 10, color: "var(--color-text-muted)", background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 999, padding: "3px 9px" }}>
                                     {user.business_name}
                                 </span>
                             )}
@@ -287,11 +287,11 @@ ${summariesText}`;
                     <button
                         onClick={onClose}
                         style={{
-                            background: "rgba(255,255,255,0.05)",
-                            border: "1px solid rgba(255,255,255,0.1)",
+                            background: "rgba(7,26,47,0.05)",
+                            border: "1px solid rgba(7,26,47,0.1)",
                             borderRadius: 8,
                             padding: "7px 12px",
-                            color: "rgba(240,237,232,0.62)",
+                            color: "var(--color-text-muted)",
                             fontSize: 12,
                             cursor: "pointer",
                             flexShrink: 0,
@@ -311,9 +311,9 @@ ${summariesText}`;
                         { label: "Tokens 30d", value: loadingDetail ? "…" : formatTokenCount(detail?.tokenUsage30d.totalTokens ?? 0) },
                         { label: "Cost 30d", value: loadingDetail ? "…" : formatEstimatedCost(detail?.tokenUsage30d.estimatedCostUsd ?? 0) },
                     ].map(item => (
-                        <div key={item.label} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "12px 14px" }}>
+                        <div key={item.label} style={{ background: "rgba(7,26,47,0.03)", border: "1px solid rgba(7,26,47,0.07)", borderRadius: 12, padding: "12px 14px" }}>
                             <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>{item.label}</div>
-                            <div style={{ fontSize: 14, color: "#F0EDE8", fontWeight: 600 }}>{item.value}</div>
+                            <div style={{ fontSize: 14, color: "var(--color-text)", fontWeight: 600 }}>{item.value}</div>
                         </div>
                     ))}
                 </div>
@@ -323,7 +323,7 @@ ${summariesText}`;
                 ) : detail && (
                     <>
                         <div style={{ background: "rgba(76,175,138,0.05)", border: "1px solid rgba(76,175,138,0.14)", borderRadius: 16, padding: 16 }}>
-                            <div style={{ fontSize: 10, color: "#4CAF8A", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 12 }}>Forge Token Usage Estimate</div>
+                            <div style={{ fontSize: 10, color: "var(--color-success)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 12 }}>Navi Token Usage Estimate</div>
                             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10, marginBottom: 10 }}>
                                 {[
                                     { label: "Cost · 30d", value: formatEstimatedCost(detail.tokenUsage30d.estimatedCostUsd) },
@@ -331,9 +331,9 @@ ${summariesText}`;
                                     { label: "Cost · All time", value: formatEstimatedCost(detail.tokenUsageAllTime.estimatedCostUsd) },
                                     { label: "Messages · 30d", value: String(detail.tokenUsage30d.messageCount) },
                                 ].map(item => (
-                                    <div key={item.label} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "11px 12px" }}>
+                                    <div key={item.label} style={{ background: "rgba(7,26,47,0.03)", border: "1px solid rgba(7,26,47,0.07)", borderRadius: 12, padding: "11px 12px" }}>
                                         <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>{item.label}</div>
-                                        <div style={{ fontSize: 14, color: "#F0EDE8", fontWeight: 700 }}>{item.value}</div>
+                                        <div style={{ fontSize: 14, color: "var(--color-text)", fontWeight: 700 }}>{item.value}</div>
                                     </div>
                                 ))}
                             </div>
@@ -341,22 +341,22 @@ ${summariesText}`;
                         </div>
 
                         {/* Stage Progress */}
-                        <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: 16 }}>
-                            <div style={{ fontSize: 10, color: "rgba(240,237,232,0.62)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 12 }}>Stage Progress</div>
+                        <div style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.07)", borderRadius: 16, padding: 16 }}>
+                            <div style={{ fontSize: 10, color: "var(--color-text-muted)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 12 }}>Stage Progress</div>
                             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                                 {[1, 2, 3, 4, 5, 6].map(stageId => {
                                     const row = detail.stageProgress.find(r => r.stage_id === stageId);
                                     const count = row?.completed_milestones?.length ?? 0;
-                                    const color = (STAGE_COLORS as Record<number, string>)[stageId] ?? "#888";
+                                    const color = (STAGE_COLORS as Record<number, string>)[stageId] ?? "var(--color-text-muted)";
                                     return (
                                         <div key={stageId} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                            <div style={{ width: 70, fontSize: 12, color: count > 0 ? color : "#444", fontWeight: count > 0 ? 600 : 400, flexShrink: 0 }}>
+                                            <div style={{ width: 70, fontSize: 12, color: count > 0 ? color : "var(--color-text-muted)", fontWeight: count > 0 ? 600 : 400, flexShrink: 0 }}>
                                                 S{stageId} · {STAGE_LABELS[stageId]}
                                             </div>
-                                            <div style={{ flex: 1, height: 6, borderRadius: 999, background: "rgba(255,255,255,0.05)", overflow: "hidden" }}>
+                                            <div style={{ flex: 1, height: 6, borderRadius: 999, background: "rgba(7,26,47,0.05)", overflow: "hidden" }}>
                                                 <div style={{ width: `${Math.min(100, count * 20)}%`, height: "100%", background: color, opacity: count > 0 ? 1 : 0, transition: "width 0.3s ease" }} />
                                             </div>
-                                            <div style={{ width: 24, fontSize: 11, color: count > 0 ? color : "#444", textAlign: "right", flexShrink: 0 }}>
+                                            <div style={{ width: 24, fontSize: 11, color: count > 0 ? color : "var(--color-text-muted)", textAlign: "right", flexShrink: 0 }}>
                                                 {count}
                                             </div>
                                         </div>
@@ -367,17 +367,17 @@ ${summariesText}`;
 
                         {/* Archive Summaries */}
                         {detail.recentSummaries.length > 0 && (
-                            <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: 16 }}>
-                                <div style={{ fontSize: 10, color: "rgba(240,237,232,0.62)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 12 }}>Recent Archive (last 5)</div>
+                            <div style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.07)", borderRadius: 16, padding: 16 }}>
+                                <div style={{ fontSize: 10, color: "var(--color-text-muted)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 12 }}>Recent Archive (last 5)</div>
                                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                                     {detail.recentSummaries.map(s => (
-                                        <div key={s.id} style={{ borderLeft: `2px solid ${(STAGE_COLORS as Record<number, string>)[s.stage_id] ?? "#444"}`, paddingLeft: 12 }}>
+                                        <div key={s.id} style={{ borderLeft: `2px solid ${(STAGE_COLORS as Record<number, string>)[s.stage_id] ?? "var(--color-text-muted)"}`, paddingLeft: 12 }}>
                                             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
-                                                <span style={{ fontSize: 12, fontWeight: 600, color: "#F0EDE8" }}>{s.title ?? "Untitled"}</span>
+                                                <span style={{ fontSize: 12, fontWeight: 600, color: "var(--color-text)" }}>{s.title ?? "Untitled"}</span>
                                                 <span style={{ fontSize: 10, color: "var(--foundry-text-muted)" }}>{formatDate(s.created_at)}</span>
                                             </div>
                                             {s.summary && (
-                                                <div style={{ fontSize: 12, color: "rgba(240,237,232,0.62)", lineHeight: 1.6 }}>
+                                                <div style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.6 }}>
                                                     {s.summary.length > 160 ? s.summary.slice(0, 160) + "…" : s.summary}
                                                 </div>
                                             )}
@@ -390,10 +390,10 @@ ${summariesText}`;
                 )}
 
                 {/* Account Summary */}
-                <div style={{ background: "rgba(232,98,42,0.06)", border: "1px solid rgba(232,98,42,0.16)", borderRadius: 16, padding: 16 }}>
+                <div style={{ background: "rgba(216,155,43,0.06)", border: "1px solid rgba(216,155,43,0.16)", borderRadius: 16, padding: 16 }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: summary ? 14 : 0 }}>
                         <div>
-                            <div style={{ fontSize: 13, fontWeight: 600, color: "#F0EDE8", marginBottom: 2 }}>Forge Account Summary</div>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text)", marginBottom: 2 }}>Navi Account Summary</div>
                             {summary && <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)" }}>Generated {formatRelative(summary.generatedAt)}</div>}
                         </div>
                         <button
@@ -402,9 +402,9 @@ ${summariesText}`;
                             style={{
                                 padding: "9px 14px",
                                 borderRadius: 10,
-                                border: "1px solid rgba(232,98,42,0.32)",
-                                background: generatingSummary ? "rgba(232,98,42,0.06)" : "rgba(232,98,42,0.14)",
-                                color: generatingSummary ? "#888" : "#E8622A",
+                                border: "1px solid rgba(216,155,43,0.32)",
+                                background: generatingSummary ? "rgba(216,155,43,0.06)" : "rgba(216,155,43,0.14)",
+                                color: generatingSummary ? "var(--color-text-muted)" : "var(--tekori-gold)",
                                 fontSize: 11,
                                 fontWeight: 700,
                                 cursor: generatingSummary || loadingDetail ? "default" : "pointer",
@@ -418,7 +418,7 @@ ${summariesText}`;
                         <div style={{ fontSize: 12, color: "#D28B76", lineHeight: 1.6, marginTop: 8 }}>{summaryError}</div>
                     )}
                     {summary && (
-                        <div style={{ fontSize: 13, color: "#C8C4BE", lineHeight: 1.75, whiteSpace: "pre-wrap" }}>
+                        <div style={{ fontSize: 13, color: "var(--color-text-soft)", lineHeight: 1.75, whiteSpace: "pre-wrap" }}>
                             {summary.text}
                         </div>
                     )}
@@ -486,9 +486,9 @@ export default function AdminFounderAccounts({ onBack }: Props) {
                 position: "fixed",
                 inset: 0,
                 zIndex: 180,
-                background: "#080809",
-                color: "#F0EDE8",
-                fontFamily: "'Lora', Georgia, serif",
+                background: "var(--color-bg-soft)",
+                color: "var(--color-text)",
+                fontFamily: "var(--tekori-font-ui)",
                 display: "flex",
                 flexDirection: "column",
             }}
@@ -497,8 +497,8 @@ export default function AdminFounderAccounts({ onBack }: Props) {
             <div
                 style={{
                     padding: "max(14px, calc(10px + env(safe-area-inset-top))) 16px 12px",
-                    borderBottom: "1px solid rgba(255,255,255,0.07)",
-                    background: "rgba(8,8,9,0.97)",
+                    borderBottom: "1px solid rgba(7,26,47,0.07)",
+                    background: "rgba(255,252,246,0.97)",
                     backdropFilter: "blur(12px)",
                     display: "flex",
                     alignItems: "center",
@@ -509,18 +509,18 @@ export default function AdminFounderAccounts({ onBack }: Props) {
                 <button
                     onClick={onBack}
                     style={{
-                        background: "rgba(255,255,255,0.05)",
-                        border: "1px solid rgba(255,255,255,0.1)",
+                        background: "rgba(7,26,47,0.05)",
+                        border: "1px solid rgba(7,26,47,0.1)",
                         borderRadius: 8,
                         padding: "7px 12px",
-                        color: "#C8C4BE",
+                        color: "var(--color-text-soft)",
                         fontSize: 12,
                         cursor: "pointer",
                     }}
                 >
                     ←
                 </button>
-                <span style={{ fontSize: 15, fontWeight: 600, color: "#F0EDE8" }}>Founder Accounts</span>
+                <span style={{ fontSize: 15, fontWeight: 600, color: "var(--color-text)" }}>Founder Accounts</span>
                 {!loading && (
                     <span style={{ fontSize: 12, color: "var(--foundry-text-muted)", marginLeft: 4 }}>
                         {filtered.length} founder{filtered.length !== 1 ? "s" : ""}
@@ -529,7 +529,7 @@ export default function AdminFounderAccounts({ onBack }: Props) {
             </div>
 
             {/* Search */}
-            <div style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.05)", flexShrink: 0 }}>
+            <div style={{ padding: "12px 16px", borderBottom: "1px solid rgba(7,26,47,0.05)", flexShrink: 0 }}>
                 <input
                     type="text"
                     placeholder="Search by name or email…"
@@ -538,11 +538,11 @@ export default function AdminFounderAccounts({ onBack }: Props) {
                     style={{
                         width: "100%",
                         maxWidth: 480,
-                        background: "rgba(255,255,255,0.04)",
-                        border: "1px solid rgba(255,255,255,0.09)",
+                        background: "rgba(7,26,47,0.04)",
+                        border: "1px solid rgba(7,26,47,0.09)",
                         borderRadius: 10,
                         padding: "10px 14px",
-                        color: "#F0EDE8",
+                        color: "var(--color-text)",
                         fontSize: 13,
                         outline: "none",
                         boxSizing: "border-box",
@@ -564,9 +564,9 @@ export default function AdminFounderAccounts({ onBack }: Props) {
                                     alignSelf: "flex-start",
                                     padding: "9px 14px",
                                     borderRadius: 10,
-                                    border: "1px solid rgba(255,255,255,0.08)",
-                                    background: "rgba(255,255,255,0.03)",
-                                    color: "#C8C4BE",
+                                    border: "1px solid rgba(7,26,47,0.08)",
+                                    background: "rgba(7,26,47,0.03)",
+                                    color: "var(--color-text-soft)",
                                     fontSize: 12,
                                     cursor: "pointer",
                                 }}
@@ -617,8 +617,8 @@ export default function AdminFounderAccounts({ onBack }: Props) {
                                             gap: "0 12px",
                                             alignItems: "center",
                                             padding: "12px 14px",
-                                            background: "rgba(255,255,255,0.02)",
-                                            border: "1px solid rgba(255,255,255,0.07)",
+                                            background: "rgba(7,26,47,0.02)",
+                                            border: "1px solid rgba(7,26,47,0.07)",
                                             borderRadius: 12,
                                             textAlign: "left",
                                             cursor: "pointer",
@@ -626,23 +626,23 @@ export default function AdminFounderAccounts({ onBack }: Props) {
                                             width: "100%",
                                         }}
                                         onMouseEnter={e => {
-                                            e.currentTarget.style.background = "rgba(255,255,255,0.04)";
-                                            e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)";
+                                            e.currentTarget.style.background = "rgba(7,26,47,0.04)";
+                                            e.currentTarget.style.borderColor = "rgba(7,26,47,0.12)";
                                         }}
                                         onMouseLeave={e => {
-                                            e.currentTarget.style.background = "rgba(255,255,255,0.02)";
-                                            e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)";
+                                            e.currentTarget.style.background = "rgba(7,26,47,0.02)";
+                                            e.currentTarget.style.borderColor = "rgba(7,26,47,0.07)";
                                         }}
                                     >
-                                        <div style={{ fontSize: 13, color: "#F0EDE8", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                        <div style={{ fontSize: 13, color: "var(--color-text)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                             {user.name ?? <span style={{ color: "var(--foundry-text-muted)" }}>Unnamed</span>}
                                         </div>
-                                        <div style={{ fontSize: 12, color: "rgba(240,237,232,0.62)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                        <div style={{ fontSize: 12, color: "var(--color-text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                             {user.email ?? "—"}
                                         </div>
                                         <StageBadge stage={stage} />
                                         <PaidPill paid={paid} />
-                                        <div style={{ fontSize: 11, color: usage && usage.estimatedCostUsd > 0 ? "#4CAF8A" : "#666", whiteSpace: "nowrap", fontWeight: 700 }}>
+                                        <div style={{ fontSize: 11, color: usage && usage.estimatedCostUsd > 0 ? "var(--color-success)" : "var(--color-text-muted)", whiteSpace: "nowrap", fontWeight: 700 }}>
                                             {formatEstimatedCost(usage?.estimatedCostUsd ?? 0)}
                                         </div>
                                         <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)", whiteSpace: "nowrap" }}>{formatDate(user.created_at)}</div>

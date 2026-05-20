@@ -5,7 +5,7 @@ export default function EulaScreen({ onBack }: { onBack: () => void }) {
     return (
         <SettingsScreenShell
             title="End User License Agreement"
-            subtitle="The EULA governing your license to use the Foundry platform."
+            subtitle="The EULA governing your license to use the Tekori platform."
             onBack={onBack}
         >
             <TermlyEmbed policyId="fc9d5081-8999-4ce0-9052-5d51888df5c9" />

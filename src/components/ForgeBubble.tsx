@@ -50,7 +50,7 @@ interface ForgeBubbleProps {
 
 const SCREEN_LABELS: Record<string, string> = {
     hub: "the Hub (their main dashboard — shows stage progress, decisions log, and budget)",
-    forge: "the Forge chat (their active AI coaching session)",
+    forge: "the Navi chat (their active AI coaching session)",
     journal: "the Journal (personal notes and reflections)",
     settings: "Settings",
     briefings: "the Briefings screen",
@@ -58,8 +58,8 @@ const SCREEN_LABELS: Record<string, string> = {
     documents: "the Document Production screen",
     marketIntel: "the Market Intelligence screen",
     cofounder: "the Co-Founder Mode screen",
-    chatRoom: "the Chat Room (open-ended learning and conversation with Forge)",
-    academy: "Forge Academy (the curated founder education section)",
+    chatRoom: "the Chat Room (open-ended learning and conversation with Navi)",
+    academy: "Navi Academy (the curated founder education section)",
 };
 
 const DOC_PHASE_LABELS: Record<string, string> = {
@@ -253,10 +253,10 @@ export default function ForgeBubble({ profile, userId, currentScreen, screenCont
             const ctx = screenContext as AcademyBubbleContext;
             const filterLabel = ctx.currentFilter === "all" ? "all disciplines" : ctx.currentFilter;
             if (ctx.activeLesson) {
-                screenLabel = `Forge Academy — currently studying: "${ctx.activeLesson.title}" (${ctx.activeLesson.discipline})`;
-                documentSection = `\n\nACTIVE ACADEMY LESSON:\nThe founder has this lesson open in Forge Academy. They may be asking about it or want to go deeper.\nTitle: ${ctx.activeLesson.title}\nDiscipline: ${ctx.activeLesson.discipline}\nDescription: ${ctx.activeLesson.description}\nWhy it matters: ${ctx.activeLesson.whyItMatters}\n\nBecause the founder has this lesson open, ground your response in this topic. Do not wait for them to ask a perfectly formed question — if they seem stuck, help them connect the lesson to their actual business situation.`;
+                screenLabel = `Navi Academy — currently studying: "${ctx.activeLesson.title}" (${ctx.activeLesson.discipline})`;
+                documentSection = `\n\nACTIVE ACADEMY LESSON:\nThe founder has this lesson open in Navi Academy. They may be asking about it or want to go deeper.\nTitle: ${ctx.activeLesson.title}\nDiscipline: ${ctx.activeLesson.discipline}\nDescription: ${ctx.activeLesson.description}\nWhy it matters: ${ctx.activeLesson.whyItMatters}\n\nBecause the founder has this lesson open, ground your response in this topic. Do not wait for them to ask a perfectly formed question — if they seem stuck, help them connect the lesson to their actual business situation.`;
             } else {
-                screenLabel = `Forge Academy — browsing ${filterLabel}, Stage ${ctx.stage}`;
+                screenLabel = `Navi Academy — browsing ${filterLabel}, Stage ${ctx.stage}`;
             }
         }
 
@@ -271,8 +271,8 @@ Strategy: ${profile.strategyLabel || profile.strategy} | Current Stage: ${profil
 Goal / constraints: ${profile.ventureGoal || "Not specified"} | Weekly hours: ${profile.weeklyHoursAvailable ?? "Unknown"} | Target monthly income: ${profile.targetMonthlyIncome ? `$${Number(profile.targetMonthlyIncome).toLocaleString()}` : "Unknown"}
 Budget: $${(profile.budget?.remaining || 0).toLocaleString()} remaining of $${(profile.budget?.total || 0).toLocaleString()} | Spent: $${(profile.budget?.spent || 0).toLocaleString()}
 
-You are in a quick-access floating chat bubble. The founder is asking a quick question or needs help with what they're looking at. Be helpful, warm, and concise — this is a quick-assist context, not a deep coaching session. You are still Forge — same personality, same expertise — just more conversational. You can help them understand what they see on the screen, navigate the app, or think through a quick question.${documentSection}
-${visibleScreenText ? `\n\nVISIBLE SCREEN TEXT SNAPSHOT:\nThis is text currently visible in the Foundry app viewport, excluding the Forge bubble itself. If the founder asks about "this", "what I'm reading", "this screen", or any visible item, use this as immediate screen context.\n\n${visibleScreenText}` : ""}
+You are in a quick-access floating chat bubble. The founder is asking a quick question or needs help with what they're looking at. Be helpful, warm, and concise — this is a quick-assist context, not a deep coaching session. You are still Navi — same personality, same expertise — just more conversational. You can help them understand what they see on the screen, navigate the app, or think through a quick question.${documentSection}
+${visibleScreenText ? `\n\nVISIBLE SCREEN TEXT SNAPSHOT:\nThis is text currently visible in the Tekori app viewport, excluding the Navi bubble itself. If the founder asks about "this", "what I'm reading", "this screen", or any visible item, use this as immediate screen context.\n\n${visibleScreenText}` : ""}
 ${universalMemoryContext ? `\n\n${universalMemoryContext}` : ""}
 ${bookContext.context ? `\n\n${bookContext.context}` : ""}
         `.trim(),
@@ -344,7 +344,7 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
         const dateKey = new Date(sessionDate).toISOString().split("T")[0];
 
         const transcript = msgsToArchive
-            .map(m => `${m.role === "forge" ? "Forge" : profile.name}: ${m.text}`)
+            .map(m => `${m.role === "forge" ? "Navi" : profile.name}: ${m.text}`)
             .join("\n");
 
         const displayDate = new Date(sessionDate).toLocaleDateString("en-US", {
@@ -356,7 +356,7 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
             const raw = await callForgeAPI(
                 [{
                     role: "user",
-                    content: `Summarize this quick Forge chat for ${profile.name} on ${displayDate}.\n\nReturn valid JSON with exactly these keys:\n"title": a concise headline under 80 characters describing the main topic\n"summary": a brief markdown summary of key questions asked and answers given.\n\nConversation:\n${transcript}`
+                    content: `Summarize this quick Navi chat for ${profile.name} on ${displayDate}.\n\nReturn valid JSON with exactly these keys:\n"title": a concise headline under 80 characters describing the main topic\n"summary": a brief markdown summary of key questions asked and answers given.\n\nConversation:\n${transcript}`
                 }],
                 "You write clean business conversation summaries. Return only valid JSON."
             );
@@ -404,14 +404,14 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
                         zIndex: 200,
                         width: "min(370px, calc(100vw - 32px))",
                         height: "min(520px, calc(100vh - 120px))",
-                        background: "#0D0D0F",
-                        border: "1px solid rgba(255,255,255,0.09)",
+                        background: "var(--color-surface)",
+                        border: "1px solid var(--color-border)",
                         borderRadius: 18,
                         display: "flex",
                         flexDirection: "column",
-                        boxShadow: "0 24px 64px rgba(0,0,0,0.65), 0 8px 24px rgba(0,0,0,0.4)",
+                        boxShadow: "var(--shadow-premium)",
                         overflow: "hidden",
-                        fontFamily: "'Lora', Georgia, serif",
+                        fontFamily: "var(--tekori-font-ui)",
                         animation: "bubbleSlideUp 0.22s cubic-bezier(0.34,1.56,0.64,1)",
                     }}
                 >
@@ -419,20 +419,20 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
                     <div
                         style={{
                             padding: "13px 16px",
-                            borderBottom: "1px solid rgba(255,255,255,0.06)",
+                            borderBottom: "1px solid rgba(7,26,47,0.06)",
                             display: "flex",
                             alignItems: "center",
                             gap: 10,
-                            background: "rgba(255,255,255,0.02)",
+                            background: "rgba(7,26,47,0.02)",
                             flexShrink: 0,
                         }}
                     >
                         <ForgeAvatar size={30} />
                         <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: 13, fontWeight: 600, color: "#F0EDE8", lineHeight: 1.2 }}>
-                                Ask Forge
+                            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text)", lineHeight: 1.2 }}>
+                                Ask Navi
                             </div>
-                            <div style={{ fontSize: 10, color: "#4CAF8A", marginTop: 1 }}>
+                            <div style={{ fontSize: 10, color: "var(--tekori-gold)", marginTop: 1 }}>
                                 ● Quick help · always here
                             </div>
                         </div>
@@ -440,11 +440,11 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
                             onClick={handleClose}
                             title={hasMessages ? "Close & archive this chat" : "Close"}
                             style={{
-                                background: "rgba(255,255,255,0.05)",
-                                border: "1px solid rgba(255,255,255,0.08)",
+                                background: "rgba(7,26,47,0.05)",
+                                border: "1px solid rgba(7,26,47,0.08)",
                                 borderRadius: 8,
                                 padding: "5px 10px",
-                                color: "rgba(240,237,232,0.62)",
+                                color: "var(--color-text-muted)",
                                 fontSize: 11,
                                 cursor: "pointer",
                                 display: "flex",
@@ -452,8 +452,8 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
                                 gap: 5,
                                 transition: "all 0.15s",
                             }}
-                            onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.09)"; e.currentTarget.style.color = "#F0EDE8"; }}
-                            onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.color = "#888"; }}
+                            onMouseEnter={e => { e.currentTarget.style.background = "rgba(7,26,47,0.09)"; e.currentTarget.style.color = "var(--color-text)"; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = "rgba(7,26,47,0.05)"; e.currentTarget.style.color = "var(--color-text-muted)"; }}
                         >
                             {hasMessages ? (
                                 <>
@@ -500,8 +500,8 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
                                         width: 48,
                                         height: 48,
                                         borderRadius: "50%",
-                                        background: "linear-gradient(135deg, #2D221C, #171214)",
-                                        border: "1px solid rgba(232,98,42,0.2)",
+                                        background: "linear-gradient(135deg, var(--color-bg-warm), var(--color-bg-warm))",
+                                        border: "1px solid rgba(216,155,43,0.2)",
                                         display: "flex",
                                         alignItems: "center",
                                         justifyContent: "center",
@@ -509,7 +509,7 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
                                 >
                                     <Logo variant="forge" style={{ width: 28, height: 28, objectFit: "contain" }} />
                                 </div>
-                                <div style={{ fontSize: 13, color: "#C8C4BE", fontWeight: 500 }}>
+                                <div style={{ fontSize: 13, color: "var(--color-text-soft)", fontWeight: 500 }}>
                                     What can I help with?
                                 </div>
                                 <div style={{ fontSize: 11, color: "var(--foundry-text-muted)", lineHeight: 1.6, maxWidth: 240 }}>
@@ -537,13 +537,13 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
                                                 ? "14px 4px 14px 14px"
                                                 : "4px 14px 14px 14px",
                                             background: msg.role === "user"
-                                                ? "rgba(232,98,42,0.14)"
-                                                : "rgba(255,255,255,0.04)",
+                                                ? "rgba(216,155,43,0.14)"
+                                                : "rgba(7,26,47,0.04)",
                                             border: msg.role === "user"
-                                                ? "1px solid rgba(232,98,42,0.22)"
-                                                : "1px solid rgba(255,255,255,0.07)",
+                                                ? "1px solid rgba(216,155,43,0.22)"
+                                                : "1px solid rgba(7,26,47,0.07)",
                                             fontSize: 12.5,
-                                            color: msg.role === "user" ? "#F0EDE8" : "#C8C4BE",
+                                            color: msg.role === "user" ? "var(--color-text)" : "var(--color-text-soft)",
                                             lineHeight: 1.65,
                                             textAlign: "left",
                                         }}
@@ -574,8 +574,8 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
                                     style={{
                                         padding: "8px 12px",
                                         borderRadius: "4px 14px 14px 14px",
-                                        background: "rgba(255,255,255,0.04)",
-                                        border: "1px solid rgba(255,255,255,0.07)",
+                                        background: "rgba(7,26,47,0.04)",
+                                        border: "1px solid rgba(7,26,47,0.07)",
                                     }}
                                 >
                                     <TypingDots />
@@ -588,8 +588,8 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
                     <div
                         style={{
                             padding: "8px 12px 10px",
-                            borderTop: "1px solid rgba(255,255,255,0.05)",
-                            background: "rgba(8,8,9,0.8)",
+                            borderTop: "1px solid rgba(7,26,47,0.05)",
+                            background: "rgba(255,252,246,0.92)",
                             flexShrink: 0,
                             display: "flex",
                             flexDirection: "column",
@@ -606,8 +606,8 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
                                             display: "flex",
                                             alignItems: "center",
                                             gap: 4,
-                                            background: "rgba(232,98,42,0.08)",
-                                            border: "1px solid rgba(232,98,42,0.2)",
+                                            background: "rgba(216,155,43,0.08)",
+                                            border: "1px solid rgba(216,155,43,0.2)",
                                             borderRadius: 7,
                                             padding: "3px 7px 3px 5px",
                                             maxWidth: 180,
@@ -618,7 +618,7 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
                                         ) : (
                                             <span style={{ fontSize: 11, flexShrink: 0 }}>{file.isPDF ? "📄" : "📝"}</span>
                                         )}
-                                        <span style={{ fontSize: 10, color: "#C8C4BE", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                        <span style={{ fontSize: 10, color: "var(--color-text-soft)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                             {file.name}
                                         </span>
                                         <button
@@ -643,7 +643,7 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
                                     background: "none",
                                     border: "none",
                                     cursor: "pointer",
-                                    color: attachedFiles.length > 0 ? "#E8622A" : "#555",
+                                    color: attachedFiles.length > 0 ? "var(--tekori-gold)" : "var(--color-text-muted)",
                                     padding: "4px",
                                     flexShrink: 0,
                                     display: "flex",
@@ -691,13 +691,13 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
                                 rows={1}
                                 style={{
                                     flex: 1,
-                                    background: "rgba(255,255,255,0.05)",
-                                    border: "1px solid rgba(255,255,255,0.09)",
+                                    background: "rgba(7,26,47,0.05)",
+                                    border: "1px solid rgba(7,26,47,0.09)",
                                     borderRadius: 10,
                                     padding: "8px 11px",
-                                    color: "#F0EDE8",
+                                    color: "var(--color-text)",
                                     fontSize: 12.5,
-                                    fontFamily: "'Lora', Georgia, serif",
+                                    fontFamily: "var(--tekori-font-ui)",
                                     resize: "none",
                                     outline: "none",
                                     lineHeight: 1.5,
@@ -714,9 +714,9 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
                                     borderRadius: 9,
                                     border: "none",
                                     background: (input.trim() || attachedFiles.length > 0) && !loading
-                                        ? "linear-gradient(135deg, #E8622A, #c9521e)"
-                                        : "rgba(255,255,255,0.06)",
-                                    color: (input.trim() || attachedFiles.length > 0) && !loading ? "#fff" : "#444",
+                                        ? "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))"
+                                        : "rgba(7,26,47,0.06)",
+                                    color: (input.trim() || attachedFiles.length > 0) && !loading ? "var(--color-primary)" : "var(--color-text-muted)",
                                     cursor: (input.trim() || attachedFiles.length > 0) && !loading ? "pointer" : "default",
                                     display: "flex",
                                     alignItems: "center",
@@ -730,8 +730,8 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
                                 </svg>
                             </button>
                         </div>
-                        <div style={{ fontSize: 9.5, color: "#252525", textAlign: "center" }}>
-                            Forge is an AI. Always verify important information before acting on it.
+                        <div style={{ fontSize: 9.5, color: "var(--color-text)", textAlign: "center" }}>
+                            Navi is an AI. Always verify important information before acting on it.
                         </div>
                     </div>
                 </div>
@@ -743,7 +743,7 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
-                title="Ask Forge — hold and drag to move"
+                title="Ask Navi — hold and drag to move"
                 style={{
                     position: "fixed",
                     bottom: pos.bottom,
@@ -753,14 +753,14 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
                     height: BUBBLE_SIZE,
                     borderRadius: "50%",
                     background: open
-                        ? "linear-gradient(135deg, #1a120e, #2D221C)"
-                        : "linear-gradient(135deg, #2D221C, #1a120e)",
-                    border: `1.5px solid ${dragging ? "rgba(232,98,42,0.8)" : open ? "rgba(232,98,42,0.6)" : "rgba(232,98,42,0.35)"}`,
+                        ? "linear-gradient(135deg, var(--color-bg-soft), var(--color-bg-warm))"
+                        : "linear-gradient(135deg, var(--color-bg-warm), var(--color-bg-soft))",
+                    border: `1.5px solid ${dragging ? "rgba(216,155,43,0.8)" : open ? "rgba(216,155,43,0.6)" : "rgba(216,155,43,0.35)"}`,
                     boxShadow: dragging
-                        ? "0 8px 32px rgba(232,98,42,0.55), 0 4px 12px rgba(0,0,0,0.6)"
+                        ? "0 8px 32px rgba(216,155,43,0.55), 0 4px 12px rgba(0,0,0,0.6)"
                         : open
-                        ? "0 4px 24px rgba(232,98,42,0.35), 0 2px 8px rgba(0,0,0,0.5)"
-                        : "0 4px 20px rgba(232,98,42,0.22), 0 2px 8px rgba(0,0,0,0.4)",
+                        ? "0 4px 24px rgba(216,155,43,0.35), 0 2px 8px rgba(7,26,47,0.34)"
+                        : "0 4px 20px rgba(216,155,43,0.22), 0 2px 8px rgba(0,0,0,0.4)",
                     cursor: dragging ? "grabbing" : "grab",
                     display: "flex",
                     alignItems: "center",
@@ -772,19 +772,19 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
                 }}
                 onMouseEnter={e => {
                     if (dragging) return;
-                    e.currentTarget.style.boxShadow = "0 6px 28px rgba(232,98,42,0.45), 0 2px 10px rgba(0,0,0,0.5)";
+                    e.currentTarget.style.boxShadow = "0 6px 28px rgba(216,155,43,0.45), 0 2px 10px rgba(7,26,47,0.34)";
                     e.currentTarget.style.transform = "scale(1.06)";
                 }}
                 onMouseLeave={e => {
                     if (dragging) return;
                     e.currentTarget.style.boxShadow = open
-                        ? "0 4px 24px rgba(232,98,42,0.35), 0 2px 8px rgba(0,0,0,0.5)"
-                        : "0 4px 20px rgba(232,98,42,0.22), 0 2px 8px rgba(0,0,0,0.4)";
+                        ? "0 4px 24px rgba(216,155,43,0.35), 0 2px 8px rgba(7,26,47,0.34)"
+                        : "0 4px 20px rgba(216,155,43,0.22), 0 2px 8px rgba(0,0,0,0.4)";
                     e.currentTarget.style.transform = "scale(1)";
                 }}
             >
                 {closing ? (
-                    <div style={{ width: 22, height: 22, borderRadius: "50%", border: "2px solid rgba(232,98,42,0.4)", borderTopColor: "#E8622A", animation: "spin 0.8s linear infinite" }} />
+                    <div style={{ width: 22, height: 22, borderRadius: "50%", border: "2px solid rgba(216,155,43,0.4)", borderTopColor: "var(--tekori-gold)", animation: "spin 0.8s linear infinite" }} />
                 ) : (
                     <Logo
                         variant="forge"

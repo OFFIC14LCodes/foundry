@@ -92,18 +92,18 @@ function buildFallbackGenerated(messages: ForgeWorkspaceMessage[], academyEntry?
             : source?.title
                 ? `Working inside ${source.title}.`
                 : visible.length > 0
-                    ? "Forge is building the working summary for this conversation."
+                    ? "Navi is building the working summary for this conversation."
                     : "",
         notes: [
             userText ? `User focus: ${sentenceSlice(userText, 150)}` : "",
-            forgeText ? `Forge response: ${sentenceSlice(forgeText, 170)}` : "",
+            forgeText ? `Navi response: ${sentenceSlice(forgeText, 170)}` : "",
         ].filter(Boolean),
         academyConnections: academyEntry
             ? [
                 academyEntry.learningGoal || academyEntry.whyThisMatters || `This connects to the ${academyEntry.title} lesson.`,
             ].filter(Boolean)
             : [],
-        nextSteps: forgeText ? ["Review Forge's latest response and decide what needs to become an action."] : [],
+        nextSteps: forgeText ? ["Review Navi's latest response and decide what needs to become an action."] : [],
         decisions: [],
         openQuestions: userText && userText.endsWith("?") ? [sentenceSlice(userText, 130)] : [],
     };
@@ -144,7 +144,7 @@ function BulletList({ items, empty }: { items: string[]; empty: string }) {
 export default function ForgeConversationWorkspace({
     messages,
     loading = false,
-    title = "Forge Workspace",
+    title = "Navi Workspace",
     subtitle = "Live notes, connections, and next steps",
     academyEntry = null,
     source,
@@ -214,7 +214,7 @@ export default function ForgeConversationWorkspace({
                 ? activeWorkspace.user.notes.map((note) => `- ${note}`).join("\n")
                 : "none";
 
-            const prompt = `Create a live workspace update for this Forge conversation.
+            const prompt = `Create a live workspace update for this Navi conversation.
 
 Context:
 - Source: ${source.type}
@@ -236,13 +236,13 @@ Return strict JSON only with this shape:
   "academyConnections": ["0-3 relevant Academy lesson/concept connections"],
   "nextSteps": ["1-4 concrete actions the founder should take next"],
   "decisions": ["0-3 decisions or commitments made"],
-  "openQuestions": ["0-3 unresolved questions Forge should help clarify"]
+  "openQuestions": ["0-3 unresolved questions Navi should help clarify"]
 }`;
 
             try {
                 const raw = await callForgeAPI(
                     [{ role: "user", content: prompt }],
-                    "You are Forge's workspace engine. Build a founder learning record, not a transcript. User-owned notes are authoritative. Return strict JSON only.",
+                    "You are Navi's workspace engine. Build a founder learning record, not a transcript. User-owned notes are authoritative. Return strict JSON only.",
                     700
                 );
                 if (cancelled) return;
@@ -250,7 +250,7 @@ Return strict JSON only with this shape:
                 const generated = mergeGenerated(parsed ?? fallbackGenerated, fallbackGenerated);
                 commitWorkspace(updateWorkspaceGenerated(activeWorkspace, generated, source));
             } catch (error) {
-                console.warn("Forge workspace update failed:", error);
+                console.warn("Navi workspace update failed:", error);
                 if (!cancelled) commitWorkspace(updateWorkspaceGenerated(activeWorkspace, fallbackGenerated, source));
             } finally {
                 if (!cancelled) setUpdating(false);
@@ -265,7 +265,7 @@ Return strict JSON only with this shape:
 
     const focusValue = getWorkspaceSummary(activeWorkspace);
     const isFounderEdited = Boolean(activeWorkspace.user.summaryOverride?.trim());
-    const modeLabel = source.type === "academy" ? "Academy" : source.type === "market" ? "Market Intel" : source.stageId ? `Stage ${source.stageId}` : "Forge";
+    const modeLabel = source.type === "academy" ? "Academy" : source.type === "market" ? "Market Intel" : source.stageId ? `Stage ${source.stageId}` : "Navi";
     const openThreads = [...activeWorkspace.generated.decisions, ...activeWorkspace.generated.openQuestions];
 
     const updateSummaryOverride = (value: string) => {
@@ -296,7 +296,7 @@ Return strict JSON only with this shape:
                     <h2>{title}</h2>
                     <p>{subtitle}</p>
                 </div>
-                <div className={`forge-conversation-workspace__status ${updating ? "is-updating" : ""}`} title={updating ? "Forge is updating the workspace" : "Workspace current"}>
+                <div className={`forge-conversation-workspace__status ${updating ? "is-updating" : ""}`} title={updating ? "Navi is updating the workspace" : "Workspace current"}>
                     {updating ? <RefreshCw size={14} /> : <CheckCircle2 size={14} />}
                 </div>
             </div>
@@ -307,12 +307,12 @@ Return strict JSON only with this shape:
                         className="forge-conversation-workspace__focus-input"
                         value={focusValue}
                         onChange={(event) => updateSummaryOverride(event.target.value)}
-                        placeholder="Forge will summarize the main thread here. You can edit this if it misses the point."
+                        placeholder="Navi will summarize the main thread here. You can edit this if it misses the point."
                     />
                     <div className="forge-conversation-workspace__ownership-row">
-                        <span>{isFounderEdited ? "Founder-edited focus" : "Forge-generated focus"}</span>
+                        <span>{isFounderEdited ? "Founder-edited focus" : "Navi-generated focus"}</span>
                         {isFounderEdited && (
-                            <button onClick={() => updateSummaryOverride("")}>Use Forge version</button>
+                            <button onClick={() => updateSummaryOverride("")}>Use Navi version</button>
                         )}
                     </div>
                     {academyEntry && (
@@ -341,7 +341,7 @@ Return strict JSON only with this shape:
                             <textarea
                                 value={draftNote}
                                 onChange={(event) => setDraftNote(event.target.value)}
-                                placeholder="Add a correction, personal note, or something you want Forge to remember for this chat."
+                                placeholder="Add a correction, personal note, or something you want Navi to remember for this chat."
                                 onKeyDown={(event) => {
                                     if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) addUserNote();
                                 }}
@@ -353,8 +353,8 @@ Return strict JSON only with this shape:
                     </div>
                 </Section>
 
-                <Section icon={<ClipboardList size={14} />} title="Forge Notes">
-                    <BulletList items={activeWorkspace.generated.notes} empty="Forge will extract useful notes after it has enough conversation context." />
+                <Section icon={<ClipboardList size={14} />} title="Navi Notes">
+                    <BulletList items={activeWorkspace.generated.notes} empty="Navi will extract useful notes after it has enough conversation context." />
                 </Section>
 
                 <Section icon={<BookOpen size={14} />} title="Academy Links">
@@ -362,7 +362,7 @@ Return strict JSON only with this shape:
                 </Section>
 
                 <Section icon={<ListChecks size={14} />} title="Next Actions">
-                    <BulletList items={activeWorkspace.generated.nextSteps} empty="Action steps will appear after Forge has enough context to recommend useful movement." />
+                    <BulletList items={activeWorkspace.generated.nextSteps} empty="Action steps will appear after Navi has enough context to recommend useful movement." />
                 </Section>
 
                 <Section icon={<HelpCircle size={14} />} title="Open Threads">

@@ -70,7 +70,7 @@ export interface SuggestedDocumentSettings {
 const COMMON_FIELDS: DocumentFieldGroup = {
     id: "core",
     title: "Core document information",
-    description: "These details help Forge produce a complete document instead of a generic draft.",
+    description: "These details help Navi produce a complete document instead of a generic draft.",
     fields: [
         {
             id: "legalBusinessName",
@@ -78,7 +78,7 @@ const COMMON_FIELDS: DocumentFieldGroup = {
             type: "text",
             required: true,
             placeholder: "Example: Northstar Coffee LLC",
-            help: "Use the exact legal name that should appear in the official document. Foundry does not auto-fill this from your business idea.",
+            help: "Use the exact legal name that should appear in the official document. Tekori does not auto-fill this from your business idea.",
         },
         {
             id: "primaryContactName",
@@ -94,7 +94,7 @@ const COMMON_FIELDS: DocumentFieldGroup = {
             type: "text",
             required: true,
             placeholder: "Founder, CEO, Managing Member, Owner",
-            help: "Use the role that should appear in the document, not necessarily your Foundry account role.",
+            help: "Use the role that should appear in the document, not necessarily your Tekori account role.",
         },
         {
             id: "documentDate",
@@ -113,7 +113,7 @@ const STATE_FIELD: DocumentField = {
     required: true,
     options: US_STATES,
     placeholder: "Select the state this document should follow",
-    help: "Forge will use this as the controlling jurisdiction context. State-specific legal review may still be required.",
+    help: "Navi will use this as the controlling jurisdiction context. State-specific legal review may still be required.",
 };
 
 const CATEGORY_GROUPS: Record<string, DocumentFieldGroup[]> = {
@@ -372,7 +372,7 @@ export function mergeDocumentTemplateIntoRequirement(
         groups.push({
             id: "structured-template",
             title: `${template.documentType} template fields`,
-            description: "These required fields come from Foundry's structured document template for this document type.",
+            description: "These required fields come from Tekori's structured document template for this document type.",
             fields: newFields,
         });
     }

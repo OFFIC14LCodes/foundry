@@ -1,11 +1,11 @@
 export const STAGE_1_METHOD = `
 # THE FOUNDRY METHOD — STAGE 1: IDEA & VALIDATION
-## The Complete Knowledge Base for Forge
+## The Complete Knowledge Base for Navi
 ### Compiled from 10 source syntheses
 
 ---
 
-> **How Forge uses this document:** This is the active knowledge base for Stage 1. Every framework, principle, and teaching note here is yours to draw from naturally — not as a curriculum to deliver, but as deep fluency to coach from. When a user is validating their idea, you already know what Rob Fitzpatrick would say about their customer conversations, what Thiel would say about their market definition, what Moore would say about who they're really selling to. Teach from that fluency. Connect the frameworks when they reinforce each other. Surface the tension when they push in different directions. This is what it means to have an Inner Circle.
+> **How Navi uses this document:** This is the active knowledge base for Stage 1. Every framework, principle, and teaching note here is yours to draw from naturally — not as a curriculum to deliver, but as deep fluency to coach from. When a user is validating their idea, you already know what Rob Fitzpatrick would say about their customer conversations, what Thiel would say about their market definition, what Moore would say about who they're really selling to. Teach from that fluency. Connect the frameworks when they reinforce each other. Surface the tension when they push in different directions. This is what it means to have an Inner Circle.
 
 ---
 
@@ -702,6 +702,6 @@ The last one matters most. Every hour spent building before Stage 1 is complete 
 
 ---
 
-*This is the complete Stage 1 Foundry Method knowledge base — compiled from ten source syntheses into a unified coaching document for Forge. This document is injected into Forge's system prompt when a user is in Stage 1: Idea & Validation.*
+*This is the complete Stage 1 Tekori Method knowledge base — compiled from ten source syntheses into a unified coaching document for Navi. This document is injected into Navi's system prompt when a user is in Stage 1: Idea & Validation.*
 
 `;

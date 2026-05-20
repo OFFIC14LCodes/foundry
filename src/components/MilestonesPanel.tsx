@@ -25,7 +25,7 @@ export default function MilestonesPanel({
             style={{
                 position: "absolute",
                 inset: 0,
-                background: "#080809",
+                background: "var(--color-bg-soft)",
                 zIndex: 5,
                 display: "flex",
                 flexDirection: "column",
@@ -36,7 +36,7 @@ export default function MilestonesPanel({
             <div
                 style={{
                     padding: "18px 20px 12px",
-                    borderBottom: "1px solid rgba(255,255,255,0.06)",
+                    borderBottom: "1px solid rgba(7,26,47,0.06)",
                     flexShrink: 0,
                 }}
             >
@@ -55,16 +55,16 @@ export default function MilestonesPanel({
                                 alignItems: "center",
                                 gap: 8,
                                 fontSize: 15,
-                                fontFamily: "'Lora', Georgia, serif",
+                                fontFamily: "var(--tekori-font-ui)",
                                 fontWeight: 600,
-                                color: "#F0EDE8",
+                                color: "var(--color-text)",
                             }}
                         >
                             <StageIcon size={16} color={stage.color} />
                             <span>Stage {stageId} Goals</span>
                         </div>
 
-                        <div style={{ fontSize: 12, color: "#E8622A", fontWeight: 600 }}>
+                        <div style={{ fontSize: 12, color: "var(--tekori-gold)", fontWeight: 600 }}>
                             {completionPct}% complete
                         </div>
                     </div>
@@ -72,7 +72,7 @@ export default function MilestonesPanel({
                     <div
                         style={{
                             height: 4,
-                            background: "rgba(255,255,255,0.06)",
+                            background: "rgba(7,26,47,0.06)",
                             borderRadius: 2,
                             position: "relative",
                             overflow: "hidden",
@@ -82,11 +82,11 @@ export default function MilestonesPanel({
                             style={{
                                 height: "100%",
                                 width: `${completionPct}%`,
-                                background: "linear-gradient(90deg, #E8622A, #F5A843)",
+                                background: "linear-gradient(90deg, var(--tekori-gold), var(--tekori-amber))",
                                 borderRadius: 2,
                                 transition: "width 0.6s ease",
                                 boxShadow:
-                                    completionPct > 0 ? "0 0 8px rgba(232,98,42,0.4)" : "none",
+                                    completionPct > 0 ? "0 0 8px rgba(216,155,43,0.4)" : "none",
                             }}
                         />
                         {stage.milestones.map((_, i) => (
@@ -98,7 +98,7 @@ export default function MilestonesPanel({
                                     bottom: 0,
                                     left: `${((i + 1) / stage.milestones.length) * 100}%`,
                                     width: 1,
-                                    background: "rgba(0,0,0,0.4)",
+                                    background: "rgba(7,26,47,0.18)",
                                 }}
                             />
                         ))}
@@ -134,10 +134,10 @@ export default function MilestonesPanel({
                                     padding: "11px 12px",
                                     background: done
                                         ? "rgba(76,175,138,0.06)"
-                                        : "rgba(255,255,255,0.02)",
+                                        : "rgba(7,26,47,0.02)",
                                     border: done
                                         ? "1px solid rgba(76,175,138,0.2)"
-                                        : "1px solid rgba(255,255,255,0.06)",
+                                        : "1px solid rgba(7,26,47,0.06)",
                                     borderRadius: 10,
                                     transition: "all 0.3s ease",
                                 }}
@@ -149,16 +149,16 @@ export default function MilestonesPanel({
                                         borderRadius: "50%",
                                         flexShrink: 0,
                                         background: done
-                                            ? "linear-gradient(135deg, #4CAF8A, #48BB78)"
-                                            : "rgba(255,255,255,0.06)",
+                                            ? "linear-gradient(135deg, var(--color-success), var(--color-success))"
+                                            : "rgba(7,26,47,0.06)",
                                         border: done
                                             ? "none"
-                                            : "1px solid rgba(255,255,255,0.12)",
+                                            : "1px solid rgba(7,26,47,0.12)",
                                         display: "flex",
                                         alignItems: "center",
                                         justifyContent: "center",
                                         fontSize: 11,
-                                        color: "#fff",
+                                        color: done ? "#fff" : "var(--color-text-muted)",
                                         fontWeight: 700,
                                         marginTop: 1,
                                     }}
@@ -170,8 +170,8 @@ export default function MilestonesPanel({
                                     <div
                                         style={{
                                             fontSize: 13,
-                                            fontFamily: "'Lora', Georgia, serif",
-                                            color: done ? "#555" : "#C8C4BE",
+                                            fontFamily: "var(--tekori-font-ui)",
+                                            color: done ? "var(--color-text-muted)" : "var(--color-text-soft)",
                                             textDecoration: done ? "line-through" : "none",
                                             lineHeight: 1.5,
                                         }}
@@ -181,7 +181,7 @@ export default function MilestonesPanel({
 
                                     {!done && (
                                         <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", marginTop: 3 }}>
-                                            Discuss with Forge to unlock
+                                            Discuss with Navi to unlock
                                         </div>
                                     )}
                                 </div>
@@ -201,10 +201,10 @@ export default function MilestonesPanel({
                             animation: "fadeSlideUp 0.4s ease",
                         }}
                     >
-                        <div style={{ fontSize: 14, fontFamily: "'Lora', Georgia, serif", color: "#4CAF8A", fontWeight: 600, marginBottom: 6 }}>
+                        <div style={{ fontSize: 14, fontFamily: "var(--tekori-font-ui)", color: "var(--color-success)", fontWeight: 600, marginBottom: 6 }}>
                             ✓ All goals complete — ready to advance
                         </div>
-                        <div style={{ fontSize: 12, color: "rgba(240,237,232,0.62)", marginBottom: 14 }}>
+                        <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 14 }}>
                             You've finished Stage {stageId}.
                             {STAGES_DATA[stageId]
                                 ? ` Stage ${stageId + 1} — ${STAGES_DATA[stageId].label} — is next. Your full chat history carries over.`
@@ -215,13 +215,13 @@ export default function MilestonesPanel({
                                 onClick={() => onAdvance(stageId + 1)}
                                 style={{
                                     width: "100%",
-                                    background: "linear-gradient(135deg, #4CAF8A, #48BB78)",
+                                    background: "linear-gradient(135deg, var(--color-success), var(--color-success))",
                                     border: "none",
                                     borderRadius: 10,
                                     padding: "11px",
                                     color: "#fff",
                                     fontSize: 13,
-                                    fontFamily: "'Lora', Georgia, serif",
+                                    fontFamily: "var(--tekori-font-ui)",
                                     fontWeight: 600,
                                     cursor: "pointer",
                                 }}
@@ -235,31 +235,31 @@ export default function MilestonesPanel({
                 {!advanceReady && canResumeReachedStage && (
                     <div
                         style={{
-                            background: "linear-gradient(135deg, rgba(232,98,42,0.12), rgba(255,255,255,0.03))",
-                            border: "1px solid rgba(232,98,42,0.22)",
+                            background: "linear-gradient(135deg, rgba(216,155,43,0.12), rgba(7,26,47,0.03))",
+                            border: "1px solid rgba(216,155,43,0.22)",
                             borderRadius: 14,
                             padding: "16px",
                             marginBottom: 16,
                             animation: "fadeSlideUp 0.4s ease",
                         }}
                     >
-                        <div style={{ fontSize: 14, fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8", fontWeight: 600, marginBottom: 6 }}>
+                        <div style={{ fontSize: 14, fontFamily: "var(--tekori-font-ui)", color: "var(--color-text)", fontWeight: 600, marginBottom: 6 }}>
                             Revisit complete whenever you&apos;re ready
                         </div>
-                        <div style={{ fontSize: 12, color: "#A8A4A0", marginBottom: 14, lineHeight: 1.7 }}>
+                        <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 14, lineHeight: 1.7 }}>
                             You&apos;ve already reached Stage {stageId + 1}. Stay here as long as you want, or move back forward whenever it makes sense.
                         </div>
                         <button
                             onClick={() => onAdvance(stageId + 1)}
                             style={{
                                 width: "100%",
-                                background: "linear-gradient(135deg, #E8622A, #c9521e)",
+                                background: "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))",
                                 border: "none",
                                 borderRadius: 10,
                                 padding: "11px",
-                                color: "#fff",
+                                color: "var(--color-primary)",
                                 fontSize: 13,
-                                fontFamily: "'Lora', Georgia, serif",
+                                fontFamily: "var(--tekori-font-ui)",
                                 fontWeight: 600,
                                 cursor: "pointer",
                             }}
@@ -271,8 +271,8 @@ export default function MilestonesPanel({
 
                 <div
                     style={{
-                        background: "rgba(255,255,255,0.02)",
-                        border: "1px solid rgba(255,255,255,0.06)",
+                        background: "rgba(7,26,47,0.02)",
+                        border: "1px solid rgba(7,26,47,0.06)",
                         borderRadius: 12,
                         padding: "12px 14px",
                         marginBottom: 10,
@@ -295,8 +295,8 @@ export default function MilestonesPanel({
                             key={i}
                             style={{
                                 fontSize: 12,
-                                color: "rgba(240,237,232,0.62)",
-                                fontFamily: "'Lora', Georgia, serif",
+                                color: "var(--color-text-muted)",
+                                fontFamily: "var(--tekori-font-ui)",
                                 padding: "3px 0",
                             }}
                         >
@@ -307,8 +307,8 @@ export default function MilestonesPanel({
 
                 <div
                     style={{
-                        background: "rgba(255,255,255,0.02)",
-                        border: "1px solid rgba(255,255,255,0.06)",
+                        background: "rgba(7,26,47,0.02)",
+                        border: "1px solid rgba(7,26,47,0.06)",
                         borderRadius: 12,
                         padding: "12px 14px",
                         marginBottom: 20,
@@ -331,8 +331,8 @@ export default function MilestonesPanel({
                             key={i}
                             style={{
                                 fontSize: 12,
-                                color: "rgba(240,237,232,0.62)",
-                                fontFamily: "'Lora', Georgia, serif",
+                                color: "var(--color-text-muted)",
+                                fontFamily: "var(--tekori-font-ui)",
                                 fontStyle: "italic",
                                 padding: "3px 0",
                             }}
@@ -347,17 +347,17 @@ export default function MilestonesPanel({
                     style={{
                         width: "100%",
                         padding: "12px",
-                        background: "linear-gradient(135deg, #E8622A, #c9521e)",
+                        background: "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))",
                         border: "none",
                         borderRadius: 12,
-                        color: "#fff",
+                        color: "var(--color-primary)",
                         fontSize: 13,
-                        fontFamily: "'Lora', Georgia, serif",
+                        fontFamily: "var(--tekori-font-ui)",
                         fontWeight: 600,
                         cursor: "pointer",
                     }}
                 >
-                    Continue with Forge →
+                    Continue with Navi →
                 </button>
                 </div>
             </div>

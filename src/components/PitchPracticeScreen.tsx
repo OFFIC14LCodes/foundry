@@ -53,12 +53,12 @@ const SCENARIO_CONTEXT: Record<Scenario, { persona: string; tips: string[]; colo
     investor: {
         persona: "A seed-stage angel investor deciding whether this is worth a check.",
         tips: ["Lead with the problem, not the product", "Be specific about market size", "Have a clear ask"],
-        color: "#E8622A",
+        color: "var(--tekori-gold)",
     },
     customer: {
         persona: "A skeptical first customer hearing about your product for the first time.",
         tips: ["Focus on their pain, not your features", "Ask questions before pitching", "Name your price confidently"],
-        color: "#4CAF8A",
+        color: "var(--color-success)",
     },
     elevator: {
         persona: "A seasoned entrepreneur with about 60 seconds before the elevator arrives.",
@@ -98,10 +98,10 @@ function stripScoresJson(text: string) {
 }
 
 function scoreColor(score?: number | null) {
-    if (!score) return "rgba(240,237,232,0.3)";
-    if (score >= 4) return "#4CAF8A";
-    if (score === 3) return "#E8622A";
-    return "rgba(232,98,42,0.7)";
+    if (!score) return "rgba(102,112,133,0.45)";
+    if (score >= 4) return "var(--color-success)";
+    if (score === 3) return "var(--tekori-gold)";
+    return "rgba(216,155,43,0.7)";
 }
 
 function scenarioLabelFor(id: string) {
@@ -130,7 +130,7 @@ function renderInline(text: string) {
     const parts = text.split(/\*\*(.+?)\*\*/g);
     return parts.map((part, i) =>
         i % 2 === 1
-            ? <strong key={i} style={{ color: "#F0EDE8" }}>{part}</strong>
+            ? <strong key={i} style={{ color: "var(--color-text)" }}>{part}</strong>
             : part
     );
 }
@@ -143,21 +143,21 @@ function FeedbackText({ text }: { text: string }) {
                 const headerMatch = line.match(/^\*\*(.+)\*\*$/);
                 if (headerMatch) {
                     return (
-                        <div key={i} style={{ fontWeight: 700, color: "#F0EDE8", marginTop: i > 0 ? 20 : 0, marginBottom: 6, fontSize: 13, letterSpacing: "0.02em" }}>
+                        <div key={i} style={{ fontWeight: 700, color: "var(--color-text)", marginTop: i > 0 ? 20 : 0, marginBottom: 6, fontSize: 13, letterSpacing: "0.02em" }}>
                             {headerMatch[1]}
                         </div>
                     );
                 }
                 if (line.startsWith("- ")) {
                     return (
-                        <div key={i} style={{ fontSize: 13, color: "#C8C4BE", paddingLeft: 14, lineHeight: 1.75, marginBottom: 3 }}>
+                        <div key={i} style={{ fontSize: 13, color: "var(--color-text-soft)", paddingLeft: 14, lineHeight: 1.75, marginBottom: 3 }}>
                             · {renderInline(line.slice(2))}
                         </div>
                     );
                 }
                 if (line.trim() === "") return <div key={i} style={{ height: 6 }} />;
                 return (
-                    <div key={i} style={{ fontSize: 13, color: "#C8C4BE", lineHeight: 1.75, marginBottom: 2 }}>
+                    <div key={i} style={{ fontSize: 13, color: "var(--color-text-soft)", lineHeight: 1.75, marginBottom: 2 }}>
                         {renderInline(line)}
                     </div>
                 );
@@ -245,15 +245,15 @@ function ScoreCard({ label, value }: { label: string; value?: number | null }) {
     const safeValue = value ?? 0;
     const color = scoreColor(safeValue);
     return (
-        <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: 16 }}>
-            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(240,237,232,0.7)", fontFamily: "'DM Sans', sans-serif", marginBottom: 8 }}>{label}</div>
+        <div style={{ background: "rgba(7,26,47,0.03)", border: "1px solid rgba(7,26,47,0.07)", borderRadius: 12, padding: 16 }}>
+            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(71,84,103,0.88)", fontFamily: "var(--tekori-font-ui)", marginBottom: 8 }}>{label}</div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-                <span style={{ fontSize: 36, color, fontFamily: "'Playfair Display', Georgia, serif", lineHeight: 1 }}>{safeValue || "—"}</span>
-                <span style={{ fontSize: 14, color: "rgba(240,237,232,0.55)", fontFamily: "'DM Sans', sans-serif" }}>/5</span>
+                <span style={{ fontSize: 36, color, fontFamily: "var(--tekori-font-brand)", lineHeight: 1 }}>{safeValue || "—"}</span>
+                <span style={{ fontSize: 14, color: "rgba(102,112,133,0.74)", fontFamily: "var(--tekori-font-ui)" }}>/5</span>
             </div>
             <div style={{ display: "flex", gap: 5, marginTop: 10 }}>
                 {[1, 2, 3, 4, 5].map(dot => (
-                    <span key={dot} style={{ width: 7, height: 7, borderRadius: "50%", background: dot <= safeValue ? color : "rgba(255,255,255,0.1)" }} />
+                    <span key={dot} style={{ width: 7, height: 7, borderRadius: "50%", background: dot <= safeValue ? color : "rgba(7,26,47,0.10)" }} />
                 ))}
             </div>
         </div>
@@ -264,13 +264,13 @@ function OverallScoreCard({ value }: { value?: number | null }) {
     const safeValue = value ?? 0;
     const color = scoreColor(safeValue);
     return (
-        <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: 18, marginBottom: 18 }}>
-            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(240,237,232,0.7)", fontFamily: "'DM Sans', sans-serif", marginBottom: 8 }}>Overall</div>
+        <div style={{ background: "rgba(7,26,47,0.03)", border: "1px solid rgba(7,26,47,0.07)", borderRadius: 12, padding: 18, marginBottom: 18 }}>
+            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(71,84,103,0.88)", fontFamily: "var(--tekori-font-ui)", marginBottom: 8 }}>Overall</div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginBottom: 12 }}>
-                <span style={{ fontSize: 48, color, fontFamily: "'Playfair Display', Georgia, serif", lineHeight: 1 }}>{safeValue || "—"}</span>
-                <span style={{ fontSize: 14, color: "rgba(240,237,232,0.55)", fontFamily: "'DM Sans', sans-serif" }}>/5</span>
+                <span style={{ fontSize: 48, color, fontFamily: "var(--tekori-font-brand)", lineHeight: 1 }}>{safeValue || "—"}</span>
+                <span style={{ fontSize: 14, color: "rgba(102,112,133,0.74)", fontFamily: "var(--tekori-font-ui)" }}>/5</span>
             </div>
-            <div style={{ height: 6, borderRadius: 3, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+            <div style={{ height: 6, borderRadius: 3, background: "rgba(7,26,47,0.08)", overflow: "hidden" }}>
                 <div style={{ width: `${Math.max(0, Math.min(100, (safeValue / 5) * 100))}%`, height: "100%", background: color, borderRadius: 3 }} />
             </div>
         </div>
@@ -289,19 +289,19 @@ function FeedbackSections({ text, scores }: { text: string; scores: ParsedScores
         const isFix = title === "The one most important fix";
         rendered.push(
             <div key={title} style={{
-                background: isFix ? "rgba(232,98,42,0.08)" : "transparent",
-                border: isFix ? "1px solid rgba(232,98,42,0.2)" : "none",
+                background: isFix ? "rgba(216,155,43,0.08)" : "transparent",
+                border: isFix ? "1px solid rgba(216,155,43,0.2)" : "none",
                 borderRadius: isFix ? 10 : 0,
                 padding: isFix ? 14 : 0,
                 marginBottom: 18,
             }}>
-                {isFix && <div style={{ fontSize: 11, textTransform: "uppercase", color: "#E8622A", fontFamily: "'DM Sans', sans-serif", marginBottom: 8 }}>🎯 Focus on this</div>}
-                <div style={{ fontSize: 15, color: "#F0EDE8", fontWeight: 600, fontFamily: "'Lora', Georgia, serif", marginBottom: 8 }}>{title}</div>
+                {isFix && <div style={{ fontSize: 11, textTransform: "uppercase", color: "var(--tekori-gold)", fontFamily: "var(--tekori-font-ui)", marginBottom: 8 }}>🎯 Focus on this</div>}
+                <div style={{ fontSize: 15, color: "var(--color-text)", fontWeight: 600, fontFamily: "var(--tekori-font-ui)", marginBottom: 8 }}>{title}</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
                     {lines.map((line, index) => {
                         const cleaned = line.replace(/^- /, "");
                         return (
-                            <div key={index} style={{ fontSize: 14, color: "rgba(240,237,232,0.8)", fontFamily: "'DM Sans', sans-serif", lineHeight: 1.7, paddingLeft: line.startsWith("- ") ? 8 : 0 }}>
+                            <div key={index} style={{ fontSize: 14, color: "rgba(16,32,51,0.8)", fontFamily: "var(--tekori-font-ui)", lineHeight: 1.7, paddingLeft: line.startsWith("- ") ? 8 : 0 }}>
                                 {line.startsWith("- ") ? `• ${cleaned}` : cleaned}
                             </div>
                         );
@@ -315,7 +315,7 @@ function FeedbackSections({ text, scores }: { text: string; scores: ParsedScores
         <>
             {rendered.length ? rendered : <FeedbackText text={withoutScores} />}
             {scores?.encouragement && (
-                <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: 16, marginTop: 4, textAlign: "center", fontSize: 14, fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", color: "rgba(240,237,232,0.7)", lineHeight: 1.7 }}>
+                <div style={{ borderTop: "1px solid rgba(7,26,47,0.07)", paddingTop: 16, marginTop: 4, textAlign: "center", fontSize: 14, fontFamily: "var(--tekori-font-ui)", fontStyle: "italic", color: "rgba(71,84,103,0.88)", lineHeight: 1.7 }}>
                     {scores.encouragement}
                 </div>
             )}
@@ -330,13 +330,13 @@ function TranscriptReplay({ messages }: { messages: PitchMessage[] }) {
                 <div key={index} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start" }}>
                     <div style={{
                         maxWidth: "82%",
-                        background: msg.role === "user" ? "rgba(232,98,42,0.12)" : "rgba(255,255,255,0.04)",
-                        color: msg.role === "user" ? "rgba(240,237,232,0.8)" : "rgba(240,237,232,0.6)",
+                        background: msg.role === "user" ? "rgba(216,155,43,0.12)" : "rgba(7,26,47,0.04)",
+                        color: msg.role === "user" ? "rgba(16,32,51,0.8)" : "rgba(102,112,133,0.78)",
                         borderRadius: 10,
                         padding: "8px 12px",
                         fontSize: 13,
                         lineHeight: 1.55,
-                        fontFamily: "'DM Sans', sans-serif",
+                        fontFamily: "var(--tekori-font-ui)",
                         whiteSpace: "pre-wrap",
                     }}>{msg.text}</div>
                 </div>
@@ -356,11 +356,11 @@ function PitchMessageBubble({ msg }: { msg: PitchMessage }) {
                 borderRadius: 10,
                 background: "rgba(76,175,138,0.08)",
                 border: "1px solid rgba(76,175,138,0.2)",
-                color: "rgba(240,237,232,0.75)",
+                color: "rgba(16,32,51,0.75)",
                 fontSize: 13,
                 lineHeight: 1.65,
             }}>
-                <div style={{ color: "#4CAF8A", fontSize: 11, fontFamily: "'DM Sans', sans-serif", marginBottom: 5 }}>💡 Quick coaching note</div>
+                <div style={{ color: "var(--color-success)", fontSize: 11, fontFamily: "var(--tekori-font-ui)", marginBottom: 5 }}>💡 Quick coaching note</div>
                 <StructuredPitchText text={displayText} />
             </div>
         );
@@ -371,11 +371,11 @@ function PitchMessageBubble({ msg }: { msg: PitchMessage }) {
             style={{
                 padding: "10px 14px",
                 borderRadius: msg.role === "user" ? "16px 16px 4px 16px" : "4px 16px 16px 16px",
-                background: msg.role === "user" ? "rgba(232,98,42,0.12)" : "rgba(255,255,255,0.04)",
-                border: msg.role === "user" ? "1px solid rgba(232,98,42,0.2)" : "1px solid rgba(255,255,255,0.06)",
+                background: msg.role === "user" ? "rgba(216,155,43,0.12)" : "rgba(7,26,47,0.04)",
+                border: msg.role === "user" ? "1px solid rgba(216,155,43,0.2)" : "1px solid rgba(7,26,47,0.06)",
                 fontSize: 13,
                 lineHeight: 1.65,
-                color: msg.role === "user" ? "#F0EDE8" : "#C8C4BE",
+                color: msg.role === "user" ? "var(--color-text)" : "var(--color-text-soft)",
             }}
         >
             {msg.text
@@ -662,7 +662,7 @@ export default function PitchPracticeScreen({
                     sourceLabel: "Pitch Practice",
                     sourceRefId: scenario,
                     stageId: Number(profile?.currentStage) || 1,
-                    transcript: messages.map((message) => `${message.role === "forge" ? "Forge" : profile?.name || "Founder"}: ${message.text}`).join("\n"),
+                    transcript: messages.map((message) => `${message.role === "forge" ? "Navi" : profile?.name || "Founder"}: ${message.text}`).join("\n"),
                 });
             }
             setArchiveSaved(!!saved);
@@ -762,18 +762,18 @@ export default function PitchPracticeScreen({
     // ═══════════════════════════════════════════════════════════
     if (phase === "setup") {
         return (
-            <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8" }}>
+            <div style={{ minHeight: "100vh", background: "var(--color-bg-soft)", fontFamily: "var(--tekori-font-ui)", color: "var(--color-text)" }}>
                 {/* Header */}
-                <div style={{ padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)", zIndex: 10 }}>
+                <div style={{ padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px", borderBottom: "1px solid rgba(7,26,47,0.05)", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, background: "rgba(255,252,246,0.94)", backdropFilter: "blur(12px)", zIndex: 10 }}>
                     <button
                         onClick={onOpenNav}
-                        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "rgba(240,237,232,0.62)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                        style={{ background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "var(--color-text-muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                     >
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg>
                     </button>
                     <div>
-                        <div style={{ fontSize: "var(--foundry-app-header-title-font)", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>Pitch Practice</div>
-                        <div style={{ fontSize: "var(--foundry-app-header-meta-font)", color: "var(--foundry-text-muted)" }}>Rehearse your pitch with Forge</div>
+                        <div style={{ fontSize: "var(--foundry-app-header-title-font)", fontFamily: "var(--tekori-font-brand)", fontWeight: 700 }}>Pitch Practice</div>
+                        <div style={{ fontSize: "var(--foundry-app-header-meta-font)", color: "var(--foundry-text-muted)" }}>Rehearse your pitch with Navi</div>
                     </div>
                 </div>
 
@@ -783,10 +783,10 @@ export default function PitchPracticeScreen({
                             marginBottom: 18,
                             padding: "12px 14px",
                             borderRadius: 12,
-                            background: trialUsesRemaining > 0 ? "rgba(232,98,42,0.05)" : "rgba(232,98,42,0.07)",
-                            border: trialUsesRemaining > 0 ? "1px solid rgba(232,98,42,0.14)" : "1px solid rgba(232,98,42,0.2)",
+                            background: trialUsesRemaining > 0 ? "rgba(216,155,43,0.05)" : "rgba(216,155,43,0.07)",
+                            border: trialUsesRemaining > 0 ? "1px solid rgba(216,155,43,0.14)" : "1px solid rgba(216,155,43,0.2)",
                             fontSize: 12,
-                            color: trialUsesRemaining > 0 ? "#BDAFA2" : "#D9B9A6",
+                            color: trialUsesRemaining > 0 ? "var(--color-text-muted)" : "var(--color-text-soft)",
                             lineHeight: 1.65,
                         }}>
                             {trialUsesRemaining > 0
@@ -803,12 +803,12 @@ export default function PitchPracticeScreen({
                                 style={{
                                     padding: "10px 12px",
                                     borderRadius: 10,
-                                    border: setupTab === tab ? "1px solid rgba(232,98,42,0.45)" : "1px solid rgba(255,255,255,0.07)",
-                                    background: setupTab === tab ? "rgba(232,98,42,0.1)" : "rgba(255,255,255,0.025)",
-                                    color: setupTab === tab ? "#E8622A" : "rgba(240,237,232,0.55)",
+                                    border: setupTab === tab ? "1px solid rgba(216,155,43,0.45)" : "1px solid rgba(7,26,47,0.07)",
+                                    background: setupTab === tab ? "rgba(216,155,43,0.1)" : "rgba(7,26,47,0.025)",
+                                    color: setupTab === tab ? "var(--tekori-gold)" : "rgba(102,112,133,0.74)",
                                     fontSize: 12,
                                     fontWeight: 700,
-                                    fontFamily: "'DM Sans', sans-serif",
+                                    fontFamily: "var(--tekori-font-ui)",
                                     cursor: "pointer",
                                 }}
                             >
@@ -822,10 +822,10 @@ export default function PitchPracticeScreen({
                     {/* Intro */}
                     <div style={{ marginBottom: 28, animation: "fadeSlideUp 0.4s ease both", textAlign: "left" }}>
                         <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                            <div style={{ fontSize: 23, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, lineHeight: 1.2 }}>
+                            <div style={{ fontSize: 23, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, lineHeight: 1.2 }}>
                                 Your rehearsal room.
                             </div>
-                            <HelpTooltip content="Forge plays the audience. You pitch. Get honest feedback on your clarity, confidence, and persuasiveness before the stakes are real." />
+                            <HelpTooltip content="Navi plays the audience. You pitch. Get honest feedback on your clarity, confidence, and persuasiveness before the stakes are real." />
                         </div>
                     </div>
                     {!voiceSupported && (
@@ -848,8 +848,8 @@ export default function PitchPracticeScreen({
                                         style={{
                                             padding: "16px 12px",
                                             borderRadius: 12,
-                                            border: mode === m ? "1px solid rgba(232,98,42,0.5)" : "1px solid rgba(255,255,255,0.06)",
-                                            background: mode === m ? "rgba(232,98,42,0.1)" : "rgba(255,255,255,0.02)",
+                                            border: mode === m ? "1px solid rgba(216,155,43,0.5)" : "1px solid rgba(7,26,47,0.06)",
+                                            background: mode === m ? "rgba(216,155,43,0.1)" : "rgba(7,26,47,0.02)",
                                             cursor: unavailable ? "not-allowed" : "pointer",
                                             opacity: unavailable ? 0.35 : 1,
                                             textAlign: "left",
@@ -861,17 +861,17 @@ export default function PitchPracticeScreen({
                                                 width: 34,
                                                 height: 34,
                                                 borderRadius: 10,
-                                                background: mode === m ? "rgba(232,98,42,0.12)" : "rgba(255,255,255,0.04)",
-                                                border: mode === m ? "1px solid rgba(232,98,42,0.24)" : "1px solid rgba(255,255,255,0.08)",
+                                                background: mode === m ? "rgba(216,155,43,0.12)" : "rgba(7,26,47,0.04)",
+                                                border: mode === m ? "1px solid rgba(216,155,43,0.24)" : "1px solid rgba(7,26,47,0.08)",
                                                 display: "flex",
                                                 alignItems: "center",
                                                 justifyContent: "center",
                                                 marginBottom: 8,
                                             }}
                                         >
-                                            <ModeIcon size={18} color={mode === m ? "#E8622A" : "#888"} />
+                                            <ModeIcon size={18} color={mode === m ? "var(--tekori-gold)" : "var(--color-text-muted)"} />
                                         </div>
-                                        <div style={{ fontSize: 13, fontWeight: 600, color: mode === m ? "#E8622A" : "#C8C4BE", marginBottom: 3 }}>
+                                        <div style={{ fontSize: 13, fontWeight: 600, color: mode === m ? "var(--tekori-gold)" : "var(--color-text-soft)", marginBottom: 3 }}>
                                             {m === "text" ? "Text" : "Voice"}
                                         </div>
                                         <HelpTooltip content={m === "text" ? "Type your pitch" : speechSupported ? "Speak naturally" : "Not supported"} />
@@ -898,8 +898,8 @@ export default function PitchPracticeScreen({
                                         gap: 14,
                                         padding: "12px 14px",
                                         borderRadius: 12,
-                                        border: scenario === s.id ? "1px solid rgba(232,98,42,0.5)" : "1px solid rgba(255,255,255,0.06)",
-                                        background: scenario === s.id ? "rgba(232,98,42,0.08)" : "rgba(255,255,255,0.02)",
+                                        border: scenario === s.id ? "1px solid rgba(216,155,43,0.5)" : "1px solid rgba(7,26,47,0.06)",
+                                        background: scenario === s.id ? "rgba(216,155,43,0.08)" : "rgba(7,26,47,0.02)",
                                         cursor: "pointer",
                                         textAlign: "left",
                                         transition: "all 0.15s",
@@ -911,21 +911,21 @@ export default function PitchPracticeScreen({
                                             width: 34,
                                             height: 34,
                                             borderRadius: 10,
-                                            background: scenario === s.id ? "rgba(232,98,42,0.12)" : "rgba(255,255,255,0.04)",
-                                            border: scenario === s.id ? "1px solid rgba(232,98,42,0.24)" : "1px solid rgba(255,255,255,0.08)",
+                                            background: scenario === s.id ? "rgba(216,155,43,0.12)" : "rgba(7,26,47,0.04)",
+                                            border: scenario === s.id ? "1px solid rgba(216,155,43,0.24)" : "1px solid rgba(7,26,47,0.08)",
                                             display: "inline-flex",
                                             alignItems: "center",
                                             justifyContent: "center",
                                             flexShrink: 0,
                                         }}
                                     >
-                                        <ScenarioIcon size={18} color={scenario === s.id ? "#E8622A" : "#888"} />
+                                        <ScenarioIcon size={18} color={scenario === s.id ? "var(--tekori-gold)" : "var(--color-text-muted)"} />
                                     </span>
                                     <div style={{ flex: 1 }}>
-                                        <div style={{ fontSize: 13, color: scenario === s.id ? "#E8622A" : "#C8C4BE", fontWeight: 600, marginBottom: 2 }}>{s.label}</div>
+                                        <div style={{ fontSize: 13, color: scenario === s.id ? "var(--tekori-gold)" : "var(--color-text-soft)", fontWeight: 600, marginBottom: 2 }}>{s.label}</div>
                                         <HelpTooltip content={s.sub} />
                                     </div>
-                                    {scenario === s.id && <span style={{ color: "#E8622A", fontSize: 12, flexShrink: 0 }}>✓</span>}
+                                    {scenario === s.id && <span style={{ color: "var(--tekori-gold)", fontSize: 12, flexShrink: 0 }}>✓</span>}
                                 </button>
                                     );
                                 })()
@@ -935,14 +935,14 @@ export default function PitchPracticeScreen({
 
                     {/* Forge voice toggle — only in voice mode */}
                     {mode === "voice" && (
-                        <div style={{ marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, animation: "fadeSlideUp 0.3s ease both" }}>
+                        <div style={{ marginBottom: 20, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.06)", borderRadius: 10, animation: "fadeSlideUp 0.3s ease both" }}>
                             <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                                <span style={{ fontSize: 12, color: "#F0EDE8" }}>Forge voice</span>
-                                <HelpTooltip content="Forge speaks responses aloud." />
+                                <span style={{ fontSize: 12, color: "var(--color-text)" }}>Navi voice</span>
+                                <HelpTooltip content="Navi speaks responses aloud." />
                             </span>
                             <button
                                 onClick={() => setForgeVoiceOn(v => !v)}
-                                style={{ background: forgeVoiceOn ? "rgba(232,98,42,0.18)" : "rgba(255,255,255,0.06)", border: "none", borderRadius: 20, padding: "4px 14px", color: forgeVoiceOn ? "#E8622A" : "#555", fontSize: 11, cursor: "pointer", fontWeight: 600 }}
+                                style={{ background: forgeVoiceOn ? "rgba(216,155,43,0.18)" : "rgba(7,26,47,0.06)", border: "none", borderRadius: 20, padding: "4px 14px", color: forgeVoiceOn ? "var(--tekori-gold)" : "var(--color-text-muted)", fontSize: 11, cursor: "pointer", fontWeight: 600 }}
                             >
                                 {forgeVoiceOn ? "On" : "Off"}
                             </button>
@@ -953,7 +953,7 @@ export default function PitchPracticeScreen({
                     <button
                         onClick={startSession}
                         disabled={trialUsesRemaining !== null && trialUsesRemaining <= 0}
-                        style={{ width: "100%", padding: "15px", background: trialUsesRemaining !== null && trialUsesRemaining <= 0 ? "rgba(255,255,255,0.06)" : "linear-gradient(135deg, #E8622A, #c9521e)", border: "none", borderRadius: 14, color: trialUsesRemaining !== null && trialUsesRemaining <= 0 ? "#555" : "#fff", fontSize: 15, fontWeight: 700, cursor: trialUsesRemaining !== null && trialUsesRemaining <= 0 ? "default" : "pointer", fontFamily: "'Lora', Georgia, serif", letterSpacing: "0.02em", animation: "fadeSlideUp 0.4s ease 0.15s both" }}
+                        style={{ width: "100%", padding: "15px", background: trialUsesRemaining !== null && trialUsesRemaining <= 0 ? "rgba(7,26,47,0.06)" : "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))", border: "none", borderRadius: 14, color: trialUsesRemaining !== null && trialUsesRemaining <= 0 ? "var(--color-text-muted)" : "var(--color-primary)", fontSize: 15, fontWeight: 800, cursor: trialUsesRemaining !== null && trialUsesRemaining <= 0 ? "default" : "pointer", fontFamily: "var(--tekori-font-ui)", letterSpacing: "0.02em", animation: "fadeSlideUp 0.4s ease 0.15s both" }}
                     >
                         {trialUsesRemaining !== null && trialUsesRemaining <= 0 ? "Preview limit reached" : "Start Session →"}
                     </button>
@@ -961,14 +961,14 @@ export default function PitchPracticeScreen({
                     ) : (
                         <div style={{ animation: "fadeSlideUp 0.35s ease both" }}>
                             {history.length >= 3 && (
-                                <div style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: 16, marginBottom: 16 }}>
-                                    <div style={{ fontSize: 15, color: "#F0EDE8", fontFamily: "'Lora', Georgia, serif", fontWeight: 600, marginBottom: 14 }}>
+                                <div style={{ background: "rgba(7,26,47,0.025)", border: "1px solid rgba(7,26,47,0.07)", borderRadius: 14, padding: 16, marginBottom: 16 }}>
+                                    <div style={{ fontSize: 15, color: "var(--color-text)", fontFamily: "var(--tekori-font-ui)", fontWeight: 600, marginBottom: 14 }}>
                                         {latestScenarioComparison ?? "Your pitch score trend"}
                                     </div>
-                                    <div style={{ height: 120, display: "flex", alignItems: "flex-end", gap: 8, borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: 8 }}>
+                                    <div style={{ height: 120, display: "flex", alignItems: "flex-end", gap: 8, borderBottom: "1px solid rgba(7,26,47,0.08)", paddingBottom: 8 }}>
                                         {history.slice(0, 8).reverse().map(session => {
                                             const value = session.overallScore ?? 0;
-                                            const color = SCENARIO_CONTEXT[session.scenario as Scenario]?.color ?? "#E8622A";
+                                            const color = SCENARIO_CONTEXT[session.scenario as Scenario]?.color ?? "var(--tekori-gold)";
                                             return (
                                                 <div key={session.id} title={`${scenarioLabelFor(session.scenario)}: ${value}/5`} style={{ flex: 1, display: "flex", alignItems: "flex-end", justifyContent: "center", height: "100%" }}>
                                                     <div style={{ width: "70%", height: `${Math.max(4, (value / 5) * 100)}%`, background: color, borderRadius: "6px 6px 0 0", opacity: value ? 0.85 : 0.25 }} />
@@ -979,17 +979,17 @@ export default function PitchPracticeScreen({
                                 </div>
                             )}
 
-                            <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: 14, marginBottom: 16 }}>
-                                <div style={{ fontSize: 13, color: "#F0EDE8", fontFamily: "'Lora', Georgia, serif", fontWeight: 600, marginBottom: 10 }}>Your best scores</div>
+                            <div style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.06)", borderRadius: 14, padding: 14, marginBottom: 16 }}>
+                                <div style={{ fontSize: 13, color: "var(--color-text)", fontFamily: "var(--tekori-font-ui)", fontWeight: 600, marginBottom: 10 }}>Your best scores</div>
                                 {(["investor", "customer", "elevator", "partner"] as Scenario[]).map(id => {
                                     const best = history
                                         .filter(session => session.scenario === id)
                                         .sort((a, b) => ((averagePitchScore(b) ?? 0) - (averagePitchScore(a) ?? 0)))[0];
                                     const bestAverage = best ? averagePitchScore(best) : null;
                                     return (
-                                        <div key={id} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 10, padding: "7px 0", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
-                                            <div style={{ fontSize: 12, color: "rgba(240,237,232,0.65)", fontFamily: "'DM Sans', sans-serif" }}>{scenarioLabelFor(id)}</div>
-                                            <div style={{ fontSize: 12, color: best ? "#D9B15D" : "rgba(240,237,232,0.3)", fontFamily: "'DM Sans', sans-serif" }}>
+                                        <div key={id} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 10, padding: "7px 0", borderTop: "1px solid rgba(7,26,47,0.04)" }}>
+                                            <div style={{ fontSize: 12, color: "rgba(16,32,51,0.65)", fontFamily: "var(--tekori-font-ui)" }}>{scenarioLabelFor(id)}</div>
+                                            <div style={{ fontSize: 12, color: best ? "var(--tekori-amber)" : "rgba(102,112,133,0.45)", fontFamily: "var(--tekori-font-ui)" }}>
                                                 {best && bestAverage !== null ? `★ ${bestAverage.toFixed(1)} overall   ${formatSessionDate(best.createdAt)}` : "★ —  No sessions yet"}
                                             </div>
                                         </div>
@@ -1004,20 +1004,20 @@ export default function PitchPracticeScreen({
                             ) : (
                                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                                     {history.map(session => (
-                                        <div key={session.id} style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: 14 }}>
+                                        <div key={session.id} style={{ background: "rgba(7,26,47,0.025)", border: "1px solid rgba(7,26,47,0.07)", borderRadius: 12, padding: 14 }}>
                                             <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginBottom: 8 }}>
                                                 <div>
-                                                    <div style={{ fontSize: 14, color: "#F0EDE8", fontWeight: 600 }}>{scenarioLabelFor(session.scenario)}</div>
-                                                    <div style={{ fontSize: 12, color: "rgba(240,237,232,0.58)", fontFamily: "'DM Sans', sans-serif" }}>{formatSessionDate(session.createdAt)} · {session.mode}</div>
+                                                    <div style={{ fontSize: 14, color: "var(--color-text)", fontWeight: 600 }}>{scenarioLabelFor(session.scenario)}</div>
+                                                    <div style={{ fontSize: 12, color: "rgba(16,32,51,0.58)", fontFamily: "var(--tekori-font-ui)" }}>{formatSessionDate(session.createdAt)} · {session.mode}</div>
                                                 </div>
-                                                <div style={{ color: scoreColor(session.overallScore), fontSize: 24, fontFamily: "'Playfair Display', Georgia, serif" }}>{session.overallScore ?? "—"}</div>
+                                                <div style={{ color: scoreColor(session.overallScore), fontSize: 24, fontFamily: "var(--tekori-font-brand)" }}>{session.overallScore ?? "—"}</div>
                                             </div>
                                             <div style={{ display: "flex", gap: 5, marginBottom: 10 }}>
                                                 {[session.clarityScore, session.confidenceScore, session.persuasivenessScore, session.brevityScore].map((value, index) => (
                                                     <span key={index} style={{ width: 8, height: 8, borderRadius: "50%", background: scoreColor(value) }} />
                                                 ))}
                                             </div>
-                                            <button onClick={() => setHistoryModal(session)} style={{ background: "transparent", border: "none", color: "#E8622A", fontSize: 12, cursor: "pointer", padding: 0 }}>View Feedback →</button>
+                                            <button onClick={() => setHistoryModal(session)} style={{ background: "transparent", border: "none", color: "var(--tekori-gold)", fontSize: 12, cursor: "pointer", padding: 0 }}>View Feedback →</button>
                                         </div>
                                     ))}
                                 </div>
@@ -1026,14 +1026,14 @@ export default function PitchPracticeScreen({
                     )}
                 </div>
                 {historyModal && (
-                    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.82)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }}>
-                        <div style={{ width: "100%", maxWidth: 720, maxHeight: "86vh", overflowY: "auto", background: "rgb(12,12,14)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 16, padding: 20 }}>
+                    <div style={{ position: "fixed", inset: 0, background: "rgba(7,26,47,0.48)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }}>
+                        <div style={{ width: "100%", maxWidth: 720, maxHeight: "86vh", overflowY: "auto", background: "var(--color-surface)", border: "1px solid rgba(7,26,47,0.09)", borderRadius: 16, padding: 20 }}>
                             <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 14 }}>
                                 <div>
-                                    <div style={{ fontSize: 18, color: "#F0EDE8", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>{scenarioLabelFor(historyModal.scenario)}</div>
-                                    <div style={{ fontSize: 12, color: "rgba(240,237,232,0.58)", fontFamily: "'DM Sans', sans-serif" }}>{formatSessionDate(historyModal.createdAt)} · {historyModal.mode}</div>
+                                    <div style={{ fontSize: 18, color: "var(--color-text)", fontFamily: "var(--tekori-font-brand)", fontWeight: 700 }}>{scenarioLabelFor(historyModal.scenario)}</div>
+                                    <div style={{ fontSize: 12, color: "rgba(16,32,51,0.58)", fontFamily: "var(--tekori-font-ui)" }}>{formatSessionDate(historyModal.createdAt)} · {historyModal.mode}</div>
                                 </div>
-                                <button onClick={() => setHistoryModal(null)} style={{ background: "transparent", border: "none", color: "rgba(240,237,232,0.62)", fontSize: 22, cursor: "pointer" }}>×</button>
+                                <button onClick={() => setHistoryModal(null)} style={{ background: "transparent", border: "none", color: "var(--color-text-muted)", fontSize: 22, cursor: "pointer" }}>×</button>
                             </div>
                             <OverallScoreCard value={historyModal.overallScore} />
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
@@ -1043,11 +1043,11 @@ export default function PitchPracticeScreen({
                                 <ScoreCard label="Brevity" value={historyModal.brevityScore} />
                             </div>
                             {historyModal.feedback && (
-                                <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: 16, marginBottom: 16 }}>
+                                <div style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.06)", borderRadius: 12, padding: 16, marginBottom: 16 }}>
                                     <FeedbackText text={historyModal.feedback} />
                                 </div>
                             )}
-                            <div style={{ fontSize: 13, color: "rgba(240,237,232,0.7)", fontFamily: "'DM Sans', sans-serif", marginBottom: 10 }}>Session Transcript</div>
+                            <div style={{ fontSize: 13, color: "rgba(71,84,103,0.88)", fontFamily: "var(--tekori-font-ui)", marginBottom: 10 }}>Session Transcript</div>
                             <TranscriptReplay messages={historyModal.transcript} />
                         </div>
                     </div>
@@ -1062,11 +1062,11 @@ export default function PitchPracticeScreen({
     if (phase === "feedback") {
         const scenarioLabel = SCENARIOS.find(s => s.id === scenario)?.label || "Pitch";
         return (
-            <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8" }}>
-                <div style={{ padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)", zIndex: 10 }}>
-                    <button onClick={onOpenNav} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "6px 10px", color: "rgba(240,237,232,0.62)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg></button>
+            <div style={{ minHeight: "100vh", background: "var(--color-bg-soft)", fontFamily: "var(--tekori-font-ui)", color: "var(--color-text)" }}>
+                <div style={{ padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px", borderBottom: "1px solid rgba(7,26,47,0.05)", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, background: "rgba(255,252,246,0.94)", backdropFilter: "blur(12px)", zIndex: 10 }}>
+                    <button onClick={onOpenNav} style={{ background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 8, padding: "6px 10px", color: "var(--color-text-muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg></button>
                     <div>
-                        <div style={{ fontSize: 16, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700 }}>Session Complete</div>
+                        <div style={{ fontSize: 16, fontFamily: "var(--tekori-font-brand)", fontWeight: 700 }}>Session Complete</div>
                         <div style={{ fontSize: 10, color: "var(--foundry-text-muted)" }}>{formatTime(sessionTime)} · {scenarioLabel}</div>
                     </div>
                 </div>
@@ -1075,18 +1075,18 @@ export default function PitchPracticeScreen({
                     {loading ? (
                         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 16, padding: "80px 0", color: "var(--foundry-text-muted)" }}>
                             <Logo variant="flame" style={{ width: 32, height: 32, objectFit: "contain" }} />
-                            <div style={{ fontSize: 14, fontFamily: "'Lora', Georgia, serif", fontStyle: "italic", color: "var(--foundry-text-secondary)" }}>
-                                Forge is reviewing your pitch...
+                            <div style={{ fontSize: 14, fontFamily: "var(--tekori-font-ui)", fontStyle: "italic", color: "var(--foundry-text-secondary)" }}>
+                                Navi is reviewing your pitch...
                             </div>
                         </div>
                     ) : (
                         <>
                             <div style={{ marginBottom: 20, animation: "fadeSlideUp 0.4s ease both", textAlign: "left" }}>
-                                <div style={{ fontSize: 22, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 4 }}>Coaching Feedback</div>
+                                <div style={{ fontSize: 22, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, marginBottom: 4 }}>Coaching Feedback</div>
                                 <div style={{ fontSize: 12, color: "var(--foundry-text-muted)" }}>From your {scenarioLabel.toLowerCase()} · {formatTime(sessionTime)}</div>
-                                <div style={{ fontSize: 11, color: archiveSaved ? "#4CAF8A" : archiveSaving ? "#D9B15D" : "#666", marginTop: 8, lineHeight: 1.6 }}>
+                                <div style={{ fontSize: 11, color: archiveSaved ? "var(--color-success)" : archiveSaving ? "var(--tekori-amber)" : "var(--color-text-muted)", marginTop: 8, lineHeight: 1.6 }}>
                                     {archiveSaved
-                                        ? "Saved to Archive. You can recap it with Forge, rename it, or delete it from the Archive."
+                                        ? "Saved to Archive. You can recap it with Navi, rename it, or delete it from the Archive."
                                         : archiveSaving
                                             ? "Saving this feedback to Archive..."
                                             : "This full feedback will be stored in Archive as a Pitch Practice card."}
@@ -1105,17 +1105,17 @@ export default function PitchPracticeScreen({
                                 </>
                             )}
 
-                            <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "20px 18px", marginBottom: 16, animation: "fadeSlideUp 0.4s ease 0.05s both" }}>
+                            <div style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.06)", borderRadius: 16, padding: "20px 18px", marginBottom: 16, animation: "fadeSlideUp 0.4s ease 0.05s both" }}>
                                 {feedback ? <FeedbackSections text={feedback} scores={scores} /> : null}
                             </div>
 
-                            <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, marginBottom: 14, overflow: "hidden" }}>
-                                <button onClick={() => setTranscriptOpen(prev => !prev)} style={{ width: "100%", background: "transparent", border: "none", color: "rgba(240,237,232,0.7)", fontSize: 13, fontFamily: "'DM Sans', sans-serif", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px", cursor: "pointer" }}>
+                            <div style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.06)", borderRadius: 12, marginBottom: 14, overflow: "hidden" }}>
+                                <button onClick={() => setTranscriptOpen(prev => !prev)} style={{ width: "100%", background: "transparent", border: "none", color: "rgba(71,84,103,0.88)", fontSize: 13, fontFamily: "var(--tekori-font-ui)", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px", cursor: "pointer" }}>
                                     <span>Session Transcript</span>
                                     <span>{transcriptOpen ? "↑" : "↓"}</span>
                                 </button>
                                 {transcriptOpen && (
-                                    <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", padding: 14 }}>
+                                    <div style={{ borderTop: "1px solid rgba(7,26,47,0.06)", padding: 14 }}>
                                         <TranscriptReplay messages={messages} />
                                     </div>
                                 )}
@@ -1125,14 +1125,14 @@ export default function PitchPracticeScreen({
                                 <button
                                     onClick={saveFeedbackToJournal}
                                     disabled={!feedback || journalSaved}
-                                    style={{ padding: "12px", background: journalSaved ? "rgba(76,175,138,0.12)" : "rgba(255,255,255,0.04)", border: journalSaved ? "1px solid rgba(76,175,138,0.25)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 12, color: journalSaved ? "#4CAF8A" : "#C8C4BE", fontSize: 12, cursor: journalSaved ? "default" : "pointer", fontWeight: 600 }}
+                                    style={{ padding: "12px", background: journalSaved ? "rgba(76,175,138,0.12)" : "rgba(7,26,47,0.04)", border: journalSaved ? "1px solid rgba(76,175,138,0.25)" : "1px solid rgba(7,26,47,0.08)", borderRadius: 12, color: journalSaved ? "var(--color-success)" : "var(--color-text-soft)", fontSize: 12, cursor: journalSaved ? "default" : "pointer", fontWeight: 600 }}
                                 >
                                     {journalSaved ? "Saved to Journal ✓" : "Save to Journal"}
                                 </button>
                                 <button
                                     onClick={copyFeedback}
                                     disabled={!feedback}
-                                    style={{ padding: "12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, color: copiedFeedback ? "#4CAF8A" : "#C8C4BE", fontSize: 12, cursor: "pointer", fontWeight: 600 }}
+                                    style={{ padding: "12px", background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 12, color: copiedFeedback ? "var(--color-success)" : "var(--color-text-soft)", fontSize: 12, cursor: "pointer", fontWeight: 600 }}
                                 >
                                     {copiedFeedback ? "Copied ✓" : "Copy Feedback"}
                                 </button>
@@ -1141,13 +1141,13 @@ export default function PitchPracticeScreen({
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, animation: "fadeSlideUp 0.4s ease 0.1s both" }}>
                                 <button
                                     onClick={restart}
-                                    style={{ padding: "13px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, color: "#C8C4BE", fontSize: 13, cursor: "pointer", fontWeight: 500 }}
+                                    style={{ padding: "13px", background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 12, color: "var(--color-text-soft)", fontSize: 13, cursor: "pointer", fontWeight: 500 }}
                                 >
                                     Practice Again
                                 </button>
                                 <button
                                     onClick={onBack}
-                                    style={{ padding: "13px", background: "linear-gradient(135deg, #E8622A, #c9521e)", border: "none", borderRadius: 12, color: "#fff", fontSize: 13, cursor: "pointer", fontWeight: 600 }}
+                                    style={{ padding: "13px", background: "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))", border: "none", borderRadius: 12, color: "var(--color-primary)", fontSize: 13, cursor: "pointer", fontWeight: 800 }}
                                 >
                                     Back to Hub
                                 </button>
@@ -1166,33 +1166,33 @@ export default function PitchPracticeScreen({
     const elevatorRemaining = Math.max(0, 60 - sessionTime);
     const timerDisplay = scenario === "elevator" ? formatTime(elevatorRemaining) : formatTime(sessionTime);
     const timerStateColor = scenario === "elevator" && sessionTime >= 60
-        ? "#E8622A"
+        ? "var(--tekori-gold)"
         : sessionTime >= 600
-            ? "rgba(232,98,42,0.7)"
+            ? "rgba(216,155,43,0.7)"
             : sessionTime >= 300
-                ? "#E8622A"
-                : "#F0EDE8";
+                ? "var(--tekori-gold)"
+                : "var(--color-text)";
 
     return (
-        <div style={{ height: "100dvh", display: "flex", flexDirection: "column", background: "#080809", fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8", overflow: "hidden" }}>
+        <div style={{ height: "100dvh", display: "flex", flexDirection: "column", background: "var(--color-bg-soft)", fontFamily: "var(--tekori-font-ui)", color: "var(--color-text)", overflow: "hidden" }}>
             {/* Session Header */}
-            <div style={{ padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 12px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)" }}>
+            <div style={{ padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 12px", borderBottom: "1px solid rgba(7,26,47,0.05)", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, background: "rgba(255,252,246,0.94)", backdropFilter: "blur(12px)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <Logo variant="flame" style={{ width: 32, height: 32, objectFit: "contain" }} />
                     <div>
-                        <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "'Playfair Display', Georgia, serif" }}>{scenarioLabel}</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "var(--tekori-font-brand)" }}>{scenarioLabel}</div>
                         <div style={{ fontSize: 10, color: "var(--foundry-text-muted)" }}>{mode === "voice" ? "Voice" : "Text"}</div>
                     </div>
                 </div>
                 <div style={{ textAlign: "center", flex: 1 }}>
-                    <div style={{ fontSize: 20, color: timerStateColor, fontFamily: "'Playfair Display', Georgia, serif", animation: sessionTime >= 600 ? "forgePulse 1.2s infinite" : "none" }}>{timerDisplay}</div>
+                    <div style={{ fontSize: 20, color: timerStateColor, fontFamily: "var(--tekori-font-brand)", animation: sessionTime >= 600 ? "forgePulse 1.2s infinite" : "none" }}>{timerDisplay}</div>
                     {scenario === "elevator" && sessionTime >= 60 && (
-                        <div style={{ fontSize: 10, color: "#E8622A", fontFamily: "'DM Sans', sans-serif" }}>Time's up — wrap it up!</div>
+                        <div style={{ fontSize: 10, color: "var(--tekori-gold)", fontFamily: "var(--tekori-font-ui)" }}>Time's up — wrap it up!</div>
                     )}
                 </div>
                 <button
                     onClick={endSession}
-                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "6px 14px", color: "rgba(240,237,232,0.62)", fontSize: 12, cursor: "pointer", fontWeight: 500 }}
+                    style={{ background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 8, padding: "6px 14px", color: "var(--color-text-muted)", fontSize: 12, cursor: "pointer", fontWeight: 500 }}
                 >
                     End Session
                 </button>
@@ -1201,15 +1201,15 @@ export default function PitchPracticeScreen({
             {/* Messages */}
             <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 8px" }}>
                 {showScenarioContext && (
-                    <div style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: 18, marginBottom: 14, animation: "fadeSlideUp 0.3s ease both" }}>
-                        <div style={{ fontSize: 11, color: "rgba(240,237,232,0.58)", fontFamily: "'DM Sans', sans-serif", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>You're pitching to</div>
-                        <div style={{ fontSize: 16, color: "#F0EDE8", fontFamily: "'Lora', Georgia, serif", fontWeight: 600, marginBottom: 14 }}>
+                    <div style={{ background: "rgba(7,26,47,0.025)", border: "1px solid rgba(7,26,47,0.07)", borderRadius: 16, padding: 18, marginBottom: 14, animation: "fadeSlideUp 0.3s ease both" }}>
+                        <div style={{ fontSize: 11, color: "rgba(16,32,51,0.58)", fontFamily: "var(--tekori-font-ui)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>You're pitching to</div>
+                        <div style={{ fontSize: 16, color: "var(--color-text)", fontFamily: "var(--tekori-font-ui)", fontWeight: 600, marginBottom: 14 }}>
                             {SCENARIO_CONTEXT[scenario].persona}
                         </div>
-                        <div style={{ fontSize: 12, color: "rgba(240,237,232,0.62)", fontFamily: "'DM Sans', sans-serif", marginBottom: 8 }}>Tips for this scenario:</div>
+                        <div style={{ fontSize: 12, color: "var(--color-text-muted)", fontFamily: "var(--tekori-font-ui)", marginBottom: 8 }}>Tips for this scenario:</div>
                         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                             {SCENARIO_CONTEXT[scenario].tips.map(tip => (
-                                <div key={tip} style={{ fontSize: 13, color: "rgba(240,237,232,0.7)", fontFamily: "'DM Sans', sans-serif", lineHeight: 1.5 }}>• {tip}</div>
+                                <div key={tip} style={{ fontSize: 13, color: "rgba(71,84,103,0.88)", fontFamily: "var(--tekori-font-ui)", lineHeight: 1.5 }}>• {tip}</div>
                             ))}
                         </div>
                     </div>
@@ -1251,7 +1251,7 @@ export default function PitchPracticeScreen({
                 {loading && !messages.some(m => m.id) && (
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                         <ForgeAvatar size={28} />
-                        <div style={{ padding: "10px 14px", borderRadius: "4px 16px 16px 16px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                        <div style={{ padding: "10px 14px", borderRadius: "4px 16px 16px 16px", background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.06)" }}>
                             <TypingDots />
                         </div>
                     </div>
@@ -1261,10 +1261,10 @@ export default function PitchPracticeScreen({
 
             {/* Voice status bar */}
             {mode === "voice" && (
-                <div style={{ padding: "7px 16px", background: "rgba(232,98,42,0.07)", borderTop: "1px solid rgba(232,98,42,0.12)", display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                    <div style={{ width: listening ? 8 : speaking ? 18 : 7, height: 7, borderRadius: listening ? "50%" : speaking ? 999 : "50%", background: listening ? "#D8563A" : speaking ? "#E8622A" : "rgba(240,237,232,0.25)", animation: listening || speaking ? "forgePulse 1s infinite" : "none" }} />
-                    <span style={{ fontSize: 13, color: "var(--foundry-text-muted)", fontFamily: "'DM Sans', sans-serif" }}>
-                        {listening ? "Listening... speak now" : speaking ? "Forge is responding..." : "Tap to speak"}
+                <div style={{ padding: "7px 16px", background: "rgba(216,155,43,0.07)", borderTop: "1px solid rgba(216,155,43,0.12)", display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                    <div style={{ width: listening ? 8 : speaking ? 18 : 7, height: 7, borderRadius: listening ? "50%" : speaking ? 999 : "50%", background: listening ? "#D8563A" : speaking ? "var(--tekori-gold)" : "rgba(102,112,133,0.45)", animation: listening || speaking ? "forgePulse 1s infinite" : "none" }} />
+                    <span style={{ fontSize: 13, color: "var(--foundry-text-muted)", fontFamily: "var(--tekori-font-ui)" }}>
+                        {listening ? "Listening... speak now" : speaking ? "Navi is responding..." : "Tap to speak"}
                     </span>
                     {speaking && (
                         <button onClick={cancelSpeech} style={{ marginLeft: "auto", background: "none", border: "none", color: "var(--foundry-text-muted)", fontSize: 11, cursor: "pointer" }}>
@@ -1275,9 +1275,9 @@ export default function PitchPracticeScreen({
             )}
 
             {/* Input Area */}
-            <div style={{ padding: "10px 12px max(12px, calc(8px + env(safe-area-inset-bottom)))", borderTop: "1px solid rgba(255,255,255,0.05)", flexShrink: 0, background: "#080809" }}>
+            <div style={{ padding: "10px 12px max(12px, calc(8px + env(safe-area-inset-bottom)))", borderTop: "1px solid rgba(7,26,47,0.05)", flexShrink: 0, background: "var(--color-bg-soft)" }}>
                 {voiceError && (
-                    <div style={{ background: "rgba(232,98,42,0.08)", border: "1px solid rgba(232,98,42,0.25)", borderRadius: 8, padding: "10px 14px", color: "rgba(240,237,232,0.8)", fontSize: 13, fontFamily: "'DM Sans', sans-serif", marginBottom: 10 }}>
+                    <div style={{ background: "rgba(216,155,43,0.08)", border: "1px solid rgba(216,155,43,0.25)", borderRadius: 8, padding: "10px 14px", color: "rgba(16,32,51,0.8)", fontSize: 13, fontFamily: "var(--tekori-font-ui)", marginBottom: 10 }}>
                         {voiceError}
                     </div>
                 )}
@@ -1292,8 +1292,8 @@ export default function PitchPracticeScreen({
                                     width: 48,
                                     height: 48,
                                     borderRadius: 14,
-                                    border: listening ? "2px solid #4CAF8A" : "1px solid rgba(232,98,42,0.3)",
-                                    background: listening ? "rgba(76,175,138,0.15)" : loading || speaking ? "rgba(255,255,255,0.04)" : "rgba(232,98,42,0.1)",
+                                    border: listening ? "2px solid var(--color-success)" : "1px solid rgba(216,155,43,0.3)",
+                                    background: listening ? "rgba(76,175,138,0.15)" : loading || speaking ? "rgba(7,26,47,0.04)" : "rgba(216,155,43,0.1)",
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
@@ -1304,7 +1304,7 @@ export default function PitchPracticeScreen({
                                     flexShrink: 0,
                                 }}
                             >
-                                <Icons.sidebar.voice size={22} color={listening ? "#4CAF8A" : "#E8622A"} />
+                                <Icons.sidebar.voice size={22} color={listening ? "var(--color-success)" : "var(--tekori-gold)"} />
                             </button>
 
                             <textarea
@@ -1326,13 +1326,13 @@ export default function PitchPracticeScreen({
                                 disabled={loading}
                                 style={{
                                     flex: 1,
-                                    background: "rgba(255,255,255,0.04)",
-                                    border: "1px solid rgba(255,255,255,0.09)",
+                                    background: "rgba(7,26,47,0.04)",
+                                    border: "1px solid rgba(7,26,47,0.09)",
                                     borderRadius: 12,
                                     padding: "10px 12px",
-                                    color: "#F0EDE8",
+                                    color: "var(--color-text)",
                                     fontSize: 14,
-                                    fontFamily: "'Lora', Georgia, serif",
+                                    fontFamily: "var(--tekori-font-ui)",
                                     lineHeight: 1.5,
                                     resize: "none",
                                     outline: "none",
@@ -1343,11 +1343,11 @@ export default function PitchPracticeScreen({
                         </div>
 
                         <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                            <div style={{ fontSize: 11, color: languageWarning ? "#D3A48D" : "#555", textAlign: "left", flex: 1, minWidth: 180, lineHeight: 1.5 }}>
+                            <div style={{ fontSize: 11, color: languageWarning ? "var(--color-danger)" : "var(--color-text-muted)", textAlign: "left", flex: 1, minWidth: 180, lineHeight: 1.5 }}>
                                 {languageWarning ? languageWarning : listening
                                     ? "Recording... tap the mic again to stop and review the transcript."
                                     : speaking
-                                        ? "Forge is speaking..."
+                                        ? "Navi is speaking..."
                                         : loading
                                             ? "Thinking..."
                                             : input.trim()
@@ -1362,9 +1362,9 @@ export default function PitchPracticeScreen({
                                     style={{
                                         padding: "10px 14px",
                                         borderRadius: 10,
-                                        border: "1px solid rgba(255,255,255,0.08)",
-                                        background: "rgba(255,255,255,0.04)",
-                                        color: "#C8C4BE",
+                                        border: "1px solid rgba(7,26,47,0.08)",
+                                        background: "rgba(7,26,47,0.04)",
+                                        color: "var(--color-text-soft)",
                                         fontSize: 12,
                                         cursor: loading || speaking || listening ? "not-allowed" : "pointer",
                                         opacity: loading || speaking || listening ? 0.45 : 1,
@@ -1380,11 +1380,11 @@ export default function PitchPracticeScreen({
                                         borderRadius: 10,
                                         border: "none",
                                         background: input.trim() && !loading && !listening
-                                            ? "linear-gradient(135deg, #E8622A, #c9521e)"
-                                            : "rgba(255,255,255,0.06)",
-                                        color: input.trim() && !loading && !listening ? "#fff" : "#444",
+                                            ? "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))"
+                                            : "rgba(7,26,47,0.06)",
+                                        color: input.trim() && !loading && !listening ? "var(--color-primary)" : "var(--color-text-muted)",
                                         fontSize: 12,
-                                        fontWeight: 600,
+                                        fontWeight: 800,
                                         cursor: input.trim() && !loading && !listening ? "pointer" : "not-allowed",
                                     }}
                                 >
@@ -1421,13 +1421,13 @@ export default function PitchPracticeScreen({
                             disabled={loading}
                             style={{
                                 flex: 1,
-                                background: "rgba(255,255,255,0.04)",
-                                border: "1px solid rgba(255,255,255,0.09)",
+                                background: "rgba(7,26,47,0.04)",
+                                border: "1px solid rgba(7,26,47,0.09)",
                                 borderRadius: 12,
                                 padding: "10px 12px",
-                                color: "#F0EDE8",
+                                color: "var(--color-text)",
                                 fontSize: 14,
-                                fontFamily: "'Lora', Georgia, serif",
+                                fontFamily: "var(--tekori-font-ui)",
                                 lineHeight: 1.5,
                                 resize: "none",
                                 outline: "none",
@@ -1453,8 +1453,8 @@ export default function PitchPracticeScreen({
                                 height: 44,
                                 borderRadius: 12,
                                 border: "none",
-                                background: input.trim() && !loading ? "linear-gradient(135deg, #E8622A, #c9521e)" : "rgba(255,255,255,0.06)",
-                                color: input.trim() && !loading ? "#fff" : "#444",
+                                background: input.trim() && !loading ? "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))" : "rgba(7,26,47,0.06)",
+                                color: input.trim() && !loading ? "var(--color-primary)" : "var(--color-text-muted)",
                                 fontSize: 18,
                                 cursor: input.trim() && !loading ? "pointer" : "not-allowed",
                                 flexShrink: 0,
@@ -1465,12 +1465,12 @@ export default function PitchPracticeScreen({
                         </button>
                     </div>
                     {languageWarning && (
-                        <div style={{ fontSize: 11, color: "#D3A48D", textAlign: "center", lineHeight: 1.5 }}>
+                        <div style={{ fontSize: 11, color: "var(--color-danger)", textAlign: "center", lineHeight: 1.5 }}>
                             {languageWarning}
                         </div>
                     )}
-                    <div style={{ fontSize: 10, color: "#2b2b2b", textAlign: "center" }}>
-                        Forge is an AI. Always verify important information before acting on it.
+                    <div style={{ fontSize: 10, color: "var(--color-text-muted)", textAlign: "center" }}>
+                        Navi is an AI. Always verify important information before acting on it.
                     </div>
                     </div>
                 )}

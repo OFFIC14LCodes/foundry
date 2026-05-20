@@ -32,7 +32,7 @@ export default function StageRefModal({ stageId, messages, profile, onClose }) {
                 style={{
                     position: "absolute",
                     inset: 0,
-                    background: "rgba(0,0,0,0.75)",
+                    background: "rgba(7,26,47,0.44)",
                     backdropFilter: "blur(6px)",
                 }}
             />
@@ -45,7 +45,7 @@ export default function StageRefModal({ stageId, messages, profile, onClose }) {
                     bottom: 0,
                     top: "8%",
                     background: "#0A0A0C",
-                    borderTop: "1px solid rgba(255,255,255,0.1)",
+                    borderTop: "1px solid rgba(7,26,47,0.1)",
                     borderRadius: "20px 20px 0 0",
                     display: "flex",
                     flexDirection: "column",
@@ -55,7 +55,7 @@ export default function StageRefModal({ stageId, messages, profile, onClose }) {
                 <div
                     style={{
                         padding: "18px 20px 14px",
-                        borderBottom: "1px solid rgba(255,255,255,0.06)",
+                        borderBottom: "1px solid rgba(7,26,47,0.06)",
                         flexShrink: 0,
                         display: "flex",
                         alignItems: "center",
@@ -75,9 +75,9 @@ export default function StageRefModal({ stageId, messages, profile, onClose }) {
                             <div
                                 style={{
                                     fontSize: 15,
-                                    fontFamily: "'Lora', Georgia, serif",
+                                    fontFamily: "var(--tekori-font-ui)",
                                     fontWeight: 600,
-                                    color: "#F0EDE8",
+                                    color: "var(--color-text)",
                                 }}
                             >
                                 Stage {stageId} — {stage.label}
@@ -92,11 +92,11 @@ export default function StageRefModal({ stageId, messages, profile, onClose }) {
                     <button
                         onClick={onClose}
                         style={{
-                            background: "rgba(255,255,255,0.06)",
-                            border: "1px solid rgba(255,255,255,0.1)",
+                            background: "rgba(7,26,47,0.06)",
+                            border: "1px solid rgba(7,26,47,0.1)",
                             borderRadius: 8,
                             padding: "6px 14px",
-                            color: "rgba(240,237,232,0.62)",
+                            color: "var(--color-text-muted)",
                             fontSize: 12,
                             cursor: "pointer",
                         }}
@@ -125,7 +125,7 @@ export default function StageRefModal({ stageId, messages, profile, onClose }) {
                             style={{
                                 textAlign: "center",
                                 color: "var(--foundry-text-secondary)",
-                                fontFamily: "'Lora', Georgia, serif",
+                                fontFamily: "var(--tekori-font-ui)",
                                 fontStyle: "italic",
                                 padding: "40px 0",
                             }}
@@ -135,7 +135,7 @@ export default function StageRefModal({ stageId, messages, profile, onClose }) {
                     ) : (
                         messages.map((msg, i) => {
                             const isForge = msg.role === "forge" || msg.role === "assistant";
-                            const senderName = isForge ? "Forge" : (profile?.name || "You");
+                            const senderName = isForge ? "Navi" : (profile?.name || "You");
 
                             return (
                                 <div
@@ -164,9 +164,9 @@ export default function StageRefModal({ stageId, messages, profile, onClose }) {
                                                 fontSize: 10,
                                                 lineHeight: 1.2,
                                                 marginBottom: 6,
-                                                color: isForge ? "#8E867D" : "rgba(240,237,232,0.72)",
+                                                color: isForge ? "var(--color-text-muted)" : "rgba(71,84,103,0.88)",
                                                 letterSpacing: "0.04em",
-                                                fontFamily: "'Lora', Georgia, serif",
+                                                fontFamily: "var(--tekori-font-ui)",
                                             }}
                                         >
                                             {senderName}
@@ -178,17 +178,17 @@ export default function StageRefModal({ stageId, messages, profile, onClose }) {
                                                     ? "4px 14px 14px 14px"
                                                     : "14px 14px 4px 14px",
                                                 background: isForge
-                                                    ? "rgba(255,255,255,0.04)"
-                                                    : "linear-gradient(135deg, #E8622A, #c9521e)",
+                                                    ? "rgba(7,26,47,0.04)"
+                                                    : "linear-gradient(135deg, var(--color-primary), var(--color-primary-hover))",
                                                 border: isForge
-                                                    ? "1px solid rgba(255,255,255,0.06)"
+                                                    ? "1px solid rgba(7,26,47,0.06)"
                                                     : "none",
                                                 fontSize: isForge ? 13 : 12,
                                                 fontFamily: isForge
-                                                    ? "'Lora', Georgia, serif"
-                                                    : "'Lora', Georgia, serif",
+                                                    ? "var(--tekori-font-ui)"
+                                                    : "var(--tekori-font-ui)",
                                                 lineHeight: 1.7,
-                                                color: isForge ? "#C8C4BE" : "#fff",
+                                                color: isForge ? "var(--color-text-soft)" : "#fff",
                                             }}
                                         >
                                             <div style={{ whiteSpace: "pre-wrap" }}>

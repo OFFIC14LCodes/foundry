@@ -70,11 +70,11 @@ function AnimatedForgeText({ text, renderWithBold, onStageRef, onGlossaryTap, on
                 @keyframes forgeLetterCool {
                     0% {
                         color: #ff6a3d;
-                        text-shadow: 0 0 10px rgba(232,98,42,0.42), 0 0 18px rgba(245,168,67,0.18);
+                        text-shadow: 0 0 10px rgba(216,155,43,0.42), 0 0 18px rgba(244,182,66,0.18);
                     }
                     35% {
                         color: #f59a69;
-                        text-shadow: 0 0 7px rgba(232,98,42,0.24);
+                        text-shadow: 0 0 7px rgba(216,155,43,0.24);
                     }
                     100% {
                         color: #d8d4ce;
@@ -113,7 +113,7 @@ function AnimatedForgeText({ text, renderWithBold, onStageRef, onGlossaryTap, on
                                                         <span
                                                             key={`anim-char-${currentIndex}`}
                                                             style={{
-                                                                color: seg.bold ? "#F0EDE8" : "#D8D4CE",
+                                                                color: seg.bold ? "var(--color-text)" : "var(--color-text)",
                                                                 fontWeight: seg.bold ? 700 : undefined,
                                                                 animation: "forgeLetterCool 1s ease forwards",
                                                                 display: "inline-block",
@@ -127,7 +127,7 @@ function AnimatedForgeText({ text, renderWithBold, onStageRef, onGlossaryTap, on
                                         );
                                     });
                                     return seg.bold
-                                        ? <strong key={`anim-seg-${pIdx}-${lIdx}-${segIdx}`} style={{ color: "#F0EDE8", fontWeight: 700 }}>{renderedTokens}</strong>
+                                        ? <strong key={`anim-seg-${pIdx}-${lIdx}-${segIdx}`} style={{ color: "var(--color-text)", fontWeight: 700 }}>{renderedTokens}</strong>
                                         : <span key={`anim-seg-${pIdx}-${lIdx}-${segIdx}`}>{renderedTokens}</span>;
                                 })}
                             </span>
@@ -141,7 +141,7 @@ function AnimatedForgeText({ text, renderWithBold, onStageRef, onGlossaryTap, on
 
 export default function MessageBubble({ msg, onStageRef, onGlossaryTap, onConceptTap, renderWithBold, userName = "You", onAction = null, onApplyToContext = null, feedbackContext = undefined }) {
     const isForge = msg.role === "forge" || msg.role === "assistant";
-    const senderName = isForge ? "Forge" : userName;
+    const senderName = isForge ? "Navi" : userName;
     const feedbackMessageId = feedbackContext?.messageId || msg.id;
     const messageFeedbackContext: ForgeMessageFeedbackContext = {
         ...(feedbackContext ?? {}),
@@ -172,9 +172,9 @@ export default function MessageBubble({ msg, onStageRef, onGlossaryTap, onConcep
                         fontSize: 11,
                         lineHeight: 1.2,
                         marginBottom: 6,
-                        color: isForge ? "#8E867D" : "rgba(240,237,232,0.72)",
+                        color: isForge ? "var(--color-text-muted)" : "rgba(71,84,103,0.88)",
                         letterSpacing: "0.04em",
-                        fontFamily: "'Lora', Georgia, serif",
+                        fontFamily: "var(--tekori-font-ui)",
                     }}
                 >
                     {senderName}
@@ -184,13 +184,13 @@ export default function MessageBubble({ msg, onStageRef, onGlossaryTap, onConcep
                         padding: isForge ? "12px 16px" : "9px 14px",
                         borderRadius: isForge ? "4px 16px 16px 16px" : "16px 16px 4px 16px",
                         background: isForge
-                            ? "rgba(255,255,255,0.04)"
-                            : "linear-gradient(135deg, #E8622A, #c9521e)",
-                        border: isForge ? "1px solid rgba(255,255,255,0.07)" : "none",
+                            ? "rgba(7,26,47,0.04)"
+                            : "linear-gradient(135deg, var(--color-primary), var(--color-primary-hover))",
+                        border: isForge ? "1px solid rgba(7,26,47,0.07)" : "none",
                         fontSize: isForge ? 14 : 13,
-                        fontFamily: isForge ? "'Lora', Georgia, serif" : "'Lora', Georgia, serif",
+                        fontFamily: isForge ? "var(--tekori-font-ui)" : "var(--tekori-font-ui)",
                         lineHeight: 1.75,
-                        color: isForge ? "#D8D4CE" : "#fff",
+                        color: isForge ? "var(--color-text)" : "#fff",
                         textAlign: "left",
                     }}
                 >
@@ -228,19 +228,19 @@ export default function MessageBubble({ msg, onStageRef, onGlossaryTap, onConcep
                                     width: "100%",
                                     padding: action.variant === "primary" ? "14px" : "12px",
                                     background: action.variant === "primary"
-                                        ? "linear-gradient(135deg, #E8622A, #c9521e)"
+                                        ? "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))"
                                         : "transparent",
                                     border: action.variant === "primary"
                                         ? "none"
-                                        : "1px solid rgba(255,255,255,0.1)",
+                                        : "1px solid rgba(7,26,47,0.1)",
                                     borderRadius: 10,
-                                    color: action.variant === "primary" ? "#fff" : "#888",
+                                    color: action.variant === "primary" ? "var(--color-primary)" : "var(--color-text-muted)",
                                     fontSize: action.variant === "primary" ? 14 : 13,
-                                    fontFamily: "'Lora', Georgia, serif",
-                                    fontWeight: action.variant === "primary" ? 600 : 500,
+                                    fontFamily: "var(--tekori-font-ui)",
+                                    fontWeight: action.variant === "primary" ? 800 : 500,
                                     cursor: "pointer",
                                     boxShadow: action.variant === "primary"
-                                        ? "0 4px 20px rgba(232,98,42,0.3)"
+                                        ? "0 4px 20px rgba(216,155,43,0.3)"
                                         : "none",
                                 }}
                             >

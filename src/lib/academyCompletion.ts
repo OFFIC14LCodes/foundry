@@ -178,7 +178,7 @@ export async function evaluateKnowledgeCheckAnswer(content: AcademyContent, answ
     const raw = await callForgeAPI(
         [{
             role: "user",
-            content: `Evaluate this Forge Academy knowledge check answer.
+            content: `Evaluate this Navi Academy knowledge check answer.
 
 Lesson title: ${content.title}
 Knowledge check prompt: ${prompt}
@@ -200,12 +200,12 @@ Return valid JSON only with exactly these keys:
 Evaluation rules:
 - Judge understanding, not phrasing. Do not require the founder to use the lesson's exact words.
 - Pass answers that accurately connect the lesson to the founder's own behavior, systems, decisions, or business execution.
-- Err on completion when the founder clearly gets the concept. Forge Academy is checking useful understanding, not mastery.
+- Err on completion when the founder clearly gets the concept. Navi Academy is checking useful understanding, not mastery.
 - Do not mark an answer incomplete just because it could be sharper, more polished, or more comprehensive. Mark it incomplete only when the core concept is actually absent or materially confused.
 - Minor missing details should be captured in feedback while still passing the answer.
 - If the answer is incomplete, the feedback must identify the exact missing idea rather than restarting the lesson.`
         }],
-        "You evaluate founder understanding for Forge Academy. Be strict enough to protect quality, but encouraging and direct. Return only valid JSON."
+        "You evaluate founder understanding for Navi Academy. Be strict enough to protect quality, but encouraging and direct. Return only valid JSON."
     );
 
     try {
@@ -224,7 +224,7 @@ Evaluation rules:
             trackStatus,
             feedback: typeof parsed?.feedback === "string" && parsed.feedback.trim()
                 ? parsed.feedback.trim()
-                : "Forge could not produce clear feedback. Try again with a more concrete explanation.",
+                : "Navi could not produce clear feedback. Try again with a more concrete explanation.",
             demonstratedUnderstanding,
             missingUnderstanding,
             evidenceQuote: typeof parsed?.evidenceQuote === "string" && parsed.evidenceQuote.trim()
@@ -235,7 +235,7 @@ Evaluation rules:
         return {
             passed: false,
             trackStatus: "off_track" as KnowledgeCheckTrackStatus,
-            feedback: "Forge could not evaluate that answer cleanly. Try again with a clearer explanation in your own words.",
+            feedback: "Navi could not evaluate that answer cleanly. Try again with a clearer explanation in your own words.",
             demonstratedUnderstanding: [],
             missingUnderstanding: ["The answer could not be evaluated cleanly."],
             evidenceQuote: null,
@@ -260,7 +260,7 @@ export async function evaluateKnowledgeCheckLaunchAnswer(entry: AcademyTopicLaun
     const raw = await callForgeAPI(
         [{
             role: "user",
-            content: `Evaluate this Forge Academy knowledge check answer.
+            content: `Evaluate this Navi Academy knowledge check answer.
 
 Lesson title: ${entry.title}
 Knowledge check prompt: ${prompt}
@@ -282,12 +282,12 @@ Return valid JSON only with exactly these keys:
 Evaluation rules:
 - Judge understanding, not phrasing. Do not require the founder to use the lesson's exact words.
 - Pass answers that accurately connect the lesson to the founder's own behavior, systems, decisions, or business execution.
-- Err on completion when the founder clearly gets the concept. Forge Academy is checking useful understanding, not mastery.
+- Err on completion when the founder clearly gets the concept. Navi Academy is checking useful understanding, not mastery.
 - Do not mark an answer incomplete just because it could be sharper, more polished, or more comprehensive. Mark it incomplete only when the core concept is actually absent or materially confused.
 - Minor missing details should be captured in feedback while still passing the answer.
 - If the answer is incomplete, the feedback must identify the exact missing idea rather than restarting the lesson.`
         }],
-        "You evaluate founder understanding for Forge Academy. Be strict enough to protect quality, but encouraging and direct. Return only valid JSON."
+        "You evaluate founder understanding for Navi Academy. Be strict enough to protect quality, but encouraging and direct. Return only valid JSON."
     );
 
     try {
@@ -306,7 +306,7 @@ Evaluation rules:
             trackStatus,
             feedback: typeof parsed?.feedback === "string" && parsed.feedback.trim()
                 ? parsed.feedback.trim()
-                : "Forge could not produce clear feedback. Try again with a more concrete explanation.",
+                : "Navi could not produce clear feedback. Try again with a more concrete explanation.",
             demonstratedUnderstanding,
             missingUnderstanding,
             evidenceQuote: typeof parsed?.evidenceQuote === "string" && parsed.evidenceQuote.trim()
@@ -317,7 +317,7 @@ Evaluation rules:
         return {
             passed: false,
             trackStatus: "off_track",
-            feedback: "Forge could not evaluate that answer cleanly. Try again with a clearer explanation in your own words.",
+            feedback: "Navi could not evaluate that answer cleanly. Try again with a clearer explanation in your own words.",
             demonstratedUnderstanding: [],
             missingUnderstanding: ["The answer could not be evaluated cleanly."],
             evidenceQuote: null,

@@ -61,11 +61,11 @@ const BUCKET_LABELS: Record<ProfitBucketType, string> = {
 };
 
 const BUCKET_COLORS: Record<ProfitBucketType, string> = {
-    income: "#F0EDE8",
-    profit: "#4CAF8A",
-    owner_comp: "#4CAF8A",
-    tax: "#4CAF8A",
-    opex: "rgba(240,237,232,0.3)",
+    income: "var(--color-text)",
+    profit: "var(--color-success)",
+    owner_comp: "var(--color-success)",
+    tax: "var(--color-success)",
+    opex: "rgba(102,112,133,0.45)",
 };
 
 const INVOICE_STORAGE_KEY_PREFIX = "foundry_invoices_";
@@ -249,7 +249,7 @@ Profit First enabled: ${summary.profitFirst.enabled ? "yes" : "no"}`;
 
         callForgeAPI(
             [{ role: "user", content: prompt }],
-            "You are Forge, a direct financial co-pilot for founders. Respond in 2 sentences maximum. Be specific to the numbers. No filler.",
+            "You are Navi, a direct financial co-pilot for founders. Respond in 2 sentences maximum. Be specific to the numbers. No filler.",
             150,
         )
             .then((text) => setForgeHealthSummary(text))
@@ -274,7 +274,7 @@ Net snapshot: ${formatCurrency(summary.roughNetSnapshot)}
 Profit First enabled: ${summary.profitFirst.enabled ? "yes" : "no"}`;
             callForgeAPI(
                 [{ role: "user", content: prompt }],
-                "You are Forge, a direct financial co-pilot for founders. Respond in 2 sentences maximum. Be specific to the numbers. No filler.",
+                "You are Navi, a direct financial co-pilot for founders. Respond in 2 sentences maximum. Be specific to the numbers. No filler.",
                 150,
             )
                 .then((text) => { forgeHealthGenerated.current = true; setForgeHealthSummary(text); })
@@ -577,7 +577,7 @@ Profit First enabled: ${summary.profitFirst.enabled ? "yes" : "no"}`;
     };
 
     const handleDownloadInvoice = (inv: FounderInvoice) => {
-        const businessName = profile?.businessName || profile?.name || "Foundry";
+        const businessName = profile?.businessName || profile?.name || "Tekori";
         printStyledPdf(buildInvoiceMarkdown(inv, businessName), { title: `Invoice — ${inv.clientName}`, businessName, docType: "Invoice", date: inv.issuedDate });
     };
 
@@ -598,7 +598,7 @@ Profit First enabled: ${summary.profitFirst.enabled ? "yes" : "no"}`;
         setForgeInsightLoading(true);
         setForgeInsight("");
 
-        const prompt = `You are Forge reviewing a founder's monthly financial close. Be direct, specific, and useful. No generic advice.
+        const prompt = `You are Navi reviewing a founder's monthly financial close. Be direct, specific, and useful. No generic advice.
 
 Month: ${closeMonthData.prevMonthLabel}
 Revenue: ${formatCurrency(closeMonthData.revenue)}
@@ -610,20 +610,20 @@ Founder note: ${closeFounderNote.trim() || "None"}
 Write 3-5 sentences covering:
 1. One thing the numbers say that the founder might not have noticed
 2. One specific question about next month based on this month's data
-3. One action Forge recommends before the month closes
+3. One action Navi recommends before the month closes
 
 Be the partner who has been watching the whole time.`;
 
         try {
             const final = await streamForgeAPI(
                 [{ role: "user", content: prompt }],
-                "You are Forge, a direct financial co-pilot for founders. Write 3-5 specific, actionable sentences. No filler. No generic advice.",
+                "You are Navi, a direct financial co-pilot for founders. Write 3-5 specific, actionable sentences. No filler. No generic advice.",
                 (chunk) => setForgeInsight(chunk),
                 600,
             );
             setForgeInsight(final);
         } catch (err) {
-            console.error("Monthly close Forge insight error:", err);
+            console.error("Monthly close Navi insight error:", err);
             setForgeInsight("Unable to generate insight at this time.");
         } finally {
             setForgeInsightLoading(false);
@@ -684,58 +684,58 @@ Be the partner who has been watching the whole time.`;
     const isEstimated = summary?.usesEstimatedInputs ?? false;
 
     const cardStyle: React.CSSProperties = {
-        background: "rgba(255,255,255,0.018)",
-        border: "1px solid rgba(255,255,255,0.052)",
+        background: "rgba(7,26,47,0.018)",
+        border: "1px solid rgba(7,26,47,0.052)",
         borderRadius: 14,
         padding: 14,
         marginBottom: 14,
     };
     const sectionHeadingStyle: React.CSSProperties = {
         fontSize: 15,
-        fontFamily: "'Lora', Georgia, serif",
+        fontFamily: "var(--tekori-font-ui)",
         fontWeight: 600,
-        color: "#F0EDE8",
+        color: "var(--color-text)",
         marginBottom: 12,
         marginTop: 0,
     };
     const labelStyle: React.CSSProperties = { fontSize: 10, color: "var(--foundry-text-secondary)", textTransform: "uppercase", letterSpacing: "0.07em" };
-    const valueStyle: React.CSSProperties = { fontSize: 18, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, lineHeight: 1.15, marginBottom: 2 };
+    const valueStyle: React.CSSProperties = { fontSize: 18, fontFamily: "var(--tekori-font-ui)", fontWeight: 700, lineHeight: 1.15, marginBottom: 2 };
 
     // Vital sign card definitions
     const vitalCards = [
         {
             label: "Available Cash",
             value: `${isEstimated ? "~" : ""}${formatCurrency(summary?.availableCash ?? 0)}`,
-            color: "#F0EDE8",
+            color: "var(--color-text)",
             tooltip: isEstimated ? "This figure is estimated from your starting budget. Connect your bank for real balances." : null,
         },
         {
             label: "Monthly Burn",
             value: formatCurrency(summary?.monthlyBurn ?? 0),
-            color: (summary?.monthlyBurn ?? 0) > 0 ? "#D96A55" : "#4CAF8A",
+            color: (summary?.monthlyBurn ?? 0) > 0 ? "#D96A55" : "var(--color-success)",
             tooltip: null,
         },
         {
             label: "Runway",
             value: summary?.runwayMonths != null ? `${isEstimated ? "~" : ""}${summary.runwayMonths.toFixed(1)} mo` : "TBD",
-            color: summary?.runwayMonths == null ? "#888" : summary.runwayMonths > 6 ? "#4CAF8A" : summary.runwayMonths > 3 ? "#D9B15D" : "#D96A55",
+            color: summary?.runwayMonths == null ? "var(--color-text-muted)" : summary.runwayMonths > 6 ? "var(--color-success)" : summary.runwayMonths > 3 ? "var(--tekori-amber)" : "#D96A55",
             tooltip: isEstimated ? "Runway estimate based on manually entered expenses. May differ from actual burn." : null,
         },
         {
             label: "Net Snapshot",
             value: formatCurrency(summary?.roughNetSnapshot ?? 0),
-            color: (summary?.roughNetSnapshot ?? 0) >= 0 ? "#4CAF8A" : "#FF6B6B",
+            color: (summary?.roughNetSnapshot ?? 0) >= 0 ? "var(--color-success)" : "#FF6B6B",
             tooltip: null,
         },
     ];
 
     const inputStyle: React.CSSProperties = {
         width: "100%",
-        background: "rgba(255,255,255,0.04)",
-        border: "1px solid rgba(255,255,255,0.1)",
+        background: "rgba(7,26,47,0.04)",
+        border: "1px solid rgba(7,26,47,0.1)",
         borderRadius: 8,
         padding: "8px 10px",
-        color: "#F0EDE8",
+        color: "var(--color-text)",
         fontSize: 13,
         boxSizing: "border-box",
     };
@@ -744,11 +744,11 @@ Be the partner who has been watching the whole time.`;
         <div style={{ position: "fixed", inset: 0, background: "var(--foundry-bg-app)", color: "var(--foundry-text-primary)", zIndex: 130, display: "flex", flexDirection: "column", overflowY: "auto" }}>
 
             {/* ── Header ──────────────────────────────────────────────────────── */}
-            <div style={{ position: "sticky", top: 0, zIndex: 10, background: "rgba(8,8,9,0.95)", borderBottom: "1px solid var(--foundry-border-subtle)", padding: "14px 20px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", backdropFilter: "blur(12px)" }}>
+            <div style={{ position: "sticky", top: 0, zIndex: 10, background: "rgba(255,252,246,0.94)", borderBottom: "1px solid var(--foundry-border-subtle)", padding: "14px 20px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", backdropFilter: "blur(12px)" }}>
                 <button className="foundry-btn foundry-btn--ghost" onClick={onOpenNav ?? onBack} style={{ padding: "6px 10px", fontSize: 12, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor" /><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor" /><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor" /></svg>
                 </button>
-                <div style={{ fontSize: 17, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: "#F0EDE8", flex: 1 }}>
+                <div style={{ fontSize: 17, fontFamily: "var(--tekori-font-ui)", fontWeight: 700, color: "var(--color-text)", flex: 1 }}>
                     Financial Dashboard
                 </div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -777,20 +777,20 @@ Be the partner who has been watching the whole time.`;
                     <>
                         {/* ── Forge Health Summary ───────────────────────────── */}
                         {(forgeHealthSummary || forgeHealthLoading) && (
-                            <div style={{ background: "rgba(232,98,42,0.06)", border: "1px solid rgba(232,98,42,0.15)", borderRadius: 12, padding: "14px 16px", marginBottom: 14, position: "relative" }}>
+                            <div style={{ background: "rgba(216,155,43,0.06)", border: "1px solid rgba(216,155,43,0.15)", borderRadius: 12, padding: "14px 16px", marginBottom: 14, position: "relative" }}>
                                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
-                                    <div style={{ width: 18, height: 18, borderRadius: "50%", background: "rgba(232,98,42,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "#E8622A", fontWeight: 700 }}>F</div>
-                                    <span style={{ fontSize: 10, color: "#E8622A", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", fontFamily: "'DM Sans', system-ui, sans-serif" }}>Forge</span>
+                                    <div style={{ width: 18, height: 18, borderRadius: "50%", background: "rgba(216,155,43,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "var(--tekori-gold)", fontWeight: 700 }}>F</div>
+                                    <span style={{ fontSize: 10, color: "var(--tekori-gold)", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", fontFamily: "var(--tekori-font-ui)" }}>Navi</span>
                                 </div>
                                 {forgeHealthLoading ? (
-                                    <div style={{ fontSize: 13, color: "rgba(240,237,232,0.58)", fontStyle: "italic", fontFamily: "'DM Sans', system-ui, sans-serif" }}>Reading your numbers...</div>
+                                    <div style={{ fontSize: 13, color: "rgba(16,32,51,0.58)", fontStyle: "italic", fontFamily: "var(--tekori-font-ui)" }}>Reading your numbers...</div>
                                 ) : (
-                                    <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8", lineHeight: 1.7 }}>{forgeHealthSummary}</div>
+                                    <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-ui)", color: "var(--color-text)", lineHeight: 1.7 }}>{forgeHealthSummary}</div>
                                 )}
                                 <button
                                     onClick={handleRefreshHealthSummary}
                                     title="Refresh"
-                                    style={{ position: "absolute", top: 12, right: 12, background: "none", border: "none", color: "rgba(240,237,232,0.55)", fontSize: 13, cursor: "pointer", padding: 4 }}
+                                    style={{ position: "absolute", top: 12, right: 12, background: "none", border: "none", color: "rgba(102,112,133,0.74)", fontSize: 13, cursor: "pointer", padding: 4 }}
                                 >
                                     ↻
                                 </button>
@@ -803,12 +803,12 @@ Be the partner who has been watching the whole time.`;
                                 <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>⚠</span>
                                 <div style={{ flex: 1 }}>
                                     <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                                        <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(240,237,232,0.85)", fontFamily: "'DM Sans', system-ui, sans-serif" }}>Some figures are estimated</div>
+                                        <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(16,32,51,0.85)", fontFamily: "var(--tekori-font-ui)" }}>Some figures are estimated</div>
                                         <HelpTooltip content="Your available cash is based on your starting budget, not a confirmed bank balance. Connect your bank or update your starting cash for accurate figures." />
                                     </div>
                                     <button
                                         onClick={() => { setStartingCashInput(String(financialData?.settings?.startingCash ?? "")); setShowStartingCashModal(true); }}
-                                        style={{ marginTop: 8, background: "none", border: "none", color: "#E8622A", fontSize: 12, fontWeight: 600, cursor: "pointer", padding: 0, fontFamily: "'DM Sans', system-ui, sans-serif" }}
+                                        style={{ marginTop: 8, background: "none", border: "none", color: "var(--tekori-gold)", fontSize: 12, fontWeight: 600, cursor: "pointer", padding: 0, fontFamily: "var(--tekori-font-ui)" }}
                                     >
                                         Update Starting Cash →
                                     </button>
@@ -823,7 +823,7 @@ Be the partner who has been watching the whole time.`;
                                 {vitalCards.map((card) => (
                                     <div
                                         key={card.label}
-                                        style={{ position: "relative", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 10, padding: "12px 10px", textAlign: "center" }}
+                                        style={{ position: "relative", background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.05)", borderRadius: 10, padding: "12px 10px", textAlign: "center" }}
                                     >
                                         <div style={{ ...valueStyle, color: card.color }}>{card.value}</div>
                                         <div style={labelStyle}>{card.label}</div>
@@ -847,7 +847,7 @@ Be the partner who has been watching the whole time.`;
                                 </div>
                                 <div style={{
                                     fontSize: 10,
-                                    color: profitLoss.hasLedger ? "#4CAF8A" : "#E8C42A",
+                                    color: profitLoss.hasLedger ? "var(--color-success)" : "var(--tekori-amber)",
                                     background: profitLoss.hasLedger ? "rgba(76,175,138,0.12)" : "rgba(232,196,42,0.1)",
                                     border: `1px solid ${profitLoss.hasLedger ? "rgba(76,175,138,0.25)" : "rgba(232,196,42,0.25)"}`,
                                     borderRadius: 999,
@@ -859,12 +859,12 @@ Be the partner who has been watching the whole time.`;
                             </div>
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 12 }}>
                                 {[
-                                    { label: "Revenue", value: formatCurrency(profitLoss.revenue), color: "#4CAF8A" },
+                                    { label: "Revenue", value: formatCurrency(profitLoss.revenue), color: "var(--color-success)" },
                                     { label: "Expenses", value: formatCurrency(profitLoss.expenses), color: "#D96A55" },
-                                    { label: profitLoss.netIncome >= 0 ? "Net Income" : "Net Loss", value: formatCurrency(Math.abs(profitLoss.netIncome)), color: profitLoss.netIncome >= 0 ? "#4CAF8A" : "#D96A55" },
+                                    { label: profitLoss.netIncome >= 0 ? "Net Income" : "Net Loss", value: formatCurrency(Math.abs(profitLoss.netIncome)), color: profitLoss.netIncome >= 0 ? "var(--color-success)" : "#D96A55" },
                                 ].map((item) => (
-                                    <div key={item.label} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
-                                        <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: item.color, marginBottom: 2 }}>{item.value}</div>
+                                    <div key={item.label} style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.05)", borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
+                                        <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-ui)", fontWeight: 700, color: item.color, marginBottom: 2 }}>{item.value}</div>
                                         <div style={labelStyle}>{item.label}</div>
                                     </div>
                                 ))}
@@ -872,9 +872,9 @@ Be the partner who has been watching the whole time.`;
                             {profitLoss.categoryRows.length > 0 ? (
                                 <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
                                     {profitLoss.categoryRows.map((row) => (
-                                        <div key={row.category} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 10, alignItems: "center", fontSize: 12, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
-                                            <div style={{ color: "#C8C4BE", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.category}</div>
-                                            <div style={{ color: row.net >= 0 ? "#4CAF8A" : "#D96A55", fontWeight: 700 }}>{formatCurrency(Math.abs(row.net))}</div>
+                                        <div key={row.category} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 10, alignItems: "center", fontSize: 12, fontFamily: "var(--tekori-font-ui)" }}>
+                                            <div style={{ color: "var(--color-text-soft)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.category}</div>
+                                            <div style={{ color: row.net >= 0 ? "var(--color-success)" : "#D96A55", fontWeight: 700 }}>{formatCurrency(Math.abs(row.net))}</div>
                                         </div>
                                     ))}
                                 </div>
@@ -889,7 +889,7 @@ Be the partner who has been watching the whole time.`;
                         <div style={cardStyle}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                                 <p style={{ ...sectionHeadingStyle, marginBottom: 0 }}>Profit First Buckets</p>
-                                <button onClick={openBucketEditor} style={{ background: "none", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 7, padding: "5px 10px", color: "#A8A4A0", fontSize: 11, cursor: "pointer" }}>
+                                <button onClick={openBucketEditor} style={{ background: "none", border: "1px solid rgba(7,26,47,0.12)", borderRadius: 7, padding: "5px 10px", color: "var(--color-text-muted)", fontSize: 11, cursor: "pointer" }}>
                                     Edit Allocations
                                 </button>
                             </div>
@@ -900,14 +900,14 @@ Be the partner who has been watching the whole time.`;
                             )}
                             {buckets.map((bucket) => {
                                 const pct = Math.min(100, bucket.allocationPercent);
-                                const color = BUCKET_COLORS[bucket.bucketType] || "#888";
+                                const color = BUCKET_COLORS[bucket.bucketType] || "var(--color-text-muted)";
                                 return (
                                     <div key={bucket.bucketType} style={{ marginBottom: 12 }}>
-                                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, fontSize: 12, color: "#C8C4BE" }}>
+                                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, fontSize: 12, color: "var(--color-text-soft)" }}>
                                             <span>{BUCKET_LABELS[bucket.bucketType]}</span>
                                             <span>{bucket.allocationPercent}% · {formatCurrency(bucket.estimatedAmount)}</span>
                                         </div>
-                                        <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: 4, height: 6, overflow: "hidden" }}>
+                                        <div style={{ background: "rgba(7,26,47,0.05)", borderRadius: 4, height: 6, overflow: "hidden" }}>
                                             <div style={{ width: `${pct}%`, height: "100%", background: color, borderRadius: 4, transition: "width 0.3s" }} />
                                         </div>
                                     </div>
@@ -920,15 +920,15 @@ Be the partner who has been watching the whole time.`;
                             <p style={sectionHeadingStyle}>Break-Even Analysis</p>
                             {summary?.breakEvenReady ? (
                                 <>
-                                    <div style={{ display: "inline-block", fontSize: 10, padding: "3px 8px", borderRadius: 20, background: "rgba(76,175,138,0.15)", color: "#4CAF8A", marginBottom: 12, letterSpacing: "0.05em" }}>Data available</div>
+                                    <div style={{ display: "inline-block", fontSize: 10, padding: "3px 8px", borderRadius: 20, background: "rgba(76,175,138,0.15)", color: "var(--color-success)", marginBottom: 12, letterSpacing: "0.05em" }}>Data available</div>
                                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 12 }}>
                                         {[
-                                            { label: "Monthly Revenue", value: formatCurrency(summary.operatingView.monthlyRevenue), color: "#4CAF8A" },
+                                            { label: "Monthly Revenue", value: formatCurrency(summary.operatingView.monthlyRevenue), color: "var(--color-success)" },
                                             { label: "Monthly Expenses", value: formatCurrency(summary.operatingView.monthlyExpenses), color: "#D96A55" },
-                                            { label: summary.operatingView.monthlyOperatingGap >= 0 ? "Monthly Surplus" : "Monthly Gap", value: formatCurrency(Math.abs(summary.operatingView.monthlyOperatingGap)), color: summary.operatingView.monthlyOperatingGap >= 0 ? "#4CAF8A" : "#D96A55" },
+                                            { label: summary.operatingView.monthlyOperatingGap >= 0 ? "Monthly Surplus" : "Monthly Gap", value: formatCurrency(Math.abs(summary.operatingView.monthlyOperatingGap)), color: summary.operatingView.monthlyOperatingGap >= 0 ? "var(--color-success)" : "#D96A55" },
                                         ].map((item) => (
-                                            <div key={item.label} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
-                                                <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: item.color, marginBottom: 2 }}>{item.value}</div>
+                                            <div key={item.label} style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.05)", borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
+                                                <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-ui)", fontWeight: 700, color: item.color, marginBottom: 2 }}>{item.value}</div>
                                                 <div style={labelStyle}>{item.label}</div>
                                             </div>
                                         ))}
@@ -939,8 +939,8 @@ Be the partner who has been watching the whole time.`;
                                                 <span>Revenue vs expenses</span>
                                                 <span>{Math.round((summary.operatingView.monthlyRevenue / summary.operatingView.monthlyExpenses) * 100)}%</span>
                                             </div>
-                                            <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: 4, height: 6, overflow: "hidden" }}>
-                                                <div style={{ width: `${Math.min(100, (summary.operatingView.monthlyRevenue / summary.operatingView.monthlyExpenses) * 100)}%`, height: "100%", background: summary.operatingView.monthlyOperatingGap >= 0 ? "#4CAF8A" : "#D96A55", borderRadius: 4, transition: "width 0.3s" }} />
+                                            <div style={{ background: "rgba(7,26,47,0.05)", borderRadius: 4, height: 6, overflow: "hidden" }}>
+                                                <div style={{ width: `${Math.min(100, (summary.operatingView.monthlyRevenue / summary.operatingView.monthlyExpenses) * 100)}%`, height: "100%", background: summary.operatingView.monthlyOperatingGap >= 0 ? "var(--color-success)" : "#D96A55", borderRadius: 4, transition: "width 0.3s" }} />
                                             </div>
                                         </>
                                     )}
@@ -948,7 +948,7 @@ Be the partner who has been watching the whole time.`;
                                 </>
                             ) : (
                                 <div style={{ textAlign: "center", padding: "20px 0" }}>
-                                    <div style={{ display: "inline-block", fontSize: 10, padding: "3px 8px", borderRadius: 20, background: "rgba(255,255,255,0.04)", color: "var(--foundry-text-secondary)", marginBottom: 12 }}>Not enough data</div>
+                                    <div style={{ display: "inline-block", fontSize: 10, padding: "3px 8px", borderRadius: 20, background: "rgba(7,26,47,0.04)", color: "var(--foundry-text-secondary)", marginBottom: 12 }}>Not enough data</div>
                                     {summary?.breakEvenMessage && <HelpTooltip content={summary.breakEvenMessage} />}
                                 </div>
                             )}
@@ -964,16 +964,16 @@ Be the partner who has been watching the whole time.`;
                             </div>
                             {chartIsEmpty ? (
                                 <div style={{ textAlign: "center", padding: "28px 0 20px" }}>
-                                    <div style={{ fontSize: 32, color: "rgba(240,237,232,0.35)", marginBottom: 12 }}>▦</div>
-                                    <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", color: "rgba(240,237,232,0.6)", marginBottom: 6 }}>No financial data yet</div>
+                                    <div style={{ fontSize: 32, color: "rgba(102,112,133,0.52)", marginBottom: 12 }}>▦</div>
+                                    <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-ui)", color: "rgba(102,112,133,0.78)", marginBottom: 6 }}>No financial data yet</div>
                                     <div style={{ marginBottom: 16 }}>
                                         <HelpTooltip content="Add your first expense or revenue entry to see your monthly cash flow history here." />
                                     </div>
                                     <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-                                        <button onClick={() => setShowAddRevenueModal(true)} style={{ background: "rgba(76,175,138,0.12)", border: "1px solid rgba(76,175,138,0.3)", borderRadius: 8, padding: "7px 14px", color: "#4CAF8A", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+                                        <button onClick={() => setShowAddRevenueModal(true)} style={{ background: "rgba(76,175,138,0.12)", border: "1px solid rgba(76,175,138,0.3)", borderRadius: 8, padding: "7px 14px", color: "var(--color-success)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "var(--tekori-font-ui)" }}>
                                             Add Revenue
                                         </button>
-                                        <button onClick={() => setShowAddExpenseModal(true)} style={{ background: "rgba(217,106,85,0.1)", border: "1px solid rgba(217,106,85,0.25)", borderRadius: 8, padding: "7px 14px", color: "#D96A55", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+                                        <button onClick={() => setShowAddExpenseModal(true)} style={{ background: "rgba(217,106,85,0.1)", border: "1px solid rgba(217,106,85,0.25)", borderRadius: 8, padding: "7px 14px", color: "#D96A55", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "var(--tekori-font-ui)" }}>
                                             Add Expense
                                         </button>
                                     </div>
@@ -987,7 +987,7 @@ Be the partner who has been watching the whole time.`;
                                             return (
                                                 <div key={`${month.year}-${month.month}`} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
                                                     <div style={{ flex: 1, width: "100%", display: "flex", alignItems: "flex-end", gap: 2 }}>
-                                                        <div title={`Cash in: ${formatCurrency(month.revenue)}`} style={{ flex: 1, height: `${revH}%`, background: "#4CAF8A", borderRadius: "3px 3px 0 0", minHeight: 2, transition: "height 0.3s" }} />
+                                                        <div title={`Cash in: ${formatCurrency(month.revenue)}`} style={{ flex: 1, height: `${revH}%`, background: "var(--color-success)", borderRadius: "3px 3px 0 0", minHeight: 2, transition: "height 0.3s" }} />
                                                         <div title={`Cash out: ${formatCurrency(month.expenses)}`} style={{ flex: 1, height: `${expH}%`, background: "#D96A55", borderRadius: "3px 3px 0 0", minHeight: 2, opacity: 0.8, transition: "height 0.3s" }} />
                                                     </div>
                                                     <div style={{ fontSize: 9, color: "var(--foundry-text-muted)", letterSpacing: "0.04em" }}>{month.label}</div>
@@ -996,10 +996,10 @@ Be the partner who has been watching the whole time.`;
                                         })}
                                     </div>
                                     <div style={{ display: "flex", gap: 14, marginTop: 10 }}>
-                                        <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, color: "rgba(240,237,232,0.62)" }}>
-                                            <div style={{ width: 10, height: 10, borderRadius: 2, background: "#4CAF8A" }} />Cash In
+                                        <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, color: "var(--color-text-muted)" }}>
+                                            <div style={{ width: 10, height: 10, borderRadius: 2, background: "var(--color-success)" }} />Cash In
                                         </div>
-                                        <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, color: "rgba(240,237,232,0.62)" }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, color: "var(--color-text-muted)" }}>
                                             <div style={{ width: 10, height: 10, borderRadius: 2, background: "#D96A55" }} />Cash Out
                                         </div>
                                     </div>
@@ -1018,7 +1018,7 @@ Be the partner who has been watching the whole time.`;
                                 <p style={{ ...sectionHeadingStyle, marginBottom: 0 }}>Bank Reconciliation</p>
                                 <div style={{
                                     fontSize: 10,
-                                    color: unreconciledLedgerEntries.length > 0 ? "#E8C42A" : "#4CAF8A",
+                                    color: unreconciledLedgerEntries.length > 0 ? "var(--tekori-amber)" : "var(--color-success)",
                                     background: unreconciledLedgerEntries.length > 0 ? "rgba(232,196,42,0.1)" : "rgba(76,175,138,0.12)",
                                     border: `1px solid ${unreconciledLedgerEntries.length > 0 ? "rgba(232,196,42,0.25)" : "rgba(76,175,138,0.25)"}`,
                                     borderRadius: 999,
@@ -1030,7 +1030,7 @@ Be the partner who has been watching the whole time.`;
                             </div>
                             <div style={{ marginBottom: 10 }}><HelpTooltip content="Manual ledger rows can be marked reconciled after you compare them against your bank records." /></div>
                             {unreconciledLedgerEntries.length === 0 ? (
-                                <div style={{ background: "rgba(76,175,138,0.06)", border: "1px solid rgba(76,175,138,0.16)", borderRadius: 10, padding: "12px 14px", color: "#4CAF8A", fontSize: 12, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+                                <div style={{ background: "rgba(76,175,138,0.06)", border: "1px solid rgba(76,175,138,0.16)", borderRadius: 10, padding: "12px 14px", color: "var(--color-success)", fontSize: 12, fontFamily: "var(--tekori-font-ui)" }}>
                                     No unmatched accepted bank entries.
                                 </div>
                             ) : (
@@ -1038,14 +1038,14 @@ Be the partner who has been watching the whole time.`;
                                     {unreconciledLedgerEntries.slice(0, 5).map((entry) => {
                                         const busy = reconcilingLedgerId === entry.id;
                                         return (
-                                            <div key={entry.id} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 10, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                                            <div key={entry.id} style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.05)", borderRadius: 10, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                                    <div style={{ fontSize: 12, color: "#F0EDE8", fontWeight: 600, marginBottom: 2 }}>{entry.description}</div>
+                                                    <div style={{ fontSize: 12, color: "var(--color-text)", fontWeight: 600, marginBottom: 2 }}>{entry.description}</div>
                                                     <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)" }}>{entry.date} · {entry.category} · {entry.type === "credit" ? "cash in" : "cash out"}</div>
                                                 </div>
                                                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                                    <div style={{ fontSize: 12, color: entry.type === "credit" ? "#4CAF8A" : "#D96A55", fontWeight: 700 }}>{formatCurrency(entry.amount)}</div>
-                                                    <button onClick={() => void handleConfirmLedgerReconciled(entry.id)} disabled={busy} style={{ background: "rgba(76,175,138,0.12)", border: "1px solid rgba(76,175,138,0.3)", borderRadius: 7, padding: "5px 9px", color: "#4CAF8A", fontSize: 10, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1 }}>
+                                                    <div style={{ fontSize: 12, color: entry.type === "credit" ? "var(--color-success)" : "#D96A55", fontWeight: 700 }}>{formatCurrency(entry.amount)}</div>
+                                                    <button onClick={() => void handleConfirmLedgerReconciled(entry.id)} disabled={busy} style={{ background: "rgba(76,175,138,0.12)", border: "1px solid rgba(76,175,138,0.3)", borderRadius: 7, padding: "5px 9px", color: "var(--color-success)", fontSize: 10, cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1 }}>
                                                         {busy ? "Confirming..." : "Confirm"}
                                                     </button>
                                                 </div>
@@ -1053,7 +1053,7 @@ Be the partner who has been watching the whole time.`;
                                         );
                                     })}
                                     {unreconciledLedgerEntries.length > 5 && (
-                                        <div style={{ fontSize: 10, color: "var(--foundry-text-muted)", fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+                                        <div style={{ fontSize: 10, color: "var(--foundry-text-muted)", fontFamily: "var(--tekori-font-ui)" }}>
                                             Showing 5 of {unreconciledLedgerEntries.length} unreconciled ledger rows.
                                         </div>
                                     )}
@@ -1065,12 +1065,12 @@ Be the partner who has been watching the whole time.`;
                         <div style={cardStyle}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
                                 <p style={{ ...sectionHeadingStyle, marginBottom: 0 }}>Bank Connection</p>
-                                <div style={{ background: "rgba(99,179,237,0.1)", border: "1px solid rgba(99,179,237,0.22)", borderRadius: 999, padding: "5px 10px", color: "#8FC8F6", fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                                <div style={{ background: "rgba(142,160,181,0.1)", border: "1px solid rgba(142,160,181,0.22)", borderRadius: 999, padding: "5px 10px", color: "var(--tekori-slate-navy)", fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase" }}>
                                     Coming Soon
                                 </div>
                             </div>
-                            <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 10, padding: "12px 14px", color: "#A8A4A0", fontSize: 12, lineHeight: 1.6 }}>
-                                Plaid bank account linking will be added after launch. For now, Foundry keeps financial tracking local with manual revenue, expense, invoice, bucket, and reconciliation tools.
+                            <div style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.05)", borderRadius: 10, padding: "12px 14px", color: "var(--color-text-muted)", fontSize: 12, lineHeight: 1.6 }}>
+                                Plaid bank account linking will be added after launch. For now, Tekori keeps financial tracking local with manual revenue, expense, invoice, bucket, and reconciliation tools.
                             </div>
                         </div>
 
@@ -1078,7 +1078,7 @@ Be the partner who has been watching the whole time.`;
                         <div style={cardStyle}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                                 <p style={{ ...sectionHeadingStyle, marginBottom: 0 }}>Invoices</p>
-                                <button onClick={openNewInvoice} style={{ background: "rgba(76,175,138,0.12)", border: "1px solid rgba(76,175,138,0.3)", borderRadius: 8, padding: "6px 12px", color: "#4CAF8A", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+                                <button onClick={openNewInvoice} style={{ background: "rgba(76,175,138,0.12)", border: "1px solid rgba(76,175,138,0.3)", borderRadius: 8, padding: "6px 12px", color: "var(--color-success)", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
                                     + New Invoice
                                 </button>
                             </div>
@@ -1089,20 +1089,20 @@ Be the partner who has been watching the whole time.`;
                             ) : (
                                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                                     {invoices.map((inv) => (
-                                        <div key={inv.id} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 10, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                                        <div key={inv.id} style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.05)", borderRadius: 10, padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                                             <div style={{ flex: 1, minWidth: 0 }}>
-                                                <div style={{ fontSize: 12, color: "#F0EDE8", fontWeight: 600, marginBottom: 2 }}>{inv.clientName}</div>
+                                                <div style={{ fontSize: 12, color: "var(--color-text)", fontWeight: 600, marginBottom: 2 }}>{inv.clientName}</div>
                                                 <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)" }}>
                                                     {formatCurrency(inv.amount)} · Due {inv.dueDate} ·{" "}
-                                                    <span style={{ color: inv.status === "paid" ? "#4CAF8A" : inv.status === "sent" ? "#E8C42A" : "#888" }}>
+                                                    <span style={{ color: inv.status === "paid" ? "var(--color-success)" : inv.status === "sent" ? "var(--tekori-amber)" : "var(--color-text-muted)" }}>
                                                         {inv.status.toUpperCase()}
                                                     </span>
                                                 </div>
                                             </div>
                                             <div style={{ display: "flex", gap: 6 }}>
                                                 {[
-                                                    { label: "PDF", handler: () => handleDownloadInvoice(inv), style: { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#A8A4A0" } },
-                                                    { label: "Edit", handler: () => openEditInvoice(inv), style: { background: "none", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(240,237,232,0.62)" } },
+                                                    { label: "PDF", handler: () => handleDownloadInvoice(inv), style: { background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)", color: "var(--color-text-muted)" } },
+                                                    { label: "Edit", handler: () => openEditInvoice(inv), style: { background: "none", border: "1px solid rgba(7,26,47,0.08)", color: "var(--color-text-muted)" } },
                                                     { label: "×", handler: () => void handleDeleteInvoice(inv.id), style: { background: "none", border: "1px solid rgba(217,106,85,0.22)", color: "#D96A55" } },
                                                 ].map((btn) => (
                                                     <button key={btn.label} onClick={btn.handler} style={{ ...btn.style, borderRadius: 7, padding: "5px 9px", fontSize: 10, cursor: "pointer" }}>{btn.label}</button>
@@ -1118,7 +1118,7 @@ Be the partner who has been watching the whole time.`;
                         <div style={cardStyle}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                                 <p style={{ ...sectionHeadingStyle, marginBottom: 0 }}>Tax Estimate Tracker</p>
-                                <button onClick={() => setShowTaxAsideModal(true)} style={{ background: "rgba(217,177,93,0.1)", border: "1px solid rgba(217,177,93,0.25)", borderRadius: 8, padding: "6px 12px", color: "#D9B15D", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+                                <button onClick={() => setShowTaxAsideModal(true)} style={{ background: "rgba(217,177,93,0.1)", border: "1px solid rgba(217,177,93,0.25)", borderRadius: 8, padding: "6px 12px", color: "var(--tekori-amber)", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
                                     Set Aside
                                 </button>
                             </div>
@@ -1129,21 +1129,21 @@ Be the partner who has been watching the whole time.`;
                                     { label: "Total Estimate", value: formatCurrency(totalTax) },
                                     { label: "Quarterly Est.", value: formatCurrency(quarterlyTax) },
                                 ].map((item) => (
-                                    <div key={item.label} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
-                                        <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: "#E8C42A", marginBottom: 2 }}>{item.value}</div>
+                                    <div key={item.label} style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.05)", borderRadius: 10, padding: "10px 8px", textAlign: "center" }}>
+                                        <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-ui)", fontWeight: 700, color: "var(--tekori-amber)", marginBottom: 2 }}>{item.value}</div>
                                         <div style={labelStyle}>{item.label}</div>
                                     </div>
                                 ))}
                             </div>
-                            <div style={{ fontSize: 11, color: "#4CAF8A", fontStyle: "italic", fontFamily: "'DM Sans', system-ui, sans-serif", marginBottom: 10 }}>
+                            <div style={{ fontSize: 11, color: "var(--color-success)", fontStyle: "italic", fontFamily: "var(--tekori-font-ui)", marginBottom: 10 }}>
                                 Conservative estimate — actual will likely be lower
                             </div>
                             <div style={{ marginBottom: 10 }}>
                                 <HelpTooltip content={taxBasisLabel} />
                             </div>
-                            <div style={{ background: "rgba(255,255,255,0.02)", borderRadius: 8, padding: "12px 14px" }}>
+                            <div style={{ background: "rgba(7,26,47,0.02)", borderRadius: 8, padding: "12px 14px" }}>
                                 <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                                    <div style={{ fontSize: 10, color: "#F0EDE8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", fontFamily: "'DM Sans', system-ui, sans-serif" }}>This estimate assumes</div>
+                                    <div style={{ fontSize: 10, color: "var(--color-text)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", fontFamily: "var(--tekori-font-ui)" }}>This estimate assumes</div>
                                     <HelpTooltip content={[
                                         "Sole proprietor or single-member LLC (self-employed)",
                                         `Taxable income = ledger credits (${formatCurrency(profitLoss.hasLedger ? profitLoss.revenue : summary?.totalRevenue ?? 0)}) minus ledger debits (${formatCurrency(profitLoss.hasLedger ? profitLoss.expenses : summary?.totalExpenses ?? 0)})`,
@@ -1166,21 +1166,21 @@ Be the partner who has been watching the whole time.`;
 
             {/* ── Bucket Editor ─────────────────────────────────────────────── */}
             {editingBuckets && (
-                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setEditingBuckets(false)}>
-                    <div style={{ background: "rgb(16,16,18)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 24, width: "100%", maxWidth: 420, boxSizing: "border-box" }} onClick={(e) => e.stopPropagation()}>
-                        <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 18 }}>Edit Profit First Allocations</div>
+                <div style={{ position: "fixed", inset: 0, background: "rgba(7,26,47,0.42)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setEditingBuckets(false)}>
+                    <div style={{ background: "rgb(16,16,18)", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 16, padding: 24, width: "100%", maxWidth: 420, boxSizing: "border-box" }} onClick={(e) => e.stopPropagation()}>
+                        <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-ui)", fontWeight: 700, color: "var(--color-text)", marginBottom: 18 }}>Edit Profit First Allocations</div>
                         {bucketDraft.map((row, idx) => (
                             <div key={row.bucketType} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                                <div style={{ fontSize: 13, color: "#C8C4BE", flex: 1 }}>{BUCKET_LABELS[row.bucketType]}</div>
+                                <div style={{ fontSize: 13, color: "var(--color-text-soft)", flex: 1 }}>{BUCKET_LABELS[row.bucketType]}</div>
                                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                    <input type="number" min={0} max={100} value={row.allocationPercent} onChange={(e) => { const val = Math.max(0, Math.min(100, Number(e.target.value) || 0)); setBucketDraft((prev) => prev.map((r, i) => (i === idx ? { ...r, allocationPercent: val } : r))); }} style={{ width: 60, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 7, padding: "5px 8px", color: "#F0EDE8", fontSize: 13, textAlign: "right" }} />
+                                    <input type="number" min={0} max={100} value={row.allocationPercent} onChange={(e) => { const val = Math.max(0, Math.min(100, Number(e.target.value) || 0)); setBucketDraft((prev) => prev.map((r, i) => (i === idx ? { ...r, allocationPercent: val } : r))); }} style={{ width: 60, background: "rgba(7,26,47,0.05)", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 7, padding: "5px 8px", color: "var(--color-text)", fontSize: 13, textAlign: "right" }} />
                                     <span style={{ fontSize: 12, color: "var(--foundry-text-secondary)" }}>%</span>
                                 </div>
                             </div>
                         ))}
                         <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-                            <button onClick={() => setEditingBuckets(false)} style={{ flex: 1, background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, padding: "10px", color: "rgba(240,237,232,0.62)", fontSize: 13, cursor: "pointer" }}>Cancel</button>
-                            <button onClick={() => void handleSaveBuckets()} disabled={savingBuckets} style={{ flex: 2, background: "linear-gradient(135deg, #4CAF8A, #3a9470)", border: "none", borderRadius: 9, padding: "10px", color: "#fff", fontSize: 13, fontWeight: 600, cursor: savingBuckets ? "default" : "pointer", opacity: savingBuckets ? 0.7 : 1 }}>
+                            <button onClick={() => setEditingBuckets(false)} style={{ flex: 1, background: "none", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 9, padding: "10px", color: "var(--color-text-muted)", fontSize: 13, cursor: "pointer" }}>Cancel</button>
+                            <button onClick={() => void handleSaveBuckets()} disabled={savingBuckets} style={{ flex: 2, background: "linear-gradient(135deg, var(--color-success), var(--color-success))", border: "none", borderRadius: 9, padding: "10px", color: "#fff", fontSize: 13, fontWeight: 600, cursor: savingBuckets ? "default" : "pointer", opacity: savingBuckets ? 0.7 : 1 }}>
                                 {savingBuckets ? "Saving..." : "Save Allocations"}
                             </button>
                         </div>
@@ -1190,9 +1190,9 @@ Be the partner who has been watching the whole time.`;
 
             {/* ── Invoice Create/Edit ───────────────────────────────────────── */}
             {showInvoiceModal && (
-                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 2000, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "40px 20px", overflowY: "auto" }} onClick={() => setShowInvoiceModal(false)}>
-                    <div style={{ background: "rgb(16,16,18)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 24, width: "100%", maxWidth: 460, boxSizing: "border-box" }} onClick={(e) => e.stopPropagation()}>
-                        <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 18 }}>{editingInvoice ? "Edit Invoice" : "New Invoice"}</div>
+                <div style={{ position: "fixed", inset: 0, background: "rgba(7,26,47,0.42)", zIndex: 2000, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "40px 20px", overflowY: "auto" }} onClick={() => setShowInvoiceModal(false)}>
+                    <div style={{ background: "rgb(16,16,18)", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 16, padding: 24, width: "100%", maxWidth: 460, boxSizing: "border-box" }} onClick={(e) => e.stopPropagation()}>
+                        <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-ui)", fontWeight: 700, color: "var(--color-text)", marginBottom: 18 }}>{editingInvoice ? "Edit Invoice" : "New Invoice"}</div>
                         {[
                             { label: "Client Name *", field: "clientName", type: "text", placeholder: "Acme Corp" },
                             { label: "Client Email", field: "clientEmail", type: "email", placeholder: "client@example.com" },
@@ -1203,7 +1203,7 @@ Be the partner who has been watching the whole time.`;
                             { label: "Notes", field: "notes", type: "textarea", placeholder: "Payment terms, etc." },
                         ].map(({ label, field, type, placeholder }) => (
                             <div key={field} style={{ marginBottom: 12 }}>
-                                <div style={{ fontSize: 11, color: "rgba(240,237,232,0.62)", marginBottom: 4 }}>{label}</div>
+                                <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginBottom: 4 }}>{label}</div>
                                 {type === "textarea" ? (
                                     <textarea rows={3} value={(invoiceDraft as any)[field] ?? ""} placeholder={placeholder} onChange={(e) => setInvoiceDraft((prev) => ({ ...prev, [field]: e.target.value }))} style={{ ...inputStyle, resize: "vertical" }} />
                                 ) : (
@@ -1212,7 +1212,7 @@ Be the partner who has been watching the whole time.`;
                             </div>
                         ))}
                         <div style={{ marginBottom: 16 }}>
-                            <div style={{ fontSize: 11, color: "rgba(240,237,232,0.62)", marginBottom: 4 }}>Status</div>
+                            <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginBottom: 4 }}>Status</div>
                             <select value={invoiceDraft.status ?? "draft"} onChange={(e) => setInvoiceDraft((prev) => ({ ...prev, status: e.target.value as any }))} style={inputStyle}>
                                 <option value="draft">Draft</option>
                                 <option value="sent">Sent</option>
@@ -1220,8 +1220,8 @@ Be the partner who has been watching the whole time.`;
                             </select>
                         </div>
                         <div style={{ display: "flex", gap: 10 }}>
-                            <button onClick={() => setShowInvoiceModal(false)} style={{ flex: 1, background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, padding: "10px", color: "rgba(240,237,232,0.62)", fontSize: 13, cursor: "pointer" }}>Cancel</button>
-                            <button onClick={() => void handleSaveInvoice()} style={{ flex: 2, background: "linear-gradient(135deg, #4CAF8A, #3a9470)", border: "none", borderRadius: 9, padding: "10px", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                            <button onClick={() => setShowInvoiceModal(false)} style={{ flex: 1, background: "none", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 9, padding: "10px", color: "var(--color-text-muted)", fontSize: 13, cursor: "pointer" }}>Cancel</button>
+                            <button onClick={() => void handleSaveInvoice()} style={{ flex: 2, background: "linear-gradient(135deg, var(--color-success), var(--color-success))", border: "none", borderRadius: 9, padding: "10px", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
                                 {editingInvoice ? "Save Changes" : "Create Invoice"}
                             </button>
                         </div>
@@ -1231,35 +1231,35 @@ Be the partner who has been watching the whole time.`;
 
             {/* ── Tax Set Aside ─────────────────────────────────────────────── */}
             {showTaxAsideModal && (
-                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowTaxAsideModal(false)}>
+                <div style={{ position: "fixed", inset: 0, background: "rgba(7,26,47,0.42)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowTaxAsideModal(false)}>
                     <div style={{ background: "rgb(16,16,18)", border: "1px solid rgba(232,196,42,0.3)", borderRadius: 16, padding: 24, width: "100%", maxWidth: 380, boxSizing: "border-box" }} onClick={(e) => e.stopPropagation()}>
-                        <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 10 }}>Set Aside for Taxes</div>
+                        <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-ui)", fontWeight: 700, color: "var(--color-text)", marginBottom: 10 }}>Set Aside for Taxes</div>
                         <div style={{ marginBottom: 14 }}><HelpTooltip content="Based on estimated taxable income from your ledger, this is your quarterly tax reserve." /></div>
                         <div style={{ textAlign: "center", marginBottom: 18 }}>
-                            <div style={{ fontSize: 28, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: "#E8C42A" }}>{formatCurrency(quarterlyTax)}</div>
+                            <div style={{ fontSize: 28, fontFamily: "var(--tekori-font-ui)", fontWeight: 700, color: "var(--tekori-amber)" }}>{formatCurrency(quarterlyTax)}</div>
                             <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)", marginTop: 4 }}>per quarter</div>
                         </div>
                         <div style={{ marginBottom: 20 }}><HelpTooltip content="Formula: taxable income × (15.3% self-employment + 22% federal) ÷ 4. Transfer this reserve before estimated tax deadlines (Apr, Jun, Sep, Jan). This is an estimate. Consult a CPA." /></div>
-                        <button onClick={() => setShowTaxAsideModal(false)} style={{ width: "100%", background: "rgba(232,196,42,0.12)", border: "1px solid rgba(232,196,42,0.3)", borderRadius: 9, padding: "11px", color: "#E8C42A", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Got it</button>
+                        <button onClick={() => setShowTaxAsideModal(false)} style={{ width: "100%", background: "rgba(232,196,42,0.12)", border: "1px solid rgba(232,196,42,0.3)", borderRadius: 9, padding: "11px", color: "var(--tekori-amber)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Got it</button>
                     </div>
                 </div>
             )}
 
             {/* ── Starting Cash ─────────────────────────────────────────────── */}
             {showStartingCashModal && (
-                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowStartingCashModal(false)}>
-                    <div style={{ background: "rgb(16,16,18)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 24, width: "100%", maxWidth: 380, boxSizing: "border-box" }} onClick={(e) => e.stopPropagation()}>
+                <div style={{ position: "fixed", inset: 0, background: "rgba(7,26,47,0.42)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowStartingCashModal(false)}>
+                    <div style={{ background: "rgb(16,16,18)", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 16, padding: 24, width: "100%", maxWidth: 380, boxSizing: "border-box" }} onClick={(e) => e.stopPropagation()}>
                         <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-                            <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: "#F0EDE8" }}>Update Starting Cash</div>
+                            <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-ui)", fontWeight: 700, color: "var(--color-text)" }}>Update Starting Cash</div>
                             <HelpTooltip content="Enter your current confirmed cash balance. This replaces the estimated figure and gives you accurate runway and burn calculations." />
                         </div>
                         <div style={{ marginBottom: 16 }}>
-                            <div style={{ fontSize: 11, color: "rgba(240,237,232,0.62)", marginBottom: 4 }}>Starting Cash ($)</div>
+                            <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginBottom: 4 }}>Starting Cash ($)</div>
                             <input type="number" min={0} value={startingCashInput} onChange={(e) => setStartingCashInput(e.target.value)} placeholder="e.g. 12000" style={inputStyle} autoFocus />
                         </div>
                         <div style={{ display: "flex", gap: 10 }}>
-                            <button onClick={() => setShowStartingCashModal(false)} style={{ flex: 1, background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, padding: "10px", color: "rgba(240,237,232,0.62)", fontSize: 13, cursor: "pointer" }}>Cancel</button>
-                            <button onClick={() => void handleSaveStartingCash()} disabled={savingStartingCash} style={{ flex: 2, background: "rgba(232,98,42,0.15)", border: "1px solid rgba(232,98,42,0.4)", borderRadius: 9, padding: "10px", color: "#E8622A", fontSize: 13, fontWeight: 600, cursor: savingStartingCash ? "default" : "pointer", opacity: savingStartingCash ? 0.7 : 1 }}>
+                            <button onClick={() => setShowStartingCashModal(false)} style={{ flex: 1, background: "none", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 9, padding: "10px", color: "var(--color-text-muted)", fontSize: 13, cursor: "pointer" }}>Cancel</button>
+                            <button onClick={() => void handleSaveStartingCash()} disabled={savingStartingCash} style={{ flex: 2, background: "rgba(216,155,43,0.15)", border: "1px solid rgba(216,155,43,0.4)", borderRadius: 9, padding: "10px", color: "var(--tekori-gold)", fontSize: 13, fontWeight: 600, cursor: savingStartingCash ? "default" : "pointer", opacity: savingStartingCash ? 0.7 : 1 }}>
                                 {savingStartingCash ? "Saving..." : "Update Cash"}
                             </button>
                         </div>
@@ -1269,21 +1269,21 @@ Be the partner who has been watching the whole time.`;
 
             {/* ── Add Revenue (quick) ───────────────────────────────────────── */}
             {showAddRevenueModal && (
-                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowAddRevenueModal(false)}>
+                <div style={{ position: "fixed", inset: 0, background: "rgba(7,26,47,0.42)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowAddRevenueModal(false)}>
                     <div style={{ background: "rgb(16,16,18)", border: "1px solid rgba(76,175,138,0.2)", borderRadius: 16, padding: 24, width: "100%", maxWidth: 380, boxSizing: "border-box" }} onClick={(e) => e.stopPropagation()}>
-                        <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 16 }}>Add Revenue</div>
+                        <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-ui)", fontWeight: 700, color: "var(--color-text)", marginBottom: 16 }}>Add Revenue</div>
                         {[
                             { label: "Label *", field: "label", type: "text", placeholder: "Client payment" },
                             { label: "Amount *", field: "amount", type: "number", placeholder: "0" },
                             { label: "Date", field: "receivedOn", type: "date", placeholder: "" },
                         ].map(({ label, field, type, placeholder }) => (
                             <div key={field} style={{ marginBottom: 12 }}>
-                                <div style={{ fontSize: 11, color: "rgba(240,237,232,0.62)", marginBottom: 4 }}>{label}</div>
+                                <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginBottom: 4 }}>{label}</div>
                                 <input type={type} value={(quickRevDraft as any)[field] ?? ""} placeholder={placeholder} onChange={(e) => setQuickRevDraft((p) => ({ ...p, [field]: e.target.value }))} style={inputStyle} />
                             </div>
                         ))}
                         <div style={{ marginBottom: 16 }}>
-                            <div style={{ fontSize: 11, color: "rgba(240,237,232,0.62)", marginBottom: 4 }}>Frequency</div>
+                            <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginBottom: 4 }}>Frequency</div>
                             <select value={quickRevDraft.frequency} onChange={(e) => setQuickRevDraft((p) => ({ ...p, frequency: e.target.value as any }))} style={inputStyle}>
                                 <option value="one_time">One-time</option>
                                 <option value="monthly">Monthly</option>
@@ -1291,8 +1291,8 @@ Be the partner who has been watching the whole time.`;
                             </select>
                         </div>
                         <div style={{ display: "flex", gap: 10 }}>
-                            <button onClick={() => setShowAddRevenueModal(false)} style={{ flex: 1, background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, padding: "10px", color: "rgba(240,237,232,0.62)", fontSize: 13, cursor: "pointer" }}>Cancel</button>
-                            <button onClick={() => void handleSaveQuickRevenue()} disabled={savingQuick} style={{ flex: 2, background: "rgba(76,175,138,0.15)", border: "1px solid rgba(76,175,138,0.4)", borderRadius: 9, padding: "10px", color: "#4CAF8A", fontSize: 13, fontWeight: 600, cursor: savingQuick ? "default" : "pointer", opacity: savingQuick ? 0.7 : 1 }}>
+                            <button onClick={() => setShowAddRevenueModal(false)} style={{ flex: 1, background: "none", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 9, padding: "10px", color: "var(--color-text-muted)", fontSize: 13, cursor: "pointer" }}>Cancel</button>
+                            <button onClick={() => void handleSaveQuickRevenue()} disabled={savingQuick} style={{ flex: 2, background: "rgba(76,175,138,0.15)", border: "1px solid rgba(76,175,138,0.4)", borderRadius: 9, padding: "10px", color: "var(--color-success)", fontSize: 13, fontWeight: 600, cursor: savingQuick ? "default" : "pointer", opacity: savingQuick ? 0.7 : 1 }}>
                                 {savingQuick ? "Saving..." : "Add Revenue"}
                             </button>
                         </div>
@@ -1302,21 +1302,21 @@ Be the partner who has been watching the whole time.`;
 
             {/* ── Add Expense (quick) ───────────────────────────────────────── */}
             {showAddExpenseModal && (
-                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowAddExpenseModal(false)}>
+                <div style={{ position: "fixed", inset: 0, background: "rgba(7,26,47,0.42)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowAddExpenseModal(false)}>
                     <div style={{ background: "rgb(16,16,18)", border: "1px solid rgba(217,106,85,0.22)", borderRadius: 16, padding: 24, width: "100%", maxWidth: 380, boxSizing: "border-box" }} onClick={(e) => e.stopPropagation()}>
-                        <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 16 }}>Add Expense</div>
+                        <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-ui)", fontWeight: 700, color: "var(--color-text)", marginBottom: 16 }}>Add Expense</div>
                         {[
                             { label: "Label *", field: "label", type: "text", placeholder: "AWS hosting" },
                             { label: "Amount *", field: "amount", type: "number", placeholder: "0" },
                             { label: "Date", field: "incurredOn", type: "date", placeholder: "" },
                         ].map(({ label, field, type, placeholder }) => (
                             <div key={field} style={{ marginBottom: 12 }}>
-                                <div style={{ fontSize: 11, color: "rgba(240,237,232,0.62)", marginBottom: 4 }}>{label}</div>
+                                <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginBottom: 4 }}>{label}</div>
                                 <input type={type} value={(quickExpDraft as any)[field] ?? ""} placeholder={placeholder} onChange={(e) => setQuickExpDraft((p) => ({ ...p, [field]: e.target.value }))} style={inputStyle} />
                             </div>
                         ))}
                         <div style={{ marginBottom: 16 }}>
-                            <div style={{ fontSize: 11, color: "rgba(240,237,232,0.62)", marginBottom: 4 }}>Frequency</div>
+                            <div style={{ fontSize: 11, color: "var(--color-text-muted)", marginBottom: 4 }}>Frequency</div>
                             <select value={quickExpDraft.frequency} onChange={(e) => setQuickExpDraft((p) => ({ ...p, frequency: e.target.value as any }))} style={inputStyle}>
                                 <option value="one_time">One-time</option>
                                 <option value="monthly">Monthly</option>
@@ -1324,7 +1324,7 @@ Be the partner who has been watching the whole time.`;
                             </select>
                         </div>
                         <div style={{ display: "flex", gap: 10 }}>
-                            <button onClick={() => setShowAddExpenseModal(false)} style={{ flex: 1, background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, padding: "10px", color: "rgba(240,237,232,0.62)", fontSize: 13, cursor: "pointer" }}>Cancel</button>
+                            <button onClick={() => setShowAddExpenseModal(false)} style={{ flex: 1, background: "none", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 9, padding: "10px", color: "var(--color-text-muted)", fontSize: 13, cursor: "pointer" }}>Cancel</button>
                             <button onClick={() => void handleSaveQuickExpense()} disabled={savingQuick} style={{ flex: 2, background: "rgba(217,106,85,0.14)", border: "1px solid rgba(217,106,85,0.34)", borderRadius: 9, padding: "10px", color: "#D96A55", fontSize: 13, fontWeight: 600, cursor: savingQuick ? "default" : "pointer", opacity: savingQuick ? 0.7 : 1 }}>
                                 {savingQuick ? "Saving..." : "Add Expense"}
                             </button>
@@ -1335,7 +1335,7 @@ Be the partner who has been watching the whole time.`;
 
             {/* ── Monthly Close Modal ───────────────────────────────────────── */}
             {showMonthlyClose && (
-                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 3000, display: "flex", flexDirection: "column", overflowY: "auto" }}>
+                <div style={{ position: "fixed", inset: 0, background: "rgba(7,26,47,0.72)", zIndex: 3000, display: "flex", flexDirection: "column", overflowY: "auto" }}>
                     <div style={{ flex: 1, padding: "32px 20px 60px", maxWidth: 560, width: "100%", margin: "0 auto", boxSizing: "border-box" }}>
 
                         {/* Step indicator */}
@@ -1347,12 +1347,12 @@ Be the partner who has been watching the whole time.`;
                                 return (
                                     <div key={step} style={{ display: "flex", alignItems: "center", flex: i < 2 ? 1 : "none" }}>
                                         <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                                            <div style={{ width: 22, height: 22, borderRadius: "50%", background: isDone ? "#4CAF8A" : isActive ? "#E8622A" : "rgba(255,255,255,0.06)", border: `1px solid ${isDone ? "#4CAF8A" : isActive ? "#E8622A" : "rgba(255,255,255,0.1)"}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: isDone || isActive ? "#fff" : "#555", fontWeight: 700, flexShrink: 0 }}>
+                                            <div style={{ width: 22, height: 22, borderRadius: "50%", background: isDone ? "var(--color-success)" : isActive ? "var(--tekori-gold)" : "rgba(7,26,47,0.06)", border: `1px solid ${isDone ? "var(--color-success)" : isActive ? "var(--tekori-gold)" : "rgba(7,26,47,0.10)"}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: isDone || isActive ? "#fff" : "var(--color-text-muted)", fontWeight: 700, flexShrink: 0 }}>
                                                 {isDone ? "✓" : stepNum}
                                             </div>
-                                            <span style={{ fontSize: 12, color: isActive ? "#F0EDE8" : isDone ? "#4CAF8A" : "#555", fontFamily: "'DM Sans', system-ui, sans-serif", fontWeight: isActive ? 600 : 400 }}>{step}</span>
+                                            <span style={{ fontSize: 12, color: isActive ? "var(--color-text)" : isDone ? "var(--color-success)" : "var(--color-text-muted)", fontFamily: "var(--tekori-font-ui)", fontWeight: isActive ? 600 : 400 }}>{step}</span>
                                         </div>
-                                        {i < 2 && <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)", margin: "0 10px" }} />}
+                                        {i < 2 && <div style={{ flex: 1, height: 1, background: "rgba(7,26,47,0.08)", margin: "0 10px" }} />}
                                     </div>
                                 );
                             })}
@@ -1361,34 +1361,34 @@ Be the partner who has been watching the whole time.`;
                         {/* ── Step 1: Review ──────────────────────────────────── */}
                         {closeStep === 1 && (
                             <div>
-                                <div style={{ fontSize: 20, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 4 }}>
+                                <div style={{ fontSize: 20, fontFamily: "var(--tekori-font-ui)", fontWeight: 700, color: "var(--color-text)", marginBottom: 4 }}>
                                     Closing {closeMonthData.prevMonthLabel}
                                 </div>
-                                <div style={{ fontSize: 13, color: "var(--foundry-text-secondary)", fontFamily: "'DM Sans', system-ui, sans-serif", marginBottom: 24 }}>
+                                <div style={{ fontSize: 13, color: "var(--foundry-text-secondary)", fontFamily: "var(--tekori-font-ui)", marginBottom: 24 }}>
                                     How did the month go?
                                 </div>
 
                                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 20 }}>
                                     {[
-                                        { label: "Revenue", value: formatCurrency(closeMonthData.revenue), color: "#4CAF8A" },
+                                        { label: "Revenue", value: formatCurrency(closeMonthData.revenue), color: "var(--color-success)" },
                                         { label: "Expenses", value: formatCurrency(closeMonthData.expenses), color: "#D96A55" },
-                                        { label: closeMonthData.net >= 0 ? "Surplus" : "Deficit", value: formatCurrency(Math.abs(closeMonthData.net)), color: closeMonthData.net >= 0 ? "#4CAF8A" : "#FF6B6B" },
+                                        { label: closeMonthData.net >= 0 ? "Surplus" : "Deficit", value: formatCurrency(Math.abs(closeMonthData.net)), color: closeMonthData.net >= 0 ? "var(--color-success)" : "#FF6B6B" },
                                     ].map((item) => (
-                                        <div key={item.label} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: "12px 10px", textAlign: "center" }}>
-                                            <div style={{ fontSize: 18, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, color: item.color, marginBottom: 3 }}>{item.value}</div>
+                                        <div key={item.label} style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.06)", borderRadius: 10, padding: "12px 10px", textAlign: "center" }}>
+                                            <div style={{ fontSize: 18, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, color: item.color, marginBottom: 3 }}>{item.value}</div>
                                             <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", textTransform: "uppercase", letterSpacing: "0.07em" }}>{item.label}</div>
                                         </div>
                                     ))}
                                 </div>
 
                                 {summary?.runwayMonths != null && (
-                                    <div style={{ fontSize: 12, color: "#A8A4A0", fontFamily: "'DM Sans', system-ui, sans-serif", marginBottom: 20, padding: "10px 14px", background: "rgba(255,255,255,0.02)", borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)" }}>
-                                        Current runway: <strong style={{ color: summary.runwayMonths > 6 ? "#4CAF8A" : summary.runwayMonths > 3 ? "#D9B15D" : "#D96A55" }}>{summary.runwayMonths.toFixed(1)} months</strong>
+                                    <div style={{ fontSize: 12, color: "var(--color-text-muted)", fontFamily: "var(--tekori-font-ui)", marginBottom: 20, padding: "10px 14px", background: "rgba(7,26,47,0.02)", borderRadius: 8, border: "1px solid rgba(7,26,47,0.05)" }}>
+                                        Current runway: <strong style={{ color: summary.runwayMonths > 6 ? "var(--color-success)" : summary.runwayMonths > 3 ? "var(--tekori-amber)" : "#D96A55" }}>{summary.runwayMonths.toFixed(1)} months</strong>
                                     </div>
                                 )}
 
                                 <div style={{ marginBottom: 24 }}>
-                                    <div style={{ fontSize: 12, color: "rgba(240,237,232,0.62)", marginBottom: 8, fontFamily: "'DM Sans', system-ui, sans-serif" }}>Anything else worth noting about this month?</div>
+                                    <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 8, fontFamily: "var(--tekori-font-ui)" }}>Anything else worth noting about this month?</div>
                                     <textarea
                                         rows={4}
                                         value={closeFounderNote}
@@ -1399,9 +1399,9 @@ Be the partner who has been watching the whole time.`;
                                 </div>
 
                                 <div style={{ display: "flex", gap: 10 }}>
-                                    <button onClick={() => setShowMonthlyClose(false)} style={{ flex: 1, background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, padding: "11px", color: "rgba(240,237,232,0.62)", fontSize: 13, cursor: "pointer" }}>Cancel</button>
-                                    <button onClick={() => void handleAdvanceToStep2()} style={{ flex: 2, background: "rgba(232,98,42,0.15)", border: "1px solid rgba(232,98,42,0.4)", borderRadius: 9, padding: "11px", color: "#E8622A", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-                                        Next → Get Forge Insights
+                                    <button onClick={() => setShowMonthlyClose(false)} style={{ flex: 1, background: "none", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 9, padding: "11px", color: "var(--color-text-muted)", fontSize: 13, cursor: "pointer" }}>Cancel</button>
+                                    <button onClick={() => void handleAdvanceToStep2()} style={{ flex: 2, background: "rgba(216,155,43,0.15)", border: "1px solid rgba(216,155,43,0.4)", borderRadius: 9, padding: "11px", color: "var(--tekori-gold)", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                                        Next → Get Navi Insights
                                     </button>
                                 </div>
                             </div>
@@ -1410,18 +1410,18 @@ Be the partner who has been watching the whole time.`;
                         {/* ── Step 2: Forge Insights ──────────────────────────── */}
                         {closeStep === 2 && (
                             <div>
-                                <div style={{ fontSize: 20, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 4 }}>Forge's Take</div>
-                                <div style={{ fontSize: 13, color: "var(--foundry-text-secondary)", fontFamily: "'DM Sans', system-ui, sans-serif", marginBottom: 24 }}>Based on your {closeMonthData.prevMonthLabel} numbers</div>
+                                <div style={{ fontSize: 20, fontFamily: "var(--tekori-font-ui)", fontWeight: 700, color: "var(--color-text)", marginBottom: 4 }}>Navi's Take</div>
+                                <div style={{ fontSize: 13, color: "var(--foundry-text-secondary)", fontFamily: "var(--tekori-font-ui)", marginBottom: 24 }}>Based on your {closeMonthData.prevMonthLabel} numbers</div>
 
-                                <div style={{ background: "rgba(232,98,42,0.06)", border: "1px solid rgba(232,98,42,0.15)", borderRadius: 12, padding: "18px 18px 16px", marginBottom: 20, minHeight: 100 }}>
+                                <div style={{ background: "rgba(216,155,43,0.06)", border: "1px solid rgba(216,155,43,0.15)", borderRadius: 12, padding: "18px 18px 16px", marginBottom: 20, minHeight: 100 }}>
                                     <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
-                                        <div style={{ width: 20, height: 20, borderRadius: "50%", background: "rgba(232,98,42,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "#E8622A", fontWeight: 700 }}>F</div>
-                                        <span style={{ fontSize: 10, color: "#E8622A", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", fontFamily: "'DM Sans', system-ui, sans-serif" }}>Forge</span>
+                                        <div style={{ width: 20, height: 20, borderRadius: "50%", background: "rgba(216,155,43,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "var(--tekori-gold)", fontWeight: 700 }}>F</div>
+                                        <span style={{ fontSize: 10, color: "var(--tekori-gold)", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", fontFamily: "var(--tekori-font-ui)" }}>Navi</span>
                                     </div>
                                     {forgeInsightLoading && !forgeInsight ? (
-                                        <div style={{ fontSize: 13, color: "rgba(240,237,232,0.58)", fontStyle: "italic", fontFamily: "'DM Sans', system-ui, sans-serif" }}>Reading your month...</div>
+                                        <div style={{ fontSize: 13, color: "rgba(16,32,51,0.58)", fontStyle: "italic", fontFamily: "var(--tekori-font-ui)" }}>Reading your month...</div>
                                     ) : (
-                                        <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8", lineHeight: 1.7 }}>{forgeInsight}</div>
+                                        <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-ui)", color: "var(--color-text)", lineHeight: 1.7 }}>{forgeInsight}</div>
                                     )}
                                 </div>
 
@@ -1429,15 +1429,15 @@ Be the partner who has been watching the whole time.`;
                                     <button
                                         onClick={() => void handleSaveInsightToJournal()}
                                         disabled={journalSaved}
-                                        style={{ display: "block", width: "100%", background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, padding: "9px", color: journalSaved ? "#4CAF8A" : "#888", fontSize: 12, cursor: journalSaved ? "default" : "pointer", marginBottom: 12, fontFamily: "'DM Sans', system-ui, sans-serif" }}
+                                        style={{ display: "block", width: "100%", background: "none", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 9, padding: "9px", color: journalSaved ? "var(--color-success)" : "var(--color-text-muted)", fontSize: 12, cursor: journalSaved ? "default" : "pointer", marginBottom: 12, fontFamily: "var(--tekori-font-ui)" }}
                                     >
                                         {journalSaved ? "✓ Saved to Journal" : "Save to Journal"}
                                     </button>
                                 )}
 
                                 <div style={{ display: "flex", gap: 10 }}>
-                                    <button onClick={() => setCloseStep(1)} style={{ flex: 1, background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, padding: "11px", color: "rgba(240,237,232,0.62)", fontSize: 13, cursor: "pointer" }}>← Back</button>
-                                    <button onClick={() => setCloseStep(3)} disabled={forgeInsightLoading} style={{ flex: 2, background: "rgba(232,98,42,0.15)", border: "1px solid rgba(232,98,42,0.4)", borderRadius: 9, padding: "11px", color: "#E8622A", fontSize: 13, fontWeight: 700, cursor: forgeInsightLoading ? "default" : "pointer", opacity: forgeInsightLoading ? 0.5 : 1 }}>
+                                    <button onClick={() => setCloseStep(1)} style={{ flex: 1, background: "none", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 9, padding: "11px", color: "var(--color-text-muted)", fontSize: 13, cursor: "pointer" }}>← Back</button>
+                                    <button onClick={() => setCloseStep(3)} disabled={forgeInsightLoading} style={{ flex: 2, background: "rgba(216,155,43,0.15)", border: "1px solid rgba(216,155,43,0.4)", borderRadius: 9, padding: "11px", color: "var(--tekori-gold)", fontSize: 13, fontWeight: 700, cursor: forgeInsightLoading ? "default" : "pointer", opacity: forgeInsightLoading ? 0.5 : 1 }}>
                                         Continue →
                                     </button>
                                 </div>
@@ -1447,16 +1447,16 @@ Be the partner who has been watching the whole time.`;
                         {/* ── Step 3: Next Month ──────────────────────────────── */}
                         {closeStep === 3 && (
                             <div>
-                                <div style={{ fontSize: 20, fontFamily: "'Lora', Georgia, serif", fontWeight: 700, color: "#F0EDE8", marginBottom: 4 }}>Looking Ahead</div>
-                                <div style={{ fontSize: 13, color: "var(--foundry-text-secondary)", fontFamily: "'DM Sans', system-ui, sans-serif", marginBottom: 24 }}>Set yourself up for {closeMonthData.nextMonthLabel}</div>
+                                <div style={{ fontSize: 20, fontFamily: "var(--tekori-font-ui)", fontWeight: 700, color: "var(--color-text)", marginBottom: 4 }}>Looking Ahead</div>
+                                <div style={{ fontSize: 13, color: "var(--foundry-text-secondary)", fontFamily: "var(--tekori-font-ui)", marginBottom: 24 }}>Set yourself up for {closeMonthData.nextMonthLabel}</div>
 
                                 <div style={{ marginBottom: 20 }}>
-                                    <div style={{ fontSize: 13, color: "#C8C4BE", fontFamily: "'DM Sans', system-ui, sans-serif", marginBottom: 8 }}>Revenue goal for {closeMonthData.nextMonthLabel}</div>
+                                    <div style={{ fontSize: 13, color: "var(--color-text-soft)", fontFamily: "var(--tekori-font-ui)", marginBottom: 8 }}>Revenue goal for {closeMonthData.nextMonthLabel}</div>
                                     <input type="number" min={0} value={nextMonthGoal} onChange={(e) => setNextMonthGoal(e.target.value)} placeholder="e.g. 5000" style={inputStyle} />
                                 </div>
 
                                 <div style={{ marginBottom: 20 }}>
-                                    <div style={{ fontSize: 13, color: "#C8C4BE", fontFamily: "'DM Sans', system-ui, sans-serif", marginBottom: 8 }}>Any planned expenses next month? <span style={{ fontSize: 11, color: "var(--foundry-text-muted)" }}>(optional)</span></div>
+                                    <div style={{ fontSize: 13, color: "var(--color-text-soft)", fontFamily: "var(--tekori-font-ui)", marginBottom: 8 }}>Any planned expenses next month? <span style={{ fontSize: 11, color: "var(--foundry-text-muted)" }}>(optional)</span></div>
                                     {nextMonthExpenses.map((exp, i) => (
                                         <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8, marginBottom: 8 }}>
                                             <input type="text" value={exp.label} onChange={(e) => setNextMonthExpenses((prev) => prev.map((r, idx) => idx === i ? { ...r, label: e.target.value } : r))} placeholder={`Expense ${i + 1}`} style={inputStyle} />
@@ -1465,19 +1465,19 @@ Be the partner who has been watching the whole time.`;
                                     ))}
                                 </div>
 
-                                <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 10, padding: "12px 14px", marginBottom: 24, fontSize: 13, fontFamily: "'DM Sans', system-ui, sans-serif", color: "#A8A4A0", lineHeight: 1.6 }}>
-                                    You're entering <strong style={{ color: "#F0EDE8" }}>{closeMonthData.nextMonthLabel}</strong> with{" "}
-                                    <strong style={{ color: summary?.runwayMonths != null ? (summary.runwayMonths > 6 ? "#4CAF8A" : "#E8C42A") : "#888" }}>
+                                <div style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.05)", borderRadius: 10, padding: "12px 14px", marginBottom: 24, fontSize: 13, fontFamily: "var(--tekori-font-ui)", color: "var(--color-text-muted)", lineHeight: 1.6 }}>
+                                    You're entering <strong style={{ color: "var(--color-text)" }}>{closeMonthData.nextMonthLabel}</strong> with{" "}
+                                    <strong style={{ color: summary?.runwayMonths != null ? (summary.runwayMonths > 6 ? "var(--color-success)" : "var(--tekori-amber)") : "var(--color-text-muted)" }}>
                                         {summary?.runwayMonths != null ? `${summary.runwayMonths.toFixed(1)} months` : "unknown"} of runway
                                     </strong>
                                     {nextMonthGoal && Number(nextMonthGoal) > 0 && (
-                                        <> and a goal of <strong style={{ color: "#4CAF8A" }}>{formatCurrency(Number(nextMonthGoal))}</strong> in revenue</>
+                                        <> and a goal of <strong style={{ color: "var(--color-success)" }}>{formatCurrency(Number(nextMonthGoal))}</strong> in revenue</>
                                     )}.
                                 </div>
 
                                 <div style={{ display: "flex", gap: 10 }}>
-                                    <button onClick={() => setCloseStep(2)} style={{ flex: 1, background: "none", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, padding: "11px", color: "rgba(240,237,232,0.62)", fontSize: 13, cursor: "pointer" }}>← Back</button>
-                                    <button onClick={() => void handleFinishClose()} disabled={savingClose} style={{ flex: 2, background: "rgba(232,98,42,0.15)", border: "1px solid rgba(232,98,42,0.4)", borderRadius: 9, padding: "11px", color: "#E8622A", fontSize: 13, fontWeight: 700, cursor: savingClose ? "default" : "pointer", opacity: savingClose ? 0.7 : 1 }}>
+                                    <button onClick={() => setCloseStep(2)} style={{ flex: 1, background: "none", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 9, padding: "11px", color: "var(--color-text-muted)", fontSize: 13, cursor: "pointer" }}>← Back</button>
+                                    <button onClick={() => void handleFinishClose()} disabled={savingClose} style={{ flex: 2, background: "rgba(216,155,43,0.15)", border: "1px solid rgba(216,155,43,0.4)", borderRadius: 9, padding: "11px", color: "var(--tekori-gold)", fontSize: 13, fontWeight: 700, cursor: savingClose ? "default" : "pointer", opacity: savingClose ? 0.7 : 1 }}>
                                         {savingClose ? "Saving..." : "Close the Month"}
                                     </button>
                                 </div>

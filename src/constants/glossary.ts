@@ -15,10 +15,10 @@ export const GLOSSARY: Record<
 export const AUTO_DETECT_TERMS = new Set(Object.keys(GLOSSARY));
 
 export const STAGE_COLORS = {
-    1: "#F5A843",
-    2: "#63B3ED",
-    3: "#9F7AEA",
-    4: "#48BB78",
-    5: "#E8622A",
-    6: "#F5A843",
+    1: "#E4AA3A",
+    2: "#8EA0B5",
+    3: "#C98924",
+    4: "#2F8F68",
+    5: "#C98924",
+    6: "#E4AA3A",
 } as const;

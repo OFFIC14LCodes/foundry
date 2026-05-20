@@ -334,7 +334,7 @@ export function buildFoundryBookContext(
   return {
     context: `[BOOK_CONTEXT]
 Use this as background teaching context for the current reply. These are the most relevant book excerpts for this message.
-Before answering, look for the useful Foundry Method principle, distinction, warning, or question inside this context. Use it in substantive replies whenever it genuinely sharpens the answer.
+Before answering, look for the useful Tekori Method principle, distinction, warning, or question inside this context. Use it in substantive replies whenever it genuinely sharpens the answer.
 This source uses a locked text snapshot with stable section and paragraph numbering. Page citations are only allowed when a page number is explicitly shown below.
 Only cite locations that appear here. If you materially use this book context, append [BOOK_USED: citation_id, citation_id] at the very end of your response using only Citation IDs shown here. Never invent a citation ID, page number, or paragraph number.
 

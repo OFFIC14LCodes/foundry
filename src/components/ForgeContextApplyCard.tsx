@@ -34,9 +34,9 @@ export default function ForgeContextApplyCard({
             <div className="forge-context-card__header">
                 <div>
                     <div className="foundry-label forge-context-card__eyebrow">
-                        {sourceLabel ? `Context · ${sourceLabel}` : "Forge Context"}
+                        {sourceLabel ? `Context · ${sourceLabel}` : "Navi Context"}
                     </div>
-                    <div className="forge-context-card__title">Where should Forge apply this?</div>
+                    <div className="forge-context-card__title">Where should Navi apply this?</div>
                 </div>
                 <button className="forge-context-card__dismiss" onClick={onDismiss} aria-label="Dismiss context prompt">
                     ×
@@ -80,7 +80,7 @@ export default function ForgeContextApplyCard({
             {customOpen && (
                 <div className="forge-context-card__custom">
                     <label className="foundry-label" htmlFor="forge-context-custom-label">
-                        What should Forge call this context?
+                        What should Navi call this context?
                     </label>
                     <div className="forge-context-card__custom-row">
                         <input

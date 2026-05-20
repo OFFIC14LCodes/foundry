@@ -110,7 +110,7 @@ export const DOC_CATEGORIES: DocCategory[] = [
             {
                 id: "custom-bp",
                 name: "Custom Document",
-                whenToUse: "When none of the templates above match what you need. Describe what you want in the special instructions field and Forge will build it from scratch based on your business context and the audience you are writing for.",
+                whenToUse: "When none of the templates above match what you need. Describe what you want in the special instructions field and Navi will build it from scratch based on your business context and the audience you are writing for.",
             },
         ],
     },
@@ -128,13 +128,13 @@ export const DOC_CATEGORIES: DocCategory[] = [
                 name: "Certificate / Articles of Organization",
                 isStateAware: true,
                 isMostPopular: true,
-                whenToUse: "When you are forming a Limited Liability Company (LLC) for the first time. This is the foundational legal document that officially creates your LLC in the eyes of your state government. Every LLC must file this document with their state before legally operating as an LLC. Filing fees, required language, and processing times vary significantly by state — Forge generates this according to your specific state's current requirements.",
+                whenToUse: "When you are forming a Limited Liability Company (LLC) for the first time. This is the foundational legal document that officially creates your LLC in the eyes of your state government. Every LLC must file this document with their state before legally operating as an LLC. Filing fees, required language, and processing times vary significantly by state — Navi generates this according to your specific state's current requirements.",
             },
             {
                 id: "articles-of-incorporation",
                 name: "Articles of Incorporation",
                 isStateAware: true,
-                whenToUse: "When you are forming a Corporation (C-Corp or S-Corp) rather than an LLC. Required if you plan to raise venture capital, issue stock to employees, or need the specific tax treatment a corporation provides. Forge will ask whether you need C-Corp or S-Corp structure and generate accordingly for your state.",
+                whenToUse: "When you are forming a Corporation (C-Corp or S-Corp) rather than an LLC. Required if you plan to raise venture capital, issue stock to employees, or need the specific tax treatment a corporation provides. Navi will ask whether you need C-Corp or S-Corp structure and generate accordingly for your state.",
             },
             {
                 id: "operating-agreement",
@@ -153,13 +153,13 @@ export const DOC_CATEGORIES: DocCategory[] = [
                 id: "registered-agent",
                 name: "Registered Agent Designation",
                 isStateAware: true,
-                whenToUse: "When you need to formally designate a registered agent for your LLC or corporation. A registered agent is the person or service that receives legal documents and official government correspondence on behalf of your business. Required in every state — Forge generates this according to your state's specific requirements and explains your options.",
+                whenToUse: "When you need to formally designate a registered agent for your LLC or corporation. A registered agent is the person or service that receives legal documents and official government correspondence on behalf of your business. Required in every state — Navi generates this according to your state's specific requirements and explains your options.",
             },
             {
                 id: "statement-of-organizer",
                 name: "Statement of Organizer",
                 isStateAware: true,
-                whenToUse: "In states that require it, when the person filing the LLC formation documents (the organizer) is different from the actual LLC members. Common when an attorney or third party files on behalf of the founders. Forge automatically includes this when required by your state.",
+                whenToUse: "In states that require it, when the person filing the LLC formation documents (the organizer) is different from the actual LLC members. Common when an attorney or third party files on behalf of the founders. Navi automatically includes this when required by your state.",
             },
             {
                 id: "llc-member-resolution",
@@ -171,19 +171,19 @@ export const DOC_CATEGORIES: DocCategory[] = [
                 id: "dba-guide",
                 name: "Business Name Registration / DBA Guide",
                 isStateAware: true,
-                whenToUse: "When you want to operate your business under a name different from your legal LLC or corporation name. Also called a fictitious business name or trade name. Forge generates the filing guide and required forms specific to your state and county.",
+                whenToUse: "When you want to operate your business under a name different from your legal LLC or corporation name. Also called a fictitious business name or trade name. Navi generates the filing guide and required forms specific to your state and county.",
             },
             {
                 id: "foreign-qualification",
                 name: "Foreign Qualification Application",
                 isStateAware: true,
-                whenToUse: "When your LLC or corporation is registered in one state but you want to legally do business in another state. Most states require foreign qualification before you can operate, open a bank account, or sign contracts there. Forge generates the application according to the requirements of the state you are expanding into.",
+                whenToUse: "When your LLC or corporation is registered in one state but you want to legally do business in another state. Most states require foreign qualification before you can operate, open a bank account, or sign contracts there. Navi generates the application according to the requirements of the state you are expanding into.",
             },
             {
                 id: "good-standing-request",
                 name: "Certificate of Good Standing Request",
                 isStateAware: true,
-                whenToUse: "When a bank, investor, lender, or business partner asks for proof that your business is legally active and in compliance with state requirements. A Certificate of Good Standing is issued by your state and confirms your business exists and has met all filing obligations. Forge generates the formal request letter and explains the process for your specific state.",
+                whenToUse: "When a bank, investor, lender, or business partner asks for proof that your business is legally active and in compliance with state requirements. A Certificate of Good Standing is issued by your state and confirms your business exists and has met all filing obligations. Navi generates the formal request letter and explains the process for your specific state.",
             },
         ],
     },
@@ -200,19 +200,19 @@ export const DOC_CATEGORIES: DocCategory[] = [
                 id: "ein-guide",
                 name: "EIN Application Guide and Summary",
                 isMostPopular: true,
-                whenToUse: "Before opening a business bank account, hiring employees, filing business taxes, or applying for most business licenses. An Employer Identification Number (EIN) is your business's federal tax ID — the equivalent of a Social Security Number for your company. Forge walks you through the IRS SS-4 form and generates a completed summary ready for submission.",
+                whenToUse: "Before opening a business bank account, hiring employees, filing business taxes, or applying for most business licenses. An Employer Identification Number (EIN) is your business's federal tax ID — the equivalent of a Social Security Number for your company. Navi walks you through the IRS SS-4 form and generates a completed summary ready for submission.",
             },
             {
                 id: "s-corp-election",
                 name: "S-Corporation Election Letter",
                 isStateAware: true,
-                whenToUse: "When your LLC or corporation wants to be taxed as an S-Corporation to reduce self-employment taxes. Typically recommended when your business is generating $40,000 or more in annual net profit. Forge generates the IRS Form 2553 preparation document and election letter — your CPA will advise on timing and confirm eligibility.",
+                whenToUse: "When your LLC or corporation wants to be taxed as an S-Corporation to reduce self-employment taxes. Typically recommended when your business is generating $40,000 or more in annual net profit. Navi generates the IRS Form 2553 preparation document and election letter — your CPA will advise on timing and confirm eligibility.",
             },
             {
                 id: "w9",
                 name: "W-9 — Taxpayer Identification Request",
                 isMostPopular: true,
-                whenToUse: "When a client or business partner asks for your tax information before paying you, or when you need to request tax information from a contractor you are paying $600 or more in a year. Every business needs this document ready. Forge generates a completed W-9 using your business information.",
+                whenToUse: "When a client or business partner asks for your tax information before paying you, or when you need to request tax information from a contractor you are paying $600 or more in a year. Every business needs this document ready. Navi generates a completed W-9 using your business information.",
             },
             {
                 id: "1099-checklist",
@@ -223,12 +223,12 @@ export const DOC_CATEGORIES: DocCategory[] = [
                 id: "sales-tax-guide",
                 name: "Sales Tax Registration Guide",
                 isStateAware: true,
-                whenToUse: "Before you make your first taxable sale in any state where you have sales tax nexus. Sales tax requirements vary dramatically by state — some states have no sales tax, others have complex multi-rate systems. After the South Dakota v. Wayfair Supreme Court decision, online businesses may have nexus in multiple states even without a physical presence. Forge generates a state-specific registration guide.",
+                whenToUse: "Before you make your first taxable sale in any state where you have sales tax nexus. Sales tax requirements vary dramatically by state — some states have no sales tax, others have complex multi-rate systems. After the South Dakota v. Wayfair Supreme Court decision, online businesses may have nexus in multiple states even without a physical presence. Navi generates a state-specific registration guide.",
             },
             {
                 id: "quarterly-tax",
                 name: "Quarterly Estimated Tax Payment Summary",
-                whenToUse: "Every quarter as a self-employed business owner or single-member LLC. The IRS requires quarterly tax payments if you expect to owe $1,000 or more in taxes for the year. Missing these payments results in penalties. Forge generates a payment schedule and summary based on your projected income.",
+                whenToUse: "Every quarter as a self-employed business owner or single-member LLC. The IRS requires quarterly tax payments if you expect to owe $1,000 or more in taxes for the year. Missing these payments results in penalties. Navi generates a payment schedule and summary based on your projected income.",
             },
             {
                 id: "expense-policy",
@@ -238,7 +238,7 @@ export const DOC_CATEGORIES: DocCategory[] = [
             {
                 id: "home-office-deduction",
                 name: "Home Office Deduction Documentation",
-                whenToUse: "When you work from home and want to claim the home office deduction on your business taxes. The IRS has specific requirements for what qualifies as a home office. Forge generates the documentation framework and calculation worksheet your CPA will need.",
+                whenToUse: "When you work from home and want to claim the home office deduction on your business taxes. The IRS has specific requirements for what qualifies as a home office. Navi generates the documentation framework and calculation worksheet your CPA will need.",
             },
         ],
     },
@@ -270,7 +270,7 @@ export const DOC_CATEGORIES: DocCategory[] = [
             {
                 id: "personal-guarantee",
                 name: "Personal Guarantee",
-                whenToUse: "When a lender, landlord, or vendor requires the founder to personally guarantee a business obligation. By signing a personal guarantee you agree to be personally responsible for the debt if the business cannot pay. Forge generates this document and clearly explains the implications so you understand what you are agreeing to.",
+                whenToUse: "When a lender, landlord, or vendor requires the founder to personally guarantee a business obligation. By signing a personal guarantee you agree to be personally responsible for the debt if the business cannot pay. Navi generates this document and clearly explains the implications so you understand what you are agreeing to.",
             },
             {
                 id: "financial-projections",
@@ -515,7 +515,7 @@ export const DOC_CATEGORIES: DocCategory[] = [
                 id: "non-compete",
                 name: "Non-Compete Agreement",
                 isStateAware: true,
-                whenToUse: "When you want to prevent a departing employee from immediately working for a direct competitor or starting a competing business. Critical note — enforceability varies dramatically by state. California bans non-competes entirely. Several other states have strong limitations. Forge generates this document with state-specific enforceability warnings so you understand your actual legal position before asking employees to sign.",
+                whenToUse: "When you want to prevent a departing employee from immediately working for a direct competitor or starting a competing business. Critical note — enforceability varies dramatically by state. California bans non-competes entirely. Several other states have strong limitations. Navi generates this document with state-specific enforceability warnings so you understand your actual legal position before asking employees to sign.",
             },
             {
                 id: "non-solicitation",
@@ -527,7 +527,7 @@ export const DOC_CATEGORIES: DocCategory[] = [
                 id: "employee-handbook",
                 name: "Employee Handbook Outline",
                 isStateAware: true,
-                whenToUse: "When you are hiring your first employees and need to establish clear workplace policies. An Employee Handbook covers attendance, conduct, discrimination and harassment policies, benefits, time off, and disciplinary procedures. Forge generates a comprehensive outline that you customize and expand — having one protects you legally and sets clear expectations.",
+                whenToUse: "When you are hiring your first employees and need to establish clear workplace policies. An Employee Handbook covers attendance, conduct, discrimination and harassment policies, benefits, time off, and disciplinary procedures. Navi generates a comprehensive outline that you customize and expand — having one protects you legally and sets clear expectations.",
             },
             {
                 id: "pip",
@@ -559,7 +559,7 @@ export const DOC_CATEGORIES: DocCategory[] = [
                 id: "background-auth",
                 name: "Background Check Authorization",
                 isStateAware: true,
-                whenToUse: "Before conducting any background check on a job candidate or employee. Federal law (FCRA) requires written authorization before running background checks. Forge generates a compliant authorization form with state-specific additions where required.",
+                whenToUse: "Before conducting any background check on a job candidate or employee. Federal law (FCRA) requires written authorization before running background checks. Navi generates a compliant authorization form with state-specific additions where required.",
             },
         ],
     },
@@ -592,23 +592,23 @@ export const DOC_CATEGORIES: DocCategory[] = [
                 id: "cap-table",
                 name: "Cap Table",
                 isMostPopular: true,
-                whenToUse: "From the moment you form your company and issue any equity — to co-founders, employees, advisors, or investors. A Cap Table is the definitive record of who owns what percentage of your company and what type of equity they hold. Investors will request this in every due diligence process. Forge generates a properly structured template you can maintain and update.",
+                whenToUse: "From the moment you form your company and issue any equity — to co-founders, employees, advisors, or investors. A Cap Table is the definitive record of who owns what percentage of your company and what type of equity they hold. Investors will request this in every due diligence process. Navi generates a properly structured template you can maintain and update.",
             },
             {
                 id: "investor-update",
                 name: "Investor Update Template",
-                whenToUse: "Monthly or quarterly after you have taken on investors. Regular professional investor updates build trust, keep investors informed, and often generate helpful introductions and support. Forge generates a template that covers the key metrics, highlights, challenges, and asks that sophisticated investors expect to see.",
+                whenToUse: "Monthly or quarterly after you have taken on investors. Regular professional investor updates build trust, keep investors informed, and often generate helpful introductions and support. Navi generates a template that covers the key metrics, highlights, challenges, and asks that sophisticated investors expect to see.",
             },
             {
                 id: "pitch-deck-outline",
                 name: "Pitch Deck Outline",
                 isMostPopular: true,
-                whenToUse: "When preparing to present your business to investors in a formal pitch setting. Forge generates a structured outline covering the 10–12 slides that most successful pitch decks include — problem, solution, market size, product, business model, traction, team, competition, financials, and the ask — tailored to your specific business.",
+                whenToUse: "When preparing to present your business to investors in a formal pitch setting. Navi generates a structured outline covering the 10–12 slides that most successful pitch decks include — problem, solution, market size, product, business model, traction, team, competition, financials, and the ask — tailored to your specific business.",
             },
             {
                 id: "due-diligence-checklist",
                 name: "Due Diligence Checklist",
-                whenToUse: "Before entering a due diligence process with an investor so you know exactly what documents and information to prepare. Being organized and responsive during due diligence dramatically increases the probability of closing an investment round. Forge generates a comprehensive checklist based on your stage and business type.",
+                whenToUse: "Before entering a due diligence process with an investor so you know exactly what documents and information to prepare. Being organized and responsive during due diligence dramatically increases the probability of closing an investment round. Navi generates a comprehensive checklist based on your stage and business type.",
             },
             {
                 id: "board-resolution",
@@ -623,7 +623,7 @@ export const DOC_CATEGORIES: DocCategory[] = [
             {
                 id: "409a-summary",
                 name: "409A Valuation Summary",
-                whenToUse: "Before issuing stock options to employees. A 409A valuation establishes the fair market value of your common stock — required by the IRS to set the exercise price of employee stock options. Forge generates a documentation framework and explanation of the process, though the actual valuation must be performed by a qualified third-party appraiser.",
+                whenToUse: "Before issuing stock options to employees. A 409A valuation establishes the fair market value of your common stock — required by the IRS to set the exercise price of employee stock options. Navi generates a documentation framework and explanation of the process, though the actual valuation must be performed by a qualified third-party appraiser.",
             },
         ],
     },
@@ -640,7 +640,7 @@ export const DOC_CATEGORIES: DocCategory[] = [
                 id: "lease-review",
                 name: "Commercial Lease Review Summary",
                 isMostPopular: true,
-                whenToUse: "Before signing any commercial lease for office, retail, warehouse, or production space. Upload your lease document and Forge will analyze it, flagging key terms, unusual clauses, hidden costs, and negotiating opportunities. Understanding what you are signing before you sign it can save thousands of dollars and years of regret.",
+                whenToUse: "Before signing any commercial lease for office, retail, warehouse, or production space. Upload your lease document and Navi will analyze it, flagging key terms, unusual clauses, hidden costs, and negotiating opportunities. Understanding what you are signing before you sign it can save thousands of dollars and years of regret.",
             },
             {
                 id: "equipment-lease",
@@ -661,7 +661,7 @@ export const DOC_CATEGORIES: DocCategory[] = [
                 id: "insurance-checklist",
                 name: "Insurance Requirements Checklist",
                 isMostPopular: true,
-                whenToUse: "Before launching your business, signing a commercial lease, or taking on your first employee. Forge generates a customized checklist of the insurance coverage your specific business needs — general liability, professional liability, workers compensation, commercial property, business interruption, and others based on your industry and state requirements.",
+                whenToUse: "Before launching your business, signing a commercial lease, or taking on your first employee. Navi generates a customized checklist of the insurance coverage your specific business needs — general liability, professional liability, workers compensation, commercial property, business interruption, and others based on your industry and state requirements.",
             },
             {
                 id: "business-continuity",
@@ -689,12 +689,12 @@ export const DOC_CATEGORIES: DocCategory[] = [
                 name: "Privacy Policy",
                 isMostPopular: true,
                 isStateAware: true,
-                whenToUse: "Before launching any website, app, or digital product that collects any information from users — including something as basic as an email address. A Privacy Policy is legally required in virtually every jurisdiction and is a condition of using Google OAuth, Apple Sign In, and most payment processors. Forge generates a comprehensive policy based on your specific data practices.",
+                whenToUse: "Before launching any website, app, or digital product that collects any information from users — including something as basic as an email address. A Privacy Policy is legally required in virtually every jurisdiction and is a condition of using Google OAuth, Apple Sign In, and most payment processors. Navi generates a comprehensive policy based on your specific data practices.",
             },
             {
                 id: "cookie-policy",
                 name: "Cookie Policy",
-                whenToUse: "When your website uses cookies for any purpose — analytics, authentication, advertising, or personalization. Required by GDPR for European users and best practice everywhere. Forge generates a policy that accurately reflects your cookie usage.",
+                whenToUse: "When your website uses cookies for any purpose — analytics, authentication, advertising, or personalization. Required by GDPR for European users and best practice everywhere. Navi generates a policy that accurately reflects your cookie usage.",
             },
             {
                 id: "gdpr-checklist",
@@ -717,13 +717,13 @@ export const DOC_CATEGORIES: DocCategory[] = [
                 name: "Business License Application Guide",
                 isMostPopular: true,
                 isStateAware: true,
-                whenToUse: "Before beginning operations in any new location or expanding into a new business activity. Business license requirements vary dramatically by state, county, and city — and by industry. Forge generates a state and industry specific guide to the licenses and permits you need to operate legally.",
+                whenToUse: "Before beginning operations in any new location or expanding into a new business activity. Business license requirements vary dramatically by state, county, and city — and by industry. Navi generates a state and industry specific guide to the licenses and permits you need to operate legally.",
             },
             {
                 id: "permit-checklist",
                 name: "Industry-Specific Permit Checklist",
                 isStateAware: true,
-                whenToUse: "When your business operates in a regulated industry — food service, healthcare, construction, childcare, financial services, real estate, transportation, and many others. Forge generates a checklist of the specific permits, certifications, and regulatory filings required for your industry and location.",
+                whenToUse: "When your business operates in a regulated industry — food service, healthcare, construction, childcare, financial services, real estate, transportation, and many others. Navi generates a checklist of the specific permits, certifications, and regulatory filings required for your industry and location.",
             },
             {
                 id: "compliance-calendar",
@@ -756,7 +756,7 @@ export const DOC_CATEGORIES: DocCategory[] = [
             {
                 id: "case-study",
                 name: "Case Study",
-                whenToUse: "When a customer has achieved a meaningful result using your product or service and you want to document it as a marketing asset. Case studies are among the most persuasive sales tools available because they show real results for real customers. Forge structures the case study in the problem-solution-results format that resonates with prospects.",
+                whenToUse: "When a customer has achieved a meaningful result using your product or service and you want to document it as a marketing asset. Case studies are among the most persuasive sales tools available because they show real results for real customers. Navi structures the case study in the problem-solution-results format that resonates with prospects.",
             },
             {
                 id: "testimonial-request",
@@ -766,7 +766,7 @@ export const DOC_CATEGORIES: DocCategory[] = [
             {
                 id: "cold-outreach",
                 name: "Cold Outreach Email",
-                whenToUse: "When reaching out to potential customers, partners, investors, or media contacts who do not know you yet. Forge generates outreach emails that lead with value, respect the recipient's time, and have a clear and simple call to action — dramatically improving response rates over generic templated messages.",
+                whenToUse: "When reaching out to potential customers, partners, investors, or media contacts who do not know you yet. Navi generates outreach emails that lead with value, respect the recipient's time, and have a clear and simple call to action — dramatically improving response rates over generic templated messages.",
             },
             {
                 id: "follow-up-email",
@@ -792,7 +792,7 @@ export const DOC_CATEGORIES: DocCategory[] = [
             {
                 id: "collection-letter",
                 name: "Collection Letter",
-                whenToUse: "When an invoice is past due and informal reminders have not resulted in payment. A formal Collection Letter escalates the urgency professionally and documents your attempt to collect before taking legal action. Forge generates letters appropriate for 30, 60, and 90 days past due — each progressively more formal.",
+                whenToUse: "When an invoice is past due and informal reminders have not resulted in payment. A formal Collection Letter escalates the urgency professionally and documents your attempt to collect before taking legal action. Navi generates letters appropriate for 30, 60, and 90 days past due — each progressively more formal.",
             },
             {
                 id: "demand-letter-comms",
@@ -820,7 +820,7 @@ export const DOC_CATEGORIES: DocCategory[] = [
                 name: "Articles of Dissolution",
                 isStateAware: true,
                 isMostPopular: true,
-                whenToUse: "When you have decided to permanently close your LLC or corporation and need to formally end its legal existence with the state. Every state has a specific process and required form for dissolution. Failing to formally dissolve means you continue to owe annual report fees and remain legally liable as the registered entity. Forge generates the dissolution documents according to your state's specific requirements.",
+                whenToUse: "When you have decided to permanently close your LLC or corporation and need to formally end its legal existence with the state. Every state has a specific process and required form for dissolution. Failing to formally dissolve means you continue to owe annual report fees and remain legally liable as the registered entity. Navi generates the dissolution documents according to your state's specific requirements.",
             },
             {
                 id: "asset-purchase",

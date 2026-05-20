@@ -51,7 +51,7 @@ export function inferBookTypeFromArchiveTitle(title: string): FounderBookType {
     if (title.startsWith("Quick Chat")) return "quick_chat";
     if (title.startsWith("Market Intel —")) return "market_intelligence";
     if (title.startsWith("Pitch Practice —")) return "pitch_practice";
-    if (title.startsWith("Chat with Forge")) return "chat_room";
+    if (title.startsWith("Ask Navi")) return "chat_room";
     return "business";
 }
 
@@ -62,7 +62,7 @@ function formatWorkspace(workspace?: ConversationWorkspaceSnapshot | null) {
             ? `Focus: ${workspace.user?.summaryOverride || workspace.generated?.summary}`
             : "",
         workspace.user?.notes?.length ? `Founder notes:\n${workspace.user.notes.map((note) => `- ${note}`).join("\n")}` : "",
-        workspace.generated?.notes?.length ? `Forge notes:\n${workspace.generated.notes.map((note) => `- ${note}`).join("\n")}` : "",
+        workspace.generated?.notes?.length ? `Navi notes:\n${workspace.generated.notes.map((note) => `- ${note}`).join("\n")}` : "",
         workspace.generated?.academyConnections?.length ? `Academy connections:\n${workspace.generated.academyConnections.map((note) => `- ${note}`).join("\n")}` : "",
         workspace.generated?.nextSteps?.length ? `Next actions:\n${workspace.generated.nextSteps.map((step) => `- ${step}`).join("\n")}` : "",
         workspace.generated?.decisions?.length ? `Decisions:\n${workspace.generated.decisions.map((decision) => `- ${decision}`).join("\n")}` : "",
@@ -84,12 +84,12 @@ function buildBookUpdatePrompt(input: UpdateInput, existingBook: FounderBook | n
     const sourceStageLabel = isAcademy ? "Academy lesson stage" : "Stage";
     return `Update this founder's private ${getFounderBookTitle(input.sourceType)}.
 
-This book is a living learning document. It should accumulate useful notes from archived Forge conversations. Most recent understanding takes precedence. If the new archive updates, corrects, or improves older notes, rewrite the relevant section so the current version is clean and current. Do not keep stale conflicting notes unless the conflict itself is important.
+This book is a living learning document. It should accumulate useful notes from archived Navi conversations. Most recent understanding takes precedence. If the new archive updates, corrects, or improves older notes, rewrite the relevant section so the current version is clean and current. Do not keep stale conflicting notes unless the conflict itself is important.
 
 Required format:
 - Use markdown.
 - Use bullet points for notes.
-- At the bottom of each section include a heading exactly named "Forge Summary" followed by a polished paragraph.
+- At the bottom of each section include a heading exactly named "Navi Summary" followed by a polished paragraph.
 ${isAcademy ? '- Organize Academy content by the lesson stage from Academy, then by lesson. Use labels like "Stage 1 Lessons" and never use the founder\'s current business stage unless it is also the lesson stage.' : "- Organize content into practical sections. Use source titles as subsection labels when helpful."}
 - Do not include a transcript dump.
 - Keep it useful as a reference book, not a chat summary.
@@ -107,7 +107,7 @@ Source ref id: ${input.sourceRefId || "none"}
 
 ${input.academyEntry ? `Academy lesson:
 Title: ${input.academyEntry.title}
-Category: ${input.academyEntry.categoryTitle || "Forge Academy"}
+Category: ${input.academyEntry.categoryTitle || "Navi Academy"}
 Stages: ${input.academyEntry.stageIds.join(", ") || sourceStage || "unknown"}
 Learning goal: ${input.academyEntry.learningGoal || "not set"}
 Why this matters: ${input.academyEntry.whyThisMatters || "not set"}` : ""}

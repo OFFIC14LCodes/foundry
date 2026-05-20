@@ -273,7 +273,7 @@ export function buildBusinessModelCanvasExportHtml(canvas: BusinessModelCanvasRe
         const entries = canvas[section] || [];
         const bullets = entries.length
             ? `<ul>${entries.map((entry) => `<li>${escapeHtml(entry.text)}</li>`).join("")}</ul>`
-            : `<p class="empty">Still being clarified with Forge.</p>`;
+            : `<p class="empty">Still being clarified with Navi.</p>`;
         return `
 <section class="card">
   <div class="card-label">${escapeHtml(BUSINESS_MODEL_CANVAS_LABELS[section])}</div>
@@ -310,7 +310,7 @@ export function buildBusinessModelCanvasExportHtml(canvas: BusinessModelCanvasRe
 <body>
   <main class="shell">
     <header class="header">
-      <div class="eyebrow">Foundry Stage 2 · Living ${escapeHtml(canvasName)}</div>
+      <div class="eyebrow">Tekori Stage 2 · Living ${escapeHtml(canvasName)}</div>
       <h1>${escapeHtml(profile?.businessName || profile?.idea || canvasName)}</h1>
       <div class="meta">
         Version ${canvas.version} · Updated ${escapeHtml(updatedAt)}<br />
@@ -319,7 +319,7 @@ export function buildBusinessModelCanvasExportHtml(canvas: BusinessModelCanvasRe
     </header>
     <section class="grid">${cards}</section>
     <div class="footer">
-      This canvas is a living strategic system generated and refined with Forge. It reflects working assumptions, not accounting, legal, or investment advice.
+      This canvas is a living strategic system generated and refined with Navi. It reflects working assumptions, not accounting, legal, or investment advice.
     </div>
   </main>
 </body>

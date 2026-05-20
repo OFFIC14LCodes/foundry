@@ -207,7 +207,7 @@ export function buildWeeklyBriefingIntelligence({
                 return `- ${stageLabel}: ${truncate(item.summary, 150)}`;
             })
             .join("\n")
-        : "- No recent Forge session summaries were available this week.";
+        : "- No recent Navi session summaries were available this week.";
 
     const financialLines = [
         `- Budget remaining: $${Number(profile?.budget?.remaining || 0).toLocaleString()}`,
@@ -278,7 +278,7 @@ export function buildWeeklyBriefingPrompt(
     weeklyContextBlock: string,
 ) {
     return `
-You are Forge. Write a weekly founder briefing for ${profile.name}, who is building "${profile.businessName || profile.idea}".
+You are Navi. Write a weekly founder briefing for ${profile.name}, who is building "${profile.businessName || profile.idea}".
 
 You should sound like a business partner who has been tracking the shape of the founder's week. Be observant, warm, and direct. Do not sound like you are reading records or analyzing a database.
 
@@ -300,7 +300,7 @@ Write the briefing in this structure:
 
 2. What moved this week
 - 2-4 bullets
-- reference meaningful movement: decisions, learning, stage progress, financial movement, or recent Forge work
+- reference meaningful movement: decisions, learning, stage progress, financial movement, or recent Navi work
 
 3. What seems stuck or repeated
 - 1 short paragraph or 2-3 bullets
@@ -308,7 +308,7 @@ Write the briefing in this structure:
 
 4. What deserves attention now
 - 2-3 sentences
-- name the one thing Forge thinks matters most this week
+- name the one thing Navi thinks matters most this week
 
 5. This week's focus
 - exactly one clear focus line

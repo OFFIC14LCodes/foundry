@@ -21,21 +21,21 @@ export default function BillingReturnScreen({
 
     const body = mode === "success"
         ? accessReady
-            ? "Your paid Foundry access is active. You can continue into paid stages immediately."
-            : "Stripe checkout completed. Foundry is waiting for the webhook-backed subscription state to finish syncing."
+            ? "Your paid Tekori access is active. You can continue into paid stages immediately."
+            : "Stripe checkout completed. Tekori is waiting for the webhook-backed subscription state to finish syncing."
         : "No billing changes were made. Stage 1 remains available, and you can reopen pricing whenever you are ready.";
 
     return (
         <div
             style={{
                 minHeight: "100vh",
-                background: "#080809",
+                background: "var(--color-bg-soft)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 padding: 24,
-                fontFamily: "'Lora', Georgia, serif",
-                color: "#F0EDE8",
+                fontFamily: "var(--tekori-font-ui)",
+                color: "var(--color-text)",
             }}
         >
             <div
@@ -43,28 +43,28 @@ export default function BillingReturnScreen({
                     width: "100%",
                     maxWidth: 520,
                     textAlign: "center",
-                    background: "linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02))",
-                    border: "1px solid rgba(255,255,255,0.08)",
+                    background: "linear-gradient(180deg, rgba(7,26,47,0.03), rgba(7,26,47,0.02))",
+                    border: "1px solid rgba(7,26,47,0.08)",
                     borderRadius: 24,
                     padding: "28px 24px",
                 }}
             >
-                <div style={{ fontSize: 11, color: mode === "success" ? "#E8622A" : "#888", letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 10 }}>
+                <div style={{ fontSize: 11, color: mode === "success" ? "var(--tekori-gold)" : "var(--color-text-muted)", letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 10 }}>
                     Billing
                 </div>
-                <div style={{ fontSize: "clamp(28px, 7vw, 38px)", lineHeight: 1.02, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, marginBottom: 12 }}>
+                <div style={{ fontSize: "clamp(28px, 7vw, 38px)", lineHeight: 1.02, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, marginBottom: 12 }}>
                     {title}
                 </div>
-                <div style={{ fontSize: 14, color: "#C8C4BE", lineHeight: 1.75, marginBottom: 14 }}>
+                <div style={{ fontSize: 14, color: "var(--color-text-soft)", lineHeight: 1.75, marginBottom: 14 }}>
                     {body}
                 </div>
                 {message && (
-                    <div style={{ fontSize: 12, color: "#8E867D", lineHeight: 1.7, marginBottom: 16 }}>
+                    <div style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.7, marginBottom: 16 }}>
                         {message}
                     </div>
                 )}
                 {mode === "success" && isProvisioning && !accessReady && (
-                    <div style={{ fontSize: 12, color: "#A8A4A0", marginBottom: 18 }}>
+                    <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 18 }}>
                         Checking subscription state...
                     </div>
                 )}
@@ -75,8 +75,8 @@ export default function BillingReturnScreen({
                             style={{
                                 padding: "10px 14px",
                                 borderRadius: 12,
-                                border: "1px solid rgba(255,255,255,0.1)",
-                                background: "rgba(255,255,255,0.04)",
+                                border: "1px solid rgba(7,26,47,0.1)",
+                                background: "rgba(7,26,47,0.04)",
                                 color: "#D8D2C8",
                                 fontSize: 12,
                                 fontWeight: 600,
@@ -92,8 +92,8 @@ export default function BillingReturnScreen({
                             padding: "10px 16px",
                             borderRadius: 12,
                             border: "none",
-                            background: "linear-gradient(135deg, #E8622A, #c9521e)",
-                            color: "#fff",
+                            background: "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))",
+                            color: "var(--color-primary)",
                             fontSize: 12,
                             fontWeight: 700,
                             cursor: "pointer",

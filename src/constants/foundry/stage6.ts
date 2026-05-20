@@ -1,11 +1,11 @@
 export const STAGE_6_METHOD = `
 # THE FOUNDRY METHOD — STAGE 6: GROW & SCALE
-## The Complete Knowledge Base for Forge
+## The Complete Knowledge Base for Navi
 ### Compiled from 10 source syntheses
 
 ---
 
-> **How Forge uses this document:** Stage 6 is where the game changes. Everything that got you here — the hustle, the scrappiness, the founder-does-everything mentality — has a ceiling. The founders who scale successfully aren't smarter than the ones who plateau. They're the ones who learned to work *on* the business, not just in it. The ten books in this stage cover the full arc of scaling: preserving the internal vitality that made you worth scaling (Founder's Mentality), building the leadership team (Five Dysfunctions), managing individual talent (First, Break All the Rules), demonstrating what sustained scale actually demands (Losing My Virginity), detecting environmental shifts before they become fatal (Only the Paranoid Survive), executing at scale with operational discipline (Sam Walton, Execution), staging compelling experiences (Experience Economy), transforming institutional decay (Who Says Elephants Can't Dance), and building enduring greatness through disciplined thought and action (Good to Great). Stage 6 doesn't end. It evolves.
+> **How Navi uses this document:** Stage 6 is where the game changes. Everything that got you here — the hustle, the scrappiness, the founder-does-everything mentality — has a ceiling. The founders who scale successfully aren't smarter than the ones who plateau. They're the ones who learned to work *on* the business, not just in it. The ten books in this stage cover the full arc of scaling: preserving the internal vitality that made you worth scaling (Founder's Mentality), building the leadership team (Five Dysfunctions), managing individual talent (First, Break All the Rules), demonstrating what sustained scale actually demands (Losing My Virginity), detecting environmental shifts before they become fatal (Only the Paranoid Survive), executing at scale with operational discipline (Sam Walton, Execution), staging compelling experiences (Experience Economy), transforming institutional decay (Who Says Elephants Can't Dance), and building enduring greatness through disciplined thought and action (Good to Great). Stage 6 doesn't end. It evolves.
 
 ---
 
@@ -724,10 +724,10 @@ Front-line obsession. Owner's mindset. Vulnerability-based trust. Employees firs
 
 These are not soft management indulgences. They are the primary competitive advantage of the best-run companies in the world. The companies that treat people as input costs to be minimized always find a way to lose, eventually, to the companies that treat people as the mechanism by which competitive advantage is created.
 
-**Forge's final principle for Stage 6:** At every decision point — hiring, firing, expanding, contracting, pivoting, persisting — ask the question Sam Walton asked at the Saturday morning meeting: *Who's number one?* The customer. And then ask the question Richard Branson asked every day: *Are the people who serve the customer treated as the most important people in the business?* If the answer to both is yes, scale will amplify strength. If the answer to either is no, scale will amplify the weakness.
+**Navi's final principle for Stage 6:** At every decision point — hiring, firing, expanding, contracting, pivoting, persisting — ask the question Sam Walton asked at the Saturday morning meeting: *Who's number one?* The customer. And then ask the question Richard Branson asked every day: *Are the people who serve the customer treated as the most important people in the business?* If the answer to both is yes, scale will amplify strength. If the answer to either is no, scale will amplify the weakness.
 
 ---
 
-*This is the complete Stage 6 Foundry Method knowledge base — compiled from ten source syntheses into a unified coaching document for Forge. This document is injected into Forge's system prompt when a user is in Stage 6: Grow & Scale. Stage 6 doesn't end. It evolves.*
+*This is the complete Stage 6 Tekori Method knowledge base — compiled from ten source syntheses into a unified coaching document for Navi. This document is injected into Navi's system prompt when a user is in Stage 6: Grow & Scale. Stage 6 doesn't end. It evolves.*
 
 `

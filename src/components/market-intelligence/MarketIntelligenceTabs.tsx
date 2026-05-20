@@ -24,11 +24,11 @@ export default function MarketIntelligenceTabs({
                         onClick={() => onSelect(tab.key as MarketTab)}
                         style={{
                             flexShrink: 0,
-                            background: selected ? "rgba(99,179,237,0.1)" : "rgba(255,255,255,0.03)",
-                            border: selected ? "1px solid rgba(99,179,237,0.22)" : "1px solid rgba(255,255,255,0.08)",
+                            background: selected ? "rgba(142,160,181,0.1)" : "rgba(7,26,47,0.03)",
+                            border: selected ? "1px solid rgba(142,160,181,0.22)" : "1px solid rgba(7,26,47,0.08)",
                             borderRadius: 999,
                             padding: "8px 14px",
-                            color: selected ? "#63B3ED" : "#A8A4A0",
+                            color: selected ? "var(--tekori-muted-text)" : "var(--color-text-muted)",
                             fontSize: 12,
                             fontWeight: 600,
                             cursor: "pointer",

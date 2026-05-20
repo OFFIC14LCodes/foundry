@@ -99,7 +99,7 @@ export default function BusinessModelCanvasScreen({
                 <Logo variant="flame" style={{ width: 42, height: 42, objectFit: "contain", flexShrink: 0 }} />
                 <div style={{ minWidth: 0 }}>
                     <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                        <div style={{ fontSize: isNarrow ? 20 : 30, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, lineHeight: 1 }}>{canvasTitle}</div>
+                        <div style={{ fontSize: isNarrow ? 20 : 30, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, lineHeight: 1 }}>{canvasTitle}</div>
                         <HelpTooltip content={`Living Stage 2 model for ${profile?.businessName || profile?.idea || canvasSubject} · Version ${canvas.version}`} side="bottom" />
                     </div>
                 </div>
@@ -119,13 +119,13 @@ export default function BusinessModelCanvasScreen({
                     <div style={{ marginBottom: 16, display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
                         <div style={{ maxWidth: 780 }}>
                             <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                                <div style={{ fontSize: 15, fontFamily: "'Lora', Georgia, serif", fontWeight: 600 }}>Forge builds this with you over time</div>
-                                <HelpTooltip content="This canvas is a live strategic system, not a blank template. Use Add via Forge whenever a section feels thin, vague, or under pressure." />
+                                <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-ui)", fontWeight: 600 }}>Navi builds this with you over time</div>
+                                <HelpTooltip content="This canvas is a live strategic system, not a blank template. Use Add via Navi whenever a section feels thin, vague, or under pressure." />
                             </div>
                         </div>
                         <div className="foundry-module-card" style={{ minWidth: 260, padding: 14 }}>
                             <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                                <div style={{ fontSize: 11, color: "rgba(240,237,232,0.62)", textTransform: "uppercase", letterSpacing: "0.12em" }}>Weak spots</div>
+                                <div style={{ fontSize: 11, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.12em" }}>Weak spots</div>
                                 <HelpTooltip content={weaknessLookup.size === 0
                                     ? "No obvious structural gaps right now."
                                     : Array.from(weaknessLookup.values()).slice(0, 4).map((item) => `${BUSINESS_MODEL_CANVAS_LABELS[item.section]}: ${item.message}`).join("\n")} />
@@ -133,7 +133,7 @@ export default function BusinessModelCanvasScreen({
                         </div>
                     </div>
                     {actionNotice && (
-                        <div style={{ marginBottom: 14, padding: "10px 12px", borderRadius: 10, background: "rgba(76,175,138,0.08)", border: "1px solid rgba(76,175,138,0.2)", color: "#8BD8A9", fontSize: 12 }}>
+                        <div style={{ marginBottom: 14, padding: "10px 12px", borderRadius: 10, background: "rgba(76,175,138,0.08)", border: "1px solid rgba(76,175,138,0.2)", color: "var(--color-success)", fontSize: 12 }}>
                             {actionNotice}
                         </div>
                     )}
@@ -166,7 +166,7 @@ export default function BusinessModelCanvasScreen({
                                             <div style={{ fontSize: 11, color: weakness ? "var(--foundry-semantic-warning)" : "var(--foundry-text-muted)", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 5 }}>
                                                 {entries.length} {entries.length === 1 ? "entry" : "entries"}
                                             </div>
-                                            <div style={{ fontSize: 20, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, lineHeight: 1.15, color: "var(--foundry-text-primary)" }}>{BUSINESS_MODEL_CANVAS_LABELS[section]}</div>
+                                            <div style={{ fontSize: 20, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, lineHeight: 1.15, color: "var(--foundry-text-primary)" }}>{BUSINESS_MODEL_CANVAS_LABELS[section]}</div>
                                         </div>
                                         {weakness && (
                                             <div style={{ fontSize: 10, color: "var(--foundry-semantic-warning)", background: "rgba(217,177,93,0.1)", border: "1px solid rgba(217,177,93,0.22)", borderRadius: 999, padding: "5px 8px", whiteSpace: "nowrap" }}>
@@ -177,19 +177,19 @@ export default function BusinessModelCanvasScreen({
 
                                     <div style={{ display: "flex", flexWrap: "wrap", gap: 7, alignContent: "flex-start" }}>
                                         {entries.slice(0, 5).map((entry) => (
-                                            <span key={entry.id} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 999, padding: "6px 10px", fontSize: 11, color: "#D6D1CA", lineHeight: 1.45 }}>
+                                            <span key={entry.id} style={{ background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.07)", borderRadius: 999, padding: "6px 10px", fontSize: 11, color: "#D6D1CA", lineHeight: 1.45 }}>
                                                 {entry.text}
                                             </span>
                                         ))}
                                         {entries.length === 0 && (
-                                            <div style={{ fontSize: 12, color: "rgba(240,237,232,0.62)", lineHeight: 1.6 }}>
-                                                Still empty. Let Forge pressure-test this part of the model.
+                                            <div style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.6 }}>
+                                                Still empty. Let Navi pressure-test this part of the model.
                                             </div>
                                         )}
                                     </div>
 
                                     <div style={{ marginTop: "auto", display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
-                                        <div style={{ fontSize: 11, color: "rgba(240,237,232,0.62)" }}>
+                                        <div style={{ fontSize: 11, color: "var(--color-text-muted)" }}>
                                             {weakness ? weakness.message : "Click to refine or clean up entries."}
                                         </div>
                                         <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", fontWeight: 600 }}>Open →</div>
@@ -203,14 +203,14 @@ export default function BusinessModelCanvasScreen({
 
             {selectedSection && (
                 <>
-                    <div onClick={() => { setSelectedSection(null); setEditingEntryId(null); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.52)", zIndex: 81 }} />
+                    <div onClick={() => { setSelectedSection(null); setEditingEntryId(null); }} style={{ position: "fixed", inset: 0, background: "rgba(7,26,47,0.52)", zIndex: 81 }} />
                     <div className="foundry-modal-surface foundry-panel-in" style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "min(760px, calc(100vw - 28px))", maxHeight: "82vh", overflowY: "auto", padding: 18, zIndex: 82 }}>
                         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", marginBottom: 14, flexWrap: "wrap" }}>
                             <div style={{ flex: 1, minWidth: 200 }}>
-                                <div style={{ fontSize: 11, color: "rgba(240,237,232,0.62)", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 5 }}>Canvas Section</div>
-                                <div style={{ fontSize: isNarrow ? 22 : 28, fontFamily: "'Lora', Georgia, serif", fontWeight: 600, lineHeight: 1.1 }}>{selectedLabel}</div>
-                                <div style={{ fontSize: 13, color: "rgba(240,237,232,0.6)", marginTop: 8, lineHeight: 1.7 }}>
-                                    Edit what is here, delete what no longer fits, or push this section forward through Forge.
+                                <div style={{ fontSize: 11, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 5 }}>Canvas Section</div>
+                                <div style={{ fontSize: isNarrow ? 22 : 28, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, lineHeight: 1.1 }}>{selectedLabel}</div>
+                                <div style={{ fontSize: 13, color: "rgba(102,112,133,0.78)", marginTop: 8, lineHeight: 1.7 }}>
+                                    Edit what is here, delete what no longer fits, or push this section forward through Navi.
                                 </div>
                             </div>
                             <button
@@ -218,7 +218,7 @@ export default function BusinessModelCanvasScreen({
                                 onClick={() => onAddViaForge(selectedSection)}
                                 style={{ padding: "10px 14px", fontSize: 12, whiteSpace: "nowrap" }}
                             >
-                                Add via Forge
+                                Add via Navi
                             </button>
                         </div>
 
@@ -233,8 +233,8 @@ export default function BusinessModelCanvasScreen({
                                 />
                             )}
                             {selectedEntries.length === 0 && (
-                                <div className="foundry-control-surface" style={{ padding: 14, fontSize: 13, color: "#9D978E", lineHeight: 1.7 }}>
-                                    There is nothing solid here yet. Use Forge to pressure-test this section instead of filling it like a worksheet.
+                                <div className="foundry-control-surface" style={{ padding: 14, fontSize: 13, color: "var(--color-text-muted)", lineHeight: 1.7 }}>
+                                    There is nothing solid here yet. Use Navi to pressure-test this section instead of filling it like a worksheet.
                                 </div>
                             )}
                             {selectedEntries.map((entry) => (
@@ -245,7 +245,7 @@ export default function BusinessModelCanvasScreen({
                                                 value={editingText}
                                                 onChange={(event) => setEditingText(event.target.value)}
                                                 rows={3}
-                                                style={{ width: "100%", resize: "vertical", background: "rgba(0,0,0,0.22)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#F0EDE8", padding: 12, fontFamily: "inherit", fontSize: 13, lineHeight: 1.6 }}
+                                                style={{ width: "100%", resize: "vertical", background: "rgba(16,32,51,0.10)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 10, color: "var(--color-text)", padding: 12, fontFamily: "inherit", fontSize: 13, lineHeight: 1.6 }}
                                             />
                                             <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
                                                 <button className="foundry-btn foundry-btn--success" onClick={handleSave} disabled={saving || !editingText.trim()} style={{ padding: "8px 12px", cursor: saving ? "default" : "pointer", fontSize: 12 }}>
@@ -258,7 +258,7 @@ export default function BusinessModelCanvasScreen({
                                         </>
                                     ) : (
                                         <>
-                                            <div style={{ fontSize: 14, color: "#F0EDE8", lineHeight: 1.7 }}>{entry.text}</div>
+                                            <div style={{ fontSize: 14, color: "var(--color-text)", lineHeight: 1.7 }}>{entry.text}</div>
                                             <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
                                                 <button className="foundry-btn foundry-btn--secondary" onClick={() => beginEdit(entry.id, entry.text)} style={{ padding: "8px 12px", fontSize: 12 }}>
                                                     Edit

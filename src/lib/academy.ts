@@ -295,7 +295,7 @@ export function getAcademyContentTypeLabel(contentType: AcademyContentType) {
 export function getAcademyHistoryLabel(action: AcademyHistoryAction) {
     switch (action) {
         case "opened_forge":
-            return "Started Forge session";
+            return "Started Navi session";
         case "completed":
             return "Completed";
         case "started_video":

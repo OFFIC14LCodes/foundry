@@ -23,34 +23,34 @@ import { hasAdminAccess, isOwnerRole, roleLabel } from '../lib/roles';
 // STATUS COLOURS
 // ─────────────────────────────────────────────────────────────
 const SUB_COLORS: Record<string, { bg: string; text: string }> = {
-    trial:      { bg: 'rgba(99,179,237,0.13)',  text: '#63B3ED' },
-    active:     { bg: 'rgba(72,187,120,0.13)',  text: '#48BB78' },
-    past_due:   { bg: 'rgba(245,168,67,0.13)',  text: '#F5A843' },
-    canceled:   { bg: 'rgba(232,98,42,0.13)',   text: '#E8622A' },
-    incomplete: { bg: 'rgba(155,127,232,0.13)', text: '#9B7FE8' },
+    trial:      { bg: 'rgba(142,160,181,0.13)',  text: 'var(--tekori-muted-text)' },
+    active:     { bg: 'rgba(72,187,120,0.13)',  text: 'var(--color-success)' },
+    past_due:   { bg: 'rgba(244,182,66,0.13)',  text: 'var(--tekori-amber)' },
+    canceled:   { bg: 'rgba(216,155,43,0.13)',   text: 'var(--tekori-gold)' },
+    incomplete: { bg: 'rgba(16,41,68,0.10)', text: 'var(--tekori-slate-navy)' },
     unpaid:     { bg: 'rgba(245,68,67,0.13)',   text: '#F54443' },
-    comped:     { bg: 'rgba(155,127,232,0.13)', text: '#9B7FE8' },
-    gifted:     { bg: 'rgba(155,127,232,0.13)', text: '#9B7FE8' },
-    expired:    { bg: 'rgba(100,100,100,0.13)', text: '#888' },
+    comped:     { bg: 'rgba(16,41,68,0.10)', text: 'var(--tekori-slate-navy)' },
+    gifted:     { bg: 'rgba(16,41,68,0.10)', text: 'var(--tekori-slate-navy)' },
+    expired:    { bg: 'rgba(100,100,100,0.13)', text: 'var(--color-text-muted)' },
 };
 
 const ACCESS_COLORS: Record<string, { bg: string; text: string }> = {
-    active:    { bg: 'rgba(72,187,120,0.13)',  text: '#48BB78' },
-    suspended: { bg: 'rgba(245,168,67,0.13)',  text: '#F5A843' },
+    active:    { bg: 'rgba(72,187,120,0.13)',  text: 'var(--color-success)' },
+    suspended: { bg: 'rgba(244,182,66,0.13)',  text: 'var(--tekori-amber)' },
     revoked:   { bg: 'rgba(245,68,67,0.13)',   text: '#F54443' },
 };
 
 const PLAN_COLORS: Record<string, { bg: string; text: string }> = {
-    free:        { bg: 'rgba(255,255,255,0.05)', text: '#888' },
-    starter:     { bg: 'rgba(99,179,237,0.13)',  text: '#63B3ED' },
-    pro:         { bg: 'rgba(72,187,120,0.13)',  text: '#48BB78' },
-    enterprise:  { bg: 'rgba(245,168,67,0.13)',  text: '#F5A843' },
-    family_comp: { bg: 'rgba(155,127,232,0.13)', text: '#9B7FE8' },
-    gifted:      { bg: 'rgba(155,127,232,0.13)', text: '#9B7FE8' },
+    free:        { bg: 'rgba(7,26,47,0.05)', text: 'var(--color-text-muted)' },
+    starter:     { bg: 'rgba(142,160,181,0.13)',  text: 'var(--tekori-muted-text)' },
+    pro:         { bg: 'rgba(72,187,120,0.13)',  text: 'var(--color-success)' },
+    enterprise:  { bg: 'rgba(244,182,66,0.13)',  text: 'var(--tekori-amber)' },
+    family_comp: { bg: 'rgba(16,41,68,0.10)', text: 'var(--tekori-slate-navy)' },
+    gifted:      { bg: 'rgba(16,41,68,0.10)', text: 'var(--tekori-slate-navy)' },
 };
 
 function colorFor(map: Record<string, { bg: string; text: string }>, key: string | null | undefined) {
-    return map[key ?? ''] ?? { bg: 'rgba(255,255,255,0.05)', text: '#888' };
+    return map[key ?? ''] ?? { bg: 'rgba(7,26,47,0.05)', text: 'var(--color-text-muted)' };
 }
 
 function Badge({ label, colors }: { label: string; colors: { bg: string; text: string } }) {
@@ -91,25 +91,25 @@ function StatsBar({ users }: { users: AdminUser[] }) {
     }, [users]);
 
     const items = [
-        { label: 'Total', value: stats.total, color: '#888' },
-        { label: 'Active', value: stats.active, color: '#48BB78' },
-        { label: 'Trial', value: stats.trial, color: '#63B3ED' },
-        { label: 'Canceled', value: stats.canceled, color: '#E8622A' },
-        { label: 'Suspended', value: stats.suspended, color: '#F5A843' },
-        { label: 'Comped', value: stats.comped, color: '#9B7FE8' },
+        { label: 'Total', value: stats.total, color: 'var(--color-text-muted)' },
+        { label: 'Active', value: stats.active, color: 'var(--color-success)' },
+        { label: 'Trial', value: stats.trial, color: 'var(--tekori-muted-text)' },
+        { label: 'Canceled', value: stats.canceled, color: 'var(--tekori-gold)' },
+        { label: 'Suspended', value: stats.suspended, color: 'var(--tekori-amber)' },
+        { label: 'Comped', value: stats.comped, color: 'var(--tekori-slate-navy)' },
     ];
 
     return (
         <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 2, flexShrink: 0 }}>
             {items.map(item => (
                 <div key={item.label} style={{
-                    background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
+                    background: 'rgba(7,26,47,0.03)', border: '1px solid rgba(7,26,47,0.07)',
                     borderRadius: 10, padding: '8px 14px', textAlign: 'center', flexShrink: 0,
                 }}>
-                    <div style={{ fontSize: 18, fontWeight: 700, color: item.color, fontFamily: "'Lora', Georgia, serif" }}>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: item.color, fontFamily: "var(--tekori-font-ui)" }}>
                         {item.value}
                     </div>
-                    <div style={{ fontSize: 9, color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: 2 }}>
+                    <div style={{ fontSize: 9, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: 2 }}>
                         {item.label}
                     </div>
                 </div>
@@ -128,7 +128,7 @@ function VaultUsageBar({
     error: string | null;
 }) {
     if (loading) {
-        return <div style={{ fontSize: 11, color: '#555', marginTop: 10 }}>Loading vault usage...</div>;
+        return <div style={{ fontSize: 11, color: 'var(--color-text-soft)', marginTop: 10 }}>Loading vault usage...</div>;
     }
 
     if (error) {
@@ -138,36 +138,36 @@ function VaultUsageBar({
     if (!usage) return null;
 
     const items = [
-        { label: 'Docs Produced', value: usage.documentsGenerated, color: '#E8622A' },
-        { label: 'Vault Created', value: usage.vaultDocumentsCreated, color: '#63B3ED' },
-        { label: 'Uploads', value: usage.filesUploaded, color: '#48BB78' },
-        { label: 'Artifacts', value: usage.artifactsSaved, color: '#F5A843' },
-        { label: 'Signature Requests', value: usage.signatureRequestsCreated, color: '#9B7FE8' },
-        { label: 'Completed', value: usage.documentsSignedCompleted, color: '#48BB78' },
-        { label: 'Wizard Runs', value: usage.needsWizardRuns, color: '#E8622A' },
+        { label: 'Docs Produced', value: usage.documentsGenerated, color: 'var(--tekori-gold)' },
+        { label: 'Vault Created', value: usage.vaultDocumentsCreated, color: 'var(--tekori-muted-text)' },
+        { label: 'Uploads', value: usage.filesUploaded, color: 'var(--color-success)' },
+        { label: 'Artifacts', value: usage.artifactsSaved, color: 'var(--tekori-amber)' },
+        { label: 'Signature Requests', value: usage.signatureRequestsCreated, color: 'var(--tekori-slate-navy)' },
+        { label: 'Completed', value: usage.documentsSignedCompleted, color: 'var(--color-success)' },
+        { label: 'Wizard Runs', value: usage.needsWizardRuns, color: 'var(--tekori-gold)' },
     ];
 
     return (
         <div style={{ marginTop: 12 }}>
-            <div style={{ fontSize: 10, color: '#555', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>
+            <div style={{ fontSize: 10, color: 'var(--color-text-soft)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>
                 Document Vault · Last {usage.windowHours} Hours
             </div>
             <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 2 }}>
                 {items.map(item => (
                     <div key={item.label} style={{
-                        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
+                        background: 'rgba(7,26,47,0.03)', border: '1px solid rgba(7,26,47,0.07)',
                         borderRadius: 10, padding: '8px 12px', textAlign: 'center', flexShrink: 0,
                     }}>
-                        <div style={{ fontSize: 16, fontWeight: 700, color: item.color, fontFamily: "'Lora', Georgia, serif" }}>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: item.color, fontFamily: "var(--tekori-font-ui)" }}>
                             {item.value}
                         </div>
-                        <div style={{ fontSize: 9, color: '#444', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 2 }}>
+                        <div style={{ fontSize: 9, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 2 }}>
                             {item.label}
                         </div>
                     </div>
                 ))}
             </div>
-            <div style={{ fontSize: 10, color: '#444', marginTop: 6 }}>
+            <div style={{ fontSize: 10, color: 'var(--color-text-muted)', marginTop: 6 }}>
                 Mock signatures completed: {usage.mockDocumentsSignedCompleted}
             </div>
         </div>
@@ -188,30 +188,30 @@ function UserRow({ user, onClick }: { user: AdminUser; onClick: () => void }) {
             onClick={onClick}
             style={{
                 width: '100%', display: 'flex', alignItems: 'center', gap: 12,
-                padding: '12px 14px', background: 'rgba(255,255,255,0.02)',
-                border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12,
+                padding: '12px 14px', background: 'rgba(7,26,47,0.02)',
+                border: '1px solid rgba(7,26,47,0.06)', borderRadius: 12,
                 cursor: 'pointer', textAlign: 'left', marginBottom: 6,
-                transition: 'background 0.15s', fontFamily: "'Lora', Georgia, serif",
+                transition: 'background 0.15s', fontFamily: "var(--tekori-font-ui)",
             }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(7,26,47,0.05)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'rgba(7,26,47,0.02)'}
         >
             {/* Avatar */}
             <div style={{
                 width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-                background: 'rgba(232,98,42,0.15)', border: '1px solid rgba(232,98,42,0.25)',
+                background: 'rgba(216,155,43,0.15)', border: '1px solid rgba(216,155,43,0.25)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 12, color: '#E8622A', fontWeight: 700,
+                fontSize: 12, color: 'var(--tekori-gold)', fontWeight: 700,
             }}>
                 {initials}
             </div>
 
             {/* Identity */}
             <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, color: '#F0EDE8', fontWeight: 500, marginBottom: 2 }}>
-                    {user.name ?? '—'}{hasAdminAccess(user.role) && <span style={{ fontSize: 9, color: isOwnerRole(user.role) ? '#E8622A' : '#F5A843', marginLeft: 6, background: isOwnerRole(user.role) ? 'rgba(232,98,42,0.15)' : 'rgba(245,168,67,0.15)', padding: '1px 5px', borderRadius: 10 }}>{roleLabel(user.role).toUpperCase()}</span>}
+                <div style={{ fontSize: 13, color: 'var(--color-text)', fontWeight: 500, marginBottom: 2 }}>
+                    {user.name ?? '—'}{hasAdminAccess(user.role) && <span style={{ fontSize: 9, color: isOwnerRole(user.role) ? 'var(--tekori-gold)' : 'var(--tekori-amber)', marginLeft: 6, background: isOwnerRole(user.role) ? 'rgba(216,155,43,0.15)' : 'rgba(244,182,66,0.15)', padding: '1px 5px', borderRadius: 10 }}>{roleLabel(user.role).toUpperCase()}</span>}
                 </div>
-                <div style={{ fontSize: 11, color: '#555', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div style={{ fontSize: 11, color: 'var(--color-text-soft)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {user.email ?? '—'}
                 </div>
             </div>
@@ -225,10 +225,10 @@ function UserRow({ user, onClick }: { user: AdminUser; onClick: () => void }) {
                 {accessStatus !== 'active' && (
                     <Badge label={accessStatus.toUpperCase()} colors={colorFor(ACCESS_COLORS, accessStatus)} />
                 )}
-                <div style={{ fontSize: 9, color: '#444' }}>{fmtDate(user.created_at)}</div>
+                <div style={{ fontSize: 9, color: 'var(--color-text-muted)' }}>{fmtDate(user.created_at)}</div>
             </div>
 
-            <span style={{ color: '#444', fontSize: 12, flexShrink: 0 }}>›</span>
+            <span style={{ color: 'var(--color-text-muted)', fontSize: 12, flexShrink: 0 }}>›</span>
         </button>
     );
 }
@@ -323,35 +323,35 @@ function UserDetailPanel({
     const isRevoked = access?.access_status === 'revoked';
     const isActive = access?.access_status === 'active';
 
-    const card = { background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: '14px 16px', marginBottom: 12 } as const;
-    const label = { fontSize: 10, color: '#444', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginBottom: 8 };
-    const row = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', fontSize: 12 } as const;
+    const card = { background: 'rgba(7,26,47,0.02)', border: '1px solid rgba(7,26,47,0.07)', borderRadius: 12, padding: '14px 16px', marginBottom: 12 } as const;
+    const label = { fontSize: 10, color: 'var(--color-text-muted)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginBottom: 8 };
+    const row = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid rgba(7,26,47,0.04)', fontSize: 12 } as const;
     const rowLast = { ...row, borderBottom: 'none' };
-    const rowKey = { color: '#555' };
-    const rowVal = { color: '#C8C4BE' };
+    const rowKey = { color: 'var(--color-text-soft)' };
+    const rowVal = { color: 'rgba(16,32,51,0.74)' };
 
     return (
         <div style={{
-            position: 'fixed', inset: 0, background: '#080809', zIndex: 110,
-            fontFamily: "'Lora', Georgia, serif", color: '#F0EDE8',
+            position: 'fixed', inset: 0, background: 'var(--tekori-deep-navy)', zIndex: 110,
+            fontFamily: "var(--tekori-font-ui)", color: 'var(--color-text)',
             display: 'flex', flexDirection: 'column', animation: 'fadeIn 0.2s ease',
         }}>
             {/* Header */}
             <div style={{
                 padding: 'max(14px, calc(10px + env(safe-area-inset-top))) 16px 12px',
-                borderBottom: '1px solid rgba(255,255,255,0.07)',
+                borderBottom: '1px solid rgba(7,26,47,0.07)',
                 display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0,
-                background: 'rgba(8,8,9,0.97)', backdropFilter: 'blur(12px)',
+                background: 'rgba(255,252,246,0.97)', backdropFilter: 'blur(12px)',
             }}>
                 <button onClick={onClose} style={{
-                    background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: 8, padding: '7px 12px', color: '#C8C4BE', fontSize: 12, cursor: 'pointer',
+                    background: 'rgba(7,26,47,0.05)', border: '1px solid rgba(7,26,47,0.1)',
+                    borderRadius: 8, padding: '7px 12px', color: 'rgba(16,32,51,0.74)', fontSize: 12, cursor: 'pointer',
                 }}>
                     ←
                 </button>
                 <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 15, fontWeight: 600, color: '#F0EDE8' }}>{user.name ?? user.email ?? 'Unknown'}</div>
-                    <div style={{ fontSize: 11, color: '#555' }}>{user.email}</div>
+                    <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--color-text)' }}>{user.name ?? user.email ?? 'Unknown'}</div>
+                    <div style={{ fontSize: 11, color: 'var(--color-text-soft)' }}>{user.email}</div>
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                     {access?.access_status && (
@@ -367,7 +367,7 @@ function UserDetailPanel({
                 {actionMsg && (
                     <div style={{
                         background: 'rgba(72,187,120,0.1)', border: '1px solid rgba(72,187,120,0.25)',
-                        borderRadius: 8, padding: '8px 14px', fontSize: 12, color: '#48BB78',
+                        borderRadius: 8, padding: '8px 14px', fontSize: 12, color: 'var(--color-success)',
                         marginBottom: 12, animation: 'fadeIn 0.2s ease',
                     }}>
                         {actionMsg}
@@ -428,7 +428,7 @@ function UserDetailPanel({
                 {/* Actions card */}
                 <div style={card}>
                     <div style={label}>Admin Actions</div>
-                    <div style={{ fontSize: 11, color: '#F5A843', lineHeight: 1.55, marginBottom: 10 }}>
+                    <div style={{ fontSize: 11, color: 'var(--tekori-amber)', lineHeight: 1.55, marginBottom: 10 }}>
                         Legacy surface. These actions now use audited server routes, but Admin Operations is the primary control center.
                     </div>
 
@@ -437,7 +437,7 @@ function UserDetailPanel({
                         <ActionItem
                             id="grant_comp"
                             label="Grant Comp Access"
-                            color="#9B7FE8"
+                            color="var(--tekori-slate-navy)"
                             expanded={expandedAction === 'grant_comp'}
                             onToggle={() => setExpandedAction(expandedAction === 'grant_comp' ? null : 'grant_comp')}
                             input={actionInput}
@@ -452,7 +452,7 @@ function UserDetailPanel({
                         <ActionItem
                             id="grant_family"
                             label="Mark as Family Access"
-                            color="#9B7FE8"
+                            color="var(--tekori-slate-navy)"
                             expanded={expandedAction === 'grant_family'}
                             onToggle={() => setExpandedAction(expandedAction === 'grant_family' ? null : 'grant_family')}
                             input={actionInput}
@@ -467,7 +467,7 @@ function UserDetailPanel({
                         <ActionItem
                             id="remove_comp"
                             label="Remove Comp Access"
-                            color="#F5A843"
+                            color="var(--tekori-amber)"
                             expanded={expandedAction === 'remove_comp'}
                             onToggle={() => setExpandedAction(expandedAction === 'remove_comp' ? null : 'remove_comp')}
                             input={actionInput}
@@ -482,7 +482,7 @@ function UserDetailPanel({
                         <ActionItem
                             id="suspend"
                             label="Suspend Account"
-                            color="#F5A843"
+                            color="var(--tekori-amber)"
                             expanded={expandedAction === 'suspend'}
                             onToggle={() => setExpandedAction(expandedAction === 'suspend' ? null : 'suspend')}
                             input={actionInput}
@@ -497,7 +497,7 @@ function UserDetailPanel({
                         <ActionItem
                             id="reactivate"
                             label="Reactivate Account"
-                            color="#48BB78"
+                            color="var(--color-success)"
                             expanded={expandedAction === 'reactivate'}
                             onToggle={() => setExpandedAction(expandedAction === 'reactivate' ? null : 'reactivate')}
                             input={actionInput}
@@ -528,7 +528,7 @@ function UserDetailPanel({
                         <ActionItem
                             id="reactivate"
                             label="Restore Access"
-                            color="#48BB78"
+                            color="var(--color-success)"
                             expanded={expandedAction === 'reactivate'}
                             onToggle={() => setExpandedAction(expandedAction === 'reactivate' ? null : 'reactivate')}
                             input={actionInput}
@@ -550,10 +550,10 @@ function UserDetailPanel({
                         placeholder="Add an internal note (retention, discount offered, follow-up needed...)"
                         rows={3}
                         style={{
-                            width: '100%', background: 'rgba(255,255,255,0.04)',
-                            border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8,
-                            padding: '9px 12px', color: '#F0EDE8', fontSize: 12,
-                            fontFamily: "'Lora', Georgia, serif", lineHeight: 1.6,
+                            width: '100%', background: 'rgba(7,26,47,0.04)',
+                            border: '1px solid rgba(7,26,47,0.1)', borderRadius: 8,
+                            padding: '9px 12px', color: 'var(--color-text)', fontSize: 12,
+                            fontFamily: "var(--tekori-font-ui)", lineHeight: 1.6,
                             resize: 'vertical', boxSizing: 'border-box', outline: 'none',
                         }}
                     />
@@ -562,9 +562,9 @@ function UserDetailPanel({
                         disabled={!noteText.trim() || savingNote}
                         style={{
                             marginTop: 8, padding: '8px 16px',
-                            background: noteText.trim() ? 'rgba(232,98,42,0.15)' : 'rgba(255,255,255,0.03)',
-                            border: noteText.trim() ? '1px solid rgba(232,98,42,0.3)' : '1px solid rgba(255,255,255,0.06)',
-                            borderRadius: 8, color: noteText.trim() ? '#E8622A' : '#444',
+                            background: noteText.trim() ? 'rgba(216,155,43,0.15)' : 'rgba(7,26,47,0.03)',
+                            border: noteText.trim() ? '1px solid rgba(216,155,43,0.3)' : '1px solid rgba(7,26,47,0.06)',
+                            borderRadius: 8, color: noteText.trim() ? 'var(--tekori-gold)' : 'var(--color-text-muted)',
                             fontSize: 12, cursor: noteText.trim() ? 'pointer' : 'default', fontWeight: 500,
                         }}
                     >
@@ -575,13 +575,13 @@ function UserDetailPanel({
                         <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
                             {notes.map(n => (
                                 <div key={n.id} style={{
-                                    background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)',
+                                    background: 'rgba(7,26,47,0.02)', border: '1px solid rgba(7,26,47,0.05)',
                                     borderRadius: 8, padding: '9px 12px',
                                 }}>
-                                    <div style={{ fontSize: 11, color: '#C8C4BE', lineHeight: 1.6 }}>{n.note}</div>
-                                    <div style={{ fontSize: 9, color: '#444', marginTop: 4 }}>{fmtDateTime(n.created_at)}</div>
+                                    <div style={{ fontSize: 11, color: 'rgba(16,32,51,0.74)', lineHeight: 1.6 }}>{n.note}</div>
+                                    <div style={{ fontSize: 9, color: 'var(--color-text-muted)', marginTop: 4 }}>{fmtDateTime(n.created_at)}</div>
                                     {n.retention_status && (
-                                        <Badge label={n.retention_status} colors={{ bg: 'rgba(245,168,67,0.1)', text: '#F5A843' }} />
+                                        <Badge label={n.retention_status} colors={{ bg: 'rgba(244,182,66,0.1)', text: 'var(--tekori-amber)' }} />
                                     )}
                                 </div>
                             ))}
@@ -610,20 +610,20 @@ function ActionItem({
                 onClick={onToggle}
                 style={{
                     width: '100%', padding: '9px 12px', borderRadius: 8, textAlign: 'left',
-                    background: expanded ? `${color}12` : 'rgba(255,255,255,0.03)',
-                    border: expanded ? `1px solid ${color}30` : '1px solid rgba(255,255,255,0.06)',
-                    color: expanded ? color : '#C8C4BE', fontSize: 12, cursor: 'pointer',
+                    background: expanded ? `color-mix(in srgb, ${color} 7%, transparent)` : 'rgba(7,26,47,0.03)',
+                    border: expanded ? `1px solid color-mix(in srgb, ${color} 18%, transparent)` : '1px solid rgba(7,26,47,0.06)',
+                    color: expanded ? color : 'rgba(16,32,51,0.74)', fontSize: 12, cursor: 'pointer',
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    fontFamily: "'Lora', Georgia, serif", transition: 'all 0.15s',
+                    fontFamily: "var(--tekori-font-ui)", transition: 'all 0.15s',
                 }}
             >
                 <span>{label}</span>
-                <span style={{ fontSize: 10, color: expanded ? color : '#444' }}>{expanded ? '▲' : '▼'}</span>
+                <span style={{ fontSize: 10, color: expanded ? color : 'var(--color-text-muted)' }}>{expanded ? '▲' : '▼'}</span>
             </button>
 
             {expanded && (
                 <div style={{
-                    background: 'rgba(255,255,255,0.02)', border: `1px solid ${color}20`,
+                    background: 'rgba(7,26,47,0.02)', border: `1px solid ${color}20`,
                     borderTop: 'none', borderRadius: '0 0 8px 8px', padding: '10px 12px',
                     animation: 'fadeSlideUp 0.2s ease',
                 }}>
@@ -633,10 +633,10 @@ function ActionItem({
                             onChange={e => onInputChange?.(e.target.value)}
                             placeholder={inputPlaceholder}
                             style={{
-                                width: '100%', background: 'rgba(255,255,255,0.04)',
-                                border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6,
-                                padding: '8px 10px', color: '#F0EDE8', fontSize: 12,
-                                fontFamily: "'Lora', Georgia, serif", marginBottom: 8,
+                                width: '100%', background: 'rgba(7,26,47,0.04)',
+                                border: '1px solid rgba(7,26,47,0.1)', borderRadius: 6,
+                                padding: '8px 10px', color: 'var(--color-text)', fontSize: 12,
+                                fontFamily: "var(--tekori-font-ui)", marginBottom: 8,
                                 boxSizing: 'border-box', outline: 'none',
                             }}
                         />
@@ -647,10 +647,10 @@ function ActionItem({
                         style={{
                             padding: '8px 16px', borderRadius: 7, fontSize: 12, fontWeight: 600,
                             cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.6 : 1,
-                            background: destructive ? 'rgba(245,68,67,0.15)' : `${color}18`,
+                            background: destructive ? 'rgba(245,68,67,0.15)' : `color-mix(in srgb, ${color} 10%, transparent)`,
                             border: `1px solid ${destructive ? 'rgba(245,68,67,0.3)' : `${color}35`}`,
                             color: destructive ? '#F54443' : color,
-                            fontFamily: "'Lora', Georgia, serif",
+                            fontFamily: "var(--tekori-font-ui)",
                         }}
                     >
                         {loading ? 'Working...' : confirmLabel}
@@ -742,28 +742,28 @@ export default function AdminDashboard({ userId, onBack }: Props) {
 
     return (
         <div style={{
-            position: 'fixed', inset: 0, background: '#080809', zIndex: 100,
-            fontFamily: "'Lora', Georgia, serif", color: '#F0EDE8',
+            position: 'fixed', inset: 0, background: 'var(--tekori-deep-navy)', zIndex: 100,
+            fontFamily: "var(--tekori-font-ui)", color: 'var(--color-text)',
             display: 'flex', flexDirection: 'column',
         }}>
             {/* Header */}
             <div style={{
                 padding: 'max(14px, calc(10px + env(safe-area-inset-top))) 16px 12px',
-                borderBottom: '1px solid rgba(255,255,255,0.07)',
-                flexShrink: 0, background: 'rgba(8,8,9,0.97)',
+                borderBottom: '1px solid rgba(7,26,47,0.07)',
+                flexShrink: 0, background: 'rgba(255,252,246,0.97)',
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                     <button onClick={onBack} style={{
-                        background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: 8, padding: '7px 12px', color: '#C8C4BE', fontSize: 12, cursor: 'pointer',
+                        background: 'rgba(7,26,47,0.05)', border: '1px solid rgba(7,26,47,0.1)',
+                        borderRadius: 8, padding: '7px 12px', color: 'rgba(16,32,51,0.74)', fontSize: 12, cursor: 'pointer',
                     }}>
                         ←
                     </button>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <Icons.sidebar.admin size={16} />
-                        <span style={{ fontSize: 15, fontWeight: 600, color: '#F0EDE8' }}>Admin Dashboard</span>
+                        <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--color-text)' }}>Admin Dashboard</span>
                     </div>
-                    {loading && <div style={{ fontSize: 10, color: '#444', marginLeft: 4 }}>Loading...</div>}
+                    {loading && <div style={{ fontSize: 10, color: 'var(--color-text-muted)', marginLeft: 4 }}>Loading...</div>}
                 </div>
 
                 {/* Stats */}
@@ -773,18 +773,18 @@ export default function AdminDashboard({ userId, onBack }: Props) {
 
             {/* Filter + search */}
             <div style={{
-                padding: '10px 16px 0', borderBottom: '1px solid rgba(255,255,255,0.06)',
-                flexShrink: 0, background: '#080809',
+                padding: '10px 16px 0', borderBottom: '1px solid rgba(7,26,47,0.06)',
+                flexShrink: 0, background: 'var(--tekori-deep-navy)',
             }}>
                 <input
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     placeholder="Search by name, email, or business..."
                     style={{
-                        width: '100%', background: 'rgba(255,255,255,0.04)',
-                        border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10,
-                        padding: '9px 14px', color: '#F0EDE8', fontSize: 13,
-                        fontFamily: "'Lora', Georgia, serif", outline: 'none',
+                        width: '100%', background: 'rgba(7,26,47,0.04)',
+                        border: '1px solid rgba(7,26,47,0.1)', borderRadius: 10,
+                        padding: '9px 14px', color: 'var(--color-text)', fontSize: 13,
+                        fontFamily: "var(--tekori-font-ui)", outline: 'none',
                         boxSizing: 'border-box', marginBottom: 10,
                     }}
                 />
@@ -796,10 +796,10 @@ export default function AdminDashboard({ userId, onBack }: Props) {
                             style={{
                                 padding: '5px 13px', borderRadius: 20, fontSize: 11,
                                 flexShrink: 0, cursor: 'pointer',
-                                background: filter === f.key ? 'rgba(232,98,42,0.15)' : 'rgba(255,255,255,0.04)',
-                                border: filter === f.key ? '1px solid rgba(232,98,42,0.35)' : '1px solid rgba(255,255,255,0.08)',
-                                color: filter === f.key ? '#E8622A' : '#666',
-                                fontFamily: "'Lora', Georgia, serif", fontWeight: filter === f.key ? 600 : 400,
+                                background: filter === f.key ? 'rgba(216,155,43,0.15)' : 'rgba(7,26,47,0.04)',
+                                border: filter === f.key ? '1px solid rgba(216,155,43,0.35)' : '1px solid rgba(7,26,47,0.08)',
+                                color: filter === f.key ? 'var(--tekori-gold)' : 'var(--color-text-muted)',
+                                fontFamily: "var(--tekori-font-ui)", fontWeight: filter === f.key ? 600 : 400,
                                 transition: 'all 0.15s',
                             }}
                         >
@@ -812,16 +812,16 @@ export default function AdminDashboard({ userId, onBack }: Props) {
             {/* User list */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', paddingBottom: 32 }}>
                 {loading ? (
-                    <div style={{ textAlign: 'center', padding: 40, color: '#444', fontSize: 13 }}>
+                    <div style={{ textAlign: 'center', padding: 40, color: 'var(--color-text-muted)', fontSize: 13 }}>
                         Loading accounts...
                     </div>
                 ) : filtered.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: 40, color: '#444', fontSize: 13 }}>
+                    <div style={{ textAlign: 'center', padding: 40, color: 'var(--color-text-muted)', fontSize: 13 }}>
                         {search || filter !== 'all' ? 'No users match this filter.' : 'No users yet.'}
                     </div>
                 ) : (
                     <>
-                        <div style={{ fontSize: 10, color: '#444', marginBottom: 10, letterSpacing: '0.08em' }}>
+                        <div style={{ fontSize: 10, color: 'var(--color-text-muted)', marginBottom: 10, letterSpacing: '0.08em' }}>
                             {filtered.length} {filtered.length === 1 ? 'user' : 'users'}{filter !== 'all' || search ? ' (filtered)' : ''}
                         </div>
                         {filtered.map(u => (

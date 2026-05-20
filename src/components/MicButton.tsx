@@ -43,7 +43,7 @@ function normalizeFinalChunk(rawText: string, prevAccumulated: string): string {
     return result + terminator;
 }
 
-export default function MicButton({ value, onChange, disabled, size = 18, idleColor = "#444" }: MicButtonProps) {
+export default function MicButton({ value, onChange, disabled, size = 18, idleColor = "var(--color-text-muted)" }: MicButtonProps) {
     const [listening, setListening] = useState(false);
     const recognitionRef = useRef<any>(null);
     const baseValueRef = useRef("");
@@ -111,7 +111,7 @@ export default function MicButton({ value, onChange, disabled, size = 18, idleCo
                 background: "none",
                 border: "none",
                 cursor: disabled ? "default" : "pointer",
-                color: listening ? "#E8622A" : idleColor,
+                color: listening ? "var(--tekori-gold)" : idleColor,
                 padding: "4px",
                 flexShrink: 0,
                 display: "flex",

@@ -76,18 +76,18 @@ function getFreshness(report: MarketReport) {
     const ageDays = getReportAgeDays(report);
 
     if (ageDays < 1) {
-        return { status: "fresh" as const, label: "Fresh", color: "#4CAF8A" };
+        return { status: "fresh" as const, label: "Fresh", color: "var(--color-success)" };
     }
 
     if (ageDays <= 7) {
         return {
             status: "aging" as const,
             label: `${ageDays} day${ageDays === 1 ? "" : "s"} old`,
-            color: "#F5A843",
+            color: "var(--tekori-amber)",
         };
     }
 
-    return { status: "outdated" as const, label: "Outdated - regenerate for current data", color: "#77716A" };
+    return { status: "outdated" as const, label: "Outdated - regenerate for current data", color: "var(--color-text-muted)" };
 }
 
 async function fetchMarketSearchResults(queries: string[]): Promise<SearchResult[]> {
@@ -561,15 +561,15 @@ export default function MarketIntelligenceScreen({
     const showDailyBrief = activeTab === "brief";
 
     return (
-        <div style={{ minHeight: "100vh", background: "#080809", fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8", display: "flex", flexDirection: "column" }}>
+        <div style={{ minHeight: "100vh", background: "var(--color-bg-soft)", fontFamily: "var(--tekori-font-ui)", color: "var(--color-text)", display: "flex", flexDirection: "column" }}>
 
             {/* Header */}
-            <div style={{ padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, position: "sticky", top: 0, background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)", zIndex: 10, flexShrink: 0 }}>
+            <div style={{ padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px", borderBottom: "1px solid rgba(7,26,47,0.05)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, position: "sticky", top: 0, background: "rgba(255,252,246,0.94)", backdropFilter: "blur(12px)", zIndex: 10, flexShrink: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-                    <button onClick={onOpenNav ?? onBack} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "rgba(240,237,232,0.62)", cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg></button>
+                    <button onClick={onOpenNav ?? onBack} style={{ background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "var(--color-text-muted)", cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg></button>
                     <div style={{ minWidth: 0 }}>
                         <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                            <div style={{ fontSize: "var(--foundry-app-header-title-font)", fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Market Intelligence</div>
+                            <div style={{ fontSize: "var(--foundry-app-header-title-font)", fontFamily: "var(--tekori-font-brand)", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Market Intelligence</div>
                             <HelpTooltip content={industry} side="bottom" />
                         </div>
                     </div>
@@ -578,14 +578,14 @@ export default function MarketIntelligenceScreen({
                 {/* Freshness badge */}
                 {isCurrentReport && (
                     <div style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(76,175,138,0.08)", border: "1px solid rgba(76,175,138,0.2)", borderRadius: 20, padding: "4px 10px", flexShrink: 0 }}>
-                        <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#4CAF8A" }} />
-                        <span style={{ fontSize: 10, color: "#4CAF8A", fontWeight: 600 }}>Current</span>
+                        <div style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--color-success)" }} />
+                        <span style={{ fontSize: 10, color: "var(--color-success)", fontWeight: 600 }}>Current</span>
                     </div>
                 )}
                 {hasOutdatedReport && !generating && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(245,168,67,0.08)", border: "1px solid rgba(245,168,67,0.2)", borderRadius: 20, padding: "4px 10px", flexShrink: 0 }}>
-                        <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#F5A843" }} />
-                        <span style={{ fontSize: 10, color: "#F5A843", fontWeight: 600 }}>Outdated</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(244,182,66,0.08)", border: "1px solid rgba(244,182,66,0.2)", borderRadius: 20, padding: "4px 10px", flexShrink: 0 }}>
+                        <div style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--tekori-amber)" }} />
+                        <span style={{ fontSize: 10, color: "var(--tekori-amber)", fontWeight: 600 }}>Outdated</span>
                     </div>
                 )}
             </div>
@@ -600,13 +600,13 @@ export default function MarketIntelligenceScreen({
                 </div>
 
                 {alertItems.length > 0 && (
-                    <div className="foundry-module-card" style={{ marginBottom: 14, padding: "12px 14px", background: "rgba(99,179,237,0.07)", border: "1px solid rgba(99,179,237,0.2)", color: "#D8C9BC", fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, lineHeight: 1.6 }}>
+                    <div className="foundry-module-card" style={{ marginBottom: 14, padding: "12px 14px", background: "rgba(142,160,181,0.07)", border: "1px solid rgba(142,160,181,0.2)", color: "var(--color-text-soft)", fontFamily: "var(--tekori-font-ui)", fontSize: 12, lineHeight: 1.6 }}>
                         <strong style={{ color: "var(--foundry-semantic-intelligence)" }}>New since last report:</strong> {alertItems.join(", ")}
                         {newCompetitorsSinceLastReport.length + highImpactTrendAlerts.length > alertItems.length ? " and more" : ""}
                     </div>
                 )}
                 {actionNotice && (
-                    <div style={{ marginBottom: 14, padding: "10px 12px", borderRadius: 10, background: "rgba(76,175,138,0.08)", border: "1px solid rgba(76,175,138,0.2)", color: "#8BD8A9", fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12 }}>
+                    <div style={{ marginBottom: 14, padding: "10px 12px", borderRadius: 10, background: "rgba(76,175,138,0.08)", border: "1px solid rgba(76,175,138,0.2)", color: "var(--color-success)", fontFamily: "var(--tekori-font-ui)", fontSize: 12 }}>
                         {actionNotice}
                     </div>
                 )}
@@ -618,12 +618,12 @@ export default function MarketIntelligenceScreen({
                             checked={scheduleEnabled}
                             disabled={scheduleSaving}
                             onChange={(event) => toggleWeeklyRefresh(event.target.checked)}
-                            style={{ accentColor: "#63B3ED", width: 16, height: 16 }}
+                            style={{ accentColor: "var(--tekori-muted-text)", width: 16, height: 16 }}
                         />
-                        <span style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 12, color: "#C8C4BE", fontWeight: 700 }}>
+                        <span style={{ fontFamily: "var(--tekori-font-ui)", fontSize: 12, color: "var(--color-text-soft)", fontWeight: 700 }}>
                             Schedule weekly refresh
                         </span>
-                        <span style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 11, color: "var(--foundry-text-secondary)" }}>
+                        <span style={{ fontFamily: "var(--tekori-font-ui)", fontSize: 11, color: "var(--foundry-text-secondary)" }}>
                             {scheduleEnabled ? `Next: ${formatScheduleDate(nextRefreshAt)}` : "Off"}
                         </span>
                     </label>
@@ -646,19 +646,19 @@ export default function MarketIntelligenceScreen({
                 {!showDailyBrief && (
                     <div style={{ marginBottom: 16 }}>
                         {automaticExtractionRunning && (
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#77716A", padding: "12px 2px 6px", fontFamily: "'DM Sans', system-ui, sans-serif" }}>
-                                <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#63B3ED", animation: "forgePulse 1.4s infinite ease-in-out" }} />
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "var(--color-text-muted)", padding: "12px 2px 6px", fontFamily: "var(--tekori-font-ui)" }}>
+                                <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--tekori-muted-text)", animation: "forgePulse 1.4s infinite ease-in-out" }} />
                                 <span>Analyzing report...</span>
                             </div>
                         )}
                         {structuredLoading ? (
-                            <div style={{ fontSize: 12, color: "#77716A", padding: "18px 2px" }}>
+                            <div style={{ fontSize: 12, color: "var(--color-text-muted)", padding: "18px 2px" }}>
                                 Loading structured market intelligence...
                             </div>
                         ) : structuredError ? (
                             <div style={{
                                 fontSize: 12,
-                                color: "#F5A843",
+                                color: "var(--tekori-amber)",
                                 lineHeight: 1.7,
                                 background: "rgba(217,177,93,0.07)",
                                 border: "1px solid rgba(217,177,93,0.18)",
@@ -702,16 +702,16 @@ export default function MarketIntelligenceScreen({
                                                 style={{
                                                     flexShrink: 0,
                                                     textAlign: "left",
-                                                    background: selected ? "rgba(99,179,237,0.1)" : "rgba(255,255,255,0.02)",
-                                                    border: selected ? "1px solid rgba(99,179,237,0.22)" : "1px solid rgba(255,255,255,0.06)",
+                                                    background: selected ? "rgba(142,160,181,0.1)" : "rgba(7,26,47,0.02)",
+                                                    border: selected ? "1px solid rgba(142,160,181,0.22)" : "1px solid rgba(7,26,47,0.06)",
                                                     borderRadius: 10,
                                                     padding: "10px 14px",
-                                                    color: "#F0EDE8",
+                                                    color: "var(--color-text)",
                                                     cursor: "pointer",
                                                     maxWidth: 220,
                                                 }}
                                             >
-                                                <div style={{ fontSize: 13, fontWeight: 600, color: selected ? "#63B3ED" : "#C8C4BE", whiteSpace: "nowrap" }}>
+                                                <div style={{ fontSize: 13, fontWeight: 600, color: selected ? "var(--tekori-muted-text)" : "var(--color-text-soft)", whiteSpace: "nowrap" }}>
                                                     {formatReportDate(entry.date)}
                                                 </div>
                                                 <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 6 }}>
@@ -719,7 +719,7 @@ export default function MarketIntelligenceScreen({
                                                     <span style={{ fontSize: 10, color: freshness.color, whiteSpace: "nowrap" }}>{freshness.label}</span>
                                                 </div>
                                                 {sourceCount > 0 && (
-                                                    <div style={{ display: "inline-flex", marginTop: 7, padding: "3px 7px", borderRadius: 999, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(240,237,232,0.7)", fontSize: 11, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+                                                    <div style={{ display: "inline-flex", marginTop: 7, padding: "3px 7px", borderRadius: 999, background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.06)", color: "rgba(71,84,103,0.88)", fontSize: 11, fontFamily: "var(--tekori-font-ui)" }}>
                                                         {sourceCount} source{sourceCount === 1 ? "" : "s"}
                                                     </div>
                                                 )}
@@ -734,8 +734,8 @@ export default function MarketIntelligenceScreen({
                                                             marginTop: 8,
                                                             padding: "5px 9px",
                                                             borderRadius: 8,
-                                                            border: "1px solid rgba(99,179,237,0.22)",
-                                                            color: "#63B3ED",
+                                                            border: "1px solid rgba(142,160,181,0.22)",
+                                                            color: "var(--tekori-muted-text)",
                                                             fontSize: 10,
                                                             fontWeight: 700,
                                                         }}
@@ -774,7 +774,7 @@ export default function MarketIntelligenceScreen({
                             </div>
 
                             {!isNarrow && reportHistory.length > 0 && (
-                                <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "16px 14px", position: "sticky", top: 78 }}>
+                                <div style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.06)", borderRadius: 14, padding: "16px 14px", position: "sticky", top: 78 }}>
                                     <div style={{ fontSize: 12, color: "var(--foundry-text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10, fontWeight: 600 }}>
                                         Saved Reports
                                     </div>
@@ -789,18 +789,18 @@ export default function MarketIntelligenceScreen({
                                                     onClick={() => selectReport(entry)}
                                                     style={{
                                                         textAlign: "left",
-                                                        background: selected ? "rgba(99,179,237,0.1)" : "rgba(255,255,255,0.02)",
-                                                        border: selected ? "1px solid rgba(99,179,237,0.22)" : "1px solid rgba(255,255,255,0.06)",
+                                                        background: selected ? "rgba(142,160,181,0.1)" : "rgba(7,26,47,0.02)",
+                                                        border: selected ? "1px solid rgba(142,160,181,0.22)" : "1px solid rgba(7,26,47,0.06)",
                                                         borderRadius: 10,
                                                         padding: "12px 14px",
-                                                        color: "#F0EDE8",
+                                                        color: "var(--color-text)",
                                                         cursor: "pointer",
                                                     }}
                                                 >
-                                                    <div style={{ fontSize: 14, fontWeight: 600, color: selected ? "#63B3ED" : "#C8C4BE", marginBottom: 6, lineHeight: 1.35 }}>
+                                                    <div style={{ fontSize: 14, fontWeight: 600, color: selected ? "var(--tekori-muted-text)" : "var(--color-text-soft)", marginBottom: 6, lineHeight: 1.35 }}>
                                                         {formatReportDate(entry.date)}
                                                     </div>
-                                                    <div style={{ fontSize: 12, color: "#77716A", lineHeight: 1.6 }}>
+                                                    <div style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.6 }}>
                                                         {getReportPreview(entry.content)}
                                                     </div>
                                                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 10 }}>
@@ -818,8 +818,8 @@ export default function MarketIntelligenceScreen({
                                                                     flexShrink: 0,
                                                                     padding: "5px 8px",
                                                                     borderRadius: 8,
-                                                                    border: "1px solid rgba(99,179,237,0.22)",
-                                                                    color: "#63B3ED",
+                                                                    border: "1px solid rgba(142,160,181,0.22)",
+                                                                    color: "var(--tekori-muted-text)",
                                                                     fontSize: 10,
                                                                     fontWeight: 700,
                                                                 }}
@@ -829,7 +829,7 @@ export default function MarketIntelligenceScreen({
                                                         )}
                                                     </div>
                                                     {sourceCount > 0 && (
-                                                        <div style={{ display: "inline-flex", marginTop: 8, padding: "3px 7px", borderRadius: 999, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(240,237,232,0.7)", fontSize: 11, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+                                                        <div style={{ display: "inline-flex", marginTop: 8, padding: "3px 7px", borderRadius: 999, background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.06)", color: "rgba(71,84,103,0.88)", fontSize: 11, fontFamily: "var(--tekori-font-ui)" }}>
                                                             {sourceCount} source{sourceCount === 1 ? "" : "s"}
                                                         </div>
                                                     )}

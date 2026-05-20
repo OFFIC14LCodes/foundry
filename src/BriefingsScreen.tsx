@@ -14,13 +14,13 @@ type ParsedBriefingSection = {
     lines: string[];
 };
 
-const briefingBodyFont = "'Lora', Georgia, serif";
+const briefingBodyFont = "var(--tekori-font-ui)";
 
 function renderInline(text: string) {
     const parts = text.split(/\*\*(.+?)\*\*/g);
     return parts.map((part, i) =>
         i % 2 === 1
-            ? <strong key={i} style={{ color: "#F0EDE8", fontWeight: 700 }}>{part}</strong>
+            ? <strong key={i} style={{ color: "var(--color-text)", fontWeight: 700 }}>{part}</strong>
             : <span key={i}>{part}</span>
     );
 }
@@ -51,7 +51,7 @@ function SectionContent({ lines }: { lines: string[] }) {
     const flushParagraph = () => {
         if (paragraphLines.length === 0) return;
         blocks.push(
-            <div key={`p-${blocks.length}`} style={{ fontSize: 15, color: "rgba(240,237,232,0.82)", lineHeight: 1.75, fontFamily: briefingBodyFont }}>
+            <div key={`p-${blocks.length}`} style={{ fontSize: 15, color: "rgba(16,32,51,0.82)", lineHeight: 1.75, fontFamily: briefingBodyFont }}>
                 {renderInline(paragraphLines.join(" "))}
             </div>
         );
@@ -67,8 +67,8 @@ function SectionContent({ lines }: { lines: string[] }) {
         if (line.startsWith("- ") || line.startsWith("* ")) {
             flushParagraph();
             blocks.push(
-                <div key={`b-${blocks.length}`} style={{ display: "flex", gap: 8, paddingLeft: 8, fontSize: 14.5, color: "rgba(240,237,232,0.82)", lineHeight: 1.75, fontFamily: briefingBodyFont }}>
-                    <span style={{ color: "#E8622A", flexShrink: 0 }}>•</span>
+                <div key={`b-${blocks.length}`} style={{ display: "flex", gap: 8, paddingLeft: 8, fontSize: 14.5, color: "rgba(16,32,51,0.82)", lineHeight: 1.75, fontFamily: briefingBodyFont }}>
+                    <span style={{ color: "var(--tekori-gold)", flexShrink: 0 }}>•</span>
                     <span>{renderInline(line.slice(2))}</span>
                 </div>
             );
@@ -95,19 +95,19 @@ function BriefingText({ text }: { text: string }) {
                     <section
                         key={`${section.number}-${section.title}`}
                         style={{
-                            borderTop: index === 0 ? "none" : "1px solid rgba(255,255,255,0.06)",
+                            borderTop: index === 0 ? "none" : "1px solid rgba(7,26,47,0.06)",
                             paddingTop: index === 0 ? 0 : 14,
                         }}
                     >
                         <div
                             style={{
-                                background: isFocus ? "rgba(232,98,42,0.06)" : isAction ? "rgba(76,175,138,0.06)" : "transparent",
-                                border: isFocus ? "1px solid rgba(232,98,42,0.15)" : isAction ? "1px solid rgba(76,175,138,0.15)" : "none",
+                                background: isFocus ? "rgba(216,155,43,0.06)" : isAction ? "rgba(76,175,138,0.06)" : "transparent",
+                                border: isFocus ? "1px solid rgba(216,155,43,0.15)" : isAction ? "1px solid rgba(76,175,138,0.15)" : "none",
                                 borderRadius: highlighted ? 8 : 0,
                                 padding: highlighted ? 12 : 0,
                             }}
                         >
-                            <div style={{ fontSize: 16, color: "#F0EDE8", fontWeight: 700, fontFamily: briefingBodyFont, marginBottom: 8, lineHeight: 1.35 }}>
+                            <div style={{ fontSize: 16, color: "var(--color-text)", fontWeight: 700, fontFamily: briefingBodyFont, marginBottom: 8, lineHeight: 1.35 }}>
                                 {section.title}
                             </div>
                             <SectionContent lines={section.lines} />
@@ -167,18 +167,18 @@ function SourceCountsPanel({
     const counts = briefing.sourceCounts;
 
     return (
-        <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+        <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid rgba(7,26,47,0.05)" }}>
             <button
                 onClick={onToggle}
-                style={{ background: "transparent", border: "none", padding: 0, color: "rgba(240,237,232,0.58)", fontSize: 11, fontFamily: "'DM Sans', sans-serif", cursor: "pointer" }}
+                style={{ background: "transparent", border: "none", padding: 0, color: "rgba(16,32,51,0.58)", fontSize: 11, fontFamily: "var(--tekori-font-ui)", cursor: "pointer" }}
             >
-                What Forge used {expanded ? "↓" : "→"}
+                What Navi used {expanded ? "↓" : "→"}
             </button>
             {expanded && (
-                <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 5, color: "rgba(240,237,232,0.7)", fontSize: 12, fontFamily: "'DM Sans', sans-serif", lineHeight: 1.55 }}>
+                <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 5, color: "rgba(71,84,103,0.88)", fontSize: 12, fontFamily: "var(--tekori-font-ui)", lineHeight: 1.55 }}>
                     <div>• {counts.journal_entries ?? 0} journal entries this week</div>
                     <div>• {counts.decisions ?? 0} decisions logged</div>
-                    <div>• {counts.chat_summaries ?? 0} Forge conversations</div>
+                    <div>• {counts.chat_summaries ?? 0} Navi conversations</div>
                     <div>• {counts.academy_completed ?? 0} Academy lessons</div>
                     <div>• Stage {briefing.stageId} — {Number.isFinite(completed) && Number.isFinite(total) ? `${completed}/${total}` : "0/0"} milestones complete{stage ? ` (${stage.label})` : ""}</div>
                 </div>
@@ -294,7 +294,7 @@ export default function BriefingsScreen({
                 body: JSON.stringify({
                     model: "claude-sonnet-4-20250514",
                     max_tokens: 900,
-                    system: "You are Forge, the AI business partner inside Foundry. Write exactly as instructed. Keep the text flush-left, easy to scan, grounded in the founder's week, and structured with short paragraphs, bullets, and numbered lines when useful.",
+                    system: "You are Navi, the AI business partner inside Tekori. Write exactly as instructed. Keep the text flush-left, easy to scan, grounded in the founder's week, and structured with short paragraphs, bullets, and numbered lines when useful.",
                     messages: [{ role: "user", content: prompt }],
                 }),
             });
@@ -319,7 +319,7 @@ export default function BriefingsScreen({
             setExpandedId(saved.id);
         } catch (err) {
             console.error("Briefing error:", err);
-            setError("Forge ran into a problem generating your briefing. Tap to try again.");
+            setError("Navi ran into a problem generating your briefing. Tap to try again.");
         } finally {
             setGenerating(false);
         }
@@ -361,32 +361,32 @@ export default function BriefingsScreen({
 
     return (
         <div style={{
-            position: "fixed", inset: 0, background: "#080809",
+            position: "fixed", inset: 0, background: "var(--color-bg-soft)",
             display: "flex", flexDirection: "column",
-            fontFamily: "'Lora', Georgia, serif", color: "#F0EDE8", zIndex: 200,
+            fontFamily: "var(--tekori-font-ui)", color: "var(--color-text)", zIndex: 200,
         }}>
             <div style={{
                 padding: "max(11px, calc(6px + env(safe-area-inset-top))) 16px 11px",
-                borderBottom: "1px solid rgba(255,255,255,0.06)",
-                background: "rgba(8,8,9,0.95)", backdropFilter: "blur(12px)",
+                borderBottom: "1px solid rgba(7,26,47,0.06)",
+                background: "rgba(255,252,246,0.94)", backdropFilter: "blur(12px)",
                 display: "flex", alignItems: "center", justifyContent: "space-between",
                 flexShrink: 0, gap: 12,
             }}>
                 <button onClick={onOpenNav} style={{
-                    background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)",
-                    borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "#F0EDE8",
+                    background: "rgba(7,26,47,0.05)", border: "1px solid rgba(7,26,47,0.08)",
+                    borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "var(--color-text)",
                     cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
                 }}><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg></button>
 
                 <div style={{ textAlign: "left", flex: 1, minWidth: 0 }}>
                     <div style={{
-                        fontSize: "var(--foundry-app-header-title-font)", fontFamily: "'Lora', Georgia, serif",
-                        fontWeight: 600, color: "#F0EDE8",
+                        fontSize: "var(--foundry-app-header-title-font)", fontFamily: "var(--tekori-font-ui)",
+                        fontWeight: 600, color: "var(--color-text)",
                     }}>Monday Briefings</div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", fontSize: "var(--foundry-app-header-meta-font)", color: "var(--foundry-text-muted)" }}>
                         <span>{briefings.length} {briefings.length === 1 ? "briefing" : "briefings"}</span>
                         {generationLimit !== null && <span>· {Math.max(0, generationLimit - briefings.length)} free left</span>}
-                        {currentStreak >= 2 && <span style={{ color: "#E8622A", fontFamily: "'DM Sans', sans-serif", fontSize: 12 }}>🔥 {currentStreak} week streak</span>}
+                        {currentStreak >= 2 && <span style={{ color: "var(--tekori-gold)", fontFamily: "var(--tekori-font-ui)", fontSize: 12 }}>🔥 {currentStreak} week streak</span>}
                     </div>
                 </div>
 
@@ -395,10 +395,10 @@ export default function BriefingsScreen({
                         onClick={generateBriefing}
                         disabled={generating || !canCreateBriefing}
                         style={{
-                            background: generating || !canCreateBriefing ? "rgba(255,255,255,0.04)" : "rgba(232,98,42,0.1)",
-                            border: generating || !canCreateBriefing ? "1px solid rgba(255,255,255,0.06)" : "1px solid rgba(232,98,42,0.25)",
+                            background: generating || !canCreateBriefing ? "rgba(7,26,47,0.04)" : "rgba(216,155,43,0.1)",
+                            border: generating || !canCreateBriefing ? "1px solid rgba(7,26,47,0.06)" : "1px solid rgba(216,155,43,0.25)",
                             borderRadius: 8, padding: "var(--foundry-app-header-button-padding)",
-                            color: generating || !canCreateBriefing ? "#444" : "#E8622A",
+                            color: generating || !canCreateBriefing ? "var(--color-text-muted)" : "var(--tekori-gold)",
                             fontSize: "var(--foundry-app-header-button-font)", fontWeight: 500,
                             cursor: generating || !canCreateBriefing ? "default" : "pointer",
                             transition: "all 0.2s",
@@ -407,7 +407,7 @@ export default function BriefingsScreen({
                         {generating ? "Writing..." : hasReachedLimit ? "Preview limit reached" : canGenerate ? "+ New" : "Up to date"}
                     </button>
                     {nextBriefingLabel && (
-                        <div style={{ maxWidth: 190, textAlign: "right", fontSize: 10, color: "rgba(240,237,232,0.55)", fontFamily: "'DM Sans', sans-serif", lineHeight: 1.35 }}>
+                        <div style={{ maxWidth: 190, textAlign: "right", fontSize: 10, color: "rgba(102,112,133,0.74)", fontFamily: "var(--tekori-font-ui)", lineHeight: 1.35 }}>
                             {nextBriefingLabel}
                         </div>
                     )}
@@ -420,21 +420,21 @@ export default function BriefingsScreen({
                     maxWidth: 680,
                     width: "calc(100% - 32px)",
                     boxSizing: "border-box",
-                    background: "rgba(232,98,42,0.08)",
-                    border: "1px solid rgba(232,98,42,0.25)",
+                    background: "rgba(216,155,43,0.08)",
+                    border: "1px solid rgba(216,155,43,0.25)",
                     borderRadius: 10,
                     padding: "14px 16px",
                     display: "flex",
                     alignItems: "center",
                     gap: 12,
                 }}>
-                    <div style={{ flex: 1, color: "rgba(240,237,232,0.8)", fontSize: 13, fontFamily: "'DM Sans', sans-serif", lineHeight: 1.5 }}>{error}</div>
-                    <button onClick={() => { setError(null); void generateBriefing(); }} style={{ background: "transparent", border: "none", color: "#E8622A", fontSize: 12, fontFamily: "'DM Sans', sans-serif", cursor: "pointer" }}>Try again</button>
-                    <button onClick={() => setError(null)} style={{ background: "transparent", border: "none", color: "rgba(240,237,232,0.62)", fontSize: 18, cursor: "pointer", lineHeight: 1 }}>×</button>
+                    <div style={{ flex: 1, color: "rgba(16,32,51,0.8)", fontSize: 13, fontFamily: "var(--tekori-font-ui)", lineHeight: 1.5 }}>{error}</div>
+                    <button onClick={() => { setError(null); void generateBriefing(); }} style={{ background: "transparent", border: "none", color: "var(--tekori-gold)", fontSize: 12, fontFamily: "var(--tekori-font-ui)", cursor: "pointer" }}>Try again</button>
+                    <button onClick={() => setError(null)} style={{ background: "transparent", border: "none", color: "var(--color-text-muted)", fontSize: 18, cursor: "pointer", lineHeight: 1 }}>×</button>
                 </div>
             )}
             {actionNotice && (
-                <div style={{ margin: "12px auto 0", maxWidth: 680, width: "calc(100% - 32px)", boxSizing: "border-box", background: "rgba(76,175,138,0.08)", border: "1px solid rgba(76,175,138,0.2)", borderRadius: 10, padding: "10px 12px", color: "#8BD8A9", fontSize: 12, fontFamily: "'DM Sans', sans-serif" }}>
+                <div style={{ margin: "12px auto 0", maxWidth: 680, width: "calc(100% - 32px)", boxSizing: "border-box", background: "rgba(76,175,138,0.08)", border: "1px solid rgba(76,175,138,0.2)", borderRadius: 10, padding: "10px 12px", color: "var(--color-success)", fontSize: 12, fontFamily: "var(--tekori-font-ui)" }}>
                     {actionNotice}
                 </div>
             )}
@@ -448,10 +448,10 @@ export default function BriefingsScreen({
                         marginBottom: 14,
                         padding: "12px 14px",
                         borderRadius: 12,
-                        background: hasReachedLimit ? "rgba(232,98,42,0.07)" : "rgba(232,98,42,0.05)",
-                        border: hasReachedLimit ? "1px solid rgba(232,98,42,0.2)" : "1px solid rgba(232,98,42,0.14)",
+                        background: hasReachedLimit ? "rgba(216,155,43,0.07)" : "rgba(216,155,43,0.05)",
+                        border: hasReachedLimit ? "1px solid rgba(216,155,43,0.2)" : "1px solid rgba(216,155,43,0.14)",
                         fontSize: 12,
-                        color: hasReachedLimit ? "#D9B9A6" : "#BDAFA2",
+                        color: hasReachedLimit ? "var(--color-text-soft)" : "var(--color-text-muted)",
                         lineHeight: 1.65,
                     }}>
                         {hasReachedLimit
@@ -467,29 +467,29 @@ export default function BriefingsScreen({
                     }}>
                         <div style={{ fontSize: 48, marginBottom: 16 }}>📅</div>
                         <div style={{
-                            fontSize: 22, fontFamily: "'Playfair Display', Georgia, serif",
-                            fontWeight: 700, color: "#F0EDE8", marginBottom: 10,
+                            fontSize: 22, fontFamily: "var(--tekori-font-brand)",
+                            fontWeight: 700, color: "var(--color-text)", marginBottom: 10,
                         }}>Your first Monday Briefing</div>
                         <div style={{
-                            fontSize: 14, color: "rgba(240,237,232,0.55)", fontFamily: "'DM Sans', sans-serif",
+                            fontSize: 14, color: "rgba(102,112,133,0.74)", fontFamily: "var(--tekori-font-ui)",
                             lineHeight: 1.7, maxWidth: 400,
                             margin: "0 0 24px",
                         }}>
-                            Every week, Forge reviews what moved in your business — decisions made, lessons learned, patterns emerging — and writes you a briefing that helps you start the week sharp.
+                            Every week, Navi reviews what moved in your business — decisions made, lessons learned, patterns emerging — and writes you a briefing that helps you start the week sharp.
                             <br /><br />
                             Takes about 30 seconds to generate.
                         </div>
                         <button onClick={generateBriefing} disabled={generating || hasReachedLimit} style={{
-                            background: generating || hasReachedLimit ? "rgba(232,98,42,0.3)" : "linear-gradient(135deg, #E8622A, #c9521e)",
+                            background: generating || hasReachedLimit ? "rgba(216,155,43,0.3)" : "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))",
                             border: "none", borderRadius: 12, padding: "12px 24px",
-                            color: "#fff", fontSize: 13, fontFamily: "'Lora', Georgia, serif",
+                            color: "#fff", fontSize: 13, fontFamily: "var(--tekori-font-ui)",
                             fontWeight: 600, cursor: generating || hasReachedLimit ? "default" : "pointer",
-                            boxShadow: generating || hasReachedLimit ? "none" : "0 4px 20px rgba(232,98,42,0.3)",
+                            boxShadow: generating || hasReachedLimit ? "none" : "0 4px 20px rgba(216,155,43,0.3)",
                         }}>
-                            {generating ? "Forge is writing..." : hasReachedLimit ? "Preview limit reached" : "Generate My First Briefing →"}
+                            {generating ? "Navi is writing..." : hasReachedLimit ? "Preview limit reached" : "Generate My First Briefing →"}
                         </button>
-                        <div style={{ marginTop: 12, maxWidth: 420, color: "rgba(240,237,232,0.38)", fontSize: 12, fontFamily: "'DM Sans', sans-serif", lineHeight: 1.6 }}>
-                            Briefings are generated weekly. You can generate one now and Forge will deliver them automatically every Monday.
+                        <div style={{ marginTop: 12, maxWidth: 420, color: "rgba(102,112,133,0.56)", fontSize: 12, fontFamily: "var(--tekori-font-ui)", lineHeight: 1.6 }}>
+                            Briefings are generated weekly. You can generate one now and Navi will deliver them automatically every Monday.
                         </div>
                     </div>
                 )}
@@ -499,14 +499,14 @@ export default function BriefingsScreen({
                         <div style={{ display: "flex", gap: 6, justifyContent: "flex-start", marginBottom: 16 }}>
                             {[0, 1, 2].map(i => (
                                 <div key={i} style={{
-                                    width: 8, height: 8, borderRadius: "50%", background: "#E8622A",
+                                    width: 8, height: 8, borderRadius: "50%", background: "var(--tekori-gold)",
                                     animation: "forgePulse 1.4s infinite ease-in-out",
                                     animationDelay: `${i * 0.2}s`,
                                 }} />
                             ))}
                         </div>
-                        <div style={{ fontSize: 13, color: "var(--foundry-text-muted)", fontFamily: "'Lora', Georgia, serif", fontStyle: "italic" }}>
-                            Forge is thinking about your week...
+                        <div style={{ fontSize: 13, color: "var(--foundry-text-muted)", fontFamily: "var(--tekori-font-ui)", fontStyle: "italic" }}>
+                            Navi is thinking about your week...
                         </div>
                     </div>
                 )}
@@ -519,8 +519,8 @@ export default function BriefingsScreen({
 
                         return (
                             <div key={briefing.id} style={{
-                                background: isFirst ? "rgba(232,98,42,0.04)" : "rgba(255,255,255,0.02)",
-                                border: isFirst ? "1px solid rgba(232,98,42,0.2)" : "1px solid rgba(255,255,255,0.06)",
+                                background: isFirst ? "rgba(216,155,43,0.04)" : "rgba(7,26,47,0.02)",
+                                border: isFirst ? "1px solid rgba(216,155,43,0.2)" : "1px solid rgba(7,26,47,0.06)",
                                 borderRadius: 14, overflow: "hidden",
                                 animation: isFirst ? "fadeSlideUp 0.3s ease" : "none",
                             }}>
@@ -528,7 +528,7 @@ export default function BriefingsScreen({
                                     onClick={() => setExpandedId(isExpanded ? null : briefing.id)}
                                     style={{
                                         padding: "12px 16px",
-                                        borderBottom: isExpanded ? "1px solid rgba(255,255,255,0.05)" : "none",
+                                        borderBottom: isExpanded ? "1px solid rgba(7,26,47,0.05)" : "none",
                                         display: "flex", alignItems: "center",
                                         justifyContent: "space-between", cursor: "pointer", gap: 14,
                                     }}
@@ -536,19 +536,19 @@ export default function BriefingsScreen({
                                     <div style={{ minWidth: 0 }}>
                                         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 5 }}>
                                             <div style={{
-                                                fontSize: 14, color: isFirst ? "#E8622A" : "#A8A4A0",
+                                                fontSize: 14, color: isFirst ? "var(--tekori-gold)" : "var(--color-text-muted)",
                                                 fontWeight: 600, lineHeight: 1.35,
                                             }}>
                                                 {isFirst ? "Latest" : formatDate(briefing.createdAt)}
                                             </div>
                                             <span style={{
                                                 fontSize: 10,
-                                                color: "#E8622A",
-                                                background: "rgba(232,98,42,0.1)",
-                                                border: "1px solid rgba(232,98,42,0.22)",
+                                                color: "var(--tekori-gold)",
+                                                background: "rgba(216,155,43,0.1)",
+                                                border: "1px solid rgba(216,155,43,0.22)",
                                                 borderRadius: 999,
                                                 padding: "2px 8px",
-                                                fontFamily: "'DM Sans', sans-serif",
+                                                fontFamily: "var(--tekori-font-ui)",
                                             }}>
                                                 Stage {briefing.stageId}{stage ? ` — ${stage.label}` : ""}
                                             </span>
@@ -558,7 +558,7 @@ export default function BriefingsScreen({
                                                 {formatDate(briefing.createdAt)}
                                             </div>
                                         )}
-                                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, fontSize: 11, color: "rgba(240,237,232,0.58)", fontFamily: "'DM Sans', sans-serif", lineHeight: 1.4 }}>
+                                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, fontSize: 11, color: "rgba(16,32,51,0.58)", fontFamily: "var(--tekori-font-ui)", lineHeight: 1.4 }}>
                                             <span>{wordCount(briefing.content)} words</span>
                                             <span>·</span>
                                             <span>{formatTimeAgo(briefing.createdAt)}</span>
@@ -571,12 +571,12 @@ export default function BriefingsScreen({
                                                 void copyBriefing(briefing);
                                             }}
                                             style={{
-                                                background: "rgba(255,255,255,0.035)",
-                                                border: "1px solid rgba(255,255,255,0.08)",
+                                                background: "rgba(7,26,47,0.035)",
+                                                border: "1px solid rgba(7,26,47,0.08)",
                                                 borderRadius: 8,
-                                                color: copiedId === briefing.id ? "#4CAF8A" : "rgba(240,237,232,0.55)",
+                                                color: copiedId === briefing.id ? "var(--color-success)" : "rgba(102,112,133,0.74)",
                                                 fontSize: 11,
-                                                fontFamily: "'DM Sans', sans-serif",
+                                                fontFamily: "var(--tekori-font-ui)",
                                                 padding: "6px 9px",
                                                 cursor: "pointer",
                                             }}
@@ -617,11 +617,11 @@ export default function BriefingsScreen({
                                         )}
                                         <div style={{
                                             marginTop: 16, paddingTop: 12,
-                                            borderTop: "1px solid rgba(255,255,255,0.05)",
-                                            fontSize: 10, color: "#333", fontStyle: "italic",
-                                            fontFamily: "'Lora', Georgia, serif",
+                                            borderTop: "1px solid rgba(7,26,47,0.05)",
+                                            fontSize: 10, color: "var(--color-text-muted)", fontStyle: "italic",
+                                            fontFamily: "var(--tekori-font-ui)",
                                         }}>
-                                            Generated by Forge · {formatStage(briefing.stageId)} · {formatDate(briefing.createdAt)}
+                                            Generated by Navi · {formatStage(briefing.stageId)} · {formatDate(briefing.createdAt)}
                                         </div>
                                     </div>
                                 )}

@@ -55,21 +55,21 @@ export type ReminderVariant = {
 export const REENGAGEMENT_REMINDER_VARIANTS: ReminderVariant[] = [
     {
         id: "forge-ready",
-        subject: "Forge is ready when you are",
-        title: "Forge is ready when you are.",
-        message: "Your next step is waiting. Come back into Foundry, check in with Forge, and keep building with clarity instead of guessing alone.",
+        subject: "Navi is ready when you are",
+        title: "Navi is ready when you are.",
+        message: "Your next step is waiting. Come back into Tekori, check in with Navi, and keep building with clarity instead of guessing alone.",
     },
     {
         id: "three-days-change",
         subject: "A lot can change in 3 days",
         title: "A lot can change in 3 days.",
-        message: "Check back in, update Forge on what shifted, and keep the build moving. Momentum does not have to be dramatic to be real.",
+        message: "Check back in, update Navi on what shifted, and keep the build moving. Momentum does not have to be dramatic to be real.",
     },
     {
         id: "next-move",
         subject: "Your business just needs your next move",
         title: "Your business does not need perfect momentum.",
-        message: "It just needs your next move. Open Foundry, tell Forge where things stand, and let the next step get specific again.",
+        message: "It just needs your next move. Open Tekori, tell Navi where things stand, and let the next step get specific again.",
     },
 ];
 

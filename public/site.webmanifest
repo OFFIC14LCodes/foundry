@@ -1,11 +1,11 @@
 {
-  "name": "Foundry",
-  "short_name": "Foundry",
-  "description": "Foundry helps founders build, pressure-test, and grow their business with structured guidance.",
+  "name": "Tekori",
+  "short_name": "Tekori",
+  "description": "Tekori helps founders build, pressure-test, and grow their business with structured guidance.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#120d09",
-  "theme_color": "#120d09",
+  "background_color": "#FAF7F0",
+  "theme_color": "#FAF7F0",
   "icons": [
     {
       "src": "/icon-192.png",

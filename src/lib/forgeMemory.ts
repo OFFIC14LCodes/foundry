@@ -90,7 +90,7 @@ export async function createForgeMemoryItem(input: CreateForgeMemoryInput): Prom
         .single();
 
     if (error) {
-        console.error("createForgeMemoryItem error:", error.message);
+        console.error("createNaviMemoryItem error:", error.message);
         return null;
     }
 
@@ -131,7 +131,7 @@ export async function getForgeMemoryForContext({
 
     const { data, error } = await query;
     if (error) {
-        console.error("getForgeMemoryForContext error:", error.message);
+        console.error("getNaviMemoryForContext error:", error.message);
         return [];
     }
     return (data as ForgeMemoryItem[]) ?? [];
