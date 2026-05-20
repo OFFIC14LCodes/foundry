@@ -45,9 +45,9 @@ import {
 
 export const Icons = {
     logos: {
-        foundryFlame: "/brand/tekori/tekori-mark.svg",
-        foundryAndForge: "/brand/tekori/tekori-logo.svg",
-        forge: "/brand/navi/navi-mark.svg",
+        foundryFlame: "/Tekori.svg",
+        foundryAndForge: "/Tekori.svg",
+        forge: "/Navi.svg",
     },
 
     stages: {
