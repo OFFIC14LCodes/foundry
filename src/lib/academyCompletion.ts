@@ -4,10 +4,12 @@ import { recordAcademyHistory, upsertAcademyContentProgress } from "./academyDb"
 import type { AcademyContent, AcademySessionMode, AcademyTopicLaunch, AcademyUserContentProgress, AssessmentAttempt } from "./academy";
 
 export type KnowledgeCheckTrackStatus = "passed" | "on_track" | "off_track";
+export type AcademyUnderstandingLevel = "incorrect" | "partially_correct" | "mostly_correct" | "fully_correct";
 
 export type KnowledgeCheckEvaluation = {
     passed: boolean;
     trackStatus: KnowledgeCheckTrackStatus;
+    understandingLevel: AcademyUnderstandingLevel;
     feedback: string;
     demonstratedUnderstanding: string[];
     missingUnderstanding: string[];
@@ -192,6 +194,7 @@ ${answer}
 Return valid JSON only with exactly these keys:
 "trackStatus": exactly one of "passed", "on_track", or "off_track". Use "passed" if the founder demonstrates the core concept, even if their wording is imperfect or they miss a minor nuance. Use "on_track" only if they are directionally right but have not yet stated the core concept clearly enough. Use "off_track" only if they fundamentally miss the point or show no real grasp of the lesson.
 "passed": true only if trackStatus is "passed", false otherwise
+"understandingLevel": exactly one of "incorrect", "partially_correct", "mostly_correct", or "fully_correct".
 "feedback": short feedback in 2-4 sentences. If passed, explain what landed well. If on_track, explain what's right and what still needs sharpening. If off_track, explain what core concept they're missing.
 "demonstratedUnderstanding": an array of 1-4 short strings naming the specific lesson ideas the founder did demonstrate.
 "missingUnderstanding": an array of 0-3 short strings naming only the specific lesson ideas still missing. Empty array if passed.
@@ -200,6 +203,9 @@ Return valid JSON only with exactly these keys:
 Evaluation rules:
 - Judge understanding, not phrasing. Do not require the founder to use the lesson's exact words.
 - Pass answers that accurately connect the lesson to the founder's own behavior, systems, decisions, or business execution.
+- Treat the founder as understanding when they correctly explain the mechanism in their own words, give a relevant business example, apply the lesson to Tekori/their company, or explain decision elimination, systemization, automation, founder dependency reduction, operational consistency, or business risk reduction.
+- Do not reject an answer solely because it includes personal productivity language if it also connects that behavior to business systems, operational risk, decision quality, consistency, or founder dependency.
+- If the founder pushes back that they already answered, fairly re-evaluate their actual answer. Do not double down unless a concrete missing concept remains.
 - Err on completion when the founder clearly gets the concept. Navi Academy is checking useful understanding, not mastery.
 - Do not mark an answer incomplete just because it could be sharper, more polished, or more comprehensive. Mark it incomplete only when the core concept is actually absent or materially confused.
 - Minor missing details should be captured in feedback while still passing the answer.
@@ -213,6 +219,12 @@ Evaluation rules:
         const trackStatus: KnowledgeCheckTrackStatus =
             parsed?.trackStatus === "passed" ? "passed" :
             parsed?.trackStatus === "on_track" ? "on_track" : "off_track";
+        const understandingLevel: AcademyUnderstandingLevel =
+            parsed?.understandingLevel === "fully_correct" ? "fully_correct" :
+            parsed?.understandingLevel === "mostly_correct" ? "mostly_correct" :
+            parsed?.understandingLevel === "partially_correct" ? "partially_correct" :
+            trackStatus === "passed" ? "fully_correct" :
+            trackStatus === "on_track" ? "mostly_correct" : "incorrect";
         const demonstratedUnderstanding = Array.isArray(parsed?.demonstratedUnderstanding)
             ? parsed.demonstratedUnderstanding.map((item: unknown) => String(item).trim()).filter(Boolean).slice(0, 4)
             : [];
@@ -222,6 +234,7 @@ Evaluation rules:
         return {
             passed: trackStatus === "passed",
             trackStatus,
+            understandingLevel,
             feedback: typeof parsed?.feedback === "string" && parsed.feedback.trim()
                 ? parsed.feedback.trim()
                 : "Navi could not produce clear feedback. Try again with a more concrete explanation.",
@@ -235,6 +248,7 @@ Evaluation rules:
         return {
             passed: false,
             trackStatus: "off_track" as KnowledgeCheckTrackStatus,
+            understandingLevel: "incorrect",
             feedback: "Navi could not evaluate that answer cleanly. Try again with a clearer explanation in your own words.",
             demonstratedUnderstanding: [],
             missingUnderstanding: ["The answer could not be evaluated cleanly."],
@@ -274,6 +288,7 @@ ${answer}
 Return valid JSON only with exactly these keys:
 "trackStatus": exactly one of "passed", "on_track", or "off_track". Use "passed" if the founder demonstrates the core concept, even if their wording is imperfect or they miss a minor nuance. Use "on_track" only if they are directionally right but have not yet stated the core concept clearly enough. Use "off_track" only if they fundamentally miss the point or show no real grasp of the lesson.
 "passed": true only if trackStatus is "passed", false otherwise
+"understandingLevel": exactly one of "incorrect", "partially_correct", "mostly_correct", or "fully_correct".
 "feedback": short feedback in 2-4 sentences. If passed, explain what landed well. If on_track, explain what's right and what still needs sharpening. If off_track, explain what core concept they're missing.
 "demonstratedUnderstanding": an array of 1-4 short strings naming the specific lesson ideas the founder did demonstrate.
 "missingUnderstanding": an array of 0-3 short strings naming only the specific lesson ideas still missing. Empty array if passed.
@@ -282,6 +297,10 @@ Return valid JSON only with exactly these keys:
 Evaluation rules:
 - Judge understanding, not phrasing. Do not require the founder to use the lesson's exact words.
 - Pass answers that accurately connect the lesson to the founder's own behavior, systems, decisions, or business execution.
+- Treat the founder as understanding when they correctly explain the mechanism in their own words, give a relevant business example, apply the lesson to Tekori/their company, or explain decision elimination, systemization, automation, founder dependency reduction, operational consistency, or business risk reduction.
+- Do not reject an answer solely because it includes personal productivity language if it also connects that behavior to business systems, operational risk, decision quality, consistency, or founder dependency.
+- If recent transcript shows Navi has already asked substantially the same question twice, avoid another drill. If the founder is mostly correct, mark passed; if not, name one exact missing distinction.
+- If the founder pushes back that they already answered, fairly re-evaluate their actual answer. Do not double down unless a concrete missing concept remains.
 - Err on completion when the founder clearly gets the concept. Navi Academy is checking useful understanding, not mastery.
 - Do not mark an answer incomplete just because it could be sharper, more polished, or more comprehensive. Mark it incomplete only when the core concept is actually absent or materially confused.
 - Minor missing details should be captured in feedback while still passing the answer.
@@ -295,6 +314,12 @@ Evaluation rules:
         const trackStatus: KnowledgeCheckTrackStatus =
             parsed?.trackStatus === "passed" ? "passed" :
             parsed?.trackStatus === "on_track" ? "on_track" : "off_track";
+        const understandingLevel: AcademyUnderstandingLevel =
+            parsed?.understandingLevel === "fully_correct" ? "fully_correct" :
+            parsed?.understandingLevel === "mostly_correct" ? "mostly_correct" :
+            parsed?.understandingLevel === "partially_correct" ? "partially_correct" :
+            trackStatus === "passed" ? "fully_correct" :
+            trackStatus === "on_track" ? "mostly_correct" : "incorrect";
         const demonstratedUnderstanding = Array.isArray(parsed?.demonstratedUnderstanding)
             ? parsed.demonstratedUnderstanding.map((item: unknown) => String(item).trim()).filter(Boolean).slice(0, 4)
             : [];
@@ -304,6 +329,7 @@ Evaluation rules:
         return {
             passed: trackStatus === "passed",
             trackStatus,
+            understandingLevel,
             feedback: typeof parsed?.feedback === "string" && parsed.feedback.trim()
                 ? parsed.feedback.trim()
                 : "Navi could not produce clear feedback. Try again with a more concrete explanation.",
@@ -317,6 +343,7 @@ Evaluation rules:
         return {
             passed: false,
             trackStatus: "off_track",
+            understandingLevel: "incorrect",
             feedback: "Navi could not evaluate that answer cleanly. Try again with a clearer explanation in your own words.",
             demonstratedUnderstanding: [],
             missingUnderstanding: ["The answer could not be evaluated cleanly."],

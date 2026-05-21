@@ -6,6 +6,11 @@ import { FORGE_SYSTEM_PROMPT } from "../constants/prompts";
 import { getLanguageWarning, moderateUserText } from "../lib/languageModeration";
 import { saveConversationSummary, updateConversationSummary, loadConversationSummaries, recordTokenUsage } from "../db";
 import { applyFoundryBookCitations, buildFoundryBookContext } from "../lib/foundryBook";
+import {
+    formatAcademyCoachingPolicy,
+    getAcademyCoachingSignals,
+    type AcademyCoachingSignals,
+} from "../lib/academyCoaching";
 import { evaluateKnowledgeCheckLaunchAnswer, getAcademySessionSubtitle, type KnowledgeCheckTrackStatus } from "../lib/academyCompletion";
 import type { AcademyTopicLaunch } from "../lib/academy";
 import type { MarketTrend } from "../db";
@@ -72,6 +77,7 @@ type TestingContinuationContext = {
     demonstratedUnderstanding?: string[];
     missingUnderstanding?: string[];
     evidenceQuote?: string | null;
+    coachingSignals?: AcademyCoachingSignals;
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -93,7 +99,9 @@ function buildChatRoomContext(
 ) {
     const academyMode = academyEntry?.sessionMode ?? "learn";
     const modeInstruction = !academyEntry ? "" : testingMode
-        ? `TESTING MODE: The founder has clicked "Test to Complete". Test their understanding of this lesson through natural conversation. Ask probing questions that reveal whether they truly understand the lesson and can apply it to their own business. Do not lecture — probe for real comprehension. If an answer is shallow or incomplete, explain what is missing and invite a stronger response. Keep it direct but encouraging.`
+        ? `TESTING MODE: The founder has clicked "Test to Complete". Test their understanding of this lesson through natural conversation. Ask probing questions that reveal whether they truly understand the lesson and can apply it to their own business. Do not lecture — probe for real comprehension. If an answer is shallow or incomplete, explain what is missing and invite a stronger response. Keep it direct but encouraging.
+
+${formatAcademyCoachingPolicy()}`
         : academyMode === "apply"
             ? `This conversation is in APPLY mode. Navi should:
 1. state what this lesson was really teaching
@@ -159,10 +167,14 @@ function isTestingClarificationRequest(text: string) {
 function isAcademyEvaluationCompleteEnough(evaluation: {
     passed: boolean;
     trackStatus: KnowledgeCheckTrackStatus;
+    understandingLevel?: "incorrect" | "partially_correct" | "mostly_correct" | "fully_correct";
     demonstratedUnderstanding: string[];
     missingUnderstanding: string[];
-}) {
+}, coachingSignals?: AcademyCoachingSignals) {
+    if (coachingSignals?.shouldComplete) return true;
     if (evaluation.passed || evaluation.trackStatus === "passed") return true;
+    if (evaluation.understandingLevel === "fully_correct") return true;
+    if (evaluation.understandingLevel === "mostly_correct" && evaluation.missingUnderstanding.length <= 1) return true;
     if (evaluation.trackStatus !== "on_track") return false;
     return evaluation.demonstratedUnderstanding.length > 0 && evaluation.missingUnderstanding.length <= 1;
 }
@@ -925,7 +937,7 @@ Start by making the trend real and concrete for them. No vague advice — be dir
     };
 
     const sendLessonCompletionMessage = async (entry: AcademyTopicLaunch) => {
-        const completionPrompt = `The founder just successfully demonstrated real understanding of "${entry.title}" through our conversation. Their lesson is now marked complete in Navi Academy. Send them a brief, warm congratulation. Let them know the lesson is complete. Tell them: to save this conversation and return to Academy, just press "Archive Chat" above — or they can keep chatting to go even deeper on this topic. Keep it short and encouraging.`;
+        const completionPrompt = `The founder just successfully demonstrated real understanding of "${entry.title}" through our conversation. Their lesson is now marked complete in Navi Academy. Give them a clean "you got it" moment, include one concise synthesis of the concept they demonstrated, and let them know the lesson is complete. Tell them: to save this conversation and return to Academy, just press "Archive Chat" above — or they can keep chatting to go even deeper on this topic. Keep it short and encouraging.`;
         const forgeMsg: ChatMessage = { id: `f-${Date.now()}`, role: "forge", text: "", createdAt: new Date().toISOString() };
         setMessages((prev) => [...prev, forgeMsg]);
         setLoading(true);
@@ -956,7 +968,9 @@ Start by making the trend real and concrete for them. No vague advice — be dir
 
 Learning goal: ${entry.learningGoal || "Core understanding of " + entry.title}
 Knowledge check: ${entry.knowledgeCheckPrompt || "What is the core founder judgment this lesson was trying to build?"}
-Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
+Common mistake founders make: ${entry.commonMistake || "Not specified"}
+
+${formatAcademyCoachingPolicy()}`;
 
         const forgeMsg: ChatMessage = { id: `f-${Date.now()}`, role: "forge", text: "", createdAt: new Date().toISOString() };
         setMessages((prev) => [...prev, forgeMsg]);
@@ -985,6 +999,7 @@ Common mistake founders make: ${entry.commonMistake || "Not specified"}`;
             .slice(-12)
             .map((message) => `${message.role === "forge" ? "Navi" : profile.name || "Founder"}: ${message.text}`)
             .join("\n\n");
+        const coachingSignals = getAcademyCoachingSignals(entry, userRequest, history);
         const clarificationPrompt = `The founder is in the "Test to Complete" conversation for "${entry.title}" and is asking for clarification about the evaluation, not submitting a new answer.
 
 Founder request:
@@ -993,7 +1008,9 @@ ${userRequest}
 Recent testing transcript:
 ${testingTranscript}
 
-Answer the request directly. If they ask to be quoted, quote the exact line or phrase from their answer that needs correction. If their answer was actually sound, say that clearly and explain that the issue is likely the test rubric or evaluation path, then ask one final confirmation question only if completion still needs evidence. Do not restart the lesson. Do not use generic reteaching. Keep testing mode active.`;
+${formatAcademyCoachingPolicy(coachingSignals)}
+
+Answer the request directly. If they ask to be quoted, quote the exact line or phrase from their answer that needs correction. If their answer was actually sound, say that clearly and explain that the issue is likely the test rubric or evaluation path, then ask one final confirmation question only if completion still needs evidence. If they are pushing back, acknowledge what they already demonstrated before naming any remaining gap. Do not restart the lesson. Do not use generic reteaching. Keep testing mode active.`;
         const forgeMsg: ChatMessage = { id: `f-${Date.now()}`, role: "forge", text: "", createdAt: new Date().toISOString() };
         setMessages((prev) => [...prev, forgeMsg]);
         try {
@@ -1027,8 +1044,9 @@ Answer the request directly. If they ask to be quoted, quote the exact line or p
         const missing = context.missingUnderstanding?.length
             ? context.missingUnderstanding.map((item) => `- ${item}`).join("\n")
             : "- No specific missing point supplied.";
+        const coachingPolicy = formatAcademyCoachingPolicy(context.coachingSignals);
         const teachingPrompt = trackStatus === "on_track"
-            ? `The founder is in the "Test to Complete" conversation for "${entry.title}". Their answer is close but not complete yet. Do NOT say they failed. Use this evaluation feedback: "${feedback}".
+            ? `The founder is in the "Test to Complete" conversation for "${entry.title}". Their answer is close and may already be sufficient. Do NOT say they failed. Use this evaluation feedback: "${feedback}".
 
 Latest founder answer:
 ${context.latestAnswer}
@@ -1044,8 +1062,10 @@ ${missing}
 
 Best evidence quote from their answer: ${context.evidenceQuote || "None supplied"}
 
-Acknowledge what they got right using their actual wording where useful, then ask one sharper follow-up question that forces only the missing piece into the open. If there is no concrete missing point, say their answer is sufficient and ask for one concise summary rather than reteaching. Keep the test conversational.`
-            : `The founder is in the "Test to Complete" conversation for "${entry.title}", but their answer shows they haven't internalized the core concept yet. Do NOT announce that they failed a test. Use this evaluation feedback to identify what needs reinforcement: "${feedback}".
+${coachingPolicy}
+
+Response rule: start with what they got right. If the policy indicates synthesis, repeated drilling, or frustration, do not ask the same conceptual question again. Instead, give the clean "you got it" synthesis or state the exact refinement directly, then ask at most one concrete application question only if truly necessary. If there is no concrete missing point, say their answer is sufficient and move forward. Keep the test conversational.`
+            : `The founder is in the "Test to Complete" conversation for "${entry.title}", but their answer does not show enough of the core concept yet. Do NOT announce that they failed a test. Use this evaluation feedback to identify what needs reinforcement: "${feedback}".
 
 Latest founder answer:
 ${context.latestAnswer}
@@ -1061,7 +1081,9 @@ ${missing}
 
 Best evidence quote from their answer: ${context.evidenceQuote || "None supplied"}
 
-Re-teach only the most critical missing piece. If you correct them, quote the exact phrase that created the issue. Then ask one direct follow-up question so they can try again in their own words. Do not restart the lesson or ignore what they already got right. Keep testing mode active.`;
+${coachingPolicy}
+
+Re-teach only the most critical missing piece. Validate any correct part first. If you correct them, quote the exact phrase that created the issue. Then ask one direct follow-up question so they can try again in their own words. Do not restart the lesson or ignore what they already got right. Keep testing mode active.`;
         const forgeMsg: ChatMessage = { id: `f-${Date.now()}`, role: "forge", text: "", createdAt: new Date().toISOString() };
         setMessages((prev) => [...prev, forgeMsg]);
         setLoading(true);
@@ -1077,7 +1099,7 @@ Re-teach only the most critical missing piece. If you correct them, quote the ex
             );
         } catch {
             setMessages((prev) => prev.map((m) =>
-                m.id === forgeMsg.id ? { ...m, text: `You're not done yet, but you're close enough to sharpen it. ${feedback} Put it in your own words again, but this time make the practical business move clear.` } : m
+                m.id === forgeMsg.id ? { ...m, text: `You've got part of it. ${feedback} The refinement is the business mechanism. Put that in your own words once more, with the practical business move made clear.` } : m
             ));
         } finally {
             setLoading(false);
@@ -1095,7 +1117,8 @@ Re-teach only the most critical missing piece. If you correct them, quote the ex
                 .map((message) => `${message.role === "forge" ? "Navi" : profile.name || "Founder"}: ${message.text}`)
                 .join("\n\n");
             const evaluation = await evaluateKnowledgeCheckLaunchAnswer(activeAcademyEntry, `Latest answer:\n${userAnswer}\n\nTesting conversation so far:\n${testingTranscript}`);
-            if (isAcademyEvaluationCompleteEnough(evaluation)) {
+            const coachingSignals = getAcademyCoachingSignals(activeAcademyEntry, userAnswer, history, evaluation);
+            if (isAcademyEvaluationCompleteEnough(evaluation, coachingSignals)) {
                 await Promise.resolve(onMarkAcademyLessonCompleted(activeAcademyEntry.id, {
                     knowledgeCheckedAt: new Date().toISOString(),
                     lastCheckResponse: testingTranscript || userAnswer,
@@ -1112,25 +1135,28 @@ Re-teach only the most critical missing piece. If you correct them, quote the ex
                     demonstratedUnderstanding: evaluation.demonstratedUnderstanding,
                     missingUnderstanding: evaluation.missingUnderstanding,
                     evidenceQuote: evaluation.evidenceQuote,
+                    coachingSignals,
                 });
             }
         } catch (error) {
             console.error("auto knowledge check error:", error);
             setTestingMode(true);
             if (activeAcademyEntry) {
+                const fallbackTestingTranscript = history
+                    .slice(-10)
+                    .map((message) => `${message.role === "forge" ? "Navi" : profile.name || "Founder"}: ${message.text}`)
+                    .join("\n\n");
                 void sendTestingContinuationMessage(
                     activeAcademyEntry,
                     "Navi could not evaluate that cleanly, so keep going with a clearer explanation.",
                     "on_track",
                     {
                         latestAnswer: userAnswer,
-                        testingTranscript: history
-                            .slice(-10)
-                            .map((message) => `${message.role === "forge" ? "Navi" : profile.name || "Founder"}: ${message.text}`)
-                            .join("\n\n"),
+                        testingTranscript: fallbackTestingTranscript,
                         demonstratedUnderstanding: [],
                         missingUnderstanding: ["The answer needs to be restated clearly enough to evaluate."],
                         evidenceQuote: null,
+                        coachingSignals: getAcademyCoachingSignals(activeAcademyEntry, userAnswer, history),
                     },
                 );
             } else {
