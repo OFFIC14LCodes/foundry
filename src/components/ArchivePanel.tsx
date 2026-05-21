@@ -39,7 +39,7 @@ const BOOK_CONFIG: Record<FounderBookType, { label: string; color: string; bg: s
     quick_chat: { label: "Quick Chat Book", color: "var(--tekori-muted-text)", bg: "rgba(142,160,181,0.06)", borderColor: "rgba(142,160,181,0.28)" },
     market_intelligence: { label: "Market Intelligence Book", color: "var(--color-success)", bg: "rgba(76,175,138,0.06)", borderColor: "rgba(76,175,138,0.28)" },
     pitch_practice: { label: "Pitch Practice Book", color: "var(--tekori-amber)", bg: "rgba(217,177,93,0.08)", borderColor: "rgba(217,177,93,0.28)" },
-    chat_room: { label: "Chat Room Book", color: "var(--color-text)", bg: "rgba(240,237,232,0.04)", borderColor: "rgba(102,112,133,0.22)" },
+    chat_room: { label: "Chat Room Book", color: "var(--color-text)", bg: "rgba(240,237,232,0.04)", borderColor: "rgba(7,26,47,0.22)" },
 };
 
 function getSourceType(entry: any): SourceType {
@@ -423,7 +423,7 @@ export default function ArchivePanel({
                                 Stage {stageData.id} — {stageData.label}
                             </span>
                         )}
-                        <span style={{ fontSize: 10, color: "rgba(102,112,133,0.74)", fontFamily: "var(--tekori-font-ui)", marginLeft: "auto" }}>
+                        <span style={{ fontSize: 10, color: "rgba(7,26,47,0.74)", fontFamily: "var(--tekori-font-ui)", marginLeft: "auto" }}>
                             {displayDate(entry.date)}
                         </span>
                     </div>
@@ -463,7 +463,7 @@ export default function ArchivePanel({
                         <BookOpen size={12} />
                         {cfg.label}
                     </span>
-                    <span style={{ fontSize: 10, color: "rgba(102,112,133,0.74)", fontFamily: "var(--tekori-font-ui)", marginLeft: "auto" }}>
+                    <span style={{ fontSize: 10, color: "rgba(7,26,47,0.74)", fontFamily: "var(--tekori-font-ui)", marginLeft: "auto" }}>
                         Updated {displayDateTime(book.updatedAt)}
                     </span>
                 </div>
@@ -504,7 +504,7 @@ export default function ArchivePanel({
                                 {stageData && (
                                     <span style={{ fontSize: 9, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: stageData.color, background: `color-mix(in srgb, ${stageData.color} 8%, transparent)`, border: `1px solid color-mix(in srgb, ${stageData.color} 16%, transparent)`, borderRadius: 5, padding: "2px 7px" }}>Stage {stageData.id} — {stageData.label}</span>
                                 )}
-                                <span style={{ fontSize: 10, color: "rgba(102,112,133,0.74)", fontFamily: "var(--tekori-font-ui)" }}>{displayDate(selectedEntry.date)}</span>
+                                <span style={{ fontSize: 10, color: "rgba(7,26,47,0.74)", fontFamily: "var(--tekori-font-ui)" }}>{displayDate(selectedEntry.date)}</span>
                             </div>
                             {/* Title / edit */}
                             {editingTitle ? (
@@ -536,7 +536,7 @@ export default function ArchivePanel({
                     </div>
 
                     {/* Summary content */}
-                    <div style={{ fontSize: 14, color: "rgba(71,84,103,0.88)", lineHeight: 1.8, borderTop: "1px solid rgba(7,26,47,0.06)", paddingTop: 16 }}>
+                    <div style={{ fontSize: 14, color: "rgba(7,26,47,0.88)", lineHeight: 1.8, borderTop: "1px solid rgba(7,26,47,0.06)", paddingTop: 16 }}>
                         {renderArchiveSummary(selectedEntry.summary)}
                     </div>
 
@@ -555,31 +555,31 @@ export default function ArchivePanel({
                                 <div style={{ fontSize: 10, fontFamily: "var(--tekori-font-ui)", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "rgba(216,155,43,0.7)", marginBottom: 12 }}>Workspace Snapshot</div>
                                 {focus && (
                                     <div style={{ marginBottom: 12 }}>
-                                        <div style={{ fontSize: 10, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(102,112,133,0.72)", marginBottom: 4 }}>Focus</div>
+                                        <div style={{ fontSize: 10, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(7,26,47,0.72)", marginBottom: 4 }}>Focus</div>
                                         <div style={{ fontSize: 13, color: "rgba(16,32,51,0.75)", lineHeight: 1.5 }}>{focus}</div>
                                     </div>
                                 )}
                                 {userNotes.length > 0 && (
                                     <div style={{ marginBottom: 12 }}>
-                                        <div style={{ fontSize: 10, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(102,112,133,0.72)", marginBottom: 4 }}>Founder Notes</div>
+                                        <div style={{ fontSize: 10, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(7,26,47,0.72)", marginBottom: 4 }}>Founder Notes</div>
                                         <ul style={{ paddingLeft: 16, margin: 0 }}>
-                                            {userNotes.map((note, i) => <li key={i} style={{ fontSize: 13, color: "rgba(71,84,103,0.88)", lineHeight: 1.6 }}>{note}</li>)}
+                                            {userNotes.map((note, i) => <li key={i} style={{ fontSize: 13, color: "rgba(7,26,47,0.88)", lineHeight: 1.6 }}>{note}</li>)}
                                         </ul>
                                     </div>
                                 )}
                                 {nextSteps.length > 0 && (
                                     <div style={{ marginBottom: 12 }}>
-                                        <div style={{ fontSize: 10, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(102,112,133,0.72)", marginBottom: 4 }}>Next Actions</div>
+                                        <div style={{ fontSize: 10, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(7,26,47,0.72)", marginBottom: 4 }}>Next Actions</div>
                                         <ul style={{ paddingLeft: 16, margin: 0 }}>
-                                            {nextSteps.map((step, i) => <li key={i} style={{ fontSize: 13, color: "rgba(71,84,103,0.88)", lineHeight: 1.6 }}>{step}</li>)}
+                                            {nextSteps.map((step, i) => <li key={i} style={{ fontSize: 13, color: "rgba(7,26,47,0.88)", lineHeight: 1.6 }}>{step}</li>)}
                                         </ul>
                                     </div>
                                 )}
                                 {(decisions.length > 0 || openQuestions.length > 0) && (
                                     <div>
-                                        <div style={{ fontSize: 10, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(102,112,133,0.72)", marginBottom: 4 }}>Open Threads</div>
+                                        <div style={{ fontSize: 10, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(7,26,47,0.72)", marginBottom: 4 }}>Open Threads</div>
                                         <ul style={{ paddingLeft: 16, margin: 0 }}>
-                                            {[...decisions, ...openQuestions].map((item, i) => <li key={i} style={{ fontSize: 13, color: "rgba(71,84,103,0.88)", lineHeight: 1.6 }}>{item}</li>)}
+                                            {[...decisions, ...openQuestions].map((item, i) => <li key={i} style={{ fontSize: 13, color: "rgba(7,26,47,0.88)", lineHeight: 1.6 }}>{item}</li>)}
                                         </ul>
                                     </div>
                                 )}
@@ -626,7 +626,7 @@ export default function ArchivePanel({
                                     <BookOpen size={12} />
                                     {cfg.label}
                                 </span>
-                                <span style={{ fontSize: 10, color: "rgba(102,112,133,0.74)", fontFamily: "var(--tekori-font-ui)" }}>
+                                <span style={{ fontSize: 10, color: "rgba(7,26,47,0.74)", fontFamily: "var(--tekori-font-ui)" }}>
                                     Updated {displayDateTime(selectedBook.updatedAt)}
                                 </span>
                             </div>
@@ -637,7 +637,7 @@ export default function ArchivePanel({
                         <button onClick={() => setSelectedBook(null)} style={{ padding: "6px 12px", background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 8, color: "var(--color-text-muted)", fontSize: 12, cursor: "pointer", height: 32 }}>✕</button>
                     </div>
 
-                    <div style={{ fontSize: 14, color: "rgba(71,84,103,0.88)", lineHeight: 1.8, borderTop: "1px solid rgba(7,26,47,0.06)", paddingTop: 16 }}>
+                    <div style={{ fontSize: 14, color: "rgba(7,26,47,0.88)", lineHeight: 1.8, borderTop: "1px solid rgba(7,26,47,0.06)", paddingTop: 16 }}>
                         {renderArchiveSummary(selectedBook.content)}
                     </div>
 
@@ -652,7 +652,7 @@ export default function ArchivePanel({
                                 {bookSources.map((source) => (
                                     <div key={source.id} style={{ padding: "10px 12px", borderRadius: 10, background: "rgba(7,26,47,0.03)", border: "1px solid rgba(7,26,47,0.06)" }}>
                                         <div style={{ fontSize: 13, color: "rgba(16,32,51,0.78)", lineHeight: 1.4 }}>{source.sourceTitle || "Archived conversation"}</div>
-                                        <div style={{ marginTop: 4, fontSize: 11, color: "rgba(102,112,133,0.68)", fontFamily: "var(--tekori-font-ui)" }}>
+                                        <div style={{ marginTop: 4, fontSize: 11, color: "rgba(7,26,47,0.68)", fontFamily: "var(--tekori-font-ui)" }}>
                                             {source.sourceStageId ? `${source.sourceType === "academy" ? "Academy Stage" : "Stage"} ${source.sourceStageId} · ` : ""}{displayDateTime(source.appliedAt)}
                                         </div>
                                     </div>
@@ -733,7 +733,7 @@ export default function ArchivePanel({
                                                 background: active ? `${opt.color}20` : "rgba(7,26,47,0.04)",
                                                 border: `1px solid ${active ? opt.color + "50" : "rgba(7,26,47,0.10)"}`,
                                                 borderRadius: 20,
-                                                color: active ? opt.color : "rgba(102,112,133,0.68)",
+                                                color: active ? opt.color : "rgba(7,26,47,0.68)",
                                                 fontSize: 11,
                                                 fontFamily: "var(--tekori-font-ui)",
                                                 fontWeight: active ? 700 : 500,
@@ -760,7 +760,7 @@ export default function ArchivePanel({
                                 </div>
                             ) : (
                                 <div style={{ background: "rgba(7,26,47,0.03)", border: "1px solid rgba(7,26,47,0.06)", borderRadius: 16, padding: "36px 24px", color: "var(--color-text-muted)", fontSize: 13, lineHeight: 1.7, textAlign: "center" }}>
-                                    <BookOpen size={30} style={{ marginBottom: 14, color: "rgba(102,112,133,0.68)" }} />
+                                    <BookOpen size={30} style={{ marginBottom: 14, color: "rgba(7,26,47,0.68)" }} />
                                     <div style={{ fontFamily: "var(--tekori-font-brand)", fontSize: 16, color: "var(--color-text)", marginBottom: 8 }}>No books yet.</div>
                                     <div>Archive a conversation with workspace notes and Navi will build the matching book here.</div>
                                 </div>
@@ -801,7 +801,7 @@ export default function ArchivePanel({
                             position: "fixed",
                             inset: 0,
                             zIndex: 400,
-                            background: "rgba(4,4,5,0.80)",
+                            background: "rgba(7,26,47,0.80)",
                             backdropFilter: "blur(14px)",
                             WebkitBackdropFilter: "blur(14px)",
                             display: "flex",
@@ -828,13 +828,13 @@ export default function ArchivePanel({
                             <div style={{ fontSize: 13, color: "var(--color-text-muted)", textAlign: "center", marginBottom: 6, fontFamily: "var(--tekori-font-ui)", lineHeight: 1.5 }}>
                                 {title}
                             </div>
-                            <div style={{ fontSize: 12, color: "rgba(102,112,133,0.74)", textAlign: "center", marginBottom: 24, fontFamily: "var(--tekori-font-ui)" }}>
+                            <div style={{ fontSize: 12, color: "rgba(7,26,47,0.74)", textAlign: "center", marginBottom: 24, fontFamily: "var(--tekori-font-ui)" }}>
                                 This cannot be undone.
                             </div>
                             <div style={{ display: "flex", gap: 10 }}>
                                 <button
                                     onClick={() => setConfirmDeleteId(null)}
-                                    style={{ flex: 1, padding: "13px 0", background: "rgba(7,26,47,0.05)", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 12, color: "rgba(102,112,133,0.78)", fontSize: 14, fontFamily: "var(--tekori-font-ui)", fontWeight: 500, cursor: "pointer" }}
+                                    style={{ flex: 1, padding: "13px 0", background: "rgba(7,26,47,0.05)", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 12, color: "rgba(7,26,47,0.78)", fontSize: 14, fontFamily: "var(--tekori-font-ui)", fontWeight: 500, cursor: "pointer" }}
                                 >
                                     Cancel
                                 </button>

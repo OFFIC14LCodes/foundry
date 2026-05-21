@@ -215,17 +215,19 @@ export function AnimatedChatText({ text, createdAt }: { text: string; createdAt?
     return (
         <div style={{ textAlign: "left", width: "100%" }}>
             <style>{`
-                @keyframes forgeLetterCool {
+                @keyframes naviWordSettle {
                     0% {
-                        color: #ff6a3d;
-                        text-shadow: 0 0 10px rgba(216,155,43,0.42), 0 0 18px rgba(244,182,66,0.18);
+                        color: #102033;
+                        opacity: 0.68;
+                        text-shadow: 0 0 10px rgba(201,137,36,0.50), 0 0 4px rgba(244,182,66,0.24);
                     }
-                    35% {
-                        color: #f59a69;
-                        text-shadow: 0 0 7px rgba(216,155,43,0.24);
+                    60% {
+                        opacity: 1;
+                        text-shadow: 0 0 3px rgba(201,137,36,0.10);
                     }
                     100% {
-                        color: #d8d4ce;
+                        color: #102033;
+                        opacity: 1;
                         text-shadow: none;
                     }
                 }
@@ -257,7 +259,7 @@ export function AnimatedChatText({ text, createdAt }: { text: string; createdAt?
                                                             style={{
                                                                 color: seg.bold ? "var(--color-text)" : "var(--color-text)",
                                                                 fontWeight: seg.bold ? 700 : undefined,
-                                                                animation: "forgeLetterCool 1s ease forwards",
+                                                                animation: "naviWordSettle 1.4s ease forwards",
                                                                 display: "inline-block",
                                                             }}
                                                         >

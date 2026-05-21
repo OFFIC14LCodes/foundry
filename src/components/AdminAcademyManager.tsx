@@ -553,7 +553,7 @@ function AdminShell({ children, onBack }: { children: ReactNode; onBack: () => v
                 </button>
                 <div>
                     <div style={{ fontSize: 15, fontWeight: 600 }}>Navi Academy Admin</div>
-                    <div style={{ fontSize: 11, color: "#6E675F" }}>Content and curriculum management</div>
+                    <div style={{ fontSize: 11, color: "var(--color-text-muted)" }}>Content and curriculum management</div>
                 </div>
             </div>
             <div style={{ flex: 1, overflowY: "auto", padding: "20px 16px 36px" }}>

@@ -56,7 +56,7 @@ function NavItem({
                 border: isPrimary ? "1px solid rgba(216,155,43,0.14)" : "none",
                 borderLeft: isPrimary ? "2px solid rgba(216,155,43,0.55)" : "2px solid transparent",
                 borderRadius: isPrimary ? 12 : 0,
-                color: isPrimary ? "var(--foundry-text-primary)" : emphasis === "muted" ? "rgba(102,112,133,0.72)" : "var(--foundry-text-secondary)",
+                color: isPrimary ? "var(--foundry-text-primary)" : emphasis === "muted" ? "rgba(7,26,47,0.46)" : "var(--foundry-text-secondary)",
                 fontSize: isPrimary ? 13 : 12,
                 cursor: "pointer",
                 textAlign: "left",
@@ -72,7 +72,7 @@ function NavItem({
                 e.currentTarget.style.background = isPrimary ? "rgba(216,155,43,0.11)" : "rgba(7,26,47,0.04)";
             }}
             onMouseLeave={e => {
-                e.currentTarget.style.color = isPrimary ? "var(--foundry-text-primary)" : emphasis === "muted" ? "rgba(102,112,133,0.72)" : "var(--foundry-text-secondary)";
+                e.currentTarget.style.color = isPrimary ? "var(--foundry-text-primary)" : emphasis === "muted" ? "rgba(7,26,47,0.46)" : "var(--foundry-text-secondary)";
                 e.currentTarget.style.background = isPrimary ? "rgba(216,155,43,0.075)" : "transparent";
             }}
         >
@@ -82,7 +82,7 @@ function NavItem({
             <span style={{ flex: 1, display: "grid", gap: 2 }}>
                 <span>{label}</span>
                 {description && (
-                    <span style={{ color: "rgba(102,112,133,0.72)", fontSize: 10, lineHeight: 1.45, fontWeight: 500 }}>
+                    <span style={{ color: "rgba(7,26,47,0.46)", fontSize: 10, lineHeight: 1.45, fontWeight: 500 }}>
                         {description}
                     </span>
                 )}
@@ -111,7 +111,7 @@ function NavSection({ label, children }: { label: string; children: ReactNode })
         <div style={{ padding: "8px 0" }}>
             <div style={{
                 padding: "0 16px 7px",
-                color: "rgba(102,112,133,0.72)",
+                color: "rgba(7,26,47,0.46)",
                 fontSize: 10,
                 letterSpacing: "0.12em",
                 textTransform: "uppercase",

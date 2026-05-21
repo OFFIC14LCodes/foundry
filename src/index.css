@@ -32,8 +32,8 @@
   --color-surface: #FFFFFF;
   --color-surface-elevated: #FFFCF6;
   --color-text: #102033;
-  --color-text-muted: #667085;
-  --color-text-soft: #475467;
+  --color-text-muted: #4e6177;
+  --color-text-soft: #354e63;
   --color-primary: #071A2F;
   --color-primary-hover: #0B1F35;
   --color-accent: #D89B2B;
@@ -149,7 +149,7 @@
   --foundry-text-primary: var(--color-text);
   --foundry-text-secondary: var(--color-text-soft);
   --foundry-text-muted: var(--color-text-muted);
-  --foundry-text-disabled: rgba(102,112,133,0.62);
+  --foundry-text-disabled: rgba(7,26,47,0.62);
   --foundry-radius-control: var(--tekori-radius-md);
   --foundry-radius-card: var(--tekori-radius-lg);
   --foundry-radius-command: var(--tekori-radius-xl);
@@ -323,6 +323,10 @@ select:focus-visible,
   background: var(--foundry-surface-control);
   border: 1px solid var(--color-border);
   border-radius: var(--foundry-radius-control);
+  transition: border-color 0.15s;
+}
+.foundry-control-surface:focus-within {
+  border-color: rgba(201, 137, 36, 0.45);
 }
 
 .foundry-modal-surface {

@@ -63,12 +63,12 @@ const SCENARIO_CONTEXT: Record<Scenario, { persona: string; tips: string[]; colo
     elevator: {
         persona: "A seasoned entrepreneur with about 60 seconds before the elevator arrives.",
         tips: ["One sentence on what you do", "One sentence on who it's for", "One clear call to action"],
-        color: "#9B59B6",
+        color: "var(--tekori-amber)",
     },
     partner: {
         persona: "A potential business partner evaluating whether this is worth their time.",
         tips: ["Lead with complementary skills", "Be clear on equity expectations", "Show traction or momentum"],
-        color: "#3498DB",
+        color: "var(--tekori-slate-navy)",
     },
 };
 
@@ -98,7 +98,7 @@ function stripScoresJson(text: string) {
 }
 
 function scoreColor(score?: number | null) {
-    if (!score) return "rgba(102,112,133,0.45)";
+    if (!score) return "rgba(7,26,47,0.45)";
     if (score >= 4) return "var(--color-success)";
     if (score === 3) return "var(--tekori-gold)";
     return "rgba(216,155,43,0.7)";
@@ -246,10 +246,10 @@ function ScoreCard({ label, value }: { label: string; value?: number | null }) {
     const color = scoreColor(safeValue);
     return (
         <div style={{ background: "rgba(7,26,47,0.03)", border: "1px solid rgba(7,26,47,0.07)", borderRadius: 12, padding: 16 }}>
-            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(71,84,103,0.88)", fontFamily: "var(--tekori-font-ui)", marginBottom: 8 }}>{label}</div>
+            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(7,26,47,0.88)", fontFamily: "var(--tekori-font-ui)", marginBottom: 8 }}>{label}</div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
                 <span style={{ fontSize: 36, color, fontFamily: "var(--tekori-font-brand)", lineHeight: 1 }}>{safeValue || "—"}</span>
-                <span style={{ fontSize: 14, color: "rgba(102,112,133,0.74)", fontFamily: "var(--tekori-font-ui)" }}>/5</span>
+                <span style={{ fontSize: 14, color: "rgba(7,26,47,0.74)", fontFamily: "var(--tekori-font-ui)" }}>/5</span>
             </div>
             <div style={{ display: "flex", gap: 5, marginTop: 10 }}>
                 {[1, 2, 3, 4, 5].map(dot => (
@@ -265,10 +265,10 @@ function OverallScoreCard({ value }: { value?: number | null }) {
     const color = scoreColor(safeValue);
     return (
         <div style={{ background: "rgba(7,26,47,0.03)", border: "1px solid rgba(7,26,47,0.07)", borderRadius: 12, padding: 18, marginBottom: 18 }}>
-            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(71,84,103,0.88)", fontFamily: "var(--tekori-font-ui)", marginBottom: 8 }}>Overall</div>
+            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(7,26,47,0.88)", fontFamily: "var(--tekori-font-ui)", marginBottom: 8 }}>Overall</div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginBottom: 12 }}>
                 <span style={{ fontSize: 48, color, fontFamily: "var(--tekori-font-brand)", lineHeight: 1 }}>{safeValue || "—"}</span>
-                <span style={{ fontSize: 14, color: "rgba(102,112,133,0.74)", fontFamily: "var(--tekori-font-ui)" }}>/5</span>
+                <span style={{ fontSize: 14, color: "rgba(7,26,47,0.74)", fontFamily: "var(--tekori-font-ui)" }}>/5</span>
             </div>
             <div style={{ height: 6, borderRadius: 3, background: "rgba(7,26,47,0.08)", overflow: "hidden" }}>
                 <div style={{ width: `${Math.max(0, Math.min(100, (safeValue / 5) * 100))}%`, height: "100%", background: color, borderRadius: 3 }} />
@@ -315,7 +315,7 @@ function FeedbackSections({ text, scores }: { text: string; scores: ParsedScores
         <>
             {rendered.length ? rendered : <FeedbackText text={withoutScores} />}
             {scores?.encouragement && (
-                <div style={{ borderTop: "1px solid rgba(7,26,47,0.07)", paddingTop: 16, marginTop: 4, textAlign: "center", fontSize: 14, fontFamily: "var(--tekori-font-ui)", fontStyle: "italic", color: "rgba(71,84,103,0.88)", lineHeight: 1.7 }}>
+                <div style={{ borderTop: "1px solid rgba(7,26,47,0.07)", paddingTop: 16, marginTop: 4, textAlign: "center", fontSize: 14, fontFamily: "var(--tekori-font-ui)", fontStyle: "italic", color: "rgba(7,26,47,0.88)", lineHeight: 1.7 }}>
                     {scores.encouragement}
                 </div>
             )}
@@ -331,7 +331,7 @@ function TranscriptReplay({ messages }: { messages: PitchMessage[] }) {
                     <div style={{
                         maxWidth: "82%",
                         background: msg.role === "user" ? "rgba(216,155,43,0.12)" : "rgba(7,26,47,0.04)",
-                        color: msg.role === "user" ? "rgba(16,32,51,0.8)" : "rgba(102,112,133,0.78)",
+                        color: msg.role === "user" ? "rgba(16,32,51,0.8)" : "rgba(7,26,47,0.78)",
                         borderRadius: 10,
                         padding: "8px 12px",
                         fontSize: 13,
@@ -805,7 +805,7 @@ export default function PitchPracticeScreen({
                                     borderRadius: 10,
                                     border: setupTab === tab ? "1px solid rgba(216,155,43,0.45)" : "1px solid rgba(7,26,47,0.07)",
                                     background: setupTab === tab ? "rgba(216,155,43,0.1)" : "rgba(7,26,47,0.025)",
-                                    color: setupTab === tab ? "var(--tekori-gold)" : "rgba(102,112,133,0.74)",
+                                    color: setupTab === tab ? "var(--tekori-gold)" : "rgba(7,26,47,0.74)",
                                     fontSize: 12,
                                     fontWeight: 700,
                                     fontFamily: "var(--tekori-font-ui)",
@@ -989,7 +989,7 @@ export default function PitchPracticeScreen({
                                     return (
                                         <div key={id} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 10, padding: "7px 0", borderTop: "1px solid rgba(7,26,47,0.04)" }}>
                                             <div style={{ fontSize: 12, color: "rgba(16,32,51,0.65)", fontFamily: "var(--tekori-font-ui)" }}>{scenarioLabelFor(id)}</div>
-                                            <div style={{ fontSize: 12, color: best ? "var(--tekori-amber)" : "rgba(102,112,133,0.45)", fontFamily: "var(--tekori-font-ui)" }}>
+                                            <div style={{ fontSize: 12, color: best ? "var(--tekori-amber)" : "rgba(7,26,47,0.45)", fontFamily: "var(--tekori-font-ui)" }}>
                                                 {best && bestAverage !== null ? `★ ${bestAverage.toFixed(1)} overall   ${formatSessionDate(best.createdAt)}` : "★ —  No sessions yet"}
                                             </div>
                                         </div>
@@ -1047,7 +1047,7 @@ export default function PitchPracticeScreen({
                                     <FeedbackText text={historyModal.feedback} />
                                 </div>
                             )}
-                            <div style={{ fontSize: 13, color: "rgba(71,84,103,0.88)", fontFamily: "var(--tekori-font-ui)", marginBottom: 10 }}>Session Transcript</div>
+                            <div style={{ fontSize: 13, color: "rgba(7,26,47,0.88)", fontFamily: "var(--tekori-font-ui)", marginBottom: 10 }}>Session Transcript</div>
                             <TranscriptReplay messages={historyModal.transcript} />
                         </div>
                     </div>
@@ -1110,7 +1110,7 @@ export default function PitchPracticeScreen({
                             </div>
 
                             <div style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.06)", borderRadius: 12, marginBottom: 14, overflow: "hidden" }}>
-                                <button onClick={() => setTranscriptOpen(prev => !prev)} style={{ width: "100%", background: "transparent", border: "none", color: "rgba(71,84,103,0.88)", fontSize: 13, fontFamily: "var(--tekori-font-ui)", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px", cursor: "pointer" }}>
+                                <button onClick={() => setTranscriptOpen(prev => !prev)} style={{ width: "100%", background: "transparent", border: "none", color: "rgba(7,26,47,0.88)", fontSize: 13, fontFamily: "var(--tekori-font-ui)", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px", cursor: "pointer" }}>
                                     <span>Session Transcript</span>
                                     <span>{transcriptOpen ? "↑" : "↓"}</span>
                                 </button>
@@ -1209,7 +1209,7 @@ export default function PitchPracticeScreen({
                         <div style={{ fontSize: 12, color: "var(--color-text-muted)", fontFamily: "var(--tekori-font-ui)", marginBottom: 8 }}>Tips for this scenario:</div>
                         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                             {SCENARIO_CONTEXT[scenario].tips.map(tip => (
-                                <div key={tip} style={{ fontSize: 13, color: "rgba(71,84,103,0.88)", fontFamily: "var(--tekori-font-ui)", lineHeight: 1.5 }}>• {tip}</div>
+                                <div key={tip} style={{ fontSize: 13, color: "rgba(7,26,47,0.88)", fontFamily: "var(--tekori-font-ui)", lineHeight: 1.5 }}>• {tip}</div>
                             ))}
                         </div>
                     </div>
@@ -1262,7 +1262,7 @@ export default function PitchPracticeScreen({
             {/* Voice status bar */}
             {mode === "voice" && (
                 <div style={{ padding: "7px 16px", background: "rgba(216,155,43,0.07)", borderTop: "1px solid rgba(216,155,43,0.12)", display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                    <div style={{ width: listening ? 8 : speaking ? 18 : 7, height: 7, borderRadius: listening ? "50%" : speaking ? 999 : "50%", background: listening ? "#D8563A" : speaking ? "var(--tekori-gold)" : "rgba(102,112,133,0.45)", animation: listening || speaking ? "forgePulse 1s infinite" : "none" }} />
+                    <div style={{ width: listening ? 8 : speaking ? 18 : 7, height: 7, borderRadius: listening ? "50%" : speaking ? 999 : "50%", background: listening ? "#D8563A" : speaking ? "var(--tekori-gold)" : "rgba(7,26,47,0.45)", animation: listening || speaking ? "forgePulse 1s infinite" : "none" }} />
                     <span style={{ fontSize: 13, color: "var(--foundry-text-muted)", fontFamily: "var(--tekori-font-ui)" }}>
                         {listening ? "Listening... speak now" : speaking ? "Navi is responding..." : "Tap to speak"}
                     </span>

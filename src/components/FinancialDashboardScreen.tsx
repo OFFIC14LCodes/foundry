@@ -65,7 +65,7 @@ const BUCKET_COLORS: Record<ProfitBucketType, string> = {
     profit: "var(--color-success)",
     owner_comp: "var(--color-success)",
     tax: "var(--color-success)",
-    opex: "rgba(102,112,133,0.45)",
+    opex: "rgba(7,26,47,0.45)",
 };
 
 const INVOICE_STORAGE_KEY_PREFIX = "foundry_invoices_";
@@ -790,7 +790,7 @@ Be the partner who has been watching the whole time.`;
                                 <button
                                     onClick={handleRefreshHealthSummary}
                                     title="Refresh"
-                                    style={{ position: "absolute", top: 12, right: 12, background: "none", border: "none", color: "rgba(102,112,133,0.74)", fontSize: 13, cursor: "pointer", padding: 4 }}
+                                    style={{ position: "absolute", top: 12, right: 12, background: "none", border: "none", color: "rgba(7,26,47,0.74)", fontSize: 13, cursor: "pointer", padding: 4 }}
                                 >
                                     ↻
                                 </button>
@@ -964,8 +964,8 @@ Be the partner who has been watching the whole time.`;
                             </div>
                             {chartIsEmpty ? (
                                 <div style={{ textAlign: "center", padding: "28px 0 20px" }}>
-                                    <div style={{ fontSize: 32, color: "rgba(102,112,133,0.52)", marginBottom: 12 }}>▦</div>
-                                    <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-ui)", color: "rgba(102,112,133,0.78)", marginBottom: 6 }}>No financial data yet</div>
+                                    <div style={{ fontSize: 32, color: "rgba(7,26,47,0.52)", marginBottom: 12 }}>▦</div>
+                                    <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-ui)", color: "rgba(7,26,47,0.78)", marginBottom: 6 }}>No financial data yet</div>
                                     <div style={{ marginBottom: 16 }}>
                                         <HelpTooltip content="Add your first expense or revenue entry to see your monthly cash flow history here." />
                                     </div>
@@ -1167,7 +1167,7 @@ Be the partner who has been watching the whole time.`;
             {/* ── Bucket Editor ─────────────────────────────────────────────── */}
             {editingBuckets && (
                 <div style={{ position: "fixed", inset: 0, background: "rgba(7,26,47,0.42)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setEditingBuckets(false)}>
-                    <div style={{ background: "rgb(16,16,18)", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 16, padding: 24, width: "100%", maxWidth: 420, boxSizing: "border-box" }} onClick={(e) => e.stopPropagation()}>
+                    <div style={{ background: "var(--foundry-surface-primary)", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 16, padding: 24, width: "100%", maxWidth: 420, boxSizing: "border-box" }} onClick={(e) => e.stopPropagation()}>
                         <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-ui)", fontWeight: 700, color: "var(--color-text)", marginBottom: 18 }}>Edit Profit First Allocations</div>
                         {bucketDraft.map((row, idx) => (
                             <div key={row.bucketType} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
@@ -1191,7 +1191,7 @@ Be the partner who has been watching the whole time.`;
             {/* ── Invoice Create/Edit ───────────────────────────────────────── */}
             {showInvoiceModal && (
                 <div style={{ position: "fixed", inset: 0, background: "rgba(7,26,47,0.42)", zIndex: 2000, display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "40px 20px", overflowY: "auto" }} onClick={() => setShowInvoiceModal(false)}>
-                    <div style={{ background: "rgb(16,16,18)", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 16, padding: 24, width: "100%", maxWidth: 460, boxSizing: "border-box" }} onClick={(e) => e.stopPropagation()}>
+                    <div style={{ background: "var(--foundry-surface-primary)", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 16, padding: 24, width: "100%", maxWidth: 460, boxSizing: "border-box" }} onClick={(e) => e.stopPropagation()}>
                         <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-ui)", fontWeight: 700, color: "var(--color-text)", marginBottom: 18 }}>{editingInvoice ? "Edit Invoice" : "New Invoice"}</div>
                         {[
                             { label: "Client Name *", field: "clientName", type: "text", placeholder: "Acme Corp" },
@@ -1232,7 +1232,7 @@ Be the partner who has been watching the whole time.`;
             {/* ── Tax Set Aside ─────────────────────────────────────────────── */}
             {showTaxAsideModal && (
                 <div style={{ position: "fixed", inset: 0, background: "rgba(7,26,47,0.42)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowTaxAsideModal(false)}>
-                    <div style={{ background: "rgb(16,16,18)", border: "1px solid rgba(232,196,42,0.3)", borderRadius: 16, padding: 24, width: "100%", maxWidth: 380, boxSizing: "border-box" }} onClick={(e) => e.stopPropagation()}>
+                    <div style={{ background: "var(--foundry-surface-primary)", border: "1px solid rgba(232,196,42,0.3)", borderRadius: 16, padding: 24, width: "100%", maxWidth: 380, boxSizing: "border-box" }} onClick={(e) => e.stopPropagation()}>
                         <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-ui)", fontWeight: 700, color: "var(--color-text)", marginBottom: 10 }}>Set Aside for Taxes</div>
                         <div style={{ marginBottom: 14 }}><HelpTooltip content="Based on estimated taxable income from your ledger, this is your quarterly tax reserve." /></div>
                         <div style={{ textAlign: "center", marginBottom: 18 }}>
@@ -1248,7 +1248,7 @@ Be the partner who has been watching the whole time.`;
             {/* ── Starting Cash ─────────────────────────────────────────────── */}
             {showStartingCashModal && (
                 <div style={{ position: "fixed", inset: 0, background: "rgba(7,26,47,0.42)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowStartingCashModal(false)}>
-                    <div style={{ background: "rgb(16,16,18)", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 16, padding: 24, width: "100%", maxWidth: 380, boxSizing: "border-box" }} onClick={(e) => e.stopPropagation()}>
+                    <div style={{ background: "var(--foundry-surface-primary)", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 16, padding: 24, width: "100%", maxWidth: 380, boxSizing: "border-box" }} onClick={(e) => e.stopPropagation()}>
                         <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
                             <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-ui)", fontWeight: 700, color: "var(--color-text)" }}>Update Starting Cash</div>
                             <HelpTooltip content="Enter your current confirmed cash balance. This replaces the estimated figure and gives you accurate runway and burn calculations." />
@@ -1270,7 +1270,7 @@ Be the partner who has been watching the whole time.`;
             {/* ── Add Revenue (quick) ───────────────────────────────────────── */}
             {showAddRevenueModal && (
                 <div style={{ position: "fixed", inset: 0, background: "rgba(7,26,47,0.42)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowAddRevenueModal(false)}>
-                    <div style={{ background: "rgb(16,16,18)", border: "1px solid rgba(76,175,138,0.2)", borderRadius: 16, padding: 24, width: "100%", maxWidth: 380, boxSizing: "border-box" }} onClick={(e) => e.stopPropagation()}>
+                    <div style={{ background: "var(--foundry-surface-primary)", border: "1px solid rgba(76,175,138,0.2)", borderRadius: 16, padding: 24, width: "100%", maxWidth: 380, boxSizing: "border-box" }} onClick={(e) => e.stopPropagation()}>
                         <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-ui)", fontWeight: 700, color: "var(--color-text)", marginBottom: 16 }}>Add Revenue</div>
                         {[
                             { label: "Label *", field: "label", type: "text", placeholder: "Client payment" },
@@ -1303,7 +1303,7 @@ Be the partner who has been watching the whole time.`;
             {/* ── Add Expense (quick) ───────────────────────────────────────── */}
             {showAddExpenseModal && (
                 <div style={{ position: "fixed", inset: 0, background: "rgba(7,26,47,0.42)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowAddExpenseModal(false)}>
-                    <div style={{ background: "rgb(16,16,18)", border: "1px solid rgba(217,106,85,0.22)", borderRadius: 16, padding: 24, width: "100%", maxWidth: 380, boxSizing: "border-box" }} onClick={(e) => e.stopPropagation()}>
+                    <div style={{ background: "var(--foundry-surface-primary)", border: "1px solid rgba(217,106,85,0.22)", borderRadius: 16, padding: 24, width: "100%", maxWidth: 380, boxSizing: "border-box" }} onClick={(e) => e.stopPropagation()}>
                         <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-ui)", fontWeight: 700, color: "var(--color-text)", marginBottom: 16 }}>Add Expense</div>
                         {[
                             { label: "Label *", field: "label", type: "text", placeholder: "AWS hosting" },

@@ -175,7 +175,7 @@ function SourceCountsPanel({
                 What Navi used {expanded ? "↓" : "→"}
             </button>
             {expanded && (
-                <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 5, color: "rgba(71,84,103,0.88)", fontSize: 12, fontFamily: "var(--tekori-font-ui)", lineHeight: 1.55 }}>
+                <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 5, color: "rgba(7,26,47,0.88)", fontSize: 12, fontFamily: "var(--tekori-font-ui)", lineHeight: 1.55 }}>
                     <div>• {counts.journal_entries ?? 0} journal entries this week</div>
                     <div>• {counts.decisions ?? 0} decisions logged</div>
                     <div>• {counts.chat_summaries ?? 0} Navi conversations</div>
@@ -407,7 +407,7 @@ export default function BriefingsScreen({
                         {generating ? "Writing..." : hasReachedLimit ? "Preview limit reached" : canGenerate ? "+ New" : "Up to date"}
                     </button>
                     {nextBriefingLabel && (
-                        <div style={{ maxWidth: 190, textAlign: "right", fontSize: 10, color: "rgba(102,112,133,0.74)", fontFamily: "var(--tekori-font-ui)", lineHeight: 1.35 }}>
+                        <div style={{ maxWidth: 190, textAlign: "right", fontSize: 10, color: "rgba(7,26,47,0.74)", fontFamily: "var(--tekori-font-ui)", lineHeight: 1.35 }}>
                             {nextBriefingLabel}
                         </div>
                     )}
@@ -471,7 +471,7 @@ export default function BriefingsScreen({
                             fontWeight: 700, color: "var(--color-text)", marginBottom: 10,
                         }}>Your first Monday Briefing</div>
                         <div style={{
-                            fontSize: 14, color: "rgba(102,112,133,0.74)", fontFamily: "var(--tekori-font-ui)",
+                            fontSize: 14, color: "rgba(7,26,47,0.74)", fontFamily: "var(--tekori-font-ui)",
                             lineHeight: 1.7, maxWidth: 400,
                             margin: "0 0 24px",
                         }}>
@@ -488,7 +488,7 @@ export default function BriefingsScreen({
                         }}>
                             {generating ? "Navi is writing..." : hasReachedLimit ? "Preview limit reached" : "Generate My First Briefing →"}
                         </button>
-                        <div style={{ marginTop: 12, maxWidth: 420, color: "rgba(102,112,133,0.56)", fontSize: 12, fontFamily: "var(--tekori-font-ui)", lineHeight: 1.6 }}>
+                        <div style={{ marginTop: 12, maxWidth: 420, color: "rgba(7,26,47,0.56)", fontSize: 12, fontFamily: "var(--tekori-font-ui)", lineHeight: 1.6 }}>
                             Briefings are generated weekly. You can generate one now and Navi will deliver them automatically every Monday.
                         </div>
                     </div>
@@ -554,7 +554,7 @@ export default function BriefingsScreen({
                                             </span>
                                         </div>
                                         {isFirst && (
-                                            <div style={{ fontSize: 12, color: "#68625C", marginTop: 3, lineHeight: 1.3 }}>
+                                            <div style={{ fontSize: 12, color: "var(--color-text-muted)", marginTop: 3, lineHeight: 1.3 }}>
                                                 {formatDate(briefing.createdAt)}
                                             </div>
                                         )}
@@ -574,7 +574,7 @@ export default function BriefingsScreen({
                                                 background: "rgba(7,26,47,0.035)",
                                                 border: "1px solid rgba(7,26,47,0.08)",
                                                 borderRadius: 8,
-                                                color: copiedId === briefing.id ? "var(--color-success)" : "rgba(102,112,133,0.74)",
+                                                color: copiedId === briefing.id ? "var(--color-success)" : "rgba(7,26,47,0.74)",
                                                 fontSize: 11,
                                                 fontFamily: "var(--tekori-font-ui)",
                                                 padding: "6px 9px",
@@ -583,7 +583,7 @@ export default function BriefingsScreen({
                                         >
                                             {copiedId === briefing.id ? "Copied!" : "Share"}
                                         </button>
-                                        <span style={{ fontSize: 22, color: "#5F5952", transition: "transform 0.2s", display: "inline-block", transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)" }}>▾</span>
+                                        <span style={{ fontSize: 22, color: "rgba(7,26,47,0.50)", transition: "transform 0.2s", display: "inline-block", transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)" }}>▾</span>
                                     </div>
                                 </div>
 

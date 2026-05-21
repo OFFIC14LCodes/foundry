@@ -126,7 +126,7 @@ export function StageBadge({ stageId }: { stageId: number | null }) {
             borderRadius: 4,
             border: "1px solid rgba(7,26,47,0.15)",
             background: "rgba(7,26,47,0.06)",
-            color: "rgba(71,84,103,0.88)",
+            color: "rgba(7,26,47,0.88)",
             fontFamily: "var(--tekori-font-ui)",
             fontSize: 10,
             fontWeight: 700,

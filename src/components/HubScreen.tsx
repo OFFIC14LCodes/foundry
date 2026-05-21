@@ -575,8 +575,8 @@ export default function HubScreen({
                     <div
                         key={invite.id}
                         style={{
-                            background: "rgba(99, 179, 237, 0.07)",
-                            border: "1px solid rgba(99, 179, 237, 0.25)",
+                            background: "linear-gradient(135deg, rgba(201,137,36,0.07), rgba(7,26,47,0.03))",
+                            border: "1px solid rgba(201,137,36,0.22)",
                             borderRadius: 14,
                             padding: "14px 16px",
                             marginBottom: 14,
@@ -589,7 +589,7 @@ export default function HubScreen({
                                     width: 28,
                                     height: 28,
                                     borderRadius: "50%",
-                                    background: "rgba(99, 179, 237, 0.15)",
+                                    background: "rgba(201,137,36,0.12)",
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
@@ -854,7 +854,7 @@ export default function HubScreen({
                                 >
                                     Get Your Business Health Score
                                 </button>
-                                <div style={{ fontSize: 10, color: "rgba(71,84,103,0.88)", textAlign: "center", lineHeight: 1.6, maxWidth: 180 }}>
+                                <div style={{ fontSize: 10, color: "rgba(7,26,47,0.88)", textAlign: "center", lineHeight: 1.6, maxWidth: 180 }}>
                                     Run a market analysis to unlock your full score
                                 </div>
                             </div>
@@ -870,7 +870,7 @@ export default function HubScreen({
                 </div>
 
                 {/* Financial Modeling */}
-                <div style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.06)", borderRadius: 16, padding: "14px 16px", marginBottom: 14, animation: "fadeSlideUp 0.5s ease 0.25s both" }}>
+                <div style={{ background: "rgba(7,26,47,0.028)", border: "1px solid rgba(7,26,47,0.09)", borderRadius: 16, padding: "14px 16px", marginBottom: 14, animation: "fadeSlideUp 0.5s ease 0.25s both" }}>
                     <div className="hub-section-header" style={{ marginBottom: 10 }}>
                         <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, color: "var(--color-text)" }}>Support: Financial Modeling</div>
                         <div className="foundry-inline-actions">
@@ -907,11 +907,11 @@ export default function HubScreen({
                             onClick={onOpenFinancialDashboard}
                             style={{
                                 width: "100%",
-                                background: "rgba(7,26,47,0.03)",
-                                border: "1px solid rgba(7,26,47,0.08)",
+                                background: "rgba(7,26,47,0.04)",
+                                border: "1px solid rgba(7,26,47,0.12)",
                                 borderRadius: 10,
                                 padding: "10px 14px",
-                                color: "var(--color-text-muted)",
+                                color: "var(--color-text-soft)",
                                 fontSize: 12,
                                 fontWeight: 600,
                                 cursor: "pointer",
@@ -919,6 +919,8 @@ export default function HubScreen({
                                 marginBottom: 12,
                                 letterSpacing: "0.02em",
                             }}
+                            onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(201,137,36,0.35)"; e.currentTarget.style.color = "var(--tekori-gold)"; }}
+                            onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(7,26,47,0.12)"; e.currentTarget.style.color = "var(--color-text-soft)"; }}
                         >
                             Full Financial Dashboard →
                         </button>
@@ -1059,7 +1061,7 @@ export default function HubScreen({
 
                 {/* Glossary learned */}
                 {(profile.glossaryLearned || []).length > 0 && (
-                    <div style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.06)", borderRadius: 16, padding: "14px 16px", marginBottom: 12, animation: "fadeSlideUp 0.5s ease 0.32s both" }}>
+                    <div style={{ background: "rgba(7,26,47,0.028)", border: "1px solid rgba(7,26,47,0.09)", borderRadius: 16, padding: "14px 16px", marginBottom: 12, animation: "fadeSlideUp 0.5s ease 0.32s both" }}>
                         <div className="hub-section-header" style={{ marginBottom: 14 }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                                 <Icons.glossary.book size={14} />
@@ -1081,7 +1083,7 @@ export default function HubScreen({
 
                 {/* Concepts explored */}
                 {(profile.exploredConcepts || []).length > 0 && (
-                    <div style={{ background: "rgba(159,122,234,0.03)", border: "1px solid rgba(159,122,234,0.12)", borderRadius: 16, padding: "14px 16px", marginBottom: 12, animation: "fadeSlideUp 0.5s ease 0.34s both" }}>
+                    <div style={{ background: "linear-gradient(155deg, rgba(201,137,36,0.06), rgba(7,26,47,0.02))", border: "1px solid rgba(201,137,36,0.18)", borderRadius: 16, padding: "14px 16px", marginBottom: 12, animation: "fadeSlideUp 0.5s ease 0.34s both" }}>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, color: "var(--color-text)" }}>
                                 <span style={{ color: "var(--tekori-gold)" }}>✦</span>
@@ -1091,7 +1093,7 @@ export default function HubScreen({
                         </div>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                             {(profile.exploredConcepts || []).map((item: any, i: number) => (
-                                <div key={i} style={{ fontSize: 11, color: "var(--tekori-gold)", background: "rgba(159,122,234,0.1)", border: "1px solid rgba(159,122,234,0.22)", borderRadius: 20, padding: "3px 10px", fontFamily: "var(--tekori-font-ui)", fontWeight: 500 }}>
+                                <div key={i} style={{ fontSize: 11, color: "var(--tekori-gold)", background: "rgba(201,137,36,0.10)", border: "1px solid rgba(201,137,36,0.24)", borderRadius: 20, padding: "3px 10px", fontFamily: "var(--tekori-font-ui)", fontWeight: 500 }}>
                                     ✦ {item.concept}
                                 </div>
                             ))}
@@ -1103,7 +1105,7 @@ export default function HubScreen({
                 )}
 
                 {/* Decisions */}
-                <div style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.06)", borderRadius: 16, padding: "14px 16px", animation: "fadeSlideUp 0.5s ease 0.3s both" }}>
+                <div style={{ background: "rgba(7,26,47,0.028)", border: "1px solid rgba(7,26,47,0.09)", borderRadius: 16, padding: "14px 16px", animation: "fadeSlideUp 0.5s ease 0.3s both" }}>
                         <div className="hub-section-header" style={{ marginBottom: 14 }}>
                             <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, color: "var(--color-text)" }}>Decisions</div>
                         <button onClick={() => setShowDecisionModal(true)} className="foundry-btn foundry-btn--secondary" style={{ padding: "4px 12px", fontSize: 11 }}>+ Log Decision</button>

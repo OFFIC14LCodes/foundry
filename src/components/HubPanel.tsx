@@ -30,7 +30,7 @@ export default function HubPanel({ profile, currentStage, completedByStage, open
                     <div style={{ fontSize: 22, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, color: "var(--color-success)" }}>${(profile.budget?.remaining || 0).toLocaleString()}</div>
                     <div style={{ fontSize: 10, color: "var(--foundry-text-muted)", marginBottom: 8 }}>remaining of ${(profile.budget?.total || 0).toLocaleString()}</div>
                     <div style={{ height: 3, background: "rgba(7,26,47,0.06)", borderRadius: 2 }}>
-                        <div style={{ height: "100%", width: `${profile.budget?.total ? (profile.budget.remaining / profile.budget.total) * 100 : 0}%`, background: "linear-gradient(90deg, var(--color-success), var(--color-success))", borderRadius: 2 }} />
+                        <div style={{ height: "100%", width: `${profile.budget?.total ? (profile.budget.remaining / profile.budget.total) * 100 : 0}%`, background: "linear-gradient(90deg, var(--tekori-gold), var(--tekori-amber))", borderRadius: 2 }} />
                     </div>
                 </div>
                 <div style={{ padding: "14px 16px", borderBottom: "1px solid rgba(7,26,47,0.06)" }}>

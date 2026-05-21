@@ -576,7 +576,7 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                                     background: "rgba(7,26,47,0.035)",
                                     border: "1px solid rgba(7,26,47,0.08)",
                                     borderRadius: 10,
-                                    color: "rgba(71,84,103,0.88)",
+                                    color: "rgba(7,26,47,0.88)",
                                     padding: "10px 12px",
                                     fontSize: 12,
                                     fontFamily: "var(--tekori-font-ui)",

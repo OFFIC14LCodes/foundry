@@ -719,7 +719,7 @@ export default function MarketIntelligenceScreen({
                                                     <span style={{ fontSize: 10, color: freshness.color, whiteSpace: "nowrap" }}>{freshness.label}</span>
                                                 </div>
                                                 {sourceCount > 0 && (
-                                                    <div style={{ display: "inline-flex", marginTop: 7, padding: "3px 7px", borderRadius: 999, background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.06)", color: "rgba(71,84,103,0.88)", fontSize: 11, fontFamily: "var(--tekori-font-ui)" }}>
+                                                    <div style={{ display: "inline-flex", marginTop: 7, padding: "3px 7px", borderRadius: 999, background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.06)", color: "rgba(7,26,47,0.88)", fontSize: 11, fontFamily: "var(--tekori-font-ui)" }}>
                                                         {sourceCount} source{sourceCount === 1 ? "" : "s"}
                                                     </div>
                                                 )}
@@ -829,7 +829,7 @@ export default function MarketIntelligenceScreen({
                                                         )}
                                                     </div>
                                                     {sourceCount > 0 && (
-                                                        <div style={{ display: "inline-flex", marginTop: 8, padding: "3px 7px", borderRadius: 999, background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.06)", color: "rgba(71,84,103,0.88)", fontSize: 11, fontFamily: "var(--tekori-font-ui)" }}>
+                                                        <div style={{ display: "inline-flex", marginTop: 8, padding: "3px 7px", borderRadius: 999, background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.06)", color: "rgba(7,26,47,0.88)", fontSize: 11, fontFamily: "var(--tekori-font-ui)" }}>
                                                             {sourceCount} source{sourceCount === 1 ? "" : "s"}
                                                         </div>
                                                     )}

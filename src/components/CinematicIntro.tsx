@@ -36,7 +36,7 @@ export default function CinematicIntro({ onComplete }) {
                 <div style={{ fontSize: 11, fontFamily: "var(--tekori-font-ui)", color: "var(--tekori-gold)", letterSpacing: "0.25em", textTransform: "uppercase", marginTop: 8 }}>The Builder&apos;s Light</div>
             </div>
             <div style={{ opacity: phase >= 3 ? 1 : 0, transform: phase >= 3 ? "translateY(0)" : "translateY(8px)", transition: "all 0.8s ease", textAlign: "center", maxWidth: 380, padding: "0 32px" }}>
-                <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-ui)", fontStyle: "italic", color: "rgba(71,84,103,0.88)", lineHeight: 1.7 }}>"Every great business started with one person who decided to try."</div>
+                <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-ui)", fontStyle: "italic", color: "rgba(7,26,47,0.88)", lineHeight: 1.7 }}>"Every great business started with one person who decided to try."</div>
             </div>
             <div style={{ position: "absolute", inset: 0, background: "var(--color-bg-soft)", opacity: phase >= 4 ? 1 : 0, transition: "opacity 0.9s ease", pointerEvents: "none" }} />
         </div>

@@ -678,7 +678,7 @@ const navSecondaryButton: CSSProperties = {
   background: "rgba(7,26,47,0.06)",
   border: "1px solid rgba(7,26,47,0.1)",
   borderRadius: 12,
-  color: "rgba(71,84,103,0.88)",
+  color: "rgba(7,26,47,0.88)",
   fontSize: 14,
   fontFamily: "var(--tekori-font-ui)",
   fontWeight: 500,
@@ -690,7 +690,7 @@ const navSecondaryButton: CSSProperties = {
 const navSkipButton: CSSProperties = {
   background: "transparent",
   border: "none",
-  color: "rgba(102,112,133,0.74)",
+  color: "rgba(7,26,47,0.74)",
   fontSize: 13,
   fontFamily: "var(--tekori-font-ui)",
   fontWeight: 500,

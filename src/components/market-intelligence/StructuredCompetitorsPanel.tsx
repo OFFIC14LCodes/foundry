@@ -142,7 +142,7 @@ export default function StructuredCompetitorsPanel({
                                                     <span>{strength}</span>
                                                 </div>
                                             )) : (
-                                                <div style={{ color: "rgba(102,112,133,0.74)", fontFamily: "var(--tekori-font-ui)", fontSize: 12 }}>No strengths captured.</div>
+                                                <div style={{ color: "rgba(7,26,47,0.74)", fontFamily: "var(--tekori-font-ui)", fontSize: 12 }}>No strengths captured.</div>
                                             )}
                                         </div>
                                         <div>
@@ -155,7 +155,7 @@ export default function StructuredCompetitorsPanel({
                                                     <span>{weakness}</span>
                                                 </div>
                                             )) : (
-                                                <div style={{ color: "rgba(102,112,133,0.74)", fontFamily: "var(--tekori-font-ui)", fontSize: 12 }}>No weaknesses captured.</div>
+                                                <div style={{ color: "rgba(7,26,47,0.74)", fontFamily: "var(--tekori-font-ui)", fontSize: 12 }}>No weaknesses captured.</div>
                                             )}
                                             {competitor.pricingNotes && (
                                                 <div style={{ color: "var(--color-text-muted)", fontFamily: "var(--tekori-font-ui)", fontSize: 12, lineHeight: 1.6, marginTop: 8 }}>
@@ -195,7 +195,7 @@ export default function StructuredCompetitorsPanel({
                             </div>
                         )}
 
-                        <div style={{ textAlign: "right", color: expanded ? "rgba(142,160,181,0.55)" : "rgba(102,112,133,0.45)", fontFamily: "var(--tekori-font-ui)", fontSize: 11, marginTop: 10 }}>
+                        <div style={{ textAlign: "right", color: expanded ? "rgba(142,160,181,0.55)" : "rgba(7,26,47,0.45)", fontFamily: "var(--tekori-font-ui)", fontSize: 11, marginTop: 10 }}>
                             {expanded ? "See less ↑" : "See more ↓"}
                         </div>
                     </div>

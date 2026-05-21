@@ -47,7 +47,7 @@ export default function StructuredSourcesPanel({ sources }: { sources: MarketRep
                             >
                                 {source.title}
                             </a>
-                            <div style={{ fontFamily: "var(--tekori-font-ui)", fontSize: 12, color: "rgba(71,84,103,0.88)", lineHeight: 1.6, marginTop: 4 }}>
+                            <div style={{ fontFamily: "var(--tekori-font-ui)", fontSize: 12, color: "rgba(7,26,47,0.88)", lineHeight: 1.6, marginTop: 4 }}>
                                 {source.snippet || "Saved source reference."}
                             </div>
                         </div>

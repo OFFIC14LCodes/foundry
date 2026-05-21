@@ -53,7 +53,7 @@ export default function StructuredBenchmarksPanel({
                         <div style={{ color: "var(--tekori-muted-text)", fontFamily: "var(--tekori-font-brand)", fontSize: 24, fontWeight: 700, lineHeight: 1.1, marginBottom: 8 }}>
                             {formatBenchmarkValue(benchmark.value, benchmark.unit)}
                         </div>
-                        <div style={{ fontSize: 12, color: "rgba(71,84,103,0.88)", lineHeight: 1.6, fontFamily: "var(--tekori-font-ui)" }}>
+                        <div style={{ fontSize: 12, color: "rgba(7,26,47,0.88)", lineHeight: 1.6, fontFamily: "var(--tekori-font-ui)" }}>
                             {benchmark.description || "Saved benchmark."}
                         </div>
                         {(onCreateAction || onAskForgeAboutAction) && (

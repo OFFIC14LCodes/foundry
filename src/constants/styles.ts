@@ -16,7 +16,7 @@ export const DESIGN_TOKENS = {
     textPrimary: "var(--color-text)",
     textSecondary: "var(--color-text-soft)",
     textMuted: "var(--color-text-muted)",
-    textDisabled: "rgba(102,112,133,0.48)",
+    textDisabled: "rgba(7,26,47,0.48)",
   },
   radii: {
     control: "10px",

@@ -68,8 +68,8 @@ export default function VaultDocumentList(props: {
                 )}
                 {!loading && !error && documents.length === 0 && (
                     <div style={{ padding: "28px 14px", textAlign: "center" }}>
-                        <FolderOpen size={40} color="rgba(102,112,133,0.18)" style={{ marginBottom: 12 }} />
-                        <div style={{ fontSize: 18, color: "rgba(71,84,103,0.88)", fontFamily: "var(--tekori-font-ui)", marginBottom: 8 }}>Your vault is empty</div>
+                        <FolderOpen size={40} color="rgba(7,26,47,0.18)" style={{ marginBottom: 12 }} />
+                        <div style={{ fontSize: 18, color: "rgba(7,26,47,0.88)", fontFamily: "var(--tekori-font-ui)", marginBottom: 8 }}>Your vault is empty</div>
                         <div style={{ fontSize: 13, color: "rgba(16,32,51,0.58)", lineHeight: 1.6, fontFamily: "var(--tekori-font-ui)", margin: "0 auto 16px", maxWidth: 330 }}>
                             Every document Navi generates lives here — organized, versioned, and ready when you need it. Start by telling Navi what you need.
                         </div>

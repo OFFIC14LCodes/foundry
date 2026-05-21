@@ -194,7 +194,7 @@ function ThemePills({ themes }: { themes?: string[] }) {
                     textTransform: "uppercase",
                     background: "rgba(7,26,47,0.06)",
                     border: "1px solid rgba(7,26,47,0.12)",
-                    color: "rgba(71,84,103,0.88)",
+                    color: "rgba(7,26,47,0.88)",
                     borderRadius: 3,
                     padding: "3px 7px",
                     lineHeight: 1.1,
@@ -209,7 +209,7 @@ function ThemePills({ themes }: { themes?: string[] }) {
                     textTransform: "uppercase",
                     background: "rgba(7,26,47,0.06)",
                     border: "1px solid rgba(7,26,47,0.12)",
-                    color: "rgba(71,84,103,0.88)",
+                    color: "rgba(7,26,47,0.88)",
                     borderRadius: 3,
                     padding: "3px 7px",
                     lineHeight: 1.1,
@@ -630,7 +630,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                     {typedEntries.length > 0 && (
                         <button onClick={handleExport} title="Export journal as Markdown" style={{
                             background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)",
-                            borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "rgba(71,84,103,0.88)",
+                            borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "rgba(7,26,47,0.88)",
                             fontSize: "var(--foundry-app-header-button-font)", cursor: "pointer",
                         }}>Export</button>
                     )}
@@ -690,7 +690,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                                 gap: 3,
                                             }}
                                         >
-                                            <span style={{ fontSize: 11, color: isSelected ? "var(--tekori-gold)" : isToday ? "var(--tekori-gold)" : hasEntry ? "rgba(71,84,103,0.88)" : "rgba(102,112,133,0.45)", fontFamily: "var(--tekori-font-ui)", fontWeight: isToday || isSelected ? 600 : 400 }}>{day}</span>
+                                            <span style={{ fontSize: 11, color: isSelected ? "var(--tekori-gold)" : isToday ? "var(--tekori-gold)" : hasEntry ? "rgba(7,26,47,0.88)" : "rgba(7,26,47,0.45)", fontFamily: "var(--tekori-font-ui)", fontWeight: isToday || isSelected ? 600 : 400 }}>{day}</span>
                                             {hasEntry && <div style={{ width: 4, height: 4, borderRadius: "50%", background: isSelected ? "var(--tekori-gold)" : "rgba(216,155,43,0.6)" }} />}
                                         </button>
                                     );
@@ -701,7 +701,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                 })()}
 
                 <div style={{ position: "relative", marginBottom: 14 }}>
-                    <span style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "rgba(102,112,133,0.74)", fontSize: 13 }}>⌕</span>
+                    <span style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "rgba(7,26,47,0.74)", fontSize: 13 }}>⌕</span>
                     <input
                         ref={searchInputRef}
                         value={searchTerm}
@@ -771,7 +771,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                     if (moodEntries.length < 2) return null;
                                     return (
                                         <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                                            <span style={{ fontSize: 10, color: "rgba(102,112,133,0.74)", fontFamily: "var(--tekori-font-ui)" }}>Mood this week:</span>
+                                            <span style={{ fontSize: 10, color: "rgba(7,26,47,0.74)", fontFamily: "var(--tekori-font-ui)" }}>Mood this week:</span>
                                             <div style={{ display: "flex", gap: 2 }}>
                                                 {moodEntries.map((e, i) => (
                                                     <span key={i} title={new Date(e.createdAt).toLocaleDateString("en-US", { weekday: "short" })} style={{ fontSize: 14 }}>{e.mood}</span>
@@ -800,7 +800,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                     style={{
                                         background: active ? "rgba(216,155,43,0.15)" : "rgba(7,26,47,0.06)",
                                         border: active ? "1px solid rgba(216,155,43,0.4)" : "1px solid rgba(7,26,47,0.12)",
-                                        color: active ? "var(--tekori-gold)" : "rgba(102,112,133,0.78)",
+                                        color: active ? "var(--tekori-gold)" : "rgba(7,26,47,0.78)",
                                         borderRadius: 999,
                                         padding: "5px 10px",
                                         fontSize: 11,
@@ -891,24 +891,24 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                             title="Edit entry"
                                             style={{
                                                 background: "transparent",
-                                                border: "none", color: "#5F5952", fontSize: 12, fontWeight: 500,
+                                                border: "none", color: "rgba(7,26,47,0.50)", fontSize: 12, fontWeight: 500,
                                                 cursor: "pointer", padding: "2px 4px", borderRadius: 8,
                                                 transition: "color 0.15s", fontFamily: "var(--tekori-font-ui)",
                                             }}
                                             onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "var(--tekori-gold)"}
-                                            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "#5F5952"}
+                                            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "rgba(7,26,47,0.50)"}
                                         >Edit</button>
                                         <button
                                             onClick={() => handleDelete(entry.id)}
                                             disabled={deletingId === entry.id}
                                             style={{
                                                 background: "transparent",
-                                                border: "none", color: "#5F5952", fontSize: 18, fontWeight: 500,
+                                                border: "none", color: "rgba(7,26,47,0.50)", fontSize: 18, fontWeight: 500,
                                                 cursor: "pointer", padding: "0 2px", borderRadius: 8,
                                                 transition: "color 0.15s", lineHeight: 1.2,
                                             }}
                                             onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#FF6B6B"}
-                                            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "#5F5952"}
+                                            onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "rgba(7,26,47,0.50)"}
                                         >×</button>
                                     </div>
                                 </div>
@@ -966,7 +966,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                                 border: "none",
                                                 borderRadius: 8,
                                                 padding: "10px 12px",
-                                                color: "rgba(102,112,133,0.74)",
+                                                color: "rgba(7,26,47,0.74)",
                                                 fontSize: 12,
                                                 fontFamily: "var(--tekori-font-ui)",
                                                 fontStyle: "italic",
@@ -982,7 +982,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                             alignItems: "center",
                                             gap: 8,
                                             fontSize: 12,
-                                            color: "rgba(102,112,133,0.74)",
+                                            color: "rgba(7,26,47,0.74)",
                                             fontFamily: "var(--tekori-font-ui)",
                                             fontStyle: "italic",
                                         }}>
@@ -1022,7 +1022,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                         style={{
                                             background: "transparent",
                                             border: "none",
-                                            color: copiedEntryId === entry.id ? "var(--color-success)" : "rgba(102,112,133,0.45)",
+                                            color: copiedEntryId === entry.id ? "var(--color-success)" : "rgba(7,26,47,0.45)",
                                             fontSize: 12,
                                             fontFamily: "var(--tekori-font-ui)",
                                             cursor: "pointer",
@@ -1078,7 +1078,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                 </div>
                                 <div style={{
                                     fontSize: 14,
-                                    color: "rgba(71,84,103,0.88)",
+                                    color: "rgba(7,26,47,0.88)",
                                     fontFamily: "var(--tekori-font-ui)",
                                     whiteSpace: "nowrap",
                                     overflow: "hidden",
@@ -1115,7 +1115,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                             }}>
                                 <div style={{
                                     fontSize: 10,
-                                    color: "rgba(102,112,133,0.50)",
+                                    color: "rgba(7,26,47,0.50)",
                                     fontFamily: "var(--tekori-font-ui)",
                                     textTransform: "uppercase",
                                     letterSpacing: "0.08em",
@@ -1257,10 +1257,10 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                             gap: 12,
                         }}>
                             <div style={{ minWidth: 0 }}>
-                                <div style={{ fontSize: 11, color: "rgba(102,112,133,0.74)", fontFamily: "var(--tekori-font-ui)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 3 }}>
+                                <div style={{ fontSize: 11, color: "rgba(7,26,47,0.74)", fontFamily: "var(--tekori-font-ui)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 3 }}>
                                     {editingEntry ? "Edit entry" : "New journal entry"}
                                 </div>
-                                <div style={{ fontSize: 15, color: "rgba(71,84,103,0.88)", fontFamily: "var(--tekori-font-ui)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                <div style={{ fontSize: 15, color: "rgba(7,26,47,0.88)", fontFamily: "var(--tekori-font-ui)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                                     {editingEntry ? formatDate(editingEntry.createdAt) : new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
                                 </div>
                             </div>
@@ -1283,7 +1283,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                         background: "rgba(7,26,47,0.04)",
                                         border: "1px solid rgba(7,26,47,0.08)",
                                         borderRadius: 9,
-                                        color: "rgba(102,112,133,0.74)",
+                                        color: "rgba(7,26,47,0.74)",
                                         fontSize: 13,
                                         fontFamily: "var(--tekori-font-ui)",
                                         cursor: "pointer",
@@ -1318,7 +1318,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
 
                             {/* Mood selector */}
                             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                                <span style={{ fontSize: 11, color: "rgba(102,112,133,0.74)", fontFamily: "var(--tekori-font-ui)" }}>How are you feeling?</span>
+                                <span style={{ fontSize: 11, color: "rgba(7,26,47,0.74)", fontFamily: "var(--tekori-font-ui)" }}>How are you feeling?</span>
                                 <div style={{ display: "flex", gap: 6 }}>
                                     {MOOD_OPTIONS.map(m => (
                                         <button
@@ -1357,13 +1357,13 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                                 borderRadius: 20,
                                                 padding: "5px 12px",
                                                 fontSize: 11,
-                                                color: "rgba(102,112,133,0.74)",
+                                                color: "rgba(7,26,47,0.74)",
                                                 cursor: "pointer",
                                                 fontFamily: "var(--tekori-font-ui)",
                                                 transition: "all 0.15s",
                                             }}
                                             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(216,155,43,0.08)"; (e.currentTarget as HTMLElement).style.borderColor = "rgba(216,155,43,0.2)"; (e.currentTarget as HTMLElement).style.color = "var(--tekori-gold)"; }}
-                                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(7,26,47,0.03)"; (e.currentTarget as HTMLElement).style.borderColor = "rgba(7,26,47,0.08)"; (e.currentTarget as HTMLElement).style.color = "rgba(102,112,133,0.74)"; }}
+                                            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "rgba(7,26,47,0.03)"; (e.currentTarget as HTMLElement).style.borderColor = "rgba(7,26,47,0.08)"; (e.currentTarget as HTMLElement).style.color = "rgba(7,26,47,0.74)"; }}
                                         >
                                             <span>{t.icon}</span>{t.name}
                                         </button>
@@ -1412,10 +1412,10 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                         position: "relative",
                                         zIndex: 1,
                                     }}>
-                                        <div style={{ fontSize: 11, marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(102,112,133,0.54)" }}>Try writing about</div>
+                                        <div style={{ fontSize: 11, marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(7,26,47,0.54)" }}>Try writing about</div>
                                         <div style={{ display: "grid", gap: 8 }}>
                                             {writingPrompts.map(prompt => (
-                                                <div key={prompt} style={{ fontSize: 13, lineHeight: 1.5, color: "rgba(71,84,103,0.88)" }}>
+                                                <div key={prompt} style={{ fontSize: 13, lineHeight: 1.5, color: "rgba(7,26,47,0.88)" }}>
                                                     {prompt}
                                                 </div>
                                             ))}
@@ -1435,7 +1435,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                     background: "linear-gradient(to top, rgba(255,252,246,0.98), rgba(7,26,47,0.28))",
                                     borderTop: "1px solid rgba(7,26,47,0.055)",
                                 }}>
-                                    <div style={{ fontSize: 12, color: "rgba(102,112,133,0.54)", fontFamily: "var(--tekori-font-ui)" }}>
+                                    <div style={{ fontSize: 12, color: "rgba(7,26,47,0.54)", fontFamily: "var(--tekori-font-ui)" }}>
                                         Private founder note
                                     </div>
                                     <div style={{

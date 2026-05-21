@@ -172,7 +172,7 @@ export default function MessageBubble({ msg, onStageRef, onGlossaryTap, onConcep
                         fontSize: 11,
                         lineHeight: 1.2,
                         marginBottom: 6,
-                        color: isForge ? "var(--color-text-muted)" : "rgba(71,84,103,0.88)",
+                        color: isForge ? "var(--color-text-muted)" : "rgba(7,26,47,0.88)",
                         letterSpacing: "0.04em",
                         fontFamily: "var(--tekori-font-ui)",
                     }}

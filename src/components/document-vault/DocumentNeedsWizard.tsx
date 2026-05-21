@@ -57,7 +57,7 @@ export default function DocumentNeedsWizard(props: {
         optionalFuture: {
             border: "3px solid rgba(7,26,47,0.08)",
             badge: "Optional",
-            badgeColor: "rgba(102,112,133,0.45)",
+            badgeColor: "rgba(7,26,47,0.45)",
             badgeBackground: "rgba(7,26,47,0.04)",
         },
     };

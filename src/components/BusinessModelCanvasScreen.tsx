@@ -209,7 +209,7 @@ export default function BusinessModelCanvasScreen({
                             <div style={{ flex: 1, minWidth: 200 }}>
                                 <div style={{ fontSize: 11, color: "var(--color-text-muted)", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 5 }}>Canvas Section</div>
                                 <div style={{ fontSize: isNarrow ? 22 : 28, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, lineHeight: 1.1 }}>{selectedLabel}</div>
-                                <div style={{ fontSize: 13, color: "rgba(102,112,133,0.78)", marginTop: 8, lineHeight: 1.7 }}>
+                                <div style={{ fontSize: 13, color: "rgba(7,26,47,0.78)", marginTop: 8, lineHeight: 1.7 }}>
                                     Edit what is here, delete what no longer fits, or push this section forward through Navi.
                                 </div>
                             </div>

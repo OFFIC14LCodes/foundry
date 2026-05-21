@@ -28,7 +28,7 @@ function getImpactDisplay(impactLevel: string) {
     return {
         label: "On the Horizon",
         color: "rgba(16,32,51,0.58)",
-        border: "rgba(102,112,133,0.45)",
+        border: "rgba(7,26,47,0.45)",
         background: "rgba(7,26,47,0.05)",
         tooltip: "Early signal worth monitoring as you scale",
     };

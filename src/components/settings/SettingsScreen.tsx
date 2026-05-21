@@ -598,7 +598,7 @@ export default function SettingsScreen({
                 <SettingsSection title="Recent Notifications" description="Latest delivery attempts and in-app notifications for this workspace.">
                     <SettingsCard>
                         {notifications.length === 0 ? (
-                            <div style={{ fontSize: 13, color: "#6B665F", lineHeight: 1.7 }}>
+                            <div style={{ fontSize: 13, color: "var(--color-text-muted)", lineHeight: 1.7 }}>
                                 No notifications yet.
                             </div>
                         ) : (

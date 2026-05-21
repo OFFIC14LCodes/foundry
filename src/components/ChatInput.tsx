@@ -202,6 +202,7 @@ export default function ChatInput({
                         overflowY: "hidden",
                         boxSizing: "border-box",
                         outline: "none",
+                        boxShadow: "none",
                         resize: "none",
                     }}
                 />

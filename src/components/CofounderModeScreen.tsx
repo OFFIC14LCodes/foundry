@@ -1094,10 +1094,10 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {([
-                            { icon: <Icons.forge.chat size={15} color="rgba(102,112,133,0.74)" />, text: 'Shared team chat for your founding team' },
-                            { icon: <Icons.onboarding.someExperience size={15} color="rgba(102,112,133,0.74)" />, text: "Tag @navi in the chat to get Navi's take on any discussion" },
-                            { icon: <Icons.forge.complete size={15} color="rgba(102,112,133,0.74)" />, text: 'Shared task list so nothing falls through the cracks' },
-                            { icon: <Icons.stages.idea size={15} color="rgba(102,112,133,0.74)" />, text: 'Navi carries your team context into individual conversations' },
+                            { icon: <Icons.forge.chat size={15} color="rgba(7,26,47,0.74)" />, text: 'Shared team chat for your founding team' },
+                            { icon: <Icons.onboarding.someExperience size={15} color="rgba(7,26,47,0.74)" />, text: "Tag @navi in the chat to get Navi's take on any discussion" },
+                            { icon: <Icons.forge.complete size={15} color="rgba(7,26,47,0.74)" />, text: 'Shared task list so nothing falls through the cracks' },
+                            { icon: <Icons.stages.idea size={15} color="rgba(7,26,47,0.74)" />, text: 'Navi carries your team context into individual conversations' },
                         ] as { icon: React.ReactNode; text: string }[]).map(({ icon, text }) => (
                             <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: 'rgba(7,26,47,0.02)', border: '1px solid rgba(7,26,47,0.04)', borderRadius: 10 }}>
                                 <span style={{ display: 'flex', alignItems: 'center' }}>{icon}</span>
@@ -1222,14 +1222,14 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3 }}>
                                                     <div style={{ fontSize: 10, color, background: `${color}14`, border: `1px solid ${color}30`, borderRadius: 20, padding: '1px 8px' }}>{member.role}</div>
                                                     {canEdit && (
-                                                        <button onClick={() => setEditingRoleFor(isEditingThis ? null : member.id)} style={{ fontSize: 11, color: 'rgba(102,112,133,0.58)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--tekori-font-ui)', padding: 0 }}>
+                                                        <button onClick={() => setEditingRoleFor(isEditingThis ? null : member.id)} style={{ fontSize: 11, color: 'rgba(7,26,47,0.58)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--tekori-font-ui)', padding: 0 }}>
                                                             {isEditingThis ? 'Cancel' : 'Edit role'}
                                                         </button>
                                                     )}
                                                 </div>
                                             </div>
                                             {canRemove && (
-                                                <button onClick={() => setConfirmRemove({ id: member.id, name: member.display_name })} title="Remove member" style={{ position: 'absolute', top: 10, right: 12, width: 20, height: 20, borderRadius: '50%', background: 'rgba(7,26,47,0.04)', border: '1px solid rgba(7,26,47,0.08)', color: 'rgba(102,112,133,0.45)', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1, fontFamily: 'sans-serif' }}>×</button>
+                                                <button onClick={() => setConfirmRemove({ id: member.id, name: member.display_name })} title="Remove member" style={{ position: 'absolute', top: 10, right: 12, width: 20, height: 20, borderRadius: '50%', background: 'rgba(7,26,47,0.04)', border: '1px solid rgba(7,26,47,0.08)', color: 'rgba(7,26,47,0.45)', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1, fontFamily: 'sans-serif' }}>×</button>
                                             )}
                                         </div>
 
@@ -1307,7 +1307,7 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                                     <div style={{ background: 'rgba(7,26,47,0.03)', border: '1px solid rgba(7,26,47,0.08)', borderRadius: 8, padding: '9px 12px', fontSize: 11, color: 'var(--color-text-muted)', wordBreak: 'break-all', lineHeight: 1.5, fontFamily: 'monospace', marginBottom: 4 }}>
                                         {inviteUrl}
                                     </div>
-                                    <div style={{ fontSize: 11, color: 'rgba(102,112,133,0.40)', fontFamily: 'var(--tekori-font-ui)' }}>No expiration · Reusable link</div>
+                                    <div style={{ fontSize: 11, color: 'rgba(7,26,47,0.40)', fontFamily: 'var(--tekori-font-ui)' }}>No expiration · Reusable link</div>
                                 </div>
                             )}
 
@@ -1316,7 +1316,7 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                                     {generatingInvite ? 'Generating...' : copied ? '✓ Copied' : inviteUrl ? 'Copy Link' : 'Generate & Copy Link'}
                                 </button>
                                 {inviteUrl && isOwner && (
-                                    <button onClick={() => setConfirmRevokeInvite(true)} style={{ ...btnSecondary, padding: '10px 14px', fontSize: 12, color: 'rgba(102,112,133,0.45)', flexShrink: 0 }}>Revoke</button>
+                                    <button onClick={() => setConfirmRevokeInvite(true)} style={{ ...btnSecondary, padding: '10px 14px', fontSize: 12, color: 'rgba(7,26,47,0.45)', flexShrink: 0 }}>Revoke</button>
                                 )}
                             </div>
 
@@ -1340,7 +1340,7 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                         {/* Leave team */}
                         {!isOwner && (
                             <div style={{ marginTop: 32, textAlign: 'center' }}>
-                                <button onClick={() => setConfirmLeave(true)} style={{ fontSize: 12, color: 'rgba(102,112,133,0.45)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--tekori-font-ui)', padding: '8px 0' }}>Leave this workspace</button>
+                                <button onClick={() => setConfirmLeave(true)} style={{ fontSize: 12, color: 'rgba(7,26,47,0.45)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--tekori-font-ui)', padding: '8px 0' }}>Leave this workspace</button>
                             </div>
                         )}
                     </div>
@@ -1373,9 +1373,9 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                         {filteredTasks.length === 0 && (
                             <div style={{ textAlign: 'center', padding: '40px 20px' }}>
                                 <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(216,155,43,0.08)', border: '1px solid rgba(216,155,43,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                                    <Icons.forge.complete size={22} color="rgba(102,112,133,0.58)" />
+                                    <Icons.forge.complete size={22} color="rgba(7,26,47,0.58)" />
                                 </div>
-                                <div style={{ fontSize: 13, color: 'rgba(102,112,133,0.58)', lineHeight: 1.7, fontFamily: 'var(--tekori-font-ui)' }}>
+                                <div style={{ fontSize: 13, color: 'rgba(7,26,47,0.58)', lineHeight: 1.7, fontFamily: 'var(--tekori-font-ui)' }}>
                                     {taskFilter === 'all' ? 'No tasks yet. Add your first one.' : 'No tasks match this filter.'}
                                 </div>
                             </div>
@@ -1413,7 +1413,7 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
 
                                         {/* Due date */}
                                         {dueFmt && (
-                                            <span style={{ fontSize: 11, color: overdue ? 'rgba(216,155,43,0.8)' : 'rgba(102,112,133,0.58)', fontFamily: 'var(--tekori-font-ui)', flexShrink: 0 }}>{dueFmt}</span>
+                                            <span style={{ fontSize: 11, color: overdue ? 'rgba(216,155,43,0.8)' : 'rgba(7,26,47,0.58)', fontFamily: 'var(--tekori-font-ui)', flexShrink: 0 }}>{dueFmt}</span>
                                         )}
 
                                         {/* Assignee */}
@@ -1534,9 +1534,9 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                         {decisions.length === 0 && (
                             <div style={{ textAlign: 'center', padding: '40px 20px' }}>
                                 <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(216,155,43,0.08)', border: '1px solid rgba(216,155,43,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                                    <Icons.hub.decisions size={22} color="rgba(102,112,133,0.58)" />
+                                    <Icons.hub.decisions size={22} color="rgba(7,26,47,0.58)" />
                                 </div>
-                                <div style={{ fontSize: 13, color: 'rgba(102,112,133,0.58)', lineHeight: 1.7, fontFamily: 'var(--tekori-font-ui)' }}>No decisions logged yet. Record key choices so your team stays aligned.</div>
+                                <div style={{ fontSize: 13, color: 'rgba(7,26,47,0.58)', lineHeight: 1.7, fontFamily: 'var(--tekori-font-ui)' }}>No decisions logged yet. Record key choices so your team stays aligned.</div>
                             </div>
                         )}
                         {decisions.map(d => {
@@ -1598,9 +1598,9 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                         {fileLinks.length === 0 && (
                             <div style={{ textAlign: 'center', padding: '40px 20px' }}>
                                 <div style={{ width: 48, height: 48, borderRadius: 14, background: 'rgba(216,155,43,0.08)', border: '1px solid rgba(216,155,43,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                                    <Paperclip size={22} color="rgba(102,112,133,0.58)" />
+                                    <Paperclip size={22} color="rgba(7,26,47,0.58)" />
                                 </div>
-                                <div style={{ fontSize: 13, color: 'rgba(102,112,133,0.58)', lineHeight: 1.7, fontFamily: 'var(--tekori-font-ui)' }}>No files shared yet. Add links to keep your team's resources in one place.</div>
+                                <div style={{ fontSize: 13, color: 'rgba(7,26,47,0.58)', lineHeight: 1.7, fontFamily: 'var(--tekori-font-ui)' }}>No files shared yet. Add links to keep your team's resources in one place.</div>
                             </div>
                         )}
                         {fileLinks.map(f => {
@@ -1617,14 +1617,14 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                             return (
                                 <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: 'rgba(7,26,47,0.02)', border: '1px solid rgba(7,26,47,0.07)', borderRadius: 12, marginBottom: 8, animation: 'fadeSlideUp 0.2s ease' }}>
                                     <div style={{ flexShrink: 0, width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <FaviconIcon size={16} color="rgba(102,112,133,0.58)" />
+                                        <FaviconIcon size={16} color="rgba(7,26,47,0.58)" />
                                     </div>
                                     <div style={{ flex: 1, minWidth: 0 }}>
                                         <a href={f.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: 'var(--color-text)', fontFamily: 'var(--tekori-font-ui)', fontWeight: 500, textDecoration: 'none', display: 'block', marginBottom: 2 }} onMouseEnter={e => (e.currentTarget.style.textDecoration = 'underline')} onMouseLeave={e => (e.currentTarget.style.textDecoration = 'none')}>{f.label}</a>
                                         <div style={{ fontSize: 10, color: 'var(--color-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sharer?.display_name ?? 'Unknown'} · {new Date(f.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
                                     </div>
                                     {canDelete && (
-                                        <button onClick={() => handleDeleteFileLink(f.id)} style={{ fontSize: 13, color: 'rgba(102,112,133,0.40)', background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0 }}>×</button>
+                                        <button onClick={() => handleDeleteFileLink(f.id)} style={{ fontSize: 13, color: 'rgba(7,26,47,0.40)', background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0 }}>×</button>
                                     )}
                                 </div>
                             );
@@ -1642,7 +1642,7 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                             {/* Load earlier messages */}
                             {hasMoreMessages && (
                                 <div style={{ textAlign: 'center', marginBottom: 8 }}>
-                                    <button onClick={handleLoadMore} disabled={loadingMore} style={{ fontSize: 12, color: loadingMore ? 'var(--color-text-muted)' : 'rgba(102,112,133,0.58)', background: 'none', border: 'none', cursor: loadingMore ? 'default' : 'pointer', padding: '8px 0', fontFamily: 'var(--tekori-font-ui)' }}>
+                                    <button onClick={handleLoadMore} disabled={loadingMore} style={{ fontSize: 12, color: loadingMore ? 'var(--color-text-muted)' : 'rgba(7,26,47,0.58)', background: 'none', border: 'none', cursor: loadingMore ? 'default' : 'pointer', padding: '8px 0', fontFamily: 'var(--tekori-font-ui)' }}>
                                         {loadingMore ? 'Loading...' : '↑ Load earlier messages'}
                                     </button>
                                 </div>
@@ -1655,11 +1655,11 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                                         <Icons.sidebar.cofounder size={22} />
                                     </div>
                                     <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, color: 'var(--color-text)', marginBottom: 8 }}>Your team workspace</div>
-                                    <div style={{ fontSize: 13, color: 'rgba(102,112,133,0.58)', lineHeight: 1.7, fontFamily: 'var(--tekori-font-ui)', marginBottom: 16 }}>
+                                    <div style={{ fontSize: 13, color: 'rgba(7,26,47,0.58)', lineHeight: 1.7, fontFamily: 'var(--tekori-font-ui)', marginBottom: 16 }}>
                                         This is where your founding team thinks out loud together.<br />
                                         Use <strong style={{ color: 'rgba(16,32,51,0.65)' }}>@navi</strong> to bring Navi into any conversation — ask for advice, pressure-test ideas, or get a second opinion.
                                     </div>
-                                    <div style={{ fontSize: 12, color: 'rgba(102,112,133,0.40)', fontFamily: 'var(--tekori-font-ui)', fontStyle: 'italic' }}>
+                                    <div style={{ fontSize: 12, color: 'rgba(7,26,47,0.40)', fontFamily: 'var(--tekori-font-ui)', fontStyle: 'italic' }}>
                                         Try: @navi what should we prioritize this week?
                                     </div>
                                 </div>
@@ -1672,7 +1672,7 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                                 return (
                                     <div key={msg.id}>
                                         {showDivider && (
-                                            <div style={{ textAlign: 'center', margin: '12px 0 8px', fontSize: 11, color: 'rgba(102,112,133,0.45)', fontFamily: 'var(--tekori-font-ui)' }}>
+                                            <div style={{ textAlign: 'center', margin: '12px 0 8px', fontSize: 11, color: 'rgba(7,26,47,0.45)', fontFamily: 'var(--tekori-font-ui)' }}>
                                                 {formatMessageDate(msg.created_at)}
                                             </div>
                                         )}
@@ -1716,11 +1716,11 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                                         {Object.values(typingUsers)[0].charAt(0).toUpperCase()}
                                     </div>
                                     <div style={{ background: 'rgba(7,26,47,0.05)', border: '1px solid rgba(7,26,47,0.08)', borderRadius: '16px 16px 16px 4px', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 4 }}>
-                                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(102,112,133,0.58)', display: 'inline-block', animation: 'typingDot 1.2s ease-in-out infinite', animationDelay: '0ms' }} />
-                                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(102,112,133,0.58)', display: 'inline-block', animation: 'typingDot 1.2s ease-in-out infinite', animationDelay: '200ms' }} />
-                                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(102,112,133,0.58)', display: 'inline-block', animation: 'typingDot 1.2s ease-in-out infinite', animationDelay: '400ms' }} />
+                                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(7,26,47,0.58)', display: 'inline-block', animation: 'typingDot 1.2s ease-in-out infinite', animationDelay: '0ms' }} />
+                                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(7,26,47,0.58)', display: 'inline-block', animation: 'typingDot 1.2s ease-in-out infinite', animationDelay: '200ms' }} />
+                                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(7,26,47,0.58)', display: 'inline-block', animation: 'typingDot 1.2s ease-in-out infinite', animationDelay: '400ms' }} />
                                     </div>
-                                    <span style={{ fontSize: 11, color: 'rgba(102,112,133,0.45)', fontFamily: 'var(--tekori-font-ui)', fontStyle: 'italic' }}>
+                                    <span style={{ fontSize: 11, color: 'rgba(7,26,47,0.45)', fontFamily: 'var(--tekori-font-ui)', fontStyle: 'italic' }}>
                                         {Object.keys(typingUsers).length === 1
                                             ? `${Object.values(typingUsers)[0]} is typing`
                                             : Object.keys(typingUsers).length === 2
@@ -1746,7 +1746,7 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                                 </div>
                             )}
                             {/@(navi|forge)\b/i.test(input) && (
-                                <div style={{ fontSize: 11, color: 'rgba(102,112,133,0.45)', fontFamily: 'var(--tekori-font-ui)', fontStyle: 'italic', marginBottom: 6 }}>
+                                <div style={{ fontSize: 11, color: 'rgba(7,26,47,0.45)', fontFamily: 'var(--tekori-font-ui)', fontStyle: 'italic', marginBottom: 6 }}>
                                     Navi will see the last 20 team messages
                                 </div>
                             )}
@@ -1765,7 +1765,7 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                                 />
                                 {/* Convert to task button */}
                                 {input.trim() && (
-                                    <button onClick={handleConvertToTask} title="Save as task" style={{ flexShrink: 0, ...btnSecondary, padding: '8px 10px', fontSize: 12, color: 'rgba(102,112,133,0.58)', marginBottom: 0 }}>
+                                    <button onClick={handleConvertToTask} title="Save as task" style={{ flexShrink: 0, ...btnSecondary, padding: '8px 10px', fontSize: 12, color: 'rgba(7,26,47,0.58)', marginBottom: 0 }}>
                                         ☑
                                     </button>
                                 )}
@@ -2030,7 +2030,7 @@ function ChatMessage({ msg, isOwn, isHovered, onMouseEnter, onMouseLeave, onRetr
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 2 }}>
                             <span style={{ fontSize: 11, color: 'var(--color-text-muted)', fontFamily: 'var(--tekori-font-ui)' }}>{formatTime(msg.created_at)}</span>
                             {onLogDecision && (
-                                <button onClick={onLogDecision} style={{ fontSize: 10, color: 'rgba(102,112,133,0.52)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--tekori-font-ui)', padding: 0 }}>Log as decision</button>
+                                <button onClick={onLogDecision} style={{ fontSize: 10, color: 'rgba(7,26,47,0.52)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--tekori-font-ui)', padding: 0 }}>Log as decision</button>
                             )}
                         </div>
                     )}

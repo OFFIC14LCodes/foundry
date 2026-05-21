@@ -105,7 +105,7 @@ export default function ConceptModal({
             {/* Sheet */}
             <div style={{
                 position: "relative",
-                background: "#0D0D10",
+                background: "var(--foundry-surface-primary)",
                 borderTop: "1px solid rgba(7,26,47,0.1)",
                 borderRadius: "20px 20px 0 0",
                 padding: "0 0 max(36px, calc(20px + env(safe-area-inset-bottom)))",
@@ -155,8 +155,8 @@ export default function ConceptModal({
                                 <div style={{
                                     fontSize: 10,
                                     color: "var(--tekori-gold)",
-                                    background: "rgba(159,122,234,0.1)",
-                                    border: "1px solid rgba(159,122,234,0.25)",
+                                    background: "rgba(201,137,36,0.1)",
+                                    border: "1px solid rgba(201,137,36,0.25)",
                                     borderRadius: 20,
                                     padding: "2px 9px",
                                     fontFamily: "var(--tekori-font-ui)",
@@ -168,7 +168,7 @@ export default function ConceptModal({
                                     <div style={{
                                         fontSize: 10,
                                         color: "var(--tekori-gold)",
-                                        background: "rgba(159,122,234,0.08)",
+                                        background: "rgba(201,137,36,0.08)",
                                         borderRadius: 20,
                                         padding: "2px 9px",
                                         fontFamily: "var(--tekori-font-ui)",
@@ -277,8 +277,8 @@ export default function ConceptModal({
                             <div style={{
                                 marginBottom: 18,
                                 padding: "14px 16px",
-                                background: "rgba(159,122,234,0.05)",
-                                border: "1px solid rgba(159,122,234,0.18)",
+                                background: "rgba(201,137,36,0.05)",
+                                border: "1px solid rgba(201,137,36,0.18)",
                                 borderRadius: 12,
                             }}>
                                 <SectionLabel color="var(--tekori-gold)">Sit with this</SectionLabel>
@@ -309,8 +309,8 @@ export default function ConceptModal({
                                                     }
                                                 }}
                                                 style={{
-                                                    background: "rgba(159,122,234,0.08)",
-                                                    border: "1px solid rgba(159,122,234,0.25)",
+                                                    background: "rgba(201,137,36,0.08)",
+                                                    border: "1px solid rgba(201,137,36,0.25)",
                                                     borderRadius: 20,
                                                     padding: "4px 12px",
                                                     color: "var(--tekori-gold)",

@@ -1882,7 +1882,7 @@ Where do you want to start?`;
                 Stage {stageData.id} — {stageData.label}
               </span>
             )}
-            <span style={{ fontSize: 10, color: "rgba(102,112,133,0.74)", fontFamily: "var(--tekori-font-ui)", marginLeft: "auto" }}>
+            <span style={{ fontSize: 10, color: "rgba(7,26,47,0.74)", fontFamily: "var(--tekori-font-ui)", marginLeft: "auto" }}>
               {dateLabel}
             </span>
           </div>
@@ -2950,7 +2950,7 @@ ${forgeReply}`;
                           background: active ? `${opt.color}20` : "rgba(7,26,47,0.04)",
                           border: `1px solid ${active ? opt.color + "50" : "rgba(7,26,47,0.10)"}`,
                           borderRadius: 20,
-                          color: active ? opt.color : "rgba(102,112,133,0.68)",
+                          color: active ? opt.color : "rgba(7,26,47,0.68)",
                           fontSize: 11,
                           fontFamily: "var(--tekori-font-ui)",
                           fontWeight: active ? 700 : 500,

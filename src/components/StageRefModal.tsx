@@ -44,7 +44,7 @@ export default function StageRefModal({ stageId, messages, profile, onClose }) {
                     right: 0,
                     bottom: 0,
                     top: "8%",
-                    background: "#0A0A0C",
+                    background: "var(--foundry-surface-primary)",
                     borderTop: "1px solid rgba(7,26,47,0.1)",
                     borderRadius: "20px 20px 0 0",
                     display: "flex",
@@ -164,7 +164,7 @@ export default function StageRefModal({ stageId, messages, profile, onClose }) {
                                                 fontSize: 10,
                                                 lineHeight: 1.2,
                                                 marginBottom: 6,
-                                                color: isForge ? "var(--color-text-muted)" : "rgba(71,84,103,0.88)",
+                                                color: isForge ? "var(--color-text-muted)" : "rgba(7,26,47,0.88)",
                                                 letterSpacing: "0.04em",
                                                 fontFamily: "var(--tekori-font-ui)",
                                             }}

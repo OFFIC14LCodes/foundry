@@ -255,7 +255,7 @@ ${summariesText}`;
         >
             <div
                 style={{
-                    background: "#0d0d0e",
+                    background: "var(--foundry-surface-primary)",
                     border: "1px solid rgba(7,26,47,0.1)",
                     borderRadius: 22,
                     padding: 24,

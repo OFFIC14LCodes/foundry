@@ -46,7 +46,7 @@ export default function GlossaryModal({
     return (
         <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", flexDirection: "column", justifyContent: "flex-end", animation: "fadeIn 0.2s ease" }}>
             <div onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(7,26,47,0.62)", backdropFilter: "blur(6px)" }} />
-            <div style={{ position: "relative", background: "#0D0D10", borderTop: "1px solid rgba(7,26,47,0.1)", borderRadius: "20px 20px 0 0", padding: "24px 20px max(36px, calc(20px + env(safe-area-inset-bottom)))", animation: "slideUp 0.3s cubic-bezier(0.16,1,0.3,1)", maxHeight: "82vh", overflowY: "auto" }}>
+            <div style={{ position: "relative", background: "var(--foundry-surface-primary)", borderTop: "1px solid rgba(7,26,47,0.1)", borderRadius: "20px 20px 0 0", padding: "24px 20px max(36px, calc(20px + env(safe-area-inset-bottom)))", animation: "slideUp 0.3s cubic-bezier(0.16,1,0.3,1)", maxHeight: "82vh", overflowY: "auto" }}>
                 <div style={{ width: 36, height: 3, background: "rgba(7,26,47,0.12)", borderRadius: 2, margin: "0 auto 20px" }} />
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 18 }}>
                     <div>

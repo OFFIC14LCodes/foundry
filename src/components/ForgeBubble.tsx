@@ -752,9 +752,7 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
                     width: BUBBLE_SIZE,
                     height: BUBBLE_SIZE,
                     borderRadius: "50%",
-                    background: open
-                        ? "linear-gradient(135deg, var(--color-bg-soft), var(--color-bg-warm))"
-                        : "linear-gradient(135deg, var(--color-bg-warm), var(--color-bg-soft))",
+                    background: "#ffffff",
                     border: `1.5px solid ${dragging ? "rgba(216,155,43,0.8)" : open ? "rgba(216,155,43,0.6)" : "rgba(216,155,43,0.35)"}`,
                     boxShadow: dragging
                         ? "0 8px 32px rgba(216,155,43,0.55), 0 4px 12px rgba(0,0,0,0.6)"
@@ -789,8 +787,8 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
                     <Logo
                         variant="forge"
                         style={{
-                            width: 28,
-                            height: 28,
+                            width: 36,
+                            height: 36,
                             objectFit: "contain",
                             opacity: open ? 1 : 0.85,
                             transition: "opacity 0.2s",

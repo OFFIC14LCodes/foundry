@@ -304,7 +304,7 @@ function TypedSignaturePanel({
                     minWidth: 132,
                     padding: "4px 10px 7px",
                     borderBottom: "1px solid rgba(16,32,51,0.5)",
-                    color: value.trim() ? "var(--color-text)" : "rgba(102,112,133,0.42)",
+                    color: value.trim() ? "var(--color-text)" : "rgba(7,26,47,0.42)",
                     fontFamily: "'Segoe Script', 'Brush Script MT', 'Lucida Handwriting', cursive",
                     fontSize: 21,
                     lineHeight: 1.15,
@@ -1845,7 +1845,7 @@ export default function DocumentProductionScreen({
                                     }}
                                     disabled={vaultHealthLoading}
                                     aria-label="Refresh vault summary"
-                                    style={{ background: "transparent", border: "none", color: "rgba(102,112,133,0.74)", cursor: vaultHealthLoading ? "wait" : "pointer", fontSize: 18, lineHeight: 1 }}
+                                    style={{ background: "transparent", border: "none", color: "rgba(7,26,47,0.74)", cursor: vaultHealthLoading ? "wait" : "pointer", fontSize: 18, lineHeight: 1 }}
                                 >
                                     ↻
                                 </button>
@@ -1936,14 +1936,14 @@ export default function DocumentProductionScreen({
                                     </div>
                                     <div style={{ padding: 16 }}>
                                         {!legalDisclaimerDismissed && (
-                                            <div style={{ marginBottom: 12, background: "rgba(216,155,43,0.08)", border: "1px solid rgba(216,155,43,0.25)", borderRadius: 8, padding: "12px 14px", color: "rgba(71,84,103,0.88)", fontFamily: "var(--tekori-font-ui)", fontSize: 12, lineHeight: 1.6, display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start" }}>
+                                            <div style={{ marginBottom: 12, background: "rgba(216,155,43,0.08)", border: "1px solid rgba(216,155,43,0.25)", borderRadius: 8, padding: "12px 14px", color: "rgba(7,26,47,0.88)", fontFamily: "var(--tekori-font-ui)", fontSize: 12, lineHeight: 1.6, display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start" }}>
                                                 <div>
                                                     <strong style={{ color: "var(--color-text)" }}>⚠ AI-Generated Document</strong>
                                                     <div>{selectedVaultRiskNote} This document was created by Navi and has not been reviewed by an attorney.</div>
                                                 </div>
                                                 <button
                                                     onClick={() => setLegalDisclaimerDismissed(true)}
-                                                    style={{ background: "transparent", border: "none", color: "rgba(71,84,103,0.88)", cursor: "pointer", fontSize: 13 }}
+                                                    style={{ background: "transparent", border: "none", color: "rgba(7,26,47,0.88)", cursor: "pointer", fontSize: 13 }}
                                                 >
                                                     X
                                                 </button>
