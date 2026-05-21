@@ -70,7 +70,7 @@ function AnimatedForgeText({ text, renderWithBold, onStageRef, onGlossaryTap, on
                 @keyframes forgeLetterCool {
                     0% {
                         color: #ff6a3d;
-                        text-shadow: 0 0 10px rgba(216,155,43,0.42), 0 0 18px rgba(244,182,66,0.18);
+                        text-shadow: 0 0 10px rgba(216,155,43,0.42), 0 0 18px rgba(244,199,106,0.18);
                     }
                     35% {
                         color: #f59a69;
@@ -190,7 +190,7 @@ export default function MessageBubble({ msg, onStageRef, onGlossaryTap, onConcep
                         fontSize: isForge ? 14 : 13,
                         fontFamily: isForge ? "var(--tekori-font-ui)" : "var(--tekori-font-ui)",
                         lineHeight: 1.75,
-                        color: isForge ? "var(--color-text)" : "#fff",
+                        color: isForge ? "var(--color-text)" : "var(--tekori-white)",
                         textAlign: "left",
                     }}
                 >

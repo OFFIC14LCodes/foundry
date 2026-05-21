@@ -101,8 +101,8 @@ function BriefingText({ text }: { text: string }) {
                     >
                         <div
                             style={{
-                                background: isFocus ? "rgba(216,155,43,0.06)" : isAction ? "rgba(76,175,138,0.06)" : "transparent",
-                                border: isFocus ? "1px solid rgba(216,155,43,0.15)" : isAction ? "1px solid rgba(76,175,138,0.15)" : "none",
+                                background: isFocus ? "rgba(216,155,43,0.06)" : isAction ? "rgba(115,135,123,0.08)" : "transparent",
+                                border: isFocus ? "1px solid rgba(216,155,43,0.15)" : isAction ? "1px solid rgba(115,135,123,0.16)" : "none",
                                 borderRadius: highlighted ? 8 : 0,
                                 padding: highlighted ? 12 : 0,
                             }}
@@ -434,7 +434,7 @@ export default function BriefingsScreen({
                 </div>
             )}
             {actionNotice && (
-                <div style={{ margin: "12px auto 0", maxWidth: 680, width: "calc(100% - 32px)", boxSizing: "border-box", background: "rgba(76,175,138,0.08)", border: "1px solid rgba(76,175,138,0.2)", borderRadius: 10, padding: "10px 12px", color: "var(--color-success)", fontSize: 12, fontFamily: "var(--tekori-font-ui)" }}>
+                <div style={{ margin: "12px auto 0", maxWidth: 680, width: "calc(100% - 32px)", boxSizing: "border-box", background: "rgba(115,135,123,0.10)", border: "1px solid rgba(115,135,123,0.24)", borderRadius: 10, padding: "10px 12px", color: "var(--color-success)", fontSize: 12, fontFamily: "var(--tekori-font-ui)" }}>
                     {actionNotice}
                 </div>
             )}
@@ -482,7 +482,7 @@ export default function BriefingsScreen({
                         <button onClick={generateBriefing} disabled={generating || hasReachedLimit} style={{
                             background: generating || hasReachedLimit ? "rgba(216,155,43,0.3)" : "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))",
                             border: "none", borderRadius: 12, padding: "12px 24px",
-                            color: "#fff", fontSize: 13, fontFamily: "var(--tekori-font-ui)",
+                            color: "var(--tekori-white)", fontSize: 13, fontFamily: "var(--tekori-font-ui)",
                             fontWeight: 600, cursor: generating || hasReachedLimit ? "default" : "pointer",
                             boxShadow: generating || hasReachedLimit ? "none" : "0 4px 20px rgba(216,155,43,0.3)",
                         }}>

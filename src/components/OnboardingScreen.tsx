@@ -411,7 +411,7 @@ export default function OnboardingScreen({ onComplete, callForgeAPI, renderWithB
                 {stepIndex > 0 && (
                     <div style={{ display: "flex", gap: 6 }}>
                         {Array.from({ length: ONBOARDING_STEPS.length - 1 }, (_, i) => i).map(i => (
-                            <div key={i} style={{ width: i < stepIndex ? 18 : 6, height: 6, borderRadius: 3, background: i < stepIndex ? "linear-gradient(90deg, var(--tekori-gold), var(--tekori-amber))" : "rgba(7,26,47,0.12)", transition: "all 0.4s ease" }} />
+                            <div key={i} style={{ width: i < stepIndex ? 18 : 6, height: 6, borderRadius: 3, background: i < stepIndex ? "linear-gradient(90deg, var(--tekori-gold), var(--tekori-gold))" : "rgba(7,26,47,0.12)", transition: "all 0.4s ease" }} />
                         ))}
                     </div>
                 )}

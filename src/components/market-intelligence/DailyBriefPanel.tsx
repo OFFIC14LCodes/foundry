@@ -104,10 +104,10 @@ export default function DailyBriefPanel({
                     marginBottom: 14,
                     padding: "12px 14px",
                     borderRadius: 12,
-                    background: hasReachedLimit ? "rgba(217,177,93,0.08)" : "rgba(142,160,181,0.055)",
-                    border: hasReachedLimit ? "1px solid rgba(217,177,93,0.2)" : "1px solid rgba(142,160,181,0.15)",
+                    background: hasReachedLimit ? "rgba(244,199,106,0.12)" : "rgba(48,70,95,0.055)",
+                    border: hasReachedLimit ? "1px solid rgba(244,199,106,0.24)" : "1px solid rgba(48,70,95,0.15)",
                     fontSize: 12,
-                    color: hasReachedLimit ? "var(--tekori-amber)" : "var(--color-text-muted)",
+                    color: hasReachedLimit ? "var(--tekori-gold)" : "var(--color-text-muted)",
                     lineHeight: 1.65,
                 }}>
                     {hasReachedLimit
@@ -131,7 +131,7 @@ export default function DailyBriefPanel({
                         <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>What you'll get</div>
                         {["Market overview for your specific industry", "Key trends reshaping the space", "Competitive landscape at your stage", "Financial and funding signals", "Risks and opportunities right now", "What matters most — given your stage and strategy"].map((item, i) => (
                             <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8 }}>
-                                <div style={{ width: 14, height: 14, borderRadius: "50%", background: "rgba(142,160,181,0.12)", border: "1px solid rgba(142,160,181,0.22)", flexShrink: 0, marginTop: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                <div style={{ width: 14, height: 14, borderRadius: "50%", background: "rgba(48,70,95,0.12)", border: "1px solid rgba(48,70,95,0.22)", flexShrink: 0, marginTop: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
                                     <div style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--tekori-muted-text)" }} />
                                 </div>
                                 <span style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.5 }}>{item}</span>
@@ -154,15 +154,15 @@ export default function DailyBriefPanel({
             )}
 
             {hasOutdatedReport && !generating && currentReport && (
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 14px", background: "rgba(244,182,66,0.05)", border: "1px solid rgba(244,182,66,0.15)", borderRadius: 10, marginBottom: 18, animation: "fadeSlideUp 0.3s ease both" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 14px", background: "rgba(244,199,106,0.08)", border: "1px solid rgba(244,199,106,0.16)", borderRadius: 10, marginBottom: 18, animation: "fadeSlideUp 0.3s ease both" }}>
                     <div>
-                        <div style={{ fontSize: 11, color: "var(--tekori-amber)", fontWeight: 600, marginBottom: 2 }}>Report from {formatReportDate(currentReport.date)}</div>
+                        <div style={{ fontSize: 11, color: "var(--tekori-gold)", fontWeight: 600, marginBottom: 2 }}>Report from {formatReportDate(currentReport.date)}</div>
                         <div style={{ fontSize: 10, color: "var(--foundry-text-muted)" }}>Generate a fresh report for today</div>
                     </div>
                     <button
                         onClick={onGenerate}
                         disabled={!canGenerateReport}
-                        style={{ background: canGenerateReport ? "rgba(244,182,66,0.12)" : "rgba(7,26,47,0.04)", border: canGenerateReport ? "1px solid rgba(244,182,66,0.25)" : "1px solid rgba(7,26,47,0.06)", borderRadius: 8, padding: "6px 14px", color: canGenerateReport ? "var(--tekori-amber)" : "var(--color-text-muted)", fontSize: 11, fontWeight: 600, cursor: canGenerateReport ? "pointer" : "default", flexShrink: 0 }}
+                        style={{ background: canGenerateReport ? "rgba(244,199,106,0.14)" : "rgba(7,26,47,0.04)", border: canGenerateReport ? "1px solid rgba(244,199,106,0.26)" : "1px solid rgba(7,26,47,0.06)", borderRadius: 8, padding: "6px 14px", color: canGenerateReport ? "var(--tekori-gold)" : "var(--color-text-muted)", fontSize: 11, fontWeight: 600, cursor: canGenerateReport ? "pointer" : "default", flexShrink: 0 }}
                     >
                         {hasReachedLimit ? "Preview limit reached" : "Refresh"}
                     </button>
@@ -291,7 +291,7 @@ export default function DailyBriefPanel({
                     </div>
 
                     {!generating && isCurrentReport && (
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "rgba(76,175,138,0.05)", border: "1px solid rgba(76,175,138,0.12)", borderRadius: 10, marginBottom: 14, animation: "fadeSlideUp 0.3s ease both" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "rgba(115,135,123,0.08)", border: "1px solid rgba(115,135,123,0.14)", borderRadius: 10, marginBottom: 14, animation: "fadeSlideUp 0.3s ease both" }}>
                             <div style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--color-success)", flexShrink: 0 }} />
                             <div style={{ fontSize: 12, color: "var(--color-success)" }}>
                                 Navi can now reference this report in your conversations.
@@ -299,7 +299,7 @@ export default function DailyBriefPanel({
                         </div>
                     )}
 
-                    {saveError && <div style={{ fontSize: 11, color: "var(--tekori-amber)", lineHeight: 1.6, marginBottom: 12 }}>{saveError}</div>}
+                    {saveError && <div style={{ fontSize: 11, color: "var(--tekori-gold)", lineHeight: 1.6, marginBottom: 12 }}>{saveError}</div>}
 
                     {!generating && (
                         <div style={{ fontSize: 10, color: "var(--color-text-muted)", fontFamily: "var(--tekori-font-ui)", fontStyle: "italic", textAlign: "left", paddingTop: 8 }}>

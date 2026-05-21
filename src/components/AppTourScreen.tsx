@@ -79,7 +79,7 @@ const TOUR_STEPS: GuideStep[] = [
     body: "Save useful Navi threads and pull them back up later instead of hunting through old messages.",
     location: "From the Hub menu, choose Archive.",
     useFor: "Use it when a conversation became a reusable asset and you want to revisit it later.",
-    accent: "var(--tekori-amber)",
+    accent: "var(--tekori-gold)",
     targetLabel: "Archive",
     targetSub: "Saved conversation snapshots",
     targetIcon: Archive,
@@ -346,7 +346,7 @@ function HubGuideSlide({ step }: { step: GuideStep }) {
 
   const segments = [
     { label: "Concept", value: 78, color: "var(--tekori-gold)" },
-    { label: "Market", value: 58, color: "var(--tekori-amber)" },
+    { label: "Market", value: 58, color: "var(--tekori-gold)" },
     { label: "Finance", value: 81, color: "var(--color-success)" },
   ];
 
@@ -376,7 +376,7 @@ function HubGuideSlide({ step }: { step: GuideStep }) {
                   <div key={i} style={{ flex: 1, textAlign: "center" }}>
                     <div style={{
                       width: 26, height: 26, borderRadius: "50%", margin: "0 auto 4px",
-                      background: s.done ? "rgba(76,175,138,0.18)" : s.current ? "rgba(216,155,43,0.14)" : "rgba(7,26,47,0.04)",
+                      background: s.done ? "rgba(115,135,123,0.18)" : s.current ? "rgba(216,155,43,0.14)" : "rgba(7,26,47,0.04)",
                       border: `1.5px solid ${s.done ? "var(--color-success)" : s.current ? "var(--tekori-gold)" : "rgba(7,26,47,0.10)"}`,
                       display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: 10, color: s.done ? "var(--color-success)" : s.current ? "var(--tekori-gold)" : "var(--color-text-muted)",
@@ -453,7 +453,7 @@ function ForgeGuideSlide({ step }: { step: GuideStep }) {
           <div style={{ padding: 16, display: "grid", gap: 12 }}>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {["Milestones", "Budget", "Strategy"].map((item, index) => (
-                <div key={item} style={{ padding: "6px 10px", borderRadius: 999, fontSize: 11, color: index === 0 ? "var(--tekori-gold)" : "var(--color-text-muted)", border: `1px solid ${index === 0 ? "rgba(216,155,43,0.32)" : "rgba(7,26,47,0.08)"}`, background: index === 0 ? "rgba(216,155,43,0.1)" : "rgba(7,26,47,0.03)" }}>
+                <div key={item} style={{ padding: "6px 10px", borderRadius: 999, fontSize: 11, color: index === 0 ? "var(--tekori-gold)" : "var(--color-pill-text)", border: `1px solid ${index === 0 ? "rgba(216,155,43,0.32)" : "rgba(7,26,47,0.08)"}`, background: index === 0 ? "rgba(216,155,43,0.1)" : "rgba(7,26,47,0.03)" }}>
                   {item}
                 </div>
               ))}

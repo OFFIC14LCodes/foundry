@@ -109,7 +109,7 @@ export default function DocumentNeedsWizard(props: {
                             <div style={{ padding: "14px 16px", borderRadius: 14, border: "1px solid rgba(7,26,47,0.06)", background: "rgba(7,26,47,0.018)" }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", marginBottom: 6, flexWrap: "wrap" }}>
                                     <div style={{ fontSize: 14, color: "var(--color-text)", fontWeight: 600 }}>Recommendation Summary</div>
-                                    <span style={{ padding: "3px 8px", borderRadius: 999, fontSize: 10, fontWeight: 700, color: visibleNeedsResult.generatedBy === "ai" ? "var(--tekori-muted-text)" : "var(--tekori-amber)", background: visibleNeedsResult.generatedBy === "ai" ? "rgba(142,160,181,0.1)" : "rgba(217,177,93,0.1)", border: visibleNeedsResult.generatedBy === "ai" ? "1px solid rgba(142,160,181,0.2)" : "1px solid rgba(217,177,93,0.2)" }}>
+                                    <span style={{ padding: "3px 8px", borderRadius: 999, fontSize: 10, fontWeight: 700, color: visibleNeedsResult.generatedBy === "ai" ? "var(--color-pill-text)" : "var(--tekori-gold)", background: visibleNeedsResult.generatedBy === "ai" ? "rgba(48,70,95,0.10)" : "rgba(244,199,106,0.14)", border: visibleNeedsResult.generatedBy === "ai" ? "1px solid rgba(48,70,95,0.20)" : "1px solid rgba(244,199,106,0.24)" }}>
                                         {visibleNeedsResult.generatedBy === "ai" ? "Navi-assisted" : "Built-in fallback"}
                                     </span>
                                 </div>
@@ -145,7 +145,7 @@ export default function DocumentNeedsWizard(props: {
                                                         <div style={{ fontSize: 10, color: "var(--foundry-text-muted)", marginTop: 3 }}>{item.categoryName} · Suggested stage {item.suggestedStage}</div>
                                                     </div>
                                                     <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
-                                                        <span style={{ padding: "3px 8px", borderRadius: 999, fontSize: 10, fontWeight: 700, color: existsInVault ? "var(--color-success)" : "var(--tekori-gold)", background: existsInVault ? "rgba(76,175,138,0.1)" : "rgba(216,155,43,0.1)", border: existsInVault ? "1px solid rgba(76,175,138,0.2)" : "1px solid rgba(216,155,43,0.2)" }}>
+                                                        <span style={{ padding: "3px 8px", borderRadius: 999, fontSize: 10, fontWeight: 700, color: existsInVault ? "var(--color-success)" : "var(--tekori-gold)", background: existsInVault ? "rgba(115,135,123,0.12)" : "rgba(216,155,43,0.1)", border: existsInVault ? "1px solid rgba(115,135,123,0.22)" : "1px solid rgba(216,155,43,0.2)" }}>
                                                             {existsInVault ? "Already in vault" : "Missing"}
                                                         </span>
                                                         <NeutralBadge label={RECOMMENDATION_ACTION_LABELS[item.recommendedAction]} />
@@ -155,14 +155,14 @@ export default function DocumentNeedsWizard(props: {
                                                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                                                     {existsInVault && vaultMatch ? (
                                                         <>
-                                                            <span style={{ display: "inline-flex", alignItems: "center", padding: "7px 10px", borderRadius: 8, border: "1px solid rgba(76,175,138,0.2)", background: "rgba(76,175,138,0.1)", color: "var(--color-success)", fontSize: 11, fontWeight: 700 }}>✓ In your vault</span>
+                                                            <span style={{ display: "inline-flex", alignItems: "center", padding: "7px 10px", borderRadius: 8, border: "1px solid rgba(115,135,123,0.22)", background: "rgba(115,135,123,0.12)", color: "var(--color-success)", fontSize: 11, fontWeight: 700 }}>✓ In your vault</span>
                                                             <button onClick={() => onReview(vaultMatch.id)} style={{ padding: "7px 4px", background: "transparent", border: "none", color: "var(--color-text-soft)", fontSize: 11, cursor: "pointer", fontFamily: "var(--tekori-font-ui)" }}>Review →</button>
                                                         </>
                                                     ) : (
                                                         <button onClick={() => onGenerate(item.categoryId, item.documentId)} style={{ padding: "7px 10px", background: "rgba(216,155,43,0.08)", border: "1px solid rgba(216,155,43,0.18)", borderRadius: 8, color: "var(--tekori-gold)", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "var(--tekori-font-ui)" }}>Generate this document</button>
                                                     )}
                                                     {existsInVault && item.recommendedAction === "send_for_signature" && vaultMatch && <button onClick={() => onReview(vaultMatch.id)} style={{ padding: "7px 10px", background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 8, color: "var(--color-text-muted)", fontSize: 11, cursor: "pointer", fontFamily: "var(--tekori-font-ui)" }}>Prepare to sign</button>}
-                                                    {!existsInVault && item.recommendedAction === "upload" && <span style={{ display: "inline-flex", alignItems: "center", padding: "7px 10px", borderRadius: 8, border: "1px solid rgba(7,26,47,0.08)", background: "rgba(7,26,47,0.03)", color: "var(--color-text-muted)", fontSize: 11 }}>Upload if you already have it</span>}
+                                                    {!existsInVault && item.recommendedAction === "upload" && <span style={{ display: "inline-flex", alignItems: "center", padding: "7px 10px", borderRadius: 8, border: "1px solid rgba(7,26,47,0.08)", background: "rgba(7,26,47,0.03)", color: "var(--color-pill-text)", fontSize: 11 }}>Upload if you already have it</span>}
                                                     <button onClick={() => onDismiss(item.key)} style={{ padding: "7px 10px", background: "rgba(7,26,47,0.03)", border: "1px solid rgba(7,26,47,0.07)", borderRadius: 8, color: "var(--foundry-text-secondary)", fontSize: 11, cursor: "pointer", fontFamily: "var(--tekori-font-ui)" }}>Not needed</button>
                                                 </div>
                                             </div>

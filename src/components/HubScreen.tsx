@@ -29,24 +29,24 @@ function HubFocusCard({
 }) {
     const tones = {
         primary: {
-            background: "linear-gradient(180deg, rgba(216,155,43,0.075), rgba(7,26,47,0.022))",
+            background: "linear-gradient(180deg, rgba(241,232,216,0.72), rgba(255,252,247,0.96))",
             border: "1px solid rgba(216,155,43,0.16)",
             color: "var(--tekori-gold)",
         },
         learn: {
-            background: "linear-gradient(180deg, rgba(142,160,181,0.07), rgba(7,26,47,0.02))",
-            border: "1px solid rgba(142,160,181,0.15)",
-            color: "var(--tekori-slate-navy)",
+            background: "linear-gradient(180deg, rgba(255,252,247,0.98), rgba(241,232,216,0.42))",
+            border: "1px solid rgba(48,70,95,0.13)",
+            color: "var(--tekori-slate)",
         },
         execute: {
-            background: "linear-gradient(180deg, rgba(76,175,138,0.065), rgba(7,26,47,0.02))",
-            border: "1px solid rgba(76,175,138,0.15)",
-            color: "#8FD0B5",
+            background: "linear-gradient(180deg, rgba(115,135,123,0.10), rgba(255,252,247,0.96))",
+            border: "1px solid rgba(115,135,123,0.20)",
+            color: "var(--tekori-sage)",
         },
         clarity: {
-            background: "linear-gradient(180deg, rgba(216,155,43,0.085), rgba(7,26,47,0.022))",
-            border: "1px solid rgba(216,155,43,0.18)",
-            color: "var(--tekori-soft-gold)",
+            background: "linear-gradient(180deg, rgba(244,199,106,0.16), rgba(255,252,247,0.96))",
+            border: "1px solid rgba(244,199,106,0.28)",
+            color: "var(--tekori-gold)",
         },
     } as const;
     const selected = tones[tone];
@@ -100,7 +100,7 @@ function getNudgePresentation(activeNudge: any) {
             eyebrow: "Clarity",
             title: "Money questions keep resurfacing",
             actionLabel: "Start quick chat",
-            color: "var(--tekori-soft-gold)",
+            color: "var(--tekori-gold)",
             icon: <BarChart3 size={16} />,
         };
     }
@@ -110,7 +110,7 @@ function getNudgePresentation(activeNudge: any) {
             eyebrow: "Clarity",
             title: "Pricing keeps coming up",
             actionLabel: "Start quick chat",
-            color: "var(--tekori-soft-gold)",
+            color: "var(--tekori-gold)",
             icon: <BarChart3 size={16} />,
         };
     }
@@ -120,7 +120,7 @@ function getNudgePresentation(activeNudge: any) {
             eyebrow: "Clarity",
             title: "A decision needs another look",
             actionLabel: "Start quick chat",
-            color: "var(--tekori-soft-gold)",
+            color: "var(--tekori-gold)",
             icon: <Zap size={16} />,
         };
     }
@@ -130,7 +130,7 @@ function getNudgePresentation(activeNudge: any) {
             eyebrow: "Clarity",
             title: "Something is slowing progress",
             actionLabel: "Start quick chat",
-            color: "var(--tekori-soft-gold)",
+            color: "var(--tekori-gold)",
             icon: <Icons.forge.chat size={16} />,
         };
     }
@@ -474,7 +474,7 @@ export default function HubScreen({
                         transition: "all 0.5s var(--foundry-ease)",
                     }}
                 >
-                    <div className="foundry-label" style={{ marginBottom: 12, color: "var(--foundry-orange)" }}>
+                    <div className="foundry-label" style={{ marginBottom: 12, color: "var(--tekori-gold)" }}>
                         Education + Execution
                     </div>
                     <div className="foundry-hub-command-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 16, alignItems: "start", marginBottom: 16 }}>
@@ -509,7 +509,7 @@ export default function HubScreen({
                         style={{
                             padding: "15px 15px 14px",
                             borderRadius: "var(--foundry-radius-card)",
-                            background: "linear-gradient(135deg, rgba(216,155,43,0.12), rgba(244,182,66,0.055) 48%, rgba(7,26,47,0.026))",
+                            background: "linear-gradient(135deg, rgba(216,155,43,0.12), rgba(244,199,106,0.055) 48%, rgba(7,26,47,0.026))",
                             border: "1px solid rgba(216,155,43,0.26)",
                             boxShadow: "0 18px 44px rgba(216,155,43,0.10)",
                             marginBottom: 16,
@@ -517,14 +517,14 @@ export default function HubScreen({
                     >
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 8 }}>
                             <div>
-                                <div className="foundry-label" style={{ color: "var(--foundry-orange)", marginBottom: 4 }}>
+                                <div className="foundry-label" style={{ color: "var(--tekori-gold)", marginBottom: 4 }}>
                                     Resume Progress
                                 </div>
                                 <div style={{ fontSize: 17, color: "var(--foundry-text-primary)", fontFamily: "var(--tekori-font-ui)", fontWeight: 700, lineHeight: 1.2 }}>
                                     Stage {currentStage} · {currentStageData.label}
                                 </div>
                             </div>
-                            <div className="foundry-font-ui" style={{ fontSize: 12, color: "var(--foundry-ember)", fontWeight: 700 }}>
+                            <div className="foundry-font-ui" style={{ fontSize: 12, color: "var(--tekori-amber-light)", fontWeight: 700 }}>
                                 {currentStagePct}%
                             </div>
                         </div>
@@ -535,7 +535,7 @@ export default function HubScreen({
                                     height: "100%",
                                     width: `${currentStagePct}%`,
                                     borderRadius: 999,
-                                    background: "linear-gradient(90deg, var(--foundry-orange), var(--foundry-ember))",
+                                    background: "linear-gradient(90deg, var(--tekori-gold), var(--tekori-amber-light))",
                                 }}
                             />
                         </div>
@@ -617,11 +617,11 @@ export default function HubScreen({
                             <button
                                 onClick={() => onAcceptCofounderInvite?.(invite)}
                                 style={{
-                                    background: "linear-gradient(135deg, var(--tekori-muted-text), var(--tekori-slate-navy))",
+                                    background: "linear-gradient(135deg, var(--tekori-navy), var(--tekori-slate))",
                                     border: "none",
                                     borderRadius: 8,
                                     padding: "6px 16px",
-                                    color: "#fff",
+                                    color: "var(--tekori-white)",
                                     fontSize: 12,
                                     fontWeight: 600,
                                     cursor: "pointer",
@@ -698,13 +698,13 @@ export default function HubScreen({
                                             borderRadius: 10,
                                             fontSize: 16,
                                             background: isComplete
-                                                ? "rgba(76,175,138,0.16)"
+                                                ? "rgba(115,135,123,0.16)"
                                                 : isCurrent
                                                     ? "rgba(216,155,43,0.15)"
                                                     : "rgba(7,26,47,0.03)",
                                             color: isComplete ? "var(--color-success)" : undefined,
                                             border: isComplete
-                                                ? "1px solid rgba(76,175,138,0.24)"
+                                                ? "1px solid rgba(115,135,123,0.24)"
                                                 : isCurrent && !isComplete ? "1px solid rgba(216,155,43,0.42)" : "1px solid rgba(7,26,47,0.04)",
                                             display: "flex",
                                             alignItems: "center",
@@ -736,7 +736,7 @@ export default function HubScreen({
                             style={{
                                 height: "100%",
                                 width: `${journeyPct}%`,
-                                background: "linear-gradient(90deg, var(--tekori-gold), var(--tekori-amber))",
+                                background: "linear-gradient(90deg, var(--tekori-gold), var(--tekori-amber-light))",
                                 borderRadius: 2,
                                 transition: "width 1s ease",
                             }}
@@ -788,7 +788,7 @@ export default function HubScreen({
                             Support Signal: Business Health
                         </div>
                         <div className="foundry-inline-actions">
-                            <div style={{ fontSize: 11, color: businessHealth.overallScore >= 62 ? "var(--color-success)" : businessHealth.overallScore >= 45 ? "var(--tekori-amber)" : "#D96A55" }}>
+                            <div style={{ fontSize: 11, color: businessHealth.overallScore >= 62 ? "var(--color-success)" : businessHealth.overallScore >= 45 ? "var(--color-warning)" : "var(--color-danger)" }}>
                                 {businessHealth.statusLabel}
                             </div>
                             <button
@@ -875,8 +875,8 @@ export default function HubScreen({
                         <div style={{ fontSize: 15, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, color: "var(--color-text)" }}>Support: Financial Modeling</div>
                         <div className="foundry-inline-actions">
                             <button onClick={openBudgetModal} style={{ background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 8, padding: "4px 12px", color: "var(--color-text)", fontSize: 11, cursor: "pointer", fontWeight: 500 }}>Customize</button>
-                            <button onClick={() => setShowIncomeModal(true)} style={{ background: "rgba(76,175,138,0.1)", border: "1px solid rgba(76,175,138,0.25)", borderRadius: 8, padding: "4px 12px", color: "var(--color-success)", fontSize: 11, cursor: "pointer", fontWeight: 500 }}>+ Revenue</button>
-                            <button onClick={() => setShowExpenseModal(true)} style={{ background: "rgba(217,106,85,0.1)", border: "1px solid rgba(217,106,85,0.25)", borderRadius: 8, padding: "4px 12px", color: "#D96A55", fontSize: 11, cursor: "pointer", fontWeight: 500 }}>+ Expense</button>
+                            <button onClick={() => setShowIncomeModal(true)} style={{ background: "rgba(115,135,123,0.12)", border: "1px solid rgba(115,135,123,0.26)", borderRadius: 8, padding: "4px 12px", color: "var(--color-success)", fontSize: 11, cursor: "pointer", fontWeight: 500 }}>+ Revenue</button>
+                            <button onClick={() => setShowExpenseModal(true)} style={{ background: "rgba(184,92,75,0.10)", border: "1px solid rgba(184,92,75,0.24)", borderRadius: 8, padding: "4px 12px", color: "var(--color-danger)", fontSize: 11, cursor: "pointer", fontWeight: 500 }}>+ Expense</button>
                         </div>
                     </div>
                     <div style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.6, marginBottom: 12 }}>
@@ -891,9 +891,9 @@ export default function HubScreen({
                     <div className="hub-budget-grid" style={{ marginBottom: 14 }}>
                         {[
                             { label: "Available Cash", value: formatCurrency(financialSummary?.availableCash || profile.budget?.remaining || 0), color: "var(--color-text)" },
-                            { label: "Monthly Burn", value: formatCurrency(financialSummary?.monthlyBurn || 0), color: "#D96A55" },
+                            { label: "Monthly Burn", value: formatCurrency(financialSummary?.monthlyBurn || 0), color: "var(--color-danger)" },
                             { label: "Runway", value: financialSummary?.runwayMonths != null ? `${financialSummary.runwayMonths.toFixed(1)} mo` : "TBD", color: "var(--color-success)" },
-                            { label: "Net Snapshot", value: formatCurrency(financialSummary?.roughNetSnapshot || 0), color: (financialSummary?.roughNetSnapshot || 0) >= 0 ? "var(--color-success)" : "#FF6B6B" },
+                            { label: "Net Snapshot", value: formatCurrency(financialSummary?.roughNetSnapshot || 0), color: (financialSummary?.roughNetSnapshot || 0) >= 0 ? "var(--color-success)" : "var(--color-danger)" },
                         ].map(item => (
                             <div key={item.label} style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.05)", borderRadius: 10, padding: "10px", textAlign: "center" }}>
                                 <div style={{ fontSize: "clamp(14px, 4vw, 20px)", fontFamily: "var(--tekori-font-ui)", fontWeight: 700, color: item.color, lineHeight: 1.1, marginBottom: 3 }}>{item.value}</div>
@@ -934,7 +934,7 @@ export default function HubScreen({
                                     Plaid bank linking is coming soon. For launch, keep this local by entering revenue and expenses manually.
                                 </div>
                             </div>
-                            <div style={{ background: "rgba(142,160,181,0.1)", border: "1px solid rgba(142,160,181,0.22)", borderRadius: 999, padding: "6px 10px", color: "var(--tekori-slate-navy)", fontSize: 10, fontFamily: "var(--tekori-font-ui)", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                            <div style={{ background: "rgba(48,70,95,0.10)", border: "1px solid rgba(48,70,95,0.22)", borderRadius: 999, padding: "6px 10px", color: "var(--tekori-slate-navy)", fontSize: 10, fontFamily: "var(--tekori-font-ui)", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase" }}>
                                 Coming Soon
                             </div>
                         </div>
@@ -952,7 +952,7 @@ export default function HubScreen({
                                     <div style={{ fontSize: 11, color: "var(--color-text-soft)" }}>{bucket.allocationPercent}% · {formatCurrency(bucket.estimatedAmount)}</div>
                                 </div>
                                 <div style={{ height: 6, background: "rgba(7,26,47,0.06)", borderRadius: 999, overflow: "hidden" }}>
-                                    <div style={{ width: `${Math.max(0, Math.min(bucket.allocationPercent, 100))}%`, height: "100%", background: bucket.bucketType === "profit" || bucket.bucketType === "tax" ? "linear-gradient(90deg, var(--color-success), #75D0A7)" : "linear-gradient(90deg, #D96A55, var(--tekori-amber))" }} />
+                                    <div style={{ width: `${Math.max(0, Math.min(bucket.allocationPercent, 100))}%`, height: "100%", background: bucket.bucketType === "profit" || bucket.bucketType === "tax" ? "linear-gradient(90deg, var(--color-success), rgba(115,135,123,0.72))" : "linear-gradient(90deg, var(--color-danger), var(--color-warning))" }} />
                                 </div>
                             </div>
                         ))}
@@ -964,7 +964,7 @@ export default function HubScreen({
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10, marginBottom: 10 }}>
                             <div>
                                 <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>Recurring Expenses</div>
-                                <div style={{ fontSize: 16, color: "#D96A55", fontFamily: "var(--tekori-font-ui)", fontWeight: 600 }}>{formatCurrency(financialSummary?.monthlyRecurringExpenses || 0)}/mo</div>
+                                <div style={{ fontSize: 16, color: "var(--color-danger)", fontFamily: "var(--tekori-font-ui)", fontWeight: 600 }}>{formatCurrency(financialSummary?.monthlyRecurringExpenses || 0)}/mo</div>
                             </div>
                             <div>
                                 <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>Recurring Revenue</div>
@@ -987,11 +987,11 @@ export default function HubScreen({
                                     </div>
                                     <div>
                                         <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>Monthly Expenses</div>
-                                        <div style={{ fontSize: 15, color: "#D96A55", fontFamily: "var(--tekori-font-ui)", fontWeight: 600 }}>{formatCurrency(financialSummary?.operatingView.monthlyExpenses || 0)}</div>
+                                        <div style={{ fontSize: 15, color: "var(--color-danger)", fontFamily: "var(--tekori-font-ui)", fontWeight: 600 }}>{formatCurrency(financialSummary?.operatingView.monthlyExpenses || 0)}</div>
                                     </div>
                                     <div>
                                         <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 2 }}>Operating Gap</div>
-                                        <div style={{ fontSize: 15, color: (financialSummary?.operatingView.monthlyOperatingGap || 0) >= 0 ? "var(--color-success)" : "#FF6B6B", fontFamily: "var(--tekori-font-ui)", fontWeight: 600 }}>{formatCurrency(financialSummary?.operatingView.monthlyOperatingGap || 0)}</div>
+                                        <div style={{ fontSize: 15, color: (financialSummary?.operatingView.monthlyOperatingGap || 0) >= 0 ? "var(--color-success)" : "var(--color-danger)", fontFamily: "var(--tekori-font-ui)", fontWeight: 600 }}>{formatCurrency(financialSummary?.operatingView.monthlyOperatingGap || 0)}</div>
                                     </div>
                                 </div>
                                 <div style={{ fontSize: 11, color: "var(--color-text-muted)", lineHeight: 1.6 }}>{financialSummary.breakEvenMessage}</div>
@@ -1029,7 +1029,7 @@ export default function HubScreen({
                                         <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", marginTop: 2 }}>{exp.category} · {String(exp.frequency).replace("_", " ")}{exp.incurredOn ? ` · ${formatFinancialDate(exp.incurredOn)}` : ""}</div>
                                     </div>
                                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                        <div style={{ fontSize: 12, color: "#D96A55", fontFamily: "var(--tekori-font-ui)", fontWeight: 600 }}>-{formatCurrency(exp.amount)}</div>
+                                        <div style={{ fontSize: 12, color: "var(--color-danger)", fontFamily: "var(--tekori-font-ui)", fontWeight: 600 }}>-{formatCurrency(exp.amount)}</div>
                                         <button onClick={() => deleteExpense(exp.id)} style={{ background: "none", border: "none", color: "var(--foundry-text-muted)", cursor: "pointer", fontSize: 14, lineHeight: 1, padding: "0 2px" }} title="Delete expense">×</button>
                                     </div>
                                 </div>
@@ -1120,7 +1120,7 @@ export default function HubScreen({
                                     <div key={i} style={{ padding: "10px 12px", background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.05)", borderRadius: 10 }}>
                                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
                                             <div style={{ fontSize: 12, color: "var(--color-text-soft)", lineHeight: 1.5, flex: 1 }}>{dec.text}</div>
-                                            {dec.tag && <div style={{ fontSize: 10, color: TAG_COLORS[dec.tag]?.text || "var(--color-text-muted)", background: TAG_COLORS[dec.tag]?.bg || "rgba(7,26,47,0.06)", borderRadius: 20, padding: "2px 8px", flexShrink: 0 }}>{dec.tag}</div>}
+                                            {dec.tag && <div style={{ fontSize: 10, color: TAG_COLORS[dec.tag]?.text || "var(--color-pill-text)", background: TAG_COLORS[dec.tag]?.bg || "rgba(7,26,47,0.06)", borderRadius: 20, padding: "2px 8px", flexShrink: 0 }}>{dec.tag}</div>}
                                         </div>
                                         <div style={{ fontSize: 10, color: "var(--foundry-text-secondary)", marginTop: 4 }}>{dec.date}</div>
                                     </div>
@@ -1144,7 +1144,7 @@ export default function HubScreen({
                         </div>
                         <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
                             {Object.keys(TAG_COLORS).map(t => (
-                                <button key={t} onClick={() => setDecisionTag(t)} style={{ padding: "4px 12px", borderRadius: 20, border: "none", background: decisionTag === t ? TAG_COLORS[t].bg : "rgba(7,26,47,0.04)", color: decisionTag === t ? TAG_COLORS[t].text : "var(--color-text-muted)", fontSize: 11, cursor: "pointer" }}>{t}</button>
+                                <button key={t} onClick={() => setDecisionTag(t)} style={{ padding: "4px 12px", borderRadius: 20, border: "none", background: decisionTag === t ? TAG_COLORS[t].bg : "rgba(7,26,47,0.04)", color: decisionTag === t ? TAG_COLORS[t].text : "var(--color-pill-text)", fontSize: 11, cursor: "pointer" }}>{t}</button>
                             ))}
                         </div>
                         <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
@@ -1204,7 +1204,7 @@ export default function HubScreen({
                         <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)", marginBottom: 6, letterSpacing: "0.08em", textTransform: "uppercase" }}>Frequency</div>
                         <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
                             {(["one-time", "monthly", "yearly"] as const).map(f => (
-                                <button key={f} onClick={() => { setIncomeFrequency(f); if (f === "one-time") setIncomeRenewalDate(""); }} style={{ flex: 1, padding: "8px 4px", borderRadius: 8, border: incomeFrequency === f ? "1px solid rgba(76,175,138,0.5)" : "1px solid rgba(7,26,47,0.08)", background: incomeFrequency === f ? "rgba(76,175,138,0.12)" : "rgba(7,26,47,0.03)", color: incomeFrequency === f ? "var(--color-success)" : "var(--color-text-muted)", fontSize: 11, cursor: "pointer", fontWeight: 500, textTransform: "capitalize" }}>{f}</button>
+                                <button key={f} onClick={() => { setIncomeFrequency(f); if (f === "one-time") setIncomeRenewalDate(""); }} style={{ flex: 1, padding: "8px 4px", borderRadius: 8, border: incomeFrequency === f ? "1px solid rgba(115,135,123,0.50)" : "1px solid rgba(7,26,47,0.08)", background: incomeFrequency === f ? "rgba(115,135,123,0.12)" : "rgba(7,26,47,0.03)", color: incomeFrequency === f ? "var(--color-success)" : "var(--color-text-muted)", fontSize: 11, cursor: "pointer", fontWeight: 500, textTransform: "capitalize" }}>{f}</button>
                             ))}
                         </div>
                         {incomeFrequency !== "one-time" && (
@@ -1215,7 +1215,7 @@ export default function HubScreen({
                         )}
                         <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
                             <button onClick={() => setShowIncomeModal(false)} style={{ flex: 1, padding: "10px", background: "transparent", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 10, color: "var(--foundry-text-muted)", fontSize: 12, cursor: "pointer" }}>Cancel</button>
-                            <button onClick={addIncome} style={{ flex: 2, padding: "10px", background: "linear-gradient(135deg, var(--color-success), var(--color-success))", border: "none", borderRadius: 10, color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "var(--tekori-font-ui)" }}>Save Revenue</button>
+                            <button onClick={addIncome} style={{ flex: 2, padding: "10px", background: "linear-gradient(135deg, var(--tekori-sage), rgba(115,135,123,0.82))", border: "none", borderRadius: 10, color: "var(--tekori-white)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "var(--tekori-font-ui)" }}>Save Revenue</button>
                         </div>
                     </div>
                 </div>
@@ -1330,7 +1330,7 @@ export default function HubScreen({
                             style={{ width: "100%", background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.1)", borderRadius: 10, padding: "10px 12px", color: "var(--color-text)", fontSize: 13, fontFamily: "var(--tekori-font-ui)", marginBottom: 16, boxSizing: "border-box" }}
                         />
                         {resetError && (
-                            <div style={{ fontSize: 12, color: "#D28B76", lineHeight: 1.6, marginBottom: 16 }}>
+                            <div style={{ fontSize: 12, color: "var(--color-danger)", lineHeight: 1.6, marginBottom: 16 }}>
                                 {resetError}
                             </div>
                         )}
@@ -1343,7 +1343,7 @@ export default function HubScreen({
                             </button>
                             <button
                                 onClick={confirmReset}
-                                style={{ flex: 2, padding: "10px", background: "linear-gradient(135deg, #A63B24, #842B1A)", border: "none", borderRadius: 10, color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "var(--tekori-font-ui)" }}
+                                style={{ flex: 2, padding: "10px", background: "linear-gradient(135deg, var(--color-danger), #984536)", border: "none", borderRadius: 10, color: "var(--tekori-white)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "var(--tekori-font-ui)" }}
                             >
                                 Yes, reset everything
                             </button>
@@ -1381,7 +1381,7 @@ function BusinessHealthDonut({ health }) {
         return cos > 0.25 ? "start" : cos < -0.25 ? "end" : "middle";
     };
 
-    const scoreColor = health.overallScore >= 62 ? "var(--color-success)" : health.overallScore >= 45 ? "var(--tekori-amber)" : "#D96A55";
+    const scoreColor = health.overallScore >= 62 ? "var(--color-success)" : health.overallScore >= 45 ? "var(--color-warning)" : "var(--color-danger)";
 
     return (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10 }}>

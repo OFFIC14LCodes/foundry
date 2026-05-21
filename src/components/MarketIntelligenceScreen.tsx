@@ -83,7 +83,7 @@ function getFreshness(report: MarketReport) {
         return {
             status: "aging" as const,
             label: `${ageDays} day${ageDays === 1 ? "" : "s"} old`,
-            color: "var(--tekori-amber)",
+            color: "var(--tekori-gold)",
         };
     }
 
@@ -577,15 +577,15 @@ export default function MarketIntelligenceScreen({
 
                 {/* Freshness badge */}
                 {isCurrentReport && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(76,175,138,0.08)", border: "1px solid rgba(76,175,138,0.2)", borderRadius: 20, padding: "4px 10px", flexShrink: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(115,135,123,0.10)", border: "1px solid rgba(115,135,123,0.22)", borderRadius: 20, padding: "4px 10px", flexShrink: 0 }}>
                         <div style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--color-success)" }} />
                         <span style={{ fontSize: 10, color: "var(--color-success)", fontWeight: 600 }}>Current</span>
                     </div>
                 )}
                 {hasOutdatedReport && !generating && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(244,182,66,0.08)", border: "1px solid rgba(244,182,66,0.2)", borderRadius: 20, padding: "4px 10px", flexShrink: 0 }}>
-                        <div style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--tekori-amber)" }} />
-                        <span style={{ fontSize: 10, color: "var(--tekori-amber)", fontWeight: 600 }}>Outdated</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(244,199,106,0.10)", border: "1px solid rgba(244,199,106,0.20)", borderRadius: 20, padding: "4px 10px", flexShrink: 0 }}>
+                        <div style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--tekori-gold)" }} />
+                        <span style={{ fontSize: 10, color: "var(--tekori-gold)", fontWeight: 600 }}>Outdated</span>
                     </div>
                 )}
             </div>
@@ -600,13 +600,13 @@ export default function MarketIntelligenceScreen({
                 </div>
 
                 {alertItems.length > 0 && (
-                    <div className="foundry-module-card" style={{ marginBottom: 14, padding: "12px 14px", background: "rgba(142,160,181,0.07)", border: "1px solid rgba(142,160,181,0.2)", color: "var(--color-text-soft)", fontFamily: "var(--tekori-font-ui)", fontSize: 12, lineHeight: 1.6 }}>
+                    <div className="foundry-module-card" style={{ marginBottom: 14, padding: "12px 14px", background: "rgba(48,70,95,0.07)", border: "1px solid rgba(48,70,95,0.20)", color: "var(--color-text-soft)", fontFamily: "var(--tekori-font-ui)", fontSize: 12, lineHeight: 1.6 }}>
                         <strong style={{ color: "var(--foundry-semantic-intelligence)" }}>New since last report:</strong> {alertItems.join(", ")}
                         {newCompetitorsSinceLastReport.length + highImpactTrendAlerts.length > alertItems.length ? " and more" : ""}
                     </div>
                 )}
                 {actionNotice && (
-                    <div style={{ marginBottom: 14, padding: "10px 12px", borderRadius: 10, background: "rgba(76,175,138,0.08)", border: "1px solid rgba(76,175,138,0.2)", color: "var(--color-success)", fontFamily: "var(--tekori-font-ui)", fontSize: 12 }}>
+                    <div style={{ marginBottom: 14, padding: "10px 12px", borderRadius: 10, background: "rgba(115,135,123,0.10)", border: "1px solid rgba(115,135,123,0.22)", color: "var(--color-success)", fontFamily: "var(--tekori-font-ui)", fontSize: 12 }}>
                         {actionNotice}
                     </div>
                 )}
@@ -658,10 +658,10 @@ export default function MarketIntelligenceScreen({
                         ) : structuredError ? (
                             <div style={{
                                 fontSize: 12,
-                                color: "var(--tekori-amber)",
+                                color: "var(--tekori-gold)",
                                 lineHeight: 1.7,
-                                background: "rgba(217,177,93,0.07)",
-                                border: "1px solid rgba(217,177,93,0.18)",
+                                background: "rgba(244,199,106,0.10)",
+                                border: "1px solid rgba(244,199,106,0.22)",
                                 borderRadius: "var(--foundry-radius-card)",
                                 padding: "14px 16px",
                             }}>
@@ -702,8 +702,8 @@ export default function MarketIntelligenceScreen({
                                                 style={{
                                                     flexShrink: 0,
                                                     textAlign: "left",
-                                                    background: selected ? "rgba(142,160,181,0.1)" : "rgba(7,26,47,0.02)",
-                                                    border: selected ? "1px solid rgba(142,160,181,0.22)" : "1px solid rgba(7,26,47,0.06)",
+                                                    background: selected ? "rgba(48,70,95,0.10)" : "rgba(7,26,47,0.02)",
+                                                    border: selected ? "1px solid rgba(48,70,95,0.22)" : "1px solid rgba(7,26,47,0.06)",
                                                     borderRadius: 10,
                                                     padding: "10px 14px",
                                                     color: "var(--color-text)",
@@ -734,7 +734,7 @@ export default function MarketIntelligenceScreen({
                                                             marginTop: 8,
                                                             padding: "5px 9px",
                                                             borderRadius: 8,
-                                                            border: "1px solid rgba(142,160,181,0.22)",
+                                                            border: "1px solid rgba(48,70,95,0.22)",
                                                             color: "var(--tekori-muted-text)",
                                                             fontSize: 10,
                                                             fontWeight: 700,
@@ -789,8 +789,8 @@ export default function MarketIntelligenceScreen({
                                                     onClick={() => selectReport(entry)}
                                                     style={{
                                                         textAlign: "left",
-                                                        background: selected ? "rgba(142,160,181,0.1)" : "rgba(7,26,47,0.02)",
-                                                        border: selected ? "1px solid rgba(142,160,181,0.22)" : "1px solid rgba(7,26,47,0.06)",
+                                                        background: selected ? "rgba(48,70,95,0.10)" : "rgba(7,26,47,0.02)",
+                                                        border: selected ? "1px solid rgba(48,70,95,0.22)" : "1px solid rgba(7,26,47,0.06)",
                                                         borderRadius: 10,
                                                         padding: "12px 14px",
                                                         color: "var(--color-text)",
@@ -818,7 +818,7 @@ export default function MarketIntelligenceScreen({
                                                                     flexShrink: 0,
                                                                     padding: "5px 8px",
                                                                     borderRadius: 8,
-                                                                    border: "1px solid rgba(142,160,181,0.22)",
+                                                                    border: "1px solid rgba(48,70,95,0.22)",
                                                                     color: "var(--tekori-muted-text)",
                                                                     fontSize: 10,
                                                                     fontWeight: 700,

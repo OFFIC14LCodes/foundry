@@ -1782,7 +1782,7 @@ Where do you want to start?`;
                 background: "transparent",
                 border: "none",
                 borderRadius: 8,
-                color: "#FF6B6B",
+                color: "var(--color-danger)",
                 padding: "10px 12px",
                 cursor: "pointer",
                 fontSize: 13,
@@ -1800,10 +1800,10 @@ Where do you want to start?`;
 
   const ARCHIVE_SOURCE_CONFIG: Record<ArchiveSourceType, { label: string; color: string; bg: string; borderColor: string }> = {
     forge:    { label: "Navi Session",  color: "var(--tekori-gold)", bg: "rgba(216,155,43,0.06)",   borderColor: "rgba(216,155,43,0.28)" },
-    chatroom: { label: "Ask Navi",color: "var(--color-success)", bg: "rgba(76,175,138,0.06)",  borderColor: "rgba(76,175,138,0.28)" },
+    chatroom: { label: "Ask Navi",color: "var(--color-success)", bg: "rgba(115,135,123,0.08)",  borderColor: "rgba(115,135,123,0.30)" },
     academy:  { label: "Academy",        color: "var(--tekori-gold)", bg: "rgba(216,155,43,0.06)", borderColor: "rgba(216,155,43,0.28)" },
-    bubble:   { label: "Quick Chat",     color: "var(--tekori-muted-text)", bg: "rgba(142,160,181,0.06)",  borderColor: "rgba(142,160,181,0.28)" },
-    pitchpractice: { label: "Pitch Practice", color: "var(--tekori-amber)", bg: "rgba(217,177,93,0.08)", borderColor: "rgba(217,177,93,0.28)" },
+    bubble:   { label: "Quick Chat",     color: "var(--color-pill-text)", bg: "rgba(48,70,95,0.07)",  borderColor: "rgba(48,70,95,0.28)" },
+    pitchpractice: { label: "Pitch Practice", color: "var(--tekori-gold)", bg: "rgba(244,199,106,0.12)", borderColor: "rgba(244,199,106,0.30)" },
   };
 
   const getEntrySourceType = (entry: any): ArchiveSourceType => {
@@ -2528,7 +2528,7 @@ ${forgeReply}`;
           style={{
             height: "100%",
             width: `${completionPct}%`,
-            background: "linear-gradient(90deg, var(--tekori-gold), var(--tekori-amber))",
+            background: "linear-gradient(90deg, var(--tekori-gold), var(--tekori-gold))",
             transition: "width 0.6s ease",
             boxShadow:
               completionPct > 0 ? "0 0 8px rgba(216,155,43,0.4)" : "none",
@@ -2678,8 +2678,8 @@ ${forgeReply}`;
             {archiveSession?.entry && archiveSession.stageId === activeStage && (
               <div
                 style={{
-                  background: "rgba(76,175,138,0.05)",
-                  border: "1px solid rgba(76,175,138,0.16)",
+                  background: "rgba(115,135,123,0.06)",
+                  border: "1px solid rgba(115,135,123,0.18)",
                   borderRadius: 14,
                   padding: "14px 16px",
                 }}
@@ -2816,8 +2816,8 @@ ${forgeReply}`;
               <div
                 style={{
                   background:
-                    "linear-gradient(135deg, rgba(76,175,138,0.15), rgba(72,187,120,0.06))",
-                  border: "1px solid rgba(76,175,138,0.35)",
+                    "linear-gradient(135deg, rgba(115,135,123,0.16), rgba(115,135,123,0.08))",
+                  border: "1px solid rgba(115,135,123,0.36)",
                   borderRadius: 14,
                   padding: "14px 16px",
                   animation: "fadeSlideUp 0.4s ease",
@@ -2851,7 +2851,7 @@ ${forgeReply}`;
                       border: "none",
                       borderRadius: 8,
                       padding: "10px",
-                      color: "#fff",
+                      color: "var(--tekori-white)",
                       fontSize: 13,
                       fontFamily: "var(--tekori-font-ui)",
                       fontWeight: 600,

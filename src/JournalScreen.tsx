@@ -834,7 +834,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                         <button onClick={openWritingOverlay} style={{
                             background: "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))",
                             border: "none", borderRadius: 12, padding: "12px 24px",
-                            color: "#fff", fontSize: 13, fontFamily: "var(--tekori-font-ui)",
+                            color: "var(--color-primary)", fontSize: 13, fontFamily: "var(--tekori-font-ui)",
                             fontWeight: 600, cursor: "pointer",
                             boxShadow: "0 4px 20px rgba(216,155,43,0.3)",
                         }}>Write your first entry</button>
@@ -907,7 +907,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                                 cursor: "pointer", padding: "0 2px", borderRadius: 8,
                                                 transition: "color 0.15s", lineHeight: 1.2,
                                             }}
-                                            onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "#FF6B6B"}
+                                            onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = "var(--color-danger)"}
                                             onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = "rgba(7,26,47,0.50)"}
                                         >×</button>
                                     </div>
@@ -1172,7 +1172,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                             )}
 
                             {quickChatError && (
-                                <div style={{ color: "var(--tekori-amber)", fontSize: 12, lineHeight: 1.6, fontFamily: "var(--tekori-font-ui)" }}>
+                                <div style={{ color: "var(--color-warning)", fontSize: 12, lineHeight: 1.6, fontFamily: "var(--tekori-font-ui)" }}>
                                     {quickChatError}
                                 </div>
                             )}
@@ -1217,7 +1217,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                     background: !quickChatDraft.trim() || quickChatLoading ? "rgba(216,155,43,0.08)" : "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))",
                                     border: !quickChatDraft.trim() || quickChatLoading ? "1px solid rgba(216,155,43,0.14)" : "1px solid rgba(216,155,43,0.35)",
                                     borderRadius: 12,
-                                    color: !quickChatDraft.trim() || quickChatLoading ? "rgba(216,155,43,0.38)" : "#fff",
+                                    color: !quickChatDraft.trim() || quickChatLoading ? "rgba(216,155,43,0.38)" : "var(--color-primary)",
                                     fontSize: 13,
                                     fontWeight: 700,
                                     fontFamily: "var(--tekori-font-ui)",
@@ -1299,7 +1299,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                         background: !draft.trim() || saving ? "rgba(216,155,43,0.08)" : "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))",
                                         border: !draft.trim() || saving ? "1px solid rgba(216,155,43,0.14)" : "1px solid rgba(216,155,43,0.35)",
                                         borderRadius: 9,
-                                        color: !draft.trim() || saving ? "rgba(216,155,43,0.38)" : "#fff",
+                                        color: !draft.trim() || saving ? "rgba(216,155,43,0.38)" : "var(--color-primary)",
                                         fontSize: 13,
                                         fontWeight: 700,
                                         fontFamily: "var(--tekori-font-ui)",
@@ -1377,7 +1377,7 @@ export default function JournalScreen({ userId, entries, onEntriesChange, onBack
                                 borderRadius: 18,
                                 background: "rgba(7,26,47,0.018)",
                                 border: "1px solid rgba(7,26,47,0.055)",
-                                boxShadow: "0 24px 80px rgba(0,0,0,0.28)",
+                                boxShadow: "var(--shadow-premium)",
                                 overflow: "hidden",
                             }}>
                                 <textarea

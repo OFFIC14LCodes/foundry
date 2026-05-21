@@ -61,7 +61,7 @@ const ROLE_COLORS: Record<string, string> = {
     Founder: '#C98924',
     Cofounder: '#8EA0B5',
     CEO: '#E4AA3A',
-    CTO: '#2F8F68',
+    CTO: 'var(--color-success)',
     COO: '#102944',
     'Marketing Lead': '#B9781F',
     'Product Lead': '#14304F',
@@ -105,7 +105,7 @@ function getPresence(member: CofounderMember): 'active' | 'today' | 'away' | nul
 
 function presenceDotColor(p: 'active' | 'today' | 'away'): string {
     if (p === 'active') return 'var(--color-success)';
-    if (p === 'today') return 'var(--tekori-amber)';
+    if (p === 'today') return 'var(--tekori-gold)';
     return 'var(--color-text-muted)';
 }
 
@@ -1045,7 +1045,7 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                             <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 8 }}>Your Role</div>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                                 {ROLE_OPTIONS.map(r => (
-                                    <button key={r} onClick={() => setJoiningRole(r)} style={{ padding: '6px 14px', borderRadius: 20, fontSize: 12, border: joiningRole === r ? 'none' : '1px solid rgba(7,26,47,0.1)', background: joiningRole === r ? `${roleColor(r)}22` : 'transparent', color: joiningRole === r ? roleColor(r) : 'var(--color-text-muted)', cursor: 'pointer', fontFamily: "var(--tekori-font-ui)", outline: joiningRole === r ? `1px solid ${roleColor(r)}55` : 'none', transition: 'all 0.15s' }}>{r}</button>
+                                    <button key={r} onClick={() => setJoiningRole(r)} style={{ padding: '6px 14px', borderRadius: 20, fontSize: 12, border: joiningRole === r ? 'none' : '1px solid rgba(7,26,47,0.1)', background: joiningRole === r ? `${roleColor(r)}22` : 'transparent', color: joiningRole === r ? roleColor(r) : 'var(--color-pill-text)', cursor: 'pointer', fontFamily: "var(--tekori-font-ui)", outline: joiningRole === r ? `1px solid ${roleColor(r)}55` : 'none', transition: 'all 0.15s' }}>{r}</button>
                                 ))}
                             </div>
                         </div>
@@ -1217,7 +1217,7 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                                                     <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-text)' }}>{member.display_name}</span>
                                                     {isMe && <span style={{ fontSize: 9, color: 'var(--tekori-gold)', background: 'rgba(216,155,43,0.1)', border: '1px solid rgba(216,155,43,0.2)', borderRadius: 20, padding: '1px 7px', lineHeight: 1.6 }}>You</span>}
-                                                    {isTeamOwner && <span style={{ fontSize: 9, color: 'var(--tekori-amber)', background: 'rgba(244,182,66,0.1)', border: '1px solid rgba(244,182,66,0.2)', borderRadius: 20, padding: '1px 7px', lineHeight: 1.6 }}>Owner</span>}
+                                                    {isTeamOwner && <span style={{ fontSize: 9, color: 'var(--tekori-gold)', background: 'rgba(244,199,106,0.1)', border: '1px solid rgba(244,199,106,0.2)', borderRadius: 20, padding: '1px 7px', lineHeight: 1.6 }}>Owner</span>}
                                                 </div>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3 }}>
                                                     <div style={{ fontSize: 10, color, background: `${color}14`, border: `1px solid ${color}30`, borderRadius: 20, padding: '1px 8px' }}>{member.role}</div>
@@ -1238,7 +1238,7 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                                                 <div style={{ fontSize: 10, color: 'var(--color-text-soft)', marginBottom: 8 }}>Select new role</div>
                                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                                                     {ROLE_OPTIONS.map(r => (
-                                                        <button key={r} onClick={() => handleRoleChange(member.id, r)} style={{ padding: '5px 12px', borderRadius: 20, fontSize: 11, border: member.role === r ? 'none' : '1px solid rgba(7,26,47,0.1)', background: member.role === r ? `${roleColor(r)}22` : 'transparent', color: member.role === r ? roleColor(r) : 'var(--color-text-muted)', cursor: 'pointer', fontFamily: "var(--tekori-font-ui)", transition: 'all 0.15s' }}>{r}</button>
+                                                        <button key={r} onClick={() => handleRoleChange(member.id, r)} style={{ padding: '5px 12px', borderRadius: 20, fontSize: 11, border: member.role === r ? 'none' : '1px solid rgba(7,26,47,0.1)', background: member.role === r ? `${roleColor(r)}22` : 'transparent', color: member.role === r ? roleColor(r) : 'var(--color-pill-text)', cursor: 'pointer', fontFamily: "var(--tekori-font-ui)", transition: 'all 0.15s' }}>{r}</button>
                                                     ))}
                                                 </div>
                                             </div>
@@ -1312,7 +1312,7 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                             )}
 
                             <div style={{ display: 'flex', gap: 8 }}>
-                                <button onClick={handleGetInviteLink} disabled={generatingInvite} style={{ ...btnPrimary, flex: 1, padding: '10px', fontSize: 12, background: copied ? 'linear-gradient(135deg, var(--color-success), var(--color-success))' : 'rgba(7,26,47,0.06)', color: copied ? '#fff' : 'var(--color-text-muted)', border: '1px solid rgba(7,26,47,0.08)', opacity: generatingInvite ? 0.7 : 1, transition: 'background 0.3s' }}>
+                                <button onClick={handleGetInviteLink} disabled={generatingInvite} style={{ ...btnPrimary, flex: 1, padding: '10px', fontSize: 12, background: copied ? 'linear-gradient(135deg, var(--color-success), var(--color-success))' : 'rgba(7,26,47,0.06)', color: copied ? 'var(--tekori-white)' : 'var(--color-text-muted)', border: '1px solid rgba(7,26,47,0.08)', opacity: generatingInvite ? 0.7 : 1, transition: 'background 0.3s' }}>
                                     {generatingInvite ? 'Generating...' : copied ? '✓ Copied' : inviteUrl ? 'Copy Link' : 'Generate & Copy Link'}
                                 </button>
                                 {inviteUrl && isOwner && (
@@ -1364,7 +1364,7 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                                 const label = f === 'all' ? 'All' : f === 'mine' ? 'My Tasks' : f === 'todo' ? 'Todo' : f === 'inprogress' ? 'In Progress' : 'Done';
                                 const active = taskFilter === f;
                                 return (
-                                    <button key={f} onClick={() => setTaskFilter(f)} style={{ padding: '5px 12px', borderRadius: 20, fontSize: 11, border: active ? 'none' : '1px solid rgba(7,26,47,0.1)', background: active ? 'rgba(216,155,43,0.15)' : 'transparent', color: active ? 'var(--tekori-gold)' : 'var(--color-text-muted)', cursor: 'pointer', fontFamily: 'var(--tekori-font-ui)', outline: active ? '1px solid rgba(216,155,43,0.3)' : 'none', transition: 'all 0.15s' }}>{label}</button>
+                                    <button key={f} onClick={() => setTaskFilter(f)} style={{ padding: '5px 12px', borderRadius: 20, fontSize: 11, border: active ? 'none' : '1px solid rgba(7,26,47,0.1)', background: active ? 'rgba(216,155,43,0.15)' : 'transparent', color: active ? 'var(--tekori-gold)' : 'var(--color-pill-text)', cursor: 'pointer', fontFamily: 'var(--tekori-font-ui)', outline: active ? '1px solid rgba(216,155,43,0.3)' : 'none', transition: 'all 0.15s' }}>{label}</button>
                                 );
                             })}
                         </div>
@@ -1399,7 +1399,7 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                                         <button
                                             onClick={e => { e.stopPropagation(); handleTaskStatusCycle(task.id, task.status); }}
                                             title="Cycle status"
-                                            style={{ flexShrink: 0, width: 20, height: 20, borderRadius: '50%', border: task.status === 'done' ? 'none' : '1.5px solid rgba(7,26,47,0.25)', background: task.status === 'done' ? 'var(--color-success)' : task.status === 'in_progress' ? 'rgba(244,182,66,0.2)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 11, color: task.status === 'done' ? '#fff' : 'var(--tekori-amber)', transition: 'all 0.15s' }}
+                                            style={{ flexShrink: 0, width: 20, height: 20, borderRadius: '50%', border: task.status === 'done' ? 'none' : '1.5px solid rgba(7,26,47,0.25)', background: task.status === 'done' ? 'var(--color-success)' : task.status === 'in_progress' ? 'rgba(244,199,106,0.2)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 11, color: task.status === 'done' ? 'var(--tekori-white)' : 'var(--tekori-gold)', transition: 'all 0.15s' }}
                                         >
                                             {task.status === 'done' ? '✓' : task.status === 'in_progress' ? '◑' : ''}
                                         </button>
@@ -1549,7 +1549,7 @@ Otherwise, continue naturally — no preamble, get right to what matters. Team m
                                             <div style={{ flex: 1 }}>
                                                 <div style={{ fontSize: 14, color: 'var(--color-text)', fontFamily: 'var(--tekori-font-ui)', lineHeight: 1.4, marginBottom: 4 }}>{d.title}</div>
                                                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                                                    {d.chosen_option && <span style={{ fontSize: 10, color: 'var(--color-success)', background: 'rgba(72,187,120,0.1)', border: '1px solid rgba(72,187,120,0.2)', borderRadius: 20, padding: '1px 8px' }}>✓ {d.chosen_option}</span>}
+                                                    {d.chosen_option && <span style={{ fontSize: 10, color: 'var(--color-success)', background: 'rgba(115,135,123,0.12)', border: '1px solid rgba(115,135,123,0.22)', borderRadius: 20, padding: '1px 8px' }}>✓ {d.chosen_option}</span>}
                                                     <span style={{ fontSize: 10, color: 'var(--color-text-muted)', fontFamily: 'var(--tekori-font-ui)' }}>{maker?.display_name ?? 'Unknown'} · {new Date(d.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                                                 </div>
                                             </div>
@@ -1952,7 +1952,7 @@ interface ChatMessageProps {
 
 function ChatMessage({ msg, isOwn, isHovered, onMouseEnter, onMouseLeave, onRetry, onLogDecision, teamName, currentStage }: ChatMessageProps) {
     const isForge = msg.role === 'forge';
-    const color = isForge ? 'var(--tekori-amber)' : (ROLE_COLORS[msg.sender_role] ?? 'var(--color-text-muted)');
+    const color = isForge ? 'var(--tekori-gold)' : (ROLE_COLORS[msg.sender_role] ?? 'var(--color-text-muted)');
     const failed = msg.failed;
 
     return (
@@ -1965,7 +1965,7 @@ function ChatMessage({ msg, isOwn, isHovered, onMouseEnter, onMouseLeave, onRetr
                 <>
                     <ForgeAvatar size={30} />
                     <div>
-                        <div style={{ fontSize: 10, color: 'var(--tekori-amber)', fontWeight: 600, marginBottom: 5, letterSpacing: '0.04em' }}>Navi · AI Partner</div>
+                        <div style={{ fontSize: 10, color: 'var(--tekori-gold)', fontWeight: 600, marginBottom: 5, letterSpacing: '0.04em' }}>Navi · AI Partner</div>
                         <div
                             onClick={failed ? onRetry : undefined}
                             style={{

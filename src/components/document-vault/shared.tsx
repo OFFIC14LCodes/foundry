@@ -25,14 +25,14 @@ export const DOCUMENT_STATUS_LABELS: Record<DocumentStatus, string> = {
 };
 
 const DOCUMENT_STATUS_STYLES: Record<DocumentStatus, { color: string; background: string; border: string }> = {
-    draft: { color: "#B8B1A7", background: "rgba(184,177,167,0.08)", border: "1px solid rgba(184,177,167,0.18)" },
+    draft: { color: "var(--tekori-slate)", background: "rgba(241,232,216,0.55)", border: "1px solid rgba(48,70,95,0.14)" },
     generated: { color: "var(--tekori-gold)", background: "rgba(216,155,43,0.1)", border: "1px solid rgba(216,155,43,0.22)" },
-    reviewed: { color: "var(--tekori-muted-text)", background: "rgba(142,160,181,0.1)", border: "1px solid rgba(142,160,181,0.22)" },
-    sent_for_signature: { color: "var(--tekori-amber)", background: "rgba(217,177,93,0.1)", border: "1px solid rgba(217,177,93,0.22)" },
-    partially_signed: { color: "var(--tekori-amber)", background: "rgba(244,182,66,0.1)", border: "1px solid rgba(244,182,66,0.22)" },
-    signed: { color: "var(--color-success)", background: "rgba(76,175,138,0.1)", border: "1px solid rgba(76,175,138,0.22)" },
-    declined: { color: "#D65037", background: "rgba(214,80,55,0.1)", border: "1px solid rgba(214,80,55,0.22)" },
-    archived: { color: "var(--foundry-text-muted)", background: "rgba(119,119,119,0.1)", border: "1px solid rgba(119,119,119,0.18)" },
+    reviewed: { color: "var(--tekori-slate)", background: "rgba(48,70,95,0.08)", border: "1px solid rgba(48,70,95,0.18)" },
+    sent_for_signature: { color: "var(--tekori-gold)", background: "rgba(244,199,106,0.14)", border: "1px solid rgba(244,199,106,0.30)" },
+    partially_signed: { color: "var(--tekori-gold)", background: "rgba(244,199,106,0.14)", border: "1px solid rgba(244,199,106,0.30)" },
+    signed: { color: "var(--color-success)", background: "rgba(115,135,123,0.14)", border: "1px solid rgba(115,135,123,0.26)" },
+    declined: { color: "var(--color-danger)", background: "rgba(184,92,75,0.10)", border: "1px solid rgba(184,92,75,0.24)" },
+    archived: { color: "var(--color-text-muted)", background: "rgba(48,70,95,0.08)", border: "1px solid rgba(48,70,95,0.16)" },
 };
 
 export const SIGNATURE_STATUS_LABELS: Record<SignatureRequestStatus, string> = {
@@ -47,14 +47,14 @@ export const SIGNATURE_STATUS_LABELS: Record<SignatureRequestStatus, string> = {
 };
 
 const SIGNATURE_STATUS_STYLES: Record<SignatureRequestStatus, { color: string; background: string; border: string }> = {
-    draft: { color: "#B8B1A7", background: "rgba(184,177,167,0.08)", border: "1px solid rgba(184,177,167,0.18)" },
-    sent: { color: "var(--tekori-amber)", background: "rgba(217,177,93,0.1)", border: "1px solid rgba(217,177,93,0.22)" },
-    viewed: { color: "var(--tekori-muted-text)", background: "rgba(142,160,181,0.1)", border: "1px solid rgba(142,160,181,0.22)" },
-    completed: { color: "var(--color-success)", background: "rgba(76,175,138,0.1)", border: "1px solid rgba(76,175,138,0.22)" },
-    declined: { color: "#D65037", background: "rgba(214,80,55,0.1)", border: "1px solid rgba(214,80,55,0.22)" },
-    expired: { color: "var(--tekori-slate-navy)", background: "rgba(160,109,213,0.1)", border: "1px solid rgba(160,109,213,0.22)" },
-    canceled: { color: "var(--foundry-text-muted)", background: "rgba(119,119,119,0.1)", border: "1px solid rgba(119,119,119,0.18)" },
-    error: { color: "#F08A5D", background: "rgba(240,138,93,0.1)", border: "1px solid rgba(240,138,93,0.22)" },
+    draft: { color: "var(--tekori-slate)", background: "rgba(241,232,216,0.55)", border: "1px solid rgba(48,70,95,0.14)" },
+    sent: { color: "var(--tekori-gold)", background: "rgba(244,199,106,0.14)", border: "1px solid rgba(244,199,106,0.30)" },
+    viewed: { color: "var(--tekori-slate)", background: "rgba(48,70,95,0.08)", border: "1px solid rgba(48,70,95,0.18)" },
+    completed: { color: "var(--color-success)", background: "rgba(115,135,123,0.14)", border: "1px solid rgba(115,135,123,0.26)" },
+    declined: { color: "var(--color-danger)", background: "rgba(184,92,75,0.10)", border: "1px solid rgba(184,92,75,0.24)" },
+    expired: { color: "var(--tekori-slate)", background: "rgba(241,232,216,0.52)", border: "1px solid rgba(48,70,95,0.16)" },
+    canceled: { color: "var(--color-text-muted)", background: "rgba(48,70,95,0.08)", border: "1px solid rgba(48,70,95,0.16)" },
+    error: { color: "var(--color-danger)", background: "rgba(184,92,75,0.10)", border: "1px solid rgba(184,92,75,0.24)" },
 };
 
 export const FILE_KIND_LABELS: Record<DocumentFile["fileKind"], string> = {

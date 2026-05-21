@@ -34,8 +34,8 @@ export default function StructuredReportSelector({
                     display: "flex",
                     alignItems: "center",
                     gap: 6,
-                    background: open ? "rgba(142,160,181,0.08)" : "rgba(7,26,47,0.03)",
-                    border: open ? "1px solid rgba(142,160,181,0.2)" : "1px solid rgba(7,26,47,0.08)",
+                    background: open ? "rgba(48,70,95,0.08)" : "rgba(7,26,47,0.03)",
+                    border: open ? "1px solid rgba(48,70,95,0.20)" : "1px solid rgba(7,26,47,0.08)",
                     borderRadius: 8,
                     padding: "7px 11px",
                     cursor: "pointer",
@@ -44,7 +44,7 @@ export default function StructuredReportSelector({
                 }}
             >
                 <span style={{ fontSize: 11, color: "var(--foundry-text-secondary)", fontWeight: 500 }}>Report:</span>
-                <span style={{ fontSize: 12, color: "var(--tekori-muted-text)", fontWeight: 700 }}>
+                <span style={{ fontSize: 12, color: "var(--color-pill-text)", fontWeight: 700 }}>
                     {currentReport ? formatReportDate(currentReport.date) : "None"}
                 </span>
                 <span style={{ fontSize: 9, color: "var(--foundry-text-muted)", marginLeft: 2 }}>{open ? "▲" : "▼"}</span>
@@ -76,8 +76,8 @@ export default function StructuredReportSelector({
                                 style={{
                                     width: "100%",
                                     textAlign: "left",
-                                    background: selected ? "rgba(142,160,181,0.1)" : "transparent",
-                                    border: selected ? "1px solid rgba(142,160,181,0.22)" : "1px solid transparent",
+                                    background: selected ? "rgba(48,70,95,0.10)" : "transparent",
+                                    border: selected ? "1px solid rgba(48,70,95,0.22)" : "1px solid transparent",
                                     borderRadius: 8,
                                     padding: "9px 11px",
                                     color: "var(--color-text)",
@@ -87,7 +87,7 @@ export default function StructuredReportSelector({
                                 <div style={{
                                     fontSize: 13,
                                     fontWeight: 600,
-                                    color: selected ? "var(--tekori-muted-text)" : "var(--color-text-soft)",
+                                    color: selected ? "var(--color-pill-text)" : "var(--color-text-soft)",
                                     fontFamily: "var(--tekori-font-ui)",
                                 }}>
                                     {formatReportDate(entry.date)}

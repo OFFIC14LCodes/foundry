@@ -7,6 +7,7 @@ import { getLanguageWarning, moderateUserText } from "../lib/languageModeration"
 import { saveConversationSummary, updateConversationSummary, loadConversationSummaries, recordTokenUsage } from "../db";
 import { applyFoundryBookCitations, buildFoundryBookContext } from "../lib/foundryBook";
 import {
+    detectAcademyMasteryClosure,
     formatAcademyCoachingPolicy,
     getAcademyCoachingSignals,
     type AcademyCoachingSignals,
@@ -80,6 +81,47 @@ type TestingContinuationContext = {
     coachingSignals?: AcademyCoachingSignals;
 };
 
+const ACADEMY_COMPLETION_CACHE_PREFIX = "academy-lesson-completed-";
+
+function getCachedAcademyCompletion(contentId: string) {
+    try {
+        const raw = localStorage.getItem(`${ACADEMY_COMPLETION_CACHE_PREFIX}${contentId}`);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw) as { completedAt?: string | null };
+        return parsed.completedAt || null;
+    } catch {
+        return null;
+    }
+}
+
+function cacheAcademyCompletion(contentId: string, completedAt: string) {
+    try {
+        localStorage.setItem(`${ACADEMY_COMPLETION_CACHE_PREFIX}${contentId}`, JSON.stringify({ completedAt }));
+    } catch {
+        /* Local cache is only a UI continuity aid. Persistence still runs through the Academy completion callback. */
+    }
+}
+
+function clearCachedAcademyCompletion(contentId: string) {
+    try {
+        localStorage.removeItem(`${ACADEMY_COMPLETION_CACHE_PREFIX}${contentId}`);
+    } catch {
+        /* ignore */
+    }
+}
+
+function isAcademyEntryComplete(entry: AcademyTopicLaunch | null | undefined) {
+    return entry?.progressStatus === "completed" || Boolean(entry?.completedAt);
+}
+
+function markAcademyEntryComplete(entry: AcademyTopicLaunch, completedAt: string): AcademyTopicLaunch {
+    return {
+        ...entry,
+        progressStatus: "completed",
+        completedAt,
+    };
+}
+
 // ─────────────────────────────────────────────────────────────
 // Context for Forge in this chat room
 // ─────────────────────────────────────────────────────────────
@@ -98,10 +140,13 @@ function buildChatRoomContext(
     scopedMemoryContext?: string,
 ) {
     const academyMode = academyEntry?.sessionMode ?? "learn";
+    const academyCompleted = isAcademyEntryComplete(academyEntry);
     const modeInstruction = !academyEntry ? "" : testingMode
         ? `TESTING MODE: The founder has clicked "Test to Complete". Test their understanding of this lesson through natural conversation. Ask probing questions that reveal whether they truly understand the lesson and can apply it to their own business. Do not lecture — probe for real comprehension. If an answer is shallow or incomplete, explain what is missing and invite a stronger response. Keep it direct but encouraging.
 
 ${formatAcademyCoachingPolicy()}`
+        : academyCompleted
+            ? `POST-COMPLETION ACADEMY MODE: This lesson is already complete. Do not grade the founder, reopen the same conceptual test, ask them to prove mastery again, or contradict prior completion. Keep the conversation open as Navi mentor mode: help them apply the completed concept to their business, explore edge cases, go deeper by request, or move toward the next useful Academy step. Any further refinement should be optional and collaborative, not corrective.`
         : academyMode === "apply"
             ? `This conversation is in APPLY mode. Navi should:
 1. state what this lesson was really teaching
@@ -260,6 +305,7 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
     const inputRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const academyBootstrappedRef = useRef(false);
+    const academyCompletionInFlightRef = useRef<string | null>(null);
     const trendBootstrappedRef = useRef(false);
     const clarityBootstrappedRef = useRef(false);
 
@@ -334,13 +380,18 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
     }, [userId]);
 
     useEffect(() => {
-        setActiveAcademyEntry(academyEntry);
+        const cachedCompletedAt = academyEntry ? getCachedAcademyCompletion(academyEntry.id) : null;
+        const hydratedAcademyEntry = academyEntry && cachedCompletedAt && !isAcademyEntryComplete(academyEntry)
+            ? markAcademyEntryComplete(academyEntry, cachedCompletedAt)
+            : academyEntry;
+        setActiveAcademyEntry(hydratedAcademyEntry);
         academyBootstrappedRef.current = false;
-        setAcademyLessonCompleted(academyEntry?.progressStatus === "completed" || Boolean(academyEntry?.completedAt));
+        academyCompletionInFlightRef.current = null;
+        setAcademyLessonCompleted(isAcademyEntryComplete(hydratedAcademyEntry));
         setTestingMode(false);
 
-        if (academyEntry) {
-            const saved = localStorage.getItem(`academy-chat-${academyEntry.id}`);
+        if (hydratedAcademyEntry) {
+            const saved = localStorage.getItem(`academy-chat-${hydratedAcademyEntry.id}`);
             if (saved) {
                 try {
                     const restored = JSON.parse(saved) as ChatMessage[];
@@ -595,10 +646,13 @@ export default function ForgeChatRoom({ userId, profile, onBack, onArchiveSaved,
         const transcript = messages
             .map((msg) => `${msg.role === "forge" ? "Navi" : profile.name}: ${msg.text}`)
             .join("\n");
+        const academyArchiveState = activeAcademyEntry
+            ? `\n\nAcademy lesson state:\nLesson: ${activeAcademyEntry.title}\nCompletion status: ${academyLessonCompleted ? "completed" : testingMode ? "testing in progress" : "not completed"}`
+            : "";
 
         const prompt = activeArchive?.id
-            ? `Update this archived Ask Navi conversation for ${profile.name} in clear markdown.\n\nExisting archive summary:\n${activeArchive.summary}\n\nNew continuation transcript:\n${transcript}\n\nReturn valid JSON with exactly these keys:\n"title": keep exactly this title: "${title}"\n"summary": a refreshed markdown summary with these sections: Main Questions, Key Takeaways, Useful Concepts, Next Moves. Blend the prior archive context with the new continuation so this replaces the old summary cleanly.`
-            : `Summarize this Ask Navi conversation for ${profile.name} in clear markdown.\n\nReturn valid JSON with exactly these keys:\n"title": keep exactly this title: "${title}"\n"summary": a detailed markdown summary with these sections: Main Questions, Key Takeaways, Useful Concepts, Next Moves.\n\nConversation:\n${transcript}`;
+            ? `Update this archived Ask Navi conversation for ${profile.name} in clear markdown.${academyArchiveState}\n\nExisting archive summary:\n${activeArchive.summary}\n\nNew continuation transcript:\n${transcript}\n\nReturn valid JSON with exactly these keys:\n"title": keep exactly this title: "${title}"\n"summary": a refreshed markdown summary with these sections: Main Questions, Key Takeaways, Useful Concepts, Next Moves. Blend the prior archive context with the new continuation so this replaces the old summary cleanly. If the Academy lesson is complete, reflect that in the summary without implying the conversation had to end.`
+            : `Summarize this Ask Navi conversation for ${profile.name} in clear markdown.${academyArchiveState}\n\nReturn valid JSON with exactly these keys:\n"title": keep exactly this title: "${title}"\n"summary": a detailed markdown summary with these sections: Main Questions, Key Takeaways, Useful Concepts, Next Moves. If the Academy lesson is complete, reflect that in the summary without implying the conversation had to end.\n\nConversation:\n${transcript}`;
 
         setSavingArchive(true);
         try {
@@ -960,15 +1014,82 @@ Start by making the trend real and concrete for them. No vague advice — be dir
         }
     };
 
+    const completeAcademyLessonFromChat = async (
+        entry: AcademyTopicLaunch,
+        options: {
+            response: string;
+            feedback: string | null;
+            completedAt?: string;
+            sendCompletionMessage?: boolean;
+        },
+    ) => {
+        if (!onMarkAcademyLessonCompleted) {
+            setTestingMode(false);
+            setLoading(false);
+            return;
+        }
+
+        const completedAt = options.completedAt ?? new Date().toISOString();
+        const completedEntry = markAcademyEntryComplete(entry, completedAt);
+
+        setTestingMode(false);
+        setAcademyLessonCompleted(true);
+        setActiveAcademyEntry((current) => current?.id === entry.id ? markAcademyEntryComplete(current, completedAt) : current);
+        cacheAcademyCompletion(entry.id, completedAt);
+
+        if (academyCompletionInFlightRef.current === entry.id) return;
+        academyCompletionInFlightRef.current = entry.id;
+
+        try {
+            await Promise.resolve(onMarkAcademyLessonCompleted(entry.id, {
+                knowledgeCheckedAt: completedAt,
+                lastCheckResponse: options.response,
+                lastCheckFeedback: options.feedback,
+            }));
+
+            if (options.sendCompletionMessage !== false) {
+                void sendLessonCompletionMessage(completedEntry);
+            }
+        } catch (error) {
+            console.error("academy lesson completion error:", error);
+            clearCachedAcademyCompletion(entry.id);
+            setAcademyLessonCompleted(false);
+            setActiveAcademyEntry((current) => current?.id === entry.id
+                ? { ...current, progressStatus: entry.progressStatus, completedAt: entry.completedAt ?? null }
+                : current
+            );
+            setMessages((prev) => [...prev, {
+                id: `f-${Date.now()}`,
+                role: "forge",
+                text: "I recognized mastery, but I could not save the lesson completion cleanly. Keep this chat open and try Test to Complete again in a moment so Academy progress can persist.",
+                createdAt: new Date().toISOString(),
+            }]);
+        } finally {
+            academyCompletionInFlightRef.current = null;
+            setLoading(false);
+        }
+    };
+
     const startTesting = async () => {
         if (!activeAcademyEntry || loading || testingMode || academyLessonCompleted) return;
         setTestingMode(true);
         const entry = activeAcademyEntry;
+        const priorLessonTranscript = messages.length
+            ? messages
+                .slice(-14)
+                .map((message) => `${message.role === "forge" ? "Navi" : profile.name || "Founder"}: ${message.text}`)
+                .join("\n\n")
+            : "No prior lesson transcript in this chat.";
         const kickoffPrompt = `The founder has clicked "Test to Complete" for the Navi Academy lesson "${entry.title}". Begin conversationally testing their understanding. Ask natural questions that probe whether they genuinely understand this lesson and can apply it to their own business. Don't announce you are testing — just start asking. Keep it conversational.
 
 Learning goal: ${entry.learningGoal || "Core understanding of " + entry.title}
 Knowledge check: ${entry.knowledgeCheckPrompt || "What is the core founder judgment this lesson was trying to build?"}
 Common mistake founders make: ${entry.commonMistake || "Not specified"}
+
+Prior lesson conversation to preserve continuity:
+${priorLessonTranscript}
+
+Build on the founder's prior examples, admissions, emotional context, and already-demonstrated understanding. Prefer progressive questioning over re-asking anything already answered.
 
 ${formatAcademyCoachingPolicy()}`;
 
@@ -976,9 +1097,16 @@ ${formatAcademyCoachingPolicy()}`;
         setMessages((prev) => [...prev, forgeMsg]);
         setLoading(true);
         try {
-            const ctx = buildChatRoomContext(profile, [kickoffPrompt], null, null, entry, true, null, null, undefined, null, universalMemoryContext, scopedMemoryContext);
+            const ctx = buildChatRoomContext(profile, [...messages.slice(-8).map((message) => message.text), kickoffPrompt], null, null, entry, true, null, null, undefined, null, universalMemoryContext, scopedMemoryContext);
+            const apiMsgs = [
+                ...messages.slice(-12).map((message) => ({
+                    role: message.role === "forge" ? "assistant" as const : "user" as const,
+                    content: message.text,
+                })),
+                { role: "user" as const, content: kickoffPrompt },
+            ];
             await streamForgeAPI(
-                [{ role: "user", content: kickoffPrompt }],
+                apiMsgs,
                 FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", ctx.context),
                 (chunk) => {
                     const { cleanText } = applyFoundryBookCitations(chunk, ctx.bookMatches);
@@ -1013,6 +1141,7 @@ ${formatAcademyCoachingPolicy(coachingSignals)}
 Answer the request directly. If they ask to be quoted, quote the exact line or phrase from their answer that needs correction. If their answer was actually sound, say that clearly and explain that the issue is likely the test rubric or evaluation path, then ask one final confirmation question only if completion still needs evidence. If they are pushing back, acknowledge what they already demonstrated before naming any remaining gap. Do not restart the lesson. Do not use generic reteaching. Keep testing mode active.`;
         const forgeMsg: ChatMessage = { id: `f-${Date.now()}`, role: "forge", text: "", createdAt: new Date().toISOString() };
         setMessages((prev) => [...prev, forgeMsg]);
+        let streamedText = "";
         try {
             const ctx = buildChatRoomContext(profile, [clarificationPrompt], null, null, entry, true, null, null, undefined, null, universalMemoryContext, scopedMemoryContext);
             await streamForgeAPI(
@@ -1020,9 +1149,17 @@ Answer the request directly. If they ask to be quoted, quote the exact line or p
                 FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", ctx.context),
                 (chunk) => {
                     const { cleanText } = applyFoundryBookCitations(chunk, ctx.bookMatches);
+                    streamedText = cleanText;
                     setMessages((prev) => prev.map((m) => m.id === forgeMsg.id ? { ...m, text: cleanText } : m));
                 }
             );
+            if (detectAcademyMasteryClosure(streamedText)) {
+                await completeAcademyLessonFromChat(entry, {
+                    response: `${testingTranscript}\n\n${profile.name || "Founder"}: ${userRequest}\n\nNavi: ${streamedText}`,
+                    feedback: streamedText || "Navi acknowledged mastery during testing clarification.",
+                    sendCompletionMessage: false,
+                });
+            }
         } catch {
             setMessages((prev) => prev.map((m) =>
                 m.id === forgeMsg.id ? { ...m, text: "You're asking the right thing: the test needs to point to the exact gap. I don't see a clean quoted flaw from your last answer yet, so restate the core idea in one sentence and I'll evaluate that directly." } : m
@@ -1087,6 +1224,7 @@ Re-teach only the most critical missing piece. Validate any correct part first. 
         const forgeMsg: ChatMessage = { id: `f-${Date.now()}`, role: "forge", text: "", createdAt: new Date().toISOString() };
         setMessages((prev) => [...prev, forgeMsg]);
         setLoading(true);
+        let streamedText = "";
         try {
             const ctx = buildChatRoomContext(profile, [teachingPrompt], null, null, entry, false, null, null, undefined, null, universalMemoryContext, scopedMemoryContext);
             await streamForgeAPI(
@@ -1094,9 +1232,17 @@ Re-teach only the most critical missing piece. Validate any correct part first. 
                 FORGE_SYSTEM_PROMPT.replace("{CONTEXT}", ctx.context),
                 (chunk) => {
                     const { cleanText } = applyFoundryBookCitations(chunk, ctx.bookMatches);
+                    streamedText = cleanText;
                     setMessages((prev) => prev.map((m) => m.id === forgeMsg.id ? { ...m, text: cleanText } : m));
                 }
             );
+            if (detectAcademyMasteryClosure(streamedText)) {
+                await completeAcademyLessonFromChat(entry, {
+                    response: `${context.testingTranscript}\n\n${profile.name || "Founder"}: ${context.latestAnswer}\n\nNavi: ${streamedText}`,
+                    feedback: streamedText || feedback,
+                    sendCompletionMessage: false,
+                });
+            }
         } catch {
             setMessages((prev) => prev.map((m) =>
                 m.id === forgeMsg.id ? { ...m, text: `You've got part of it. ${feedback} The refinement is the business mechanism. Put that in your own words once more, with the practical business move made clear.` } : m
@@ -1119,14 +1265,10 @@ Re-teach only the most critical missing piece. Validate any correct part first. 
             const evaluation = await evaluateKnowledgeCheckLaunchAnswer(activeAcademyEntry, `Latest answer:\n${userAnswer}\n\nTesting conversation so far:\n${testingTranscript}`);
             const coachingSignals = getAcademyCoachingSignals(activeAcademyEntry, userAnswer, history, evaluation);
             if (isAcademyEvaluationCompleteEnough(evaluation, coachingSignals)) {
-                await Promise.resolve(onMarkAcademyLessonCompleted(activeAcademyEntry.id, {
-                    knowledgeCheckedAt: new Date().toISOString(),
-                    lastCheckResponse: testingTranscript || userAnswer,
-                    lastCheckFeedback: evaluation.feedback,
-                }));
-                setTestingMode(false);
-                setAcademyLessonCompleted(true);
-                void sendLessonCompletionMessage(activeAcademyEntry);
+                await completeAcademyLessonFromChat(activeAcademyEntry, {
+                    response: testingTranscript || userAnswer,
+                    feedback: evaluation.feedback,
+                });
             } else {
                 setTestingMode(true);
                 void sendTestingContinuationMessage(activeAcademyEntry, evaluation.feedback, evaluation.trackStatus, {
@@ -1174,7 +1316,11 @@ Re-teach only the most critical missing piece. Validate any correct part first. 
                 ? `Clarity · ${activeClarityEntry.title}`
                 : "Ask Navi";
     const chatSubtitle = activeAcademyEntry
-        ? getAcademySessionSubtitle(activeAcademyEntry.sessionMode)
+        ? academyLessonCompleted
+            ? "Lesson complete · continue exploring"
+            : testingMode
+                ? "Understanding check · building on this conversation"
+                : getAcademySessionSubtitle(activeAcademyEntry.sessionMode)
         : activeTrendEntry
             ? "Trend deep-dive · strategic analysis"
             : activeClarityEntry
@@ -1253,12 +1399,12 @@ Re-teach only the most critical missing piece. Validate any correct part first. 
                         disabled={academyLessonCompleted || testingMode || loading}
                         style={{
                             background: academyLessonCompleted
-                                ? "rgba(76,175,138,0.08)"
+                                ? "rgba(115,135,123,0.10)"
                                 : testingMode
                                     ? "rgba(216,155,43,0.06)"
                                     : "rgba(216,155,43,0.10)",
                             border: academyLessonCompleted
-                                ? "1px solid rgba(76,175,138,0.22)"
+                                ? "1px solid rgba(115,135,123,0.24)"
                                 : testingMode
                                     ? "1px solid rgba(216,155,43,0.15)"
                                     : "1px solid rgba(216,155,43,0.22)",
@@ -1508,7 +1654,7 @@ Re-teach only the most critical missing piece. Validate any correct part first. 
                                     ? "1px solid rgba(7,26,47,0.18)"
                                     : "1px solid var(--color-border)",
                                 fontSize: 13.5,
-                                color: msg.role === "user" ? "#fff" : "var(--color-text-soft)",
+                                color: msg.role === "user" ? "var(--tekori-white)" : "var(--color-text-soft)",
                                 lineHeight: 1.7,
                                 textAlign: "left",
                                 boxShadow: msg.role === "user" ? "0 12px 28px rgba(7,26,47,0.16)" : "0 10px 26px rgba(16,32,51,0.07)",
@@ -1763,7 +1909,7 @@ Re-teach only the most critical missing piece. Validate any correct part first. 
                             }}
                         />
                         {archiveError && (
-                            <div style={{ fontSize: 12, color: "#D96A55", background: "rgba(217,106,85,0.08)", border: "1px solid rgba(217,106,85,0.2)", borderRadius: 8, padding: "10px 12px", marginBottom: 12, lineHeight: 1.5 }}>
+                            <div style={{ fontSize: 12, color: "var(--color-danger)", background: "rgba(184,92,75,0.10)", border: "1px solid rgba(184,92,75,0.22)", borderRadius: 8, padding: "10px 12px", marginBottom: 12, lineHeight: 1.5 }}>
                                 {archiveError}
                             </div>
                         )}
@@ -1785,11 +1931,11 @@ Re-teach only the most critical missing piece. Validate any correct part first. 
                                 onClick={handleSaveArchive}
                                 disabled={savingArchive}
                                 style={{
-                                    background: savingArchive ? "rgba(76,175,138,0.18)" : "linear-gradient(135deg, var(--color-success), #3b8f70)",
+                                    background: savingArchive ? "rgba(115,135,123,0.18)" : "linear-gradient(135deg, var(--color-success), var(--color-success))",
                                     border: "none",
                                     borderRadius: 10,
                                     padding: "10px 14px",
-                                    color: "#fff",
+                                    color: "var(--tekori-white)",
                                     cursor: savingArchive ? "default" : "pointer",
                                     fontWeight: 600,
                                 }}

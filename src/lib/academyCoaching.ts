@@ -15,6 +15,8 @@ export type AcademyCoachingSignals = {
     shouldComplete: boolean;
 };
 
+const COMPLETE_MARKER_PATTERN = /\[COMPLETE(?::\s*[\w-]+)?\]/i;
+
 const FRUSTRATION_PATTERNS = [
     /\bi already answered\b/i,
     /\byou can tell i understand\b/i,
@@ -25,6 +27,18 @@ const FRUSTRATION_PATTERNS = [
     /\bwhere .* wrong\b/i,
     /\bquote .* correct/i,
     /\bquote .* wrong/i,
+];
+
+const MASTERY_CLOSURE_PATTERNS = [
+    COMPLETE_MARKER_PATTERN,
+    /\b(that'?s|that is) the complete concept\b/i,
+    /\byou got it\b/i,
+    /\bwell done\b/i,
+    /\byou understand (the|this) (framework|concept|lesson)\b/i,
+    /\bthat'?s mastery\b/i,
+    /\bthat'?s the infrastructure frame\b/i,
+    /\bthat'?s a valid infrastructure framing\b/i,
+    /\bperfect\b/i,
 ];
 
 const STOP_WORDS = new Set([
@@ -55,6 +69,10 @@ function countMatches(text: string, patterns: RegExp[]) {
 
 export function detectAcademyFrustration(text: string) {
     return FRUSTRATION_PATTERNS.some((pattern) => pattern.test(text));
+}
+
+export function detectAcademyMasteryClosure(text: string) {
+    return MASTERY_CLOSURE_PATTERNS.some((pattern) => pattern.test(text));
 }
 
 export function detectRepeatedAcademyDrill(messages: AcademyCoachingMessage[]) {

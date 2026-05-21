@@ -269,7 +269,7 @@ export default function ActionCenterScreen({ userId, onBack, onOpenNav, onAskFor
                                     <HelpTooltip content="Create an action directly when you already know what needs to happen." />
                                 </div>
                             </div>
-                            {manualNotice && <div style={{ color: manualNotice.includes("added") ? "var(--color-success)" : "var(--tekori-amber)", fontSize: 12, fontWeight: 800 }}>{manualNotice}</div>}
+                            {manualNotice && <div style={{ color: manualNotice.includes("added") ? "var(--color-success)" : "var(--tekori-gold)", fontSize: 12, fontWeight: 800 }}>{manualNotice}</div>}
                         </div>
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
                             <TextField label="Action title" value={manualTitle} onChange={setManualTitle} placeholder="Follow up with three discovery leads" />
@@ -381,9 +381,9 @@ export default function ActionCenterScreen({ userId, onBack, onOpenNav, onAskFor
 
 function OutcomeButton({ label, tone, onClick }: { label: string; tone: "success" | "partial" | "failed"; onClick: () => void }) {
     const styles = {
-        success: { border: "1px solid rgba(76,175,138,0.32)", background: "rgba(76,175,138,0.12)", color: "var(--color-success)" },
-        partial: { border: "1px solid rgba(200,169,110,0.32)", background: "rgba(200,169,110,0.12)", color: "var(--tekori-amber)" },
-        failed: { border: "1px solid rgba(240,93,94,0.32)", background: "rgba(240,93,94,0.12)", color: "#F05D5E" },
+        success: { border: "1px solid rgba(115,135,123,0.32)", background: "rgba(115,135,123,0.14)", color: "var(--color-success)" },
+        partial: { border: "1px solid rgba(200,169,110,0.32)", background: "rgba(200,169,110,0.12)", color: "var(--tekori-gold)" },
+        failed: { border: "1px solid rgba(184,92,75,0.30)", background: "rgba(184,92,75,0.10)", color: "var(--color-danger)" },
     };
     return (
         <button className="foundry-interactive" type="button" onClick={onClick} style={{ ...styles[tone], borderRadius: 999, padding: "7px 10px", fontSize: 12, cursor: "pointer", fontWeight: 800 }}>
@@ -531,8 +531,8 @@ function FilterRow({ label, value, options, onChange }: { label: string; value: 
                     className="foundry-interactive"
                     style={{
                         borderRadius: 999,
-                        border: value === option ? "1px solid rgba(142,160,181,0.24)" : "1px solid rgba(7,26,47,0.08)",
-                        background: value === option ? "rgba(142,160,181,0.1)" : "rgba(7,26,47,0.03)",
+                        border: value === option ? "1px solid rgba(48,70,95,0.24)" : "1px solid rgba(7,26,47,0.08)",
+                        background: value === option ? "rgba(48,70,95,0.10)" : "rgba(7,26,47,0.03)",
                         color: value === option ? "var(--tekori-slate-navy)" : "var(--color-text-muted)",
                         padding: "6px 9px",
                         fontSize: 11,

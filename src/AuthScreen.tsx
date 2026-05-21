@@ -241,7 +241,7 @@ export default function AuthScreen({
                                 />
                                 {error && (
                                     <div style={{
-                                        fontSize: 12, color: "#FF6B6B",
+                                        fontSize: 12, color: "var(--color-danger)",
                                         marginBottom: 12, textAlign: "center",
                                         fontFamily: "var(--tekori-font-ui)"
                                     }}>{error}</div>
@@ -253,7 +253,7 @@ export default function AuthScreen({
                                     style={{
                                         width: "100%", padding: "13px",
                                         background: loading ? "rgba(7,26,47,0.38)" : "linear-gradient(135deg, var(--color-primary), var(--color-primary-hover))",
-                                        border: "none", borderRadius: 12, color: "#fff",
+                                        border: "none", borderRadius: 12, color: "var(--tekori-white)",
                                         fontSize: 13, fontWeight: 600, cursor: loading ? "default" : "pointer",
                                         fontFamily: "var(--tekori-font-ui)",
                                         boxShadow: loading ? "none" : "0 14px 28px rgba(7,26,47,0.18)",
@@ -313,7 +313,7 @@ export default function AuthScreen({
                                 />
                                 {error && (
                                     <div style={{
-                                        fontSize: 12, color: "#FF6B6B",
+                                        fontSize: 12, color: "var(--color-danger)",
                                         marginBottom: 12, textAlign: "center",
                                         fontFamily: "var(--tekori-font-ui)"
                                     }}>{error}</div>
@@ -325,7 +325,7 @@ export default function AuthScreen({
                                     style={{
                                         width: "100%", padding: "13px",
                                         background: loading ? "rgba(7,26,47,0.38)" : "linear-gradient(135deg, var(--color-primary), var(--color-primary-hover))",
-                                        border: "none", borderRadius: 12, color: "#fff",
+                                        border: "none", borderRadius: 12, color: "var(--tekori-white)",
                                         fontSize: 13, fontWeight: 600, cursor: loading ? "default" : "pointer",
                                         fontFamily: "var(--tekori-font-ui)",
                                         boxShadow: loading ? "none" : "0 14px 28px rgba(7,26,47,0.18)",
@@ -451,7 +451,7 @@ export default function AuthScreen({
                                 {/* Error */}
                                 {error && (
                                     <div style={{
-                                        fontSize: 12, color: "#FF6B6B",
+                                        fontSize: 12, color: "var(--color-danger)",
                                         marginBottom: 12, textAlign: "center",
                                         fontFamily: "var(--tekori-font-ui)"
                                     }}>{error}</div>
@@ -461,7 +461,7 @@ export default function AuthScreen({
                                 <button onClick={handleEmailAuth} disabled={loading} className="foundry-btn foundry-btn--primary foundry-auth-submit-button" style={{
                                     width: "100%", padding: "13px",
                                     background: loading ? "rgba(7,26,47,0.38)" : "linear-gradient(135deg, var(--color-primary), var(--color-primary-hover))",
-                                    border: "none", borderRadius: 12, color: "#fff",
+                                    border: "none", borderRadius: 12, color: "var(--tekori-white)",
                                     fontSize: 13, fontWeight: 600, cursor: loading ? "default" : "pointer",
                                     fontFamily: "var(--tekori-font-ui)",
                                     boxShadow: loading ? "none" : "0 14px 28px rgba(7,26,47,0.18)",

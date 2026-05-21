@@ -46,7 +46,7 @@ export default function StructuredBenchmarksPanel({
                         description: benchmark.description,
                     });
                     return (
-                    <div key={benchmark.id} style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.06)", borderLeft: "3px solid rgba(142,160,181,0.38)", borderRadius: 12, padding: "16px 16px 14px" }}>
+                    <div key={benchmark.id} style={{ background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.06)", borderLeft: "3px solid rgba(48,70,95,0.34)", borderRadius: 12, padding: "16px 16px 14px" }}>
                         <div style={{ fontSize: 15, fontWeight: 700, color: "var(--color-text)", fontFamily: "var(--tekori-font-ui)", lineHeight: 1.35, marginBottom: 8 }}>
                             {benchmark.metric}
                         </div>

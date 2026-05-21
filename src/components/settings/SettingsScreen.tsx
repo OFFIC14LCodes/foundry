@@ -528,7 +528,7 @@ export default function SettingsScreen({
                                         {supportSubmitting ? "Sending..." : "Submit Support Ticket"}
                                     </SettingsButton>
                                     {supportStatus && (
-                                        <span style={{ fontSize: 12, color: supportStatus === "Support ticket sent." ? "var(--color-success)" : "#D28B76" }}>
+                                        <span style={{ fontSize: 12, color: supportStatus === "Support ticket sent." ? "var(--color-success)" : "var(--color-danger)" }}>
                                             {supportStatus}
                                         </span>
                                     )}
@@ -574,7 +574,7 @@ export default function SettingsScreen({
                                         {suggestionSubmitting ? "Sending..." : "Submit Suggestion"}
                                     </SettingsButton>
                                     {suggestionStatus && (
-                                        <span style={{ fontSize: 12, color: suggestionStatus === "Suggestion sent." ? "var(--color-success)" : "#D28B76" }}>
+                                        <span style={{ fontSize: 12, color: suggestionStatus === "Suggestion sent." ? "var(--color-success)" : "var(--color-danger)" }}>
                                             {suggestionStatus}
                                         </span>
                                     )}
@@ -647,8 +647,8 @@ function PreferenceToggle({
                 minWidth: 68,
                 padding: "8px 12px",
                 borderRadius: 999,
-                border: enabled ? "1px solid rgba(76,175,138,0.3)" : "1px solid rgba(7,26,47,0.08)",
-                background: enabled ? "rgba(76,175,138,0.14)" : "rgba(7,26,47,0.03)",
+                border: enabled ? "1px solid rgba(115,135,123,0.30)" : "1px solid rgba(7,26,47,0.08)",
+                background: enabled ? "rgba(115,135,123,0.14)" : "rgba(7,26,47,0.03)",
                 color: enabled ? "var(--color-success)" : "var(--color-text-muted)",
                 fontSize: 11,
                 fontWeight: 700,

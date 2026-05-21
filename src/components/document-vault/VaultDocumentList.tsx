@@ -12,9 +12,9 @@ function getDocumentHealthScore(doc: VaultDocument) {
 }
 
 function healthColor(score: number) {
-    if (score >= 90) return { color: "var(--color-success)", background: "rgba(76,175,138,0.1)", border: "1px solid rgba(76,175,138,0.22)" };
+    if (score >= 90) return { color: "var(--color-success)", background: "rgba(115,135,123,0.12)", border: "1px solid rgba(115,135,123,0.24)" };
     if (score >= 70) return { color: "#D6A84F", background: "rgba(214,168,79,0.1)", border: "1px solid rgba(214,168,79,0.22)" };
-    return { color: "#D65037", background: "rgba(214,80,55,0.1)", border: "1px solid rgba(214,80,55,0.22)" };
+    return { color: "var(--color-danger)", background: "rgba(184,92,75,0.10)", border: "1px solid rgba(184,92,75,0.24)" };
 }
 
 export default function VaultDocumentList(props: {
@@ -62,7 +62,7 @@ export default function VaultDocumentList(props: {
                     <div style={{ padding: "22px 10px", color: "var(--foundry-text-secondary)", fontSize: 12 }}>Loading vault documents...</div>
                 )}
                 {!loading && error && (
-                    <div style={{ padding: "18px 12px", color: "#D28B76", fontSize: 12, lineHeight: 1.6 }}>
+                    <div style={{ padding: "18px 12px", color: "var(--color-danger)", fontSize: 12, lineHeight: 1.6 }}>
                         {error}
                     </div>
                 )}

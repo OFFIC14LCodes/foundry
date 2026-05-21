@@ -57,8 +57,8 @@ export default function DocumentSignaturesPanel(props: {
             </div>
             <div style={{ padding: 14, display: "grid", gap: 14 }}>
                 <div style={{
-                    background: "rgba(142,160,181,0.06)",
-                    border: "1px solid rgba(142,160,181,0.16)",
+                    background: "rgba(48,70,95,0.06)",
+                    border: "1px solid rgba(48,70,95,0.16)",
                     borderRadius: 12,
                     padding: "12px 14px",
                     fontFamily: "var(--tekori-font-ui)",
@@ -85,8 +85,8 @@ export default function DocumentSignaturesPanel(props: {
                                         fontSize: 10,
                                         fontWeight: 700,
                                         color: provider.availableNow ? "var(--color-success)" : "var(--color-text-muted)",
-                                        background: provider.availableNow ? "rgba(76,175,138,0.1)" : "rgba(7,26,47,0.04)",
-                                        border: provider.availableNow ? "1px solid rgba(76,175,138,0.2)" : "1px solid rgba(7,26,47,0.08)",
+                                        background: provider.availableNow ? "rgba(115,135,123,0.12)" : "rgba(7,26,47,0.04)",
+                                        border: provider.availableNow ? "1px solid rgba(115,135,123,0.22)" : "1px solid rgba(7,26,47,0.08)",
                                     }}>
                                         {provider.id === "mock" ? "Not used" : provider.availableNow ? "Configured" : "Coming later"}
                                     </span>
@@ -103,7 +103,7 @@ export default function DocumentSignaturesPanel(props: {
                     </div>
                     <div style={{ padding: 12, maxHeight: 250, overflowY: "auto" }}>
                         {props.requestsLoading && <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", padding: "8px 4px" }}>Loading signature requests...</div>}
-                        {!props.requestsLoading && props.requestsError && <div style={{ fontSize: 12, color: "#D28B76", lineHeight: 1.6, padding: "8px 4px" }}>{props.requestsError}</div>}
+                        {!props.requestsLoading && props.requestsError && <div style={{ fontSize: 12, color: "var(--color-danger)", lineHeight: 1.6, padding: "8px 4px" }}>{props.requestsError}</div>}
                         {!props.requestsLoading && !props.requestsError && props.requests.length === 0 && (
                             <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.6, padding: "8px 4px" }}>
                                 No e-signature requests are linked to this document.
@@ -166,7 +166,7 @@ export default function DocumentSignaturesPanel(props: {
                             <div>
                                 <div style={{ fontSize: 11, color: "var(--color-text)", fontWeight: 600, marginBottom: 8 }}>Events</div>
                                 {props.eventsLoading && <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)" }}>Loading event timeline...</div>}
-                                {!props.eventsLoading && props.eventsError && <div style={{ fontSize: 12, color: "#D28B76", lineHeight: 1.6 }}>{props.eventsError}</div>}
+                                {!props.eventsLoading && props.eventsError && <div style={{ fontSize: 12, color: "var(--color-danger)", lineHeight: 1.6 }}>{props.eventsError}</div>}
                                 {!props.eventsLoading && !props.eventsError && props.events.length === 0 && (
                                     <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.6 }}>
                                         No events yet for this request.

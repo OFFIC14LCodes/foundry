@@ -4,15 +4,15 @@ export const DESIGN_TOKENS = {
     background: "var(--color-bg-soft)",
     surfacePrimary: "var(--color-surface)",
     surfaceElevated: "var(--color-surface-elevated)",
-    surfaceControl: "rgba(7,26,47,0.045)",
+    surfaceControl: "rgba(241,232,216,0.72)",
     brandOrange: "var(--tekori-gold)",
-    emberHighlight: "var(--tekori-amber)",
+    emberHighlight: "var(--tekori-amber-light)",
     deepEmber: "var(--color-accent-hover)",
-    intelligenceBlue: "var(--tekori-muted-text)",
+    intelligenceBlue: "var(--tekori-slate)",
     positiveGreen: "var(--color-success)",
-    warningAmber: "var(--tekori-amber)",
-    destructiveRed: "#D96A55",
-    neutralData: "var(--tekori-muted-text)",
+    warningAmber: "var(--color-warning)",
+    destructiveRed: "var(--color-danger)",
+    neutralData: "var(--tekori-slate)",
     textPrimary: "var(--color-text)",
     textSecondary: "var(--color-text-soft)",
     textMuted: "var(--color-text-muted)",
@@ -87,8 +87,8 @@ export const GLOBAL_STYLES = `
 `;
 
 export const TAG_COLORS = {
-  Legal: { bg: "rgba(142,160,181,0.12)", text: "var(--tekori-muted-text)" },
+  Legal: { bg: "rgba(48,70,95,0.10)", text: "var(--tekori-slate)" },
   Strategy: { bg: "rgba(216,155,43,0.12)", text: "var(--tekori-gold)" },
-  Market: { bg: "rgba(72,187,120,0.12)", text: "var(--color-success)" },
-  Finance: { bg: "rgba(244,182,66,0.12)", text: "var(--tekori-amber)" },
+  Market: { bg: "rgba(115,135,123,0.14)", text: "var(--color-success)" },
+  Finance: { bg: "rgba(244,199,106,0.16)", text: "var(--tekori-gold)" },
 } as const;

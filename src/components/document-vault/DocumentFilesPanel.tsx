@@ -52,7 +52,7 @@ export default function DocumentFilesPanel(props: {
             </div>
             <div style={{ padding: 12 }}>
                 {loading && <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", padding: "8px 4px" }}>Loading files...</div>}
-                {!loading && error && <div style={{ fontSize: 12, color: "#D28B76", lineHeight: 1.6, padding: "8px 4px" }}>{error}</div>}
+                {!loading && error && <div style={{ fontSize: 12, color: "var(--color-danger)", lineHeight: 1.6, padding: "8px 4px" }}>{error}</div>}
                 {!loading && !error && files.length === 0 && (
                     <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.6, padding: "14px 4px" }}>
                         No files saved yet. Upload an attachment or save a DOCX/HTML artifact from the preview panel so this document is ready for sharing.

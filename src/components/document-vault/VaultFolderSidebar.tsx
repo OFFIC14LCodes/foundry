@@ -59,7 +59,7 @@ export default function VaultFolderSidebar(props: {
                         Unfiled
                     </button>
                     {loading && <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", padding: "6px 2px" }}>Loading folders...</div>}
-                    {!loading && error && <div style={{ fontSize: 12, color: "#D28B76", lineHeight: 1.6 }}>{error}</div>}
+                    {!loading && error && <div style={{ fontSize: 12, color: "var(--color-danger)", lineHeight: 1.6 }}>{error}</div>}
                     {!loading && !error && folders.length === 0 && (
                         <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.6, padding: "6px 2px" }}>
                             No folders yet. Create one to organize your vault.

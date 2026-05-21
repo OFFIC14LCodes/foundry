@@ -57,9 +57,9 @@ export default function WhatChangedPanel({ changes }: { changes: MarketIntellige
                         <div key={change.id} style={{ border: "1px solid rgba(7,26,47,0.06)", background: "rgba(7,26,47,0.025)", borderRadius: 12, padding: 12, display: "grid", gap: 7 }}>
                             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 7 }}>
                                 <Badge label={changeLabels[change.changeType]} color={color} />
-                                <Badge label={entityLabels[change.entityType]} color="var(--tekori-amber)" />
+                                <Badge label={entityLabels[change.entityType]} color="var(--tekori-gold)" />
                                 {change.actionStatus && <Badge label={`Action ${change.actionStatus.replace(/_/g, " ")}`} color="var(--tekori-slate-navy)" />}
-                                {outcome && <Badge label={`Outcome: ${outcome}`} color={change.actionOutcomeType === "failed" ? "#F05D5E" : change.actionOutcomeType === "success" ? "var(--color-success)" : "var(--tekori-amber)"} />}
+                                {outcome && <Badge label={`Outcome: ${outcome}`} color={change.actionOutcomeType === "failed" ? "var(--color-danger)" : change.actionOutcomeType === "success" ? "var(--color-success)" : "var(--tekori-gold)"} />}
                             </div>
                             <div style={{ fontSize: 14, color: "var(--color-text)", fontWeight: 800 }}>
                                 {change.entityName}
@@ -68,12 +68,12 @@ export default function WhatChangedPanel({ changes }: { changes: MarketIntellige
                                 {change.changeSummary}
                             </div>
                             {change.changeReason && (
-                                <div style={{ fontSize: 12, color: "var(--tekori-amber)", lineHeight: 1.55, background: "rgba(200,169,110,0.08)", border: "1px solid rgba(200,169,110,0.16)", borderRadius: 10, padding: "8px 10px" }}>
+                                <div style={{ fontSize: 12, color: "var(--tekori-gold)", lineHeight: 1.55, background: "rgba(200,169,110,0.08)", border: "1px solid rgba(200,169,110,0.16)", borderRadius: 10, padding: "8px 10px" }}>
                                     {change.changeReason}
                                 </div>
                             )}
                             {change.actionOutcomeNotes && (
-                                <div style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.55, borderLeft: "2px solid rgba(76,175,138,0.4)", paddingLeft: 9 }}>
+                                <div style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.55, borderLeft: "2px solid rgba(115,135,123,0.40)", paddingLeft: 9 }}>
                                     {change.actionOutcomeNotes}
                                 </div>
                             )}

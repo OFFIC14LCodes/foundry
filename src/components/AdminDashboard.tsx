@@ -23,34 +23,34 @@ import { hasAdminAccess, isOwnerRole, roleLabel } from '../lib/roles';
 // STATUS COLOURS
 // ─────────────────────────────────────────────────────────────
 const SUB_COLORS: Record<string, { bg: string; text: string }> = {
-    trial:      { bg: 'rgba(142,160,181,0.13)',  text: 'var(--tekori-muted-text)' },
-    active:     { bg: 'rgba(72,187,120,0.13)',  text: 'var(--color-success)' },
-    past_due:   { bg: 'rgba(244,182,66,0.13)',  text: 'var(--tekori-amber)' },
+    trial:      { bg: 'rgba(48,70,95,0.13)',  text: 'var(--color-pill-text)' },
+    active:     { bg: 'rgba(115,135,123,0.14)',  text: 'var(--color-success)' },
+    past_due:   { bg: 'rgba(244,199,106,0.13)',  text: 'var(--tekori-gold)' },
     canceled:   { bg: 'rgba(216,155,43,0.13)',   text: 'var(--tekori-gold)' },
     incomplete: { bg: 'rgba(16,41,68,0.10)', text: 'var(--tekori-slate-navy)' },
     unpaid:     { bg: 'rgba(245,68,67,0.13)',   text: '#F54443' },
     comped:     { bg: 'rgba(16,41,68,0.10)', text: 'var(--tekori-slate-navy)' },
     gifted:     { bg: 'rgba(16,41,68,0.10)', text: 'var(--tekori-slate-navy)' },
-    expired:    { bg: 'rgba(100,100,100,0.13)', text: 'var(--color-text-muted)' },
+    expired:    { bg: 'rgba(48,70,95,0.10)', text: 'var(--color-pill-text)' },
 };
 
 const ACCESS_COLORS: Record<string, { bg: string; text: string }> = {
-    active:    { bg: 'rgba(72,187,120,0.13)',  text: 'var(--color-success)' },
-    suspended: { bg: 'rgba(244,182,66,0.13)',  text: 'var(--tekori-amber)' },
+    active:    { bg: 'rgba(115,135,123,0.14)',  text: 'var(--color-success)' },
+    suspended: { bg: 'rgba(244,199,106,0.13)',  text: 'var(--tekori-gold)' },
     revoked:   { bg: 'rgba(245,68,67,0.13)',   text: '#F54443' },
 };
 
 const PLAN_COLORS: Record<string, { bg: string; text: string }> = {
-    free:        { bg: 'rgba(7,26,47,0.05)', text: 'var(--color-text-muted)' },
-    starter:     { bg: 'rgba(142,160,181,0.13)',  text: 'var(--tekori-muted-text)' },
-    pro:         { bg: 'rgba(72,187,120,0.13)',  text: 'var(--color-success)' },
-    enterprise:  { bg: 'rgba(244,182,66,0.13)',  text: 'var(--tekori-amber)' },
+    free:        { bg: 'rgba(7,26,47,0.05)', text: 'var(--color-pill-text)' },
+    starter:     { bg: 'rgba(48,70,95,0.13)',  text: 'var(--color-pill-text)' },
+    pro:         { bg: 'rgba(115,135,123,0.14)',  text: 'var(--color-success)' },
+    enterprise:  { bg: 'rgba(244,199,106,0.13)',  text: 'var(--tekori-gold)' },
     family_comp: { bg: 'rgba(16,41,68,0.10)', text: 'var(--tekori-slate-navy)' },
     gifted:      { bg: 'rgba(16,41,68,0.10)', text: 'var(--tekori-slate-navy)' },
 };
 
 function colorFor(map: Record<string, { bg: string; text: string }>, key: string | null | undefined) {
-    return map[key ?? ''] ?? { bg: 'rgba(7,26,47,0.05)', text: 'var(--color-text-muted)' };
+    return map[key ?? ''] ?? { bg: 'rgba(7,26,47,0.05)', text: 'var(--color-pill-text)' };
 }
 
 function Badge({ label, colors }: { label: string; colors: { bg: string; text: string } }) {
@@ -95,7 +95,7 @@ function StatsBar({ users }: { users: AdminUser[] }) {
         { label: 'Active', value: stats.active, color: 'var(--color-success)' },
         { label: 'Trial', value: stats.trial, color: 'var(--tekori-muted-text)' },
         { label: 'Canceled', value: stats.canceled, color: 'var(--tekori-gold)' },
-        { label: 'Suspended', value: stats.suspended, color: 'var(--tekori-amber)' },
+        { label: 'Suspended', value: stats.suspended, color: 'var(--tekori-gold)' },
         { label: 'Comped', value: stats.comped, color: 'var(--tekori-slate-navy)' },
     ];
 
@@ -141,7 +141,7 @@ function VaultUsageBar({
         { label: 'Docs Produced', value: usage.documentsGenerated, color: 'var(--tekori-gold)' },
         { label: 'Vault Created', value: usage.vaultDocumentsCreated, color: 'var(--tekori-muted-text)' },
         { label: 'Uploads', value: usage.filesUploaded, color: 'var(--color-success)' },
-        { label: 'Artifacts', value: usage.artifactsSaved, color: 'var(--tekori-amber)' },
+        { label: 'Artifacts', value: usage.artifactsSaved, color: 'var(--tekori-gold)' },
         { label: 'Signature Requests', value: usage.signatureRequestsCreated, color: 'var(--tekori-slate-navy)' },
         { label: 'Completed', value: usage.documentsSignedCompleted, color: 'var(--color-success)' },
         { label: 'Wizard Runs', value: usage.needsWizardRuns, color: 'var(--tekori-gold)' },
@@ -209,7 +209,7 @@ function UserRow({ user, onClick }: { user: AdminUser; onClick: () => void }) {
             {/* Identity */}
             <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, color: 'var(--color-text)', fontWeight: 500, marginBottom: 2 }}>
-                    {user.name ?? '—'}{hasAdminAccess(user.role) && <span style={{ fontSize: 9, color: isOwnerRole(user.role) ? 'var(--tekori-gold)' : 'var(--tekori-amber)', marginLeft: 6, background: isOwnerRole(user.role) ? 'rgba(216,155,43,0.15)' : 'rgba(244,182,66,0.15)', padding: '1px 5px', borderRadius: 10 }}>{roleLabel(user.role).toUpperCase()}</span>}
+                    {user.name ?? '—'}{hasAdminAccess(user.role) && <span style={{ fontSize: 9, color: isOwnerRole(user.role) ? 'var(--tekori-gold)' : 'var(--tekori-gold)', marginLeft: 6, background: isOwnerRole(user.role) ? 'rgba(216,155,43,0.15)' : 'rgba(244,199,106,0.15)', padding: '1px 5px', borderRadius: 10 }}>{roleLabel(user.role).toUpperCase()}</span>}
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--color-text-soft)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {user.email ?? '—'}
@@ -366,7 +366,7 @@ function UserDetailPanel({
             <div style={{ flex: 1, overflowY: 'auto', padding: 16, paddingBottom: 32 }}>
                 {actionMsg && (
                     <div style={{
-                        background: 'rgba(72,187,120,0.1)', border: '1px solid rgba(72,187,120,0.25)',
+                        background: 'rgba(115,135,123,0.12)', border: '1px solid rgba(115,135,123,0.28)',
                         borderRadius: 8, padding: '8px 14px', fontSize: 12, color: 'var(--color-success)',
                         marginBottom: 12, animation: 'fadeIn 0.2s ease',
                     }}>
@@ -428,7 +428,7 @@ function UserDetailPanel({
                 {/* Actions card */}
                 <div style={card}>
                     <div style={label}>Admin Actions</div>
-                    <div style={{ fontSize: 11, color: 'var(--tekori-amber)', lineHeight: 1.55, marginBottom: 10 }}>
+                    <div style={{ fontSize: 11, color: 'var(--tekori-gold)', lineHeight: 1.55, marginBottom: 10 }}>
                         Legacy surface. These actions now use audited server routes, but Admin Operations is the primary control center.
                     </div>
 
@@ -467,7 +467,7 @@ function UserDetailPanel({
                         <ActionItem
                             id="remove_comp"
                             label="Remove Comp Access"
-                            color="var(--tekori-amber)"
+                            color="var(--tekori-gold)"
                             expanded={expandedAction === 'remove_comp'}
                             onToggle={() => setExpandedAction(expandedAction === 'remove_comp' ? null : 'remove_comp')}
                             input={actionInput}
@@ -482,7 +482,7 @@ function UserDetailPanel({
                         <ActionItem
                             id="suspend"
                             label="Suspend Account"
-                            color="var(--tekori-amber)"
+                            color="var(--tekori-gold)"
                             expanded={expandedAction === 'suspend'}
                             onToggle={() => setExpandedAction(expandedAction === 'suspend' ? null : 'suspend')}
                             input={actionInput}
@@ -581,7 +581,7 @@ function UserDetailPanel({
                                     <div style={{ fontSize: 11, color: 'rgba(16,32,51,0.74)', lineHeight: 1.6 }}>{n.note}</div>
                                     <div style={{ fontSize: 9, color: 'var(--color-text-muted)', marginTop: 4 }}>{fmtDateTime(n.created_at)}</div>
                                     {n.retention_status && (
-                                        <Badge label={n.retention_status} colors={{ bg: 'rgba(244,182,66,0.1)', text: 'var(--tekori-amber)' }} />
+                                        <Badge label={n.retention_status} colors={{ bg: 'rgba(244,199,106,0.1)', text: 'var(--tekori-gold)' }} />
                                     )}
                                 </div>
                             ))}

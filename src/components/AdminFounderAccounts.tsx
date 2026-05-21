@@ -121,8 +121,8 @@ function PaidPill({ paid }: { paid: boolean }) {
                 alignItems: "center",
                 padding: "3px 9px",
                 borderRadius: 999,
-                background: paid ? "rgba(76,175,138,0.14)" : "rgba(7,26,47,0.05)",
-                border: paid ? "1px solid rgba(76,175,138,0.32)" : "1px solid rgba(7,26,47,0.1)",
+                background: paid ? "rgba(115,135,123,0.16)" : "rgba(7,26,47,0.05)",
+                border: paid ? "1px solid rgba(115,135,123,0.34)" : "1px solid rgba(7,26,47,0.1)",
                 color: paid ? "var(--color-success)" : "var(--color-text-muted)",
                 fontSize: 10,
                 fontWeight: 700,
@@ -278,7 +278,7 @@ ${summariesText}`;
                             <StageBadge stage={stage} />
                             <PaidPill paid={paid} />
                             {user.business_name && (
-                                <span style={{ fontSize: 10, color: "var(--color-text-muted)", background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 999, padding: "3px 9px" }}>
+                                <span style={{ fontSize: 10, color: "var(--color-pill-text)", background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 999, padding: "3px 9px" }}>
                                     {user.business_name}
                                 </span>
                             )}
@@ -322,7 +322,7 @@ ${summariesText}`;
                     <div style={{ fontSize: 13, color: "var(--foundry-text-secondary)", padding: "8px 0" }}>Loading account data…</div>
                 ) : detail && (
                     <>
-                        <div style={{ background: "rgba(76,175,138,0.05)", border: "1px solid rgba(76,175,138,0.14)", borderRadius: 16, padding: 16 }}>
+                        <div style={{ background: "rgba(115,135,123,0.06)", border: "1px solid rgba(115,135,123,0.16)", borderRadius: 16, padding: 16 }}>
                             <div style={{ fontSize: 10, color: "var(--color-success)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 12 }}>Navi Token Usage Estimate</div>
                             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10, marginBottom: 10 }}>
                                 {[
@@ -415,7 +415,7 @@ ${summariesText}`;
                         </button>
                     </div>
                     {summaryError && (
-                        <div style={{ fontSize: 12, color: "#D28B76", lineHeight: 1.6, marginTop: 8 }}>{summaryError}</div>
+                        <div style={{ fontSize: 12, color: "var(--color-danger)", lineHeight: 1.6, marginTop: 8 }}>{summaryError}</div>
                     )}
                     {summary && (
                         <div style={{ fontSize: 13, color: "var(--color-text-soft)", lineHeight: 1.75, whiteSpace: "pre-wrap" }}>
@@ -557,7 +557,7 @@ export default function AdminFounderAccounts({ onBack }: Props) {
                         <div style={{ fontSize: 13, color: "var(--foundry-text-secondary)", padding: "24px 0" }}>Loading founders…</div>
                     ) : error ? (
                         <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "24px 0" }}>
-                            <div style={{ fontSize: 13, color: "#D28B76" }}>{error}</div>
+                            <div style={{ fontSize: 13, color: "var(--color-danger)" }}>{error}</div>
                             <button
                                 onClick={() => void load()}
                                 style={{

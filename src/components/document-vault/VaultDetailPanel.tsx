@@ -100,8 +100,8 @@ export default function VaultDetailPanel(props: {
                     style={{
                         margin: "0 0 12px",
                         padding: isChanged ? "8px 10px" : "0",
-                        background: isChanged ? (mode === "old" ? "rgba(216,155,43,0.08)" : "rgba(76,175,138,0.08)") : "transparent",
-                        borderLeft: isChanged ? (mode === "old" ? "2px solid rgba(216,155,43,0.4)" : "2px solid rgba(76,175,138,0.4)") : "none",
+                        background: isChanged ? (mode === "old" ? "rgba(216,155,43,0.08)" : "rgba(115,135,123,0.10)") : "transparent",
+                        borderLeft: isChanged ? (mode === "old" ? "2px solid rgba(216,155,43,0.4)" : "2px solid rgba(115,135,123,0.40)") : "none",
                         color: "var(--color-text)",
                         fontFamily: "var(--tekori-font-ui)",
                         fontSize: 13,
@@ -196,7 +196,7 @@ export default function VaultDetailPanel(props: {
                                         </div>
                                         <div style={{ maxHeight: 290, overflowY: "auto", padding: 12 }}>
                                             {versionsLoading && <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", padding: "8px 4px" }}>Loading versions...</div>}
-                                            {!versionsLoading && versionsError && <div style={{ fontSize: 12, color: "#D28B76", lineHeight: 1.6, padding: "8px 4px" }}>{versionsError}</div>}
+                                            {!versionsLoading && versionsError && <div style={{ fontSize: 12, color: "var(--color-danger)", lineHeight: 1.6, padding: "8px 4px" }}>{versionsError}</div>}
                                             {!versionsLoading && !versionsError && versions.length === 0 && (
                                                 <div style={{ padding: "20px 8px", textAlign: "center", fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.6 }}>
                                                     No versions found for this document yet.
@@ -282,7 +282,7 @@ export default function VaultDetailPanel(props: {
                                 <div style={{ fontFamily: "var(--tekori-font-ui)", fontSize: 11, color: "var(--tekori-gold)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Changed clauses</div>
                                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                                     {changedClauseNames(compareVersion.content, latestVersion.content).map((name) => (
-                                        <span key={name} style={{ padding: "4px 8px", borderRadius: 999, background: "rgba(7,26,47,0.045)", border: "1px solid rgba(7,26,47,0.08)", color: "var(--color-text-soft)", fontSize: 11 }}>
+                                        <span key={name} style={{ padding: "4px 8px", borderRadius: 999, background: "rgba(7,26,47,0.045)", border: "1px solid rgba(7,26,47,0.08)", color: "var(--color-pill-text)", fontSize: 11 }}>
                                             {name}
                                         </span>
                                     ))}

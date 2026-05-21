@@ -133,7 +133,7 @@ export default function BusinessModelCanvasScreen({
                         </div>
                     </div>
                     {actionNotice && (
-                        <div style={{ marginBottom: 14, padding: "10px 12px", borderRadius: 10, background: "rgba(76,175,138,0.08)", border: "1px solid rgba(76,175,138,0.2)", color: "var(--color-success)", fontSize: 12 }}>
+                        <div style={{ marginBottom: 14, padding: "10px 12px", borderRadius: 10, background: "rgba(115,135,123,0.10)", border: "1px solid rgba(115,135,123,0.22)", color: "var(--color-success)", fontSize: 12 }}>
                             {actionNotice}
                         </div>
                     )}
@@ -152,7 +152,7 @@ export default function BusinessModelCanvasScreen({
                                         minHeight: 188,
                                         background: undefined,
                                         border: weakness
-                                            ? "1px solid rgba(217,177,93,0.28)"
+                                            ? "1px solid rgba(244,199,106,0.30)"
                                             : undefined,
                                         padding: 16,
                                         cursor: "pointer",
@@ -169,7 +169,7 @@ export default function BusinessModelCanvasScreen({
                                             <div style={{ fontSize: 20, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, lineHeight: 1.15, color: "var(--foundry-text-primary)" }}>{BUSINESS_MODEL_CANVAS_LABELS[section]}</div>
                                         </div>
                                         {weakness && (
-                                            <div style={{ fontSize: 10, color: "var(--foundry-semantic-warning)", background: "rgba(217,177,93,0.1)", border: "1px solid rgba(217,177,93,0.22)", borderRadius: 999, padding: "5px 8px", whiteSpace: "nowrap" }}>
+                                            <div style={{ fontSize: 10, color: "var(--foundry-semantic-warning)", background: "rgba(244,199,106,0.14)", border: "1px solid rgba(244,199,106,0.24)", borderRadius: 999, padding: "5px 8px", whiteSpace: "nowrap" }}>
                                                 Needs work
                                             </div>
                                         )}
@@ -177,7 +177,7 @@ export default function BusinessModelCanvasScreen({
 
                                     <div style={{ display: "flex", flexWrap: "wrap", gap: 7, alignContent: "flex-start" }}>
                                         {entries.slice(0, 5).map((entry) => (
-                                            <span key={entry.id} style={{ background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.07)", borderRadius: 999, padding: "6px 10px", fontSize: 11, color: "#D6D1CA", lineHeight: 1.45 }}>
+                                            <span key={entry.id} style={{ background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.07)", borderRadius: 999, padding: "6px 10px", fontSize: 11, color: "var(--color-pill-text)", lineHeight: 1.45 }}>
                                                 {entry.text}
                                             </span>
                                         ))}

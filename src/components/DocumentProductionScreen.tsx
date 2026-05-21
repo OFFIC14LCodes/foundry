@@ -265,8 +265,8 @@ function TypedSignaturePanel({
 }) {
     return (
         <div style={{
-            border: "1px solid rgba(142,160,181,0.16)",
-            background: "rgba(142,160,181,0.06)",
+            border: "1px solid rgba(48,70,95,0.16)",
+            background: "rgba(48,70,95,0.06)",
             borderRadius: 12,
             padding: "12px 14px",
             marginBottom: 12,
@@ -1950,7 +1950,7 @@ export default function DocumentProductionScreen({
                                             </div>
                                         )}
                                         {versionRestoreMessage && (
-                                            <div style={{ marginBottom: 12, padding: "10px 12px", borderRadius: 8, background: "rgba(76,175,138,0.08)", border: "1px solid rgba(76,175,138,0.2)", color: "var(--color-success)", fontSize: 12, fontFamily: "var(--tekori-font-ui)" }}>
+                                            <div style={{ marginBottom: 12, padding: "10px 12px", borderRadius: 8, background: "rgba(115,135,123,0.10)", border: "1px solid rgba(115,135,123,0.22)", color: "var(--color-success)", fontSize: 12, fontFamily: "var(--tekori-font-ui)" }}>
                                                 {versionRestoreMessage}
                                             </div>
                                         )}
@@ -1966,7 +1966,7 @@ export default function DocumentProductionScreen({
                                                     background: "#F8F5F0",
                                                     borderRadius: 12,
                                                     padding: "28px 28px 24px",
-                                                    boxShadow: "0 4px 30px rgba(0,0,0,0.35)",
+                                                    boxShadow: "0 4px 30px rgba(7,26,47,0.18)",
                                                 }}>
                                                     <DocPreview content={signedLatestVaultContent} meta={latestVaultMeta} />
                                                 </div>
@@ -2365,8 +2365,8 @@ export default function DocumentProductionScreen({
                                 marginBottom: 12,
                                 padding: "12px 14px",
                                 borderRadius: 12,
-                                background: "rgba(76,175,138,0.06)",
-                                border: "1px solid rgba(76,175,138,0.18)",
+                                background: "rgba(115,135,123,0.08)",
+                                border: "1px solid rgba(115,135,123,0.18)",
                                 fontSize: "var(--foundry-doc-card-body-font)",
                                 color: "var(--color-text-muted)",
                                 lineHeight: 1.65,
@@ -2381,8 +2381,8 @@ export default function DocumentProductionScreen({
                                 marginBottom: 12,
                                 padding: "12px 14px",
                                 borderRadius: 12,
-                                background: currentValidation.valid ? "rgba(76,175,138,0.08)" : "rgba(216,155,43,0.07)",
-                                border: currentValidation.valid ? "1px solid rgba(76,175,138,0.2)" : "1px solid rgba(216,155,43,0.18)",
+                                background: currentValidation.valid ? "rgba(115,135,123,0.10)" : "rgba(216,155,43,0.07)",
+                                border: currentValidation.valid ? "1px solid rgba(115,135,123,0.22)" : "1px solid rgba(216,155,43,0.18)",
                             }}>
                                 <div>
                                     <div style={{ fontSize: 12, color: "var(--color-text)", fontWeight: 700, marginBottom: 3 }}>
@@ -2398,7 +2398,7 @@ export default function DocumentProductionScreen({
                             </div>
 
                             {showValidation && !currentValidation.valid && (
-                                <div style={{ marginBottom: 12, fontSize: 11, color: "#D65037", lineHeight: 1.6 }}>
+                                <div style={{ marginBottom: 12, fontSize: 11, color: "var(--color-danger)", lineHeight: 1.6 }}>
                                     Complete these before generation: {currentValidation.missingRequired.join(", ")}
                                 </div>
                             )}
@@ -2540,7 +2540,7 @@ export default function DocumentProductionScreen({
             <ModeTabs mode={surfaceMode} onChange={setSurfaceMode} />
 
             {studioLaunchNotice && (
-                <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(142,160,181,0.14)", background: "rgba(142,160,181,0.08)", fontSize: 11, color: "#CFE5F5", lineHeight: 1.6 }}>
+                <div style={{ padding: "10px 16px", borderBottom: "1px solid rgba(48,70,95,0.14)", background: "rgba(48,70,95,0.08)", fontSize: 11, color: "#CFE5F5", lineHeight: 1.6 }}>
                     {studioLaunchNotice}
                 </div>
             )}
@@ -2674,7 +2674,7 @@ export default function DocumentProductionScreen({
                                 <button
                                     key={chip}
                                     onClick={() => setRefineInput(chip)}
-                                    style={{ padding: "5px 12px", borderRadius: 20, border: "1px solid rgba(7,26,47,0.07)", background: refineInput === chip ? "rgba(216,155,43,0.1)" : "rgba(7,26,47,0.02)", color: refineInput === chip ? "var(--tekori-gold)" : "var(--color-text-muted)", fontSize: 11, cursor: "pointer", fontFamily: "var(--tekori-font-ui)", transition: "all 0.15s" }}
+                                    style={{ padding: "5px 12px", borderRadius: 20, border: "1px solid rgba(7,26,47,0.07)", background: refineInput === chip ? "rgba(216,155,43,0.1)" : "rgba(7,26,47,0.02)", color: refineInput === chip ? "var(--tekori-gold)" : "var(--color-pill-text)", fontSize: 11, cursor: "pointer", fontFamily: "var(--tekori-font-ui)", transition: "all 0.15s" }}
                                 >
                                     {chip}
                                 </button>

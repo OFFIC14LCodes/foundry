@@ -12,16 +12,16 @@ function getImpactDisplay(impactLevel: string) {
             label: "High Impact",
             color: "var(--color-success)",
             border: "var(--color-success)",
-            background: "rgba(76,175,138,0.15)",
+            background: "rgba(115,135,123,0.16)",
             tooltip: "This trend is actively reshaping your market right now",
         };
     }
     if (normalized === "medium") {
         return {
             label: "Watch This",
-            color: "var(--tekori-amber)",
-            border: "var(--tekori-amber)",
-            background: "rgba(217,177,93,0.13)",
+            color: "var(--tekori-gold)",
+            border: "var(--tekori-gold)",
+            background: "rgba(244,199,106,0.16)",
             tooltip: "This trend is growing and will matter to your business soon",
         };
     }
@@ -37,7 +37,7 @@ function getImpactDisplay(impactLevel: string) {
 function getTimeframeDisplay(timeframe: string) {
     const normalized = timeframe.trim().toLowerCase();
     if (normalized === "current") return { label: "Happening Now", color: "var(--color-success)" };
-    if (normalized === "emerging") return { label: "Emerging", color: "var(--tekori-muted-text)" };
+    if (normalized === "emerging") return { label: "Emerging", color: "var(--color-pill-text)" };
     if (normalized === "future") return { label: "Future Signal", color: "rgba(16,32,51,0.58)" };
     return { label: timeframe || "Unspecified", color: "rgba(16,32,51,0.58)" };
 }
@@ -134,7 +134,7 @@ export default function StructuredTrendsPanel({
                                     <span>•</span>
                                     <span>{timeframe.label}</span>
                                 </span>
-                                <span style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "var(--tekori-amber)", fontFamily: "var(--tekori-font-ui)", fontSize: 11, fontWeight: 700 }}>
+                                <span style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "var(--tekori-gold)", fontFamily: "var(--tekori-font-ui)", fontSize: 11, fontWeight: 700 }}>
                                     <span>Momentum:</span>
                                     <span>{trend.recurrenceCount ?? 0}x · {formatFirstSeen(trend.firstSeenAt)}</span>
                                 </span>

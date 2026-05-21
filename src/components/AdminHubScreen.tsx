@@ -41,14 +41,14 @@ const PRIMARY_TOOLS: Array<{
         title: "Founder Accounts",
         eyebrow: "Account Review",
         description: "Registered founders, stage progress, archive summaries, subscription state, and AI account summaries.",
-        accent: "var(--foundry-orange)",
+        accent: "var(--tekori-gold)",
         view: "accounts",
     },
     {
         title: "Navi Academy",
         eyebrow: "Content Ops",
         description: "Academy categories, topic conversations, lesson series, and learning content.",
-        accent: "var(--foundry-amber)",
+        accent: "var(--tekori-amber-light)",
         view: "academy",
     },
     {
@@ -91,13 +91,13 @@ const OPERATING_PATHS: Array<{
         label: "Audit admin actions",
         detail: "Search immutable admin actions by actor, founder, action, entity, and date.",
         target: "operations",
-        accent: "var(--foundry-amber)",
+        accent: "var(--tekori-amber-light)",
     },
     {
         label: "Manage Academy content",
         detail: "Edit learning structure and content without entering account support workflows.",
         target: "academy",
-        accent: "var(--foundry-orange)",
+        accent: "var(--tekori-gold)",
     },
     {
         label: "Generate account summaries",
@@ -245,7 +245,7 @@ export default function AdminHubScreen({
                             <div style={{ display: "grid", gap: 8 }}>
                                 <SystemRow label="Admin Operations" value="Active" accent="var(--foundry-green)" />
                                 <SystemRow label="Audit Log" value="Read-only" accent="var(--foundry-blue)" />
-                                <SystemRow label="Mutations" value="Server audited" accent="var(--foundry-amber)" />
+                                <SystemRow label="Mutations" value="Server audited" accent="var(--tekori-amber-light)" />
                             </div>
                         </SectionPanel>
 
@@ -265,7 +265,7 @@ export default function AdminHubScreen({
                         <section className="foundry-command-panel foundry-panel-in" style={{ padding: 18, borderRadius: 8 }}>
                             <div style={{ display: "flex", justifyContent: "space-between", gap: 14, alignItems: "flex-start", flexWrap: "wrap" }}>
                                 <div style={{ minWidth: 260, maxWidth: 760 }}>
-                                    <div className="foundry-label" style={{ color: "var(--foundry-orange)", marginBottom: 8 }}>Internal Control Panel</div>
+                                    <div className="foundry-label" style={{ color: "var(--tekori-gold)", marginBottom: 8 }}>Internal Control Panel</div>
                                     <div style={{ fontSize: 28, lineHeight: 1.08, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, marginBottom: 8 }}>
                                         Tekori Admin Hub
                                     </div>
@@ -275,8 +275,8 @@ export default function AdminHubScreen({
                                 </div>
                                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                                     <MiniAction label="Founder Ops" onClick={() => setActiveView("operations")} accent="var(--foundry-green)" />
-                                    <MiniAction label="Academy" onClick={() => setActiveView("academy")} accent="var(--foundry-amber)" />
-                                    <MiniAction label="Accounts" onClick={() => setActiveView("accounts")} accent="var(--foundry-orange)" />
+                                    <MiniAction label="Academy" onClick={() => setActiveView("academy")} accent="var(--tekori-amber-light)" />
+                                    <MiniAction label="Accounts" onClick={() => setActiveView("accounts")} accent="var(--tekori-gold)" />
                                 </div>
                             </div>
                         </section>
@@ -306,8 +306,8 @@ export default function AdminHubScreen({
                                         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 }}>
                                             <MetricTile label="30d Cost" value={formatEstimatedCost(tokenUsage30d.estimatedCostUsd)} accent="var(--foundry-green)" />
                                             <MetricTile label="30d Tokens" value={formatTokenCount(tokenUsage30d.totalTokens)} accent="var(--foundry-blue)" />
-                                            <MetricTile label="All-Time Cost" value={formatEstimatedCost(tokenUsageAllTime.estimatedCostUsd)} accent="var(--foundry-orange)" />
-                                            <MetricTile label="Messages" value={formatNumber(tokenUsage30d.messageCount)} accent="var(--foundry-amber)" />
+                                            <MetricTile label="All-Time Cost" value={formatEstimatedCost(tokenUsageAllTime.estimatedCostUsd)} accent="var(--tekori-gold)" />
+                                            <MetricTile label="Messages" value={formatNumber(tokenUsage30d.messageCount)} accent="var(--tekori-amber-light)" />
                                         </div>
                                         <div style={{ fontSize: 11, color: "var(--foundry-text-muted)", lineHeight: 1.6 }}>
                                             {tokenUsageEstimateNote()}
@@ -334,15 +334,15 @@ export default function AdminHubScreen({
                                                     <span>{usagePercent}% · reset {formatResetDate(ttsUsage.resetAtUnix)}</span>
                                                 </div>
                                                 <div style={{ height: 8, borderRadius: 999, background: "rgba(7,26,47,0.05)", overflow: "hidden" }}>
-                                                    <div style={{ width: `${usagePercent}%`, height: "100%", background: "linear-gradient(90deg, var(--foundry-orange), var(--foundry-amber))" }} />
+                                                    <div style={{ width: `${usagePercent}%`, height: "100%", background: "linear-gradient(90deg, var(--tekori-gold), var(--tekori-amber-light))" }} />
                                                 </div>
                                             </div>
                                         )}
                                         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8 }}>
-                                            <MetricTile label="Voice" value={ttsUsage.currentVoiceName || "Not set"} accent="var(--foundry-amber)" />
+                                            <MetricTile label="Voice" value={ttsUsage.currentVoiceName || "Not set"} accent="var(--tekori-amber-light)" />
                                             <MetricTile label={ttsUsageLimited ? "Connection" : "Status"} value={ttsUsageLimited ? ttsUsage.status : `${ttsUsage.tier} · ${ttsUsage.status}`} accent="var(--foundry-blue)" />
                                             <MetricTile label="Remaining" value={ttsUsageLimited ? "Unavailable" : formatNumber(ttsUsage.remainingCredits)} accent="var(--foundry-green)" />
-                                            <MetricTile label="Used" value={ttsUsageLimited ? "Unavailable" : `${formatNumber(ttsUsage.usedCredits)} / ${formatNumber(ttsUsage.totalCredits)}`} accent="var(--foundry-orange)" />
+                                            <MetricTile label="Used" value={ttsUsageLimited ? "Unavailable" : `${formatNumber(ttsUsage.usedCredits)} / ${formatNumber(ttsUsage.totalCredits)}`} accent="var(--tekori-gold)" />
                                         </div>
                                     </div>
                                 ) : (
@@ -546,7 +546,7 @@ function MetricTile({ label, value, accent }: { label: string; value: string; ac
 }
 
 function InlineState({ children, tone = "muted" }: { children: ReactNode; tone?: "muted" | "error" | "warn" }) {
-    const color = tone === "error" ? "var(--foundry-red)" : tone === "warn" ? "var(--foundry-amber)" : "var(--foundry-text-muted)";
+    const color = tone === "error" ? "var(--foundry-red)" : tone === "warn" ? "var(--tekori-amber-light)" : "var(--foundry-text-muted)";
     return <div style={{ fontSize: 12, color, lineHeight: 1.6 }}>{children}</div>;
 }
 
@@ -570,8 +570,8 @@ function ToggleButton({ enabled, onClick }: { enabled: boolean; onClick: () => v
                 minWidth: 82,
                 padding: "9px 12px",
                 borderRadius: 999,
-                border: enabled ? "1px solid rgba(76,175,138,0.32)" : "1px solid rgba(7,26,47,0.08)",
-                background: enabled ? "rgba(76,175,138,0.14)" : "rgba(7,26,47,0.03)",
+                border: enabled ? "1px solid rgba(115,135,123,0.34)" : "1px solid rgba(7,26,47,0.08)",
+                background: enabled ? "rgba(115,135,123,0.16)" : "rgba(7,26,47,0.03)",
                 color: enabled ? "var(--foundry-green)" : "var(--foundry-text-muted)",
                 fontSize: 11,
                 fontWeight: 800,

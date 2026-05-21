@@ -75,8 +75,8 @@ export default function StructuredCompetitorsPanel({
                         style={{
                             width: "100%",
                             textAlign: "left",
-                            background: expanded ? "rgba(142,160,181,0.045)" : "rgba(7,26,47,0.02)",
-                            border: expanded ? "1px solid rgba(142,160,181,0.18)" : "1px solid rgba(7,26,47,0.06)",
+                            background: expanded ? "rgba(48,70,95,0.045)" : "rgba(7,26,47,0.02)",
+                            border: expanded ? "1px solid rgba(48,70,95,0.18)" : "1px solid rgba(7,26,47,0.06)",
                             borderRadius: 12,
                             padding: "16px 16px 14px",
                             color: "var(--color-text)",
@@ -91,12 +91,12 @@ export default function StructuredCompetitorsPanel({
                             </div>
                             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
                                 {(competitor.timesSpotted ?? 0) > 0 && (
-                                    <div style={{ fontFamily: "var(--tekori-font-ui)", fontSize: 10, color: "var(--tekori-amber)", background: "rgba(244,182,66,0.1)", border: "1px solid rgba(244,182,66,0.25)", borderRadius: 999, padding: "4px 7px", lineHeight: 1.2, fontWeight: 700 }}>
+                                    <div style={{ fontFamily: "var(--tekori-font-ui)", fontSize: 10, color: "var(--tekori-gold)", background: "rgba(244,199,106,0.12)", border: "1px solid rgba(244,199,106,0.26)", borderRadius: 999, padding: "4px 7px", lineHeight: 1.2, fontWeight: 700 }}>
                                         {competitor.timesSpotted}x spotted
                                     </div>
                                 )}
                                 {competitor.positioning && (
-                                    <div style={{ fontFamily: "var(--tekori-font-ui)", fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--tekori-muted-text)", background: "rgba(142,160,181,0.12)", border: "1px solid rgba(142,160,181,0.34)", borderRadius: 6, padding: "4px 7px", lineHeight: 1.2 }}>
+                                    <div style={{ fontFamily: "var(--tekori-font-ui)", fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--color-pill-text)", background: "rgba(48,70,95,0.12)", border: "1px solid rgba(48,70,95,0.30)", borderRadius: 6, padding: "4px 7px", lineHeight: 1.2 }}>
                                         {competitor.positioning}
                                     </div>
                                 )}
@@ -195,7 +195,7 @@ export default function StructuredCompetitorsPanel({
                             </div>
                         )}
 
-                        <div style={{ textAlign: "right", color: expanded ? "rgba(142,160,181,0.55)" : "rgba(7,26,47,0.45)", fontFamily: "var(--tekori-font-ui)", fontSize: 11, marginTop: 10 }}>
+                        <div style={{ textAlign: "right", color: expanded ? "rgba(48,70,95,0.45)" : "rgba(7,26,47,0.45)", fontFamily: "var(--tekori-font-ui)", fontSize: 11, marginTop: 10 }}>
                             {expanded ? "See less ↑" : "See more ↓"}
                         </div>
                     </div>

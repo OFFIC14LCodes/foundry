@@ -5,7 +5,7 @@ export const STAGES_DATA = [
         id: 1,
         label: "Idea",
         icon: Icons.stages.idea,
-        color: "var(--tekori-amber)",
+        color: "var(--tekori-gold)",
         mission: "Prove the problem is real before building anything",
         briefing: `Before you build anything — before you name it, brand it, or spend a dollar on it — you need to know one thing with certainty: does this problem actually exist, and will someone pay you to solve it?\n\nMost founders skip this. They fall in love with their solution and build it hoping customers will appear. Navi won't let you make that mistake.\n\nThis stage is about getting out of the building and into real conversations. Not surveys. Not hypotheticals. Real people telling you real things about a real problem they actually have.`,
         innerCircle: [
@@ -35,7 +35,7 @@ export const STAGES_DATA = [
         id: 2,
         label: "Plan",
         icon: Icons.stages.plan,
-        color: "var(--tekori-muted-text)",
+        color: "var(--tekori-slate)",
         mission: "Build a coherent offer and model before spending serious money",
         briefing: `You've validated the problem. Now we build the model — the system that turns solving that problem into sustainable income.\n\nA business plan isn't a 40-page document. It's a single coherent answer to: who are my customers, what do I give them, how do I reach them, how do I make money, and what makes me hard to copy?\n\nFor a side hustle, this may stay lean: one clear offer, one buyer type, one simple way to deliver. For a company, it becomes the foundation everything else sits on. Either way, get this right and every decision downstream gets easier.`,
         innerCircle: [
@@ -156,7 +156,7 @@ export const STAGES_DATA = [
         id: 6,
         label: "Grow",
         icon: Icons.stages.grow,
-        color: "var(--tekori-amber)",
+        color: "var(--tekori-amber-light)",
         mission: "Scale or systemize what's working without breaking your life",
         briefing: `You've built something real. Now the challenge changes — from finding customers to building systems, from surviving to scaling, from hustle to operator.\n\nGrowth breaks work that isn't ready for it. For a side hustle, scaling may mean a cleaner process, better pricing, fewer custom requests, or a decision about whether this should become full time. For a company, it may mean people, systems, and capital.\n\nNavi stays with you here permanently. This stage doesn't end. It evolves.`,
         innerCircle: [

@@ -17,7 +17,7 @@ function FieldInput({ field, value, error, onChange }: {
     const baseStyle = {
         width: "100%",
         background: "rgba(7,26,47,0.04)",
-        border: error ? "1px solid rgba(214,80,55,0.55)" : "1px solid rgba(7,26,47,0.1)",
+        border: error ? "1px solid rgba(184,92,75,0.55)" : "1px solid rgba(7,26,47,0.1)",
         borderRadius: 10,
         padding: "10px 12px",
         color: "var(--color-text)",
@@ -127,7 +127,7 @@ export default function DocumentFieldsForm({ requirement, values, errors, onChan
                                         {field.type === "list" && <HelpTooltip content="Enter one item per line." />}
                                     </div>
                                     {errors[field.id] && (
-                                        <span style={{ fontSize: 10, color: "#D65037", flexShrink: 0 }}>{errors[field.id]}</span>
+                                        <span style={{ fontSize: 10, color: "var(--color-danger)", flexShrink: 0 }}>{errors[field.id]}</span>
                                     )}
                                 </div>
                                 <FieldInput

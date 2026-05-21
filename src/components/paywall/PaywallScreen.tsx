@@ -45,7 +45,7 @@ function PriceLine({
                     {formatUsd(foundingCents)}
                 </span>
                 <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>{intervalLabel}</span>
-                <span style={{ fontSize: 11, color: "#B08A6B", textDecoration: "line-through" }}>
+                <span style={{ fontSize: 11, color: "var(--tekori-slate)", textDecoration: "line-through" }}>
                     {formatUsd(standardCents)}
                 </span>
             </div>
@@ -103,7 +103,7 @@ function PlanCard({
         >
             <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 10, marginBottom: 12, alignItems: "center" }}>
                 <div>
-                    <div style={{ fontSize: 11, color: planId === "pro" ? "var(--tekori-amber)" : "var(--color-text-muted)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6 }}>
+                    <div style={{ fontSize: 11, color: planId === "pro" ? "var(--tekori-gold)" : "var(--color-text-muted)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6 }}>
                         {plan.shortLabel}
                     </div>
                     <div style={{ fontSize: 20, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, color: "var(--color-text)" }}>
@@ -111,7 +111,7 @@ function PlanCard({
                     </div>
                 </div>
                 {planId === "pro" && (
-                    <div style={{ fontSize: 10, color: "var(--tekori-amber)", background: "rgba(244,182,66,0.1)", border: "1px solid rgba(244,182,66,0.22)", borderRadius: 999, padding: "4px 10px", whiteSpace: "nowrap" }}>
+                    <div style={{ fontSize: 10, color: "var(--tekori-gold)", background: "rgba(244,199,106,0.14)", border: "1px solid rgba(244,199,106,0.28)", borderRadius: 999, padding: "4px 10px", whiteSpace: "nowrap" }}>
                         Premium
                     </div>
                 )}
@@ -232,11 +232,11 @@ export default function PaywallScreen({ open, targetStage, access, onManageSubsc
                     <div>
                         <div className="foundry-command-panel" style={{ padding: 22, marginBottom: 18, textAlign: "center" }}>
                             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 14, justifyContent: "center" }}>
-                                <div style={{ fontSize: 11, color: "var(--tekori-amber)", background: "rgba(244,182,66,0.1)", border: "1px solid rgba(244,182,66,0.24)", borderRadius: 999, padding: "5px 10px" }}>
+                                <div style={{ fontSize: 11, color: "var(--tekori-gold)", background: "rgba(244,199,106,0.14)", border: "1px solid rgba(244,199,106,0.28)", borderRadius: 999, padding: "5px 10px" }}>
                                     Stage 1 remains free
                                 </div>
                                 {foundingVisible && (
-                                    <div style={{ fontSize: 11, color: "var(--tekori-amber)", background: "rgba(244,182,66,0.1)", border: "1px solid rgba(244,182,66,0.22)", borderRadius: 999, padding: "5px 10px" }}>
+                                    <div style={{ fontSize: 11, color: "var(--tekori-gold)", background: "rgba(244,199,106,0.14)", border: "1px solid rgba(244,199,106,0.28)", borderRadius: 999, padding: "5px 10px" }}>
                                         {foundingLocked ? FOUNDING_PRICING.lockedBadge : FOUNDING_PRICING.badge}
                                     </div>
                                 )}
@@ -307,7 +307,7 @@ export default function PaywallScreen({ open, targetStage, access, onManageSubsc
                                     ))}
                                 </div>
                                 <div style={{ textAlign: "center" }}>
-                                    <div style={{ fontSize: 12, color: "var(--tekori-amber)", marginBottom: 8 }}>Pro</div>
+                                    <div style={{ fontSize: 12, color: "var(--tekori-gold)", marginBottom: 8 }}>Pro</div>
                                     {BILLING_PLANS.pro.comparisonPoints.map((point) => (
                                         <div key={point} style={{ fontSize: 12, color: "var(--color-text-soft)", lineHeight: 1.6, marginBottom: 6 }}>{point}</div>
                                     ))}
@@ -328,7 +328,7 @@ export default function PaywallScreen({ open, targetStage, access, onManageSubsc
                                 {accessSummary.note}
                             </div>
                             {accessSummary.badge && (
-                                <div style={{ marginTop: 12, fontSize: 11, color: "var(--tekori-amber)", background: "rgba(244,182,66,0.08)", border: "1px solid rgba(244,182,66,0.18)", borderRadius: 999, padding: "5px 10px", display: "inline-block" }}>
+                                <div style={{ marginTop: 12, fontSize: 11, color: "var(--tekori-gold)", background: "rgba(244,199,106,0.12)", border: "1px solid rgba(244,199,106,0.24)", borderRadius: 999, padding: "5px 10px", display: "inline-block" }}>
                                     {accessSummary.badge}
                                 </div>
                             )}

@@ -57,11 +57,11 @@ export default function GlossaryModal({
                             <div style={{ fontSize: 10, color: stageColor, background: `${stageColor}18`, border: `1px solid ${stageColor}30`, borderRadius: 20, padding: "2px 9px", fontWeight: 500 }}>
                                 Stage {entry.stage_unlock} — {STAGES_DATA[entry.stage_unlock - 1]?.label}
                             </div>
-                            <div style={{ fontSize: 10, color: "var(--color-text-muted)", background: "rgba(7,26,47,0.05)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 20, padding: "2px 9px" }}>
+                            <div style={{ fontSize: 10, color: "var(--color-pill-text)", background: "rgba(7,26,47,0.05)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 20, padding: "2px 9px" }}>
                                 {entry.category}
                             </div>
                             {alreadyLearned && (
-                                <div style={{ fontSize: 10, color: "var(--color-success)", background: "rgba(76,175,138,0.1)", borderRadius: 20, padding: "2px 9px" }}>✓ Learned</div>
+                                <div style={{ fontSize: 10, color: "var(--color-success)", background: "rgba(115,135,123,0.12)", borderRadius: 20, padding: "2px 9px" }}>✓ Learned</div>
                             )}
                         </div>
                     </div>
@@ -129,8 +129,8 @@ export default function GlossaryModal({
                                 color: "var(--color-success)",
                                 padding: "12px 14px",
                                 borderRadius: 12,
-                                background: "rgba(76,175,138,0.08)",
-                                border: "1px solid rgba(76,175,138,0.18)",
+                                background: "rgba(115,135,123,0.10)",
+                                border: "1px solid rgba(115,135,123,0.18)",
                             }}
                         >
                             <Check size={14} strokeWidth={2.4} />

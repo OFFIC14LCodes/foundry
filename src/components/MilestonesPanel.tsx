@@ -82,7 +82,7 @@ export default function MilestonesPanel({
                             style={{
                                 height: "100%",
                                 width: `${completionPct}%`,
-                                background: "linear-gradient(90deg, var(--tekori-gold), var(--tekori-amber))",
+                                background: "linear-gradient(90deg, var(--tekori-gold), var(--tekori-gold))",
                                 borderRadius: 2,
                                 transition: "width 0.6s ease",
                                 boxShadow:
@@ -133,10 +133,10 @@ export default function MilestonesPanel({
                                     gap: 12,
                                     padding: "11px 12px",
                                     background: done
-                                        ? "rgba(76,175,138,0.06)"
+                                        ? "rgba(115,135,123,0.08)"
                                         : "rgba(7,26,47,0.02)",
                                     border: done
-                                        ? "1px solid rgba(76,175,138,0.2)"
+                                        ? "1px solid rgba(115,135,123,0.22)"
                                         : "1px solid rgba(7,26,47,0.06)",
                                     borderRadius: 10,
                                     transition: "all 0.3s ease",
@@ -158,7 +158,7 @@ export default function MilestonesPanel({
                                         alignItems: "center",
                                         justifyContent: "center",
                                         fontSize: 11,
-                                        color: done ? "#fff" : "var(--color-text-muted)",
+                                        color: done ? "var(--tekori-white)" : "var(--color-text-muted)",
                                         fontWeight: 700,
                                         marginTop: 1,
                                     }}
@@ -193,8 +193,8 @@ export default function MilestonesPanel({
                 {advanceReady && (
                     <div
                         style={{
-                            background: "linear-gradient(135deg, rgba(76,175,138,0.15), rgba(72,187,120,0.06))",
-                            border: "1px solid rgba(76,175,138,0.35)",
+                            background: "linear-gradient(135deg, rgba(115,135,123,0.16), rgba(115,135,123,0.08))",
+                            border: "1px solid rgba(115,135,123,0.35)",
                             borderRadius: 14,
                             padding: "16px",
                             marginBottom: 16,
@@ -219,7 +219,7 @@ export default function MilestonesPanel({
                                     border: "none",
                                     borderRadius: 10,
                                     padding: "11px",
-                                    color: "#fff",
+                                    color: "var(--tekori-white)",
                                     fontSize: 13,
                                     fontFamily: "var(--tekori-font-ui)",
                                     fontWeight: 600,

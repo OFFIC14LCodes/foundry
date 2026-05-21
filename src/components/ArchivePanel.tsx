@@ -27,18 +27,18 @@ type ArchiveMode = "archives" | "books";
 
 const SOURCE_CONFIG: Record<SourceType, { label: string; color: string; bg: string; borderColor: string }> = {
     forge:    { label: "Navi Session",   color: "var(--tekori-gold)", bg: "rgba(216,155,43,0.06)",   borderColor: "rgba(216,155,43,0.28)" },
-    chatroom: { label: "Ask Navi", color: "var(--color-success)", bg: "rgba(76,175,138,0.06)",  borderColor: "rgba(76,175,138,0.28)" },
+    chatroom: { label: "Ask Navi", color: "var(--color-success)", bg: "rgba(115,135,123,0.08)",  borderColor: "rgba(115,135,123,0.28)" },
     academy:  { label: "Academy",         color: "var(--tekori-gold)", bg: "rgba(216,155,43,0.06)", borderColor: "rgba(216,155,43,0.28)" },
-    bubble:   { label: "Quick Chat",      color: "var(--tekori-muted-text)", bg: "rgba(142,160,181,0.06)",  borderColor: "rgba(142,160,181,0.28)" },
-    pitchpractice: { label: "Pitch Practice", color: "var(--tekori-amber)", bg: "rgba(217,177,93,0.08)", borderColor: "rgba(217,177,93,0.28)" },
+    bubble:   { label: "Quick Chat",      color: "var(--color-pill-text)", bg: "rgba(48,70,95,0.06)",  borderColor: "rgba(48,70,95,0.28)" },
+    pitchpractice: { label: "Pitch Practice", color: "var(--tekori-gold)", bg: "rgba(244,199,106,0.12)", borderColor: "rgba(244,199,106,0.30)" },
 };
 
 const BOOK_CONFIG: Record<FounderBookType, { label: string; color: string; bg: string; borderColor: string }> = {
     business: { label: "Business Book", color: "var(--tekori-gold)", bg: "rgba(216,155,43,0.06)", borderColor: "rgba(216,155,43,0.28)" },
     academy: { label: "Academy Book", color: "var(--tekori-gold)", bg: "rgba(216,155,43,0.06)", borderColor: "rgba(216,155,43,0.28)" },
-    quick_chat: { label: "Quick Chat Book", color: "var(--tekori-muted-text)", bg: "rgba(142,160,181,0.06)", borderColor: "rgba(142,160,181,0.28)" },
-    market_intelligence: { label: "Market Intelligence Book", color: "var(--color-success)", bg: "rgba(76,175,138,0.06)", borderColor: "rgba(76,175,138,0.28)" },
-    pitch_practice: { label: "Pitch Practice Book", color: "var(--tekori-amber)", bg: "rgba(217,177,93,0.08)", borderColor: "rgba(217,177,93,0.28)" },
+    quick_chat: { label: "Quick Chat Book", color: "var(--color-pill-text)", bg: "rgba(48,70,95,0.06)", borderColor: "rgba(48,70,95,0.28)" },
+    market_intelligence: { label: "Market Intelligence Book", color: "var(--color-success)", bg: "rgba(115,135,123,0.08)", borderColor: "rgba(115,135,123,0.28)" },
+    pitch_practice: { label: "Pitch Practice Book", color: "var(--tekori-gold)", bg: "rgba(244,199,106,0.12)", borderColor: "rgba(244,199,106,0.30)" },
     chat_room: { label: "Chat Room Book", color: "var(--color-text)", bg: "rgba(240,237,232,0.04)", borderColor: "rgba(7,26,47,0.22)" },
 };
 
@@ -400,7 +400,7 @@ export default function ArchivePanel({
                                 </button>
                                 <button
                                     onClick={() => handleDelete(entry)}
-                                    style={{ width: "100%", textAlign: "left", background: "transparent", border: "none", borderRadius: 8, color: "#FF6B6B", padding: "10px 12px", cursor: "pointer", fontSize: 13 }}
+                                    style={{ width: "100%", textAlign: "left", background: "transparent", border: "none", borderRadius: 8, color: "var(--color-danger)", padding: "10px 12px", cursor: "pointer", fontSize: 13 }}
                                 >
                                     Delete
                                 </button>
@@ -591,7 +591,7 @@ export default function ArchivePanel({
                     <div style={{ marginTop: 20, display: "flex", gap: 10, justifyContent: "space-between", flexWrap: "wrap", alignItems: "center" }}>
                         <button
                             onClick={() => handleDelete(selectedEntry)}
-                            style={{ padding: "10px 16px", background: "rgba(255,107,107,0.08)", border: "1px solid rgba(255,107,107,0.2)", borderRadius: 10, color: "#FF6B6B", fontSize: 13, cursor: "pointer" }}
+                            style={{ padding: "10px 16px", background: "rgba(184,92,75,0.10)", border: "1px solid rgba(184,92,75,0.24)", borderRadius: 10, color: "var(--color-danger)", fontSize: 13, cursor: "pointer" }}
                         >
                             Delete
                         </button>
@@ -815,7 +815,7 @@ export default function ArchivePanel({
                             style={{
                                 width: "min(400px, 100%)",
                                 background: "var(--color-surface-elevated)",
-                                border: "1px solid rgba(255,107,107,0.2)",
+                                border: "1px solid rgba(184,92,75,0.24)",
                                 borderRadius: 18,
                                 padding: "28px 24px 24px",
                                 boxShadow: "0 24px 60px rgba(7,26,47,0.34)",
@@ -841,7 +841,7 @@ export default function ArchivePanel({
                                 <button
                                     onClick={() => confirmAndDelete(entry)}
                                     disabled={!!deletingId}
-                                    style={{ flex: 1, padding: "13px 0", background: "rgba(255,107,107,0.15)", border: "1px solid rgba(255,107,107,0.35)", borderRadius: 12, color: "#FF6B6B", fontSize: 14, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, cursor: "pointer", opacity: deletingId ? 0.5 : 1 }}
+                                    style={{ flex: 1, padding: "13px 0", background: "rgba(184,92,75,0.14)", border: "1px solid rgba(184,92,75,0.34)", borderRadius: 12, color: "var(--color-danger)", fontSize: 14, fontFamily: "var(--tekori-font-ui)", fontWeight: 600, cursor: "pointer", opacity: deletingId ? 0.5 : 1 }}
                                 >
                                     {deletingId ? "Deleting…" : "Yes, Delete"}
                                 </button>

@@ -240,7 +240,7 @@ export default function AdminOperationsScreen({ onBack }: Props) {
             <div className="foundry-app-page__content" style={{ flex: 1, overflowY: "auto", padding: "20px 16px 32px" }}>
                 <div style={{ maxWidth: 1180, margin: "0 auto", display: "grid", gap: 16 }}>
                     <div className="foundry-command-panel foundry-panel-in" style={{ padding: 20 }}>
-                        <div className="foundry-label" style={{ color: "var(--foundry-orange)", marginBottom: 9 }}>Observe</div>
+                        <div className="foundry-label" style={{ color: "var(--tekori-gold)", marginBottom: 9 }}>Observe</div>
                         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 18, flexWrap: "wrap" }}>
                             <div style={{ minWidth: 260, maxWidth: 700 }}>
                                 <div style={{ fontSize: 30, lineHeight: 1.05, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, marginBottom: 10 }}>
@@ -253,8 +253,8 @@ export default function AdminOperationsScreen({ onBack }: Props) {
                             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(96px, 1fr))", gap: 8, minWidth: 360 }}>
                                 <MetricCard label="Actions" value={formatNumber(totals.actions)} accent="var(--foundry-green)" />
                                 <MetricCard label="Documents" value={formatNumber(totals.documents)} accent="var(--foundry-blue)" />
-                                <MetricCard label="Archives" value={formatNumber(totals.archives)} accent="var(--foundry-ember)" />
-                                <MetricCard label="Academy" value={formatNumber(totals.academy)} accent="var(--foundry-orange)" />
+                                <MetricCard label="Archives" value={formatNumber(totals.archives)} accent="var(--tekori-amber-light)" />
+                                <MetricCard label="Academy" value={formatNumber(totals.academy)} accent="var(--tekori-gold)" />
                             </div>
                         </div>
                     </div>
@@ -718,7 +718,7 @@ function FounderDetailDrawer({ founder, onClose }: { founder: AdminFounderListIt
             >
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
                     <div style={{ minWidth: 0 }}>
-                        <div className="foundry-label" style={{ color: "var(--foundry-orange)", marginBottom: 8 }}>Founder Detail</div>
+                        <div className="foundry-label" style={{ color: "var(--tekori-gold)", marginBottom: 8 }}>Founder Detail</div>
                         <div style={{ fontSize: 25, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, lineHeight: 1.12 }}>
                             {founder.display_name || founder.name || "Unnamed founder"}
                         </div>
@@ -882,7 +882,7 @@ function BillingAccessOperations({
                         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                             <StatusPill label={access?.access_status || "unknown"} accent={accessAccent(access?.access_status)} />
                             <StatusPill label={access?.subscription_status || "none"} accent={subscriptionAccent(access?.subscription_status)} />
-                            {isComped && <StatusPill label="manual override" accent="var(--foundry-amber)" />}
+                            {isComped && <StatusPill label="manual override" accent="var(--tekori-amber-light)" />}
                         </div>
                     </div>
                     <InfoGrid
@@ -984,12 +984,12 @@ function ActivityCounts({ counts }: { counts: AdminFounderDetailResponse["counts
     return (
         <Section title="Activity Counts">
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 8 }}>
-                <MetricCard label="Academy" value={formatNumber(counts.academy_progress)} accent="var(--foundry-orange)" />
+                <MetricCard label="Academy" value={formatNumber(counts.academy_progress)} accent="var(--tekori-gold)" />
                 <MetricCard label="Actions" value={formatNumber(counts.actions)} accent="var(--foundry-green)" />
                 <MetricCard label="Documents" value={formatNumber(counts.documents)} accent="var(--foundry-blue)" />
-                <MetricCard label="Archives" value={formatNumber(counts.archives)} accent="var(--foundry-ember)" />
+                <MetricCard label="Archives" value={formatNumber(counts.archives)} accent="var(--tekori-amber-light)" />
                 <MetricCard label="Books" value={formatNumber(counts.books)} accent="var(--foundry-neutral-data)" />
-                <MetricCard label="Market" value={formatNumber(counts.market_reports)} accent="var(--foundry-amber)" />
+                <MetricCard label="Market" value={formatNumber(counts.market_reports)} accent="var(--tekori-amber-light)" />
             </div>
         </Section>
     );
@@ -1035,9 +1035,9 @@ function AcademyProgressPanel({
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(118px, 1fr))", gap: 8 }}>
                         <MetricCard label="Lessons" value={formatNumber(progress.totals.total)} accent="var(--foundry-text-primary)" />
                         <MetricCard label="Complete" value={formatNumber(progress.totals.completed)} accent="var(--foundry-green)" />
-                        <MetricCard label="Needs Check" value={formatNumber(progress.totals.completed_pending_assessment)} accent="var(--foundry-amber)" />
+                        <MetricCard label="Needs Check" value={formatNumber(progress.totals.completed_pending_assessment)} accent="var(--tekori-amber-light)" />
                         <MetricCard label="In Progress" value={formatNumber(progress.totals.in_progress)} accent="var(--foundry-blue)" />
-                        <MetricCard label="Attempts" value={formatNumber(progress.totals.assessment_attempts)} accent="var(--foundry-orange)" />
+                        <MetricCard label="Attempts" value={formatNumber(progress.totals.assessment_attempts)} accent="var(--tekori-gold)" />
                     </div>
                     {progress.stages.map((stage) => (
                         <AcademyStageCard key={stage.stage_id} stage={stage} onRepair={onRepair} />
@@ -1061,7 +1061,7 @@ function AcademyStageCard({
                 <div style={{ fontSize: 14, color: "var(--foundry-text-primary)", fontWeight: 800 }}>Stage {stage.stage_id}</div>
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                     <StatusPill label={`${stage.totals.completed}/${stage.totals.total} complete`} accent="var(--foundry-green)" />
-                    <StatusPill label={`${stage.totals.assessment_attempts} attempts`} accent="var(--foundry-orange)" />
+                    <StatusPill label={`${stage.totals.assessment_attempts} attempts`} accent="var(--tekori-gold)" />
                 </div>
             </div>
             <div style={{ display: "grid", gap: 7 }}>
@@ -1237,7 +1237,7 @@ function AcademyRepairModal({
                 style={{ width: "min(520px, 100%)", padding: 18, borderColor: isReset ? "rgba(191, 74, 57, 0.35)" : undefined }}
                 onClick={(event) => event.stopPropagation()}
             >
-                <div className="foundry-label" style={{ color: isReset ? "var(--foundry-red)" : "var(--foundry-orange)", marginBottom: 10 }}>
+                <div className="foundry-label" style={{ color: isReset ? "var(--foundry-red)" : "var(--tekori-gold)", marginBottom: 10 }}>
                     Admin Override
                 </div>
                 <div style={{ fontSize: 22, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, lineHeight: 1.15 }}>
@@ -1262,7 +1262,7 @@ function AcademyRepairModal({
                     </div>
                 )}
                 {disabledReason && (
-                    <div style={{ marginTop: 10, fontSize: 12, color: "var(--foundry-amber)", lineHeight: 1.55 }}>
+                    <div style={{ marginTop: 10, fontSize: 12, color: "var(--tekori-amber-light)", lineHeight: 1.55 }}>
                         {disabledReason}
                     </div>
                 )}
@@ -1278,7 +1278,7 @@ function AcademyRepairModal({
                         rows={3}
                         style={{ ...inputStyle, minWidth: 0, resize: "vertical", lineHeight: 1.45 }}
                     />
-                    <span style={{ fontSize: 10, color: reasonValid ? "var(--foundry-text-muted)" : "var(--foundry-amber)" }}>
+                    <span style={{ fontSize: 10, color: reasonValid ? "var(--foundry-text-muted)" : "var(--tekori-amber-light)" }}>
                         Minimum 8 characters.
                     </span>
                 </label>
@@ -1397,7 +1397,7 @@ function AccessActionModal({
                 style={{ width: "min(560px, 100%)", padding: 18, borderColor: isDanger ? "rgba(191,74,57,0.35)" : undefined }}
                 onClick={(event) => event.stopPropagation()}
             >
-                <div className="foundry-label" style={{ color: isDanger ? "var(--foundry-red)" : "var(--foundry-orange)", marginBottom: 10 }}>
+                <div className="foundry-label" style={{ color: isDanger ? "var(--foundry-red)" : "var(--tekori-gold)", marginBottom: 10 }}>
                     Audited Access Control
                 </div>
                 <div style={{ fontSize: 22, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, lineHeight: 1.15 }}>
@@ -1477,7 +1477,7 @@ function AccessActionModal({
                         rows={3}
                         style={{ ...inputStyle, minWidth: 0, resize: "vertical", lineHeight: 1.45 }}
                     />
-                    <span style={{ fontSize: 10, color: reasonValid ? "var(--foundry-text-muted)" : "var(--foundry-amber)" }}>Minimum 8 characters.</span>
+                    <span style={{ fontSize: 10, color: reasonValid ? "var(--foundry-text-muted)" : "var(--tekori-amber-light)" }}>Minimum 8 characters.</span>
                 </label>
 
                 {isRevoke && (
@@ -1524,7 +1524,7 @@ function AccessActionModal({
 
 function MiniMeta({ label, value }: { label: string; value: string }) {
     return (
-        <span className="foundry-font-ui" style={{ fontSize: 10, color: "var(--foundry-text-muted)", background: "rgba(7,26,47,0.03)", border: "1px solid rgba(7,26,47,0.06)", borderRadius: 999, padding: "4px 7px" }}>
+        <span className="foundry-font-ui" style={{ fontSize: 10, color: "var(--color-pill-text)", background: "rgba(7,26,47,0.03)", border: "1px solid rgba(7,26,47,0.06)", borderRadius: 999, padding: "4px 7px" }}>
             {label}: <span style={{ color: "var(--foundry-text-secondary)" }}>{value}</span>
         </span>
     );
@@ -1713,7 +1713,7 @@ function AdminSupportNotesSection({
                     style={{ ...inputStyle, minWidth: 0, resize: "vertical", lineHeight: 1.45 }}
                 />
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginTop: 9, flexWrap: "wrap" }}>
-                    <div style={{ fontSize: 10, color: noteValid || !noteText ? "var(--foundry-text-muted)" : "var(--foundry-amber)" }}>
+                    <div style={{ fontSize: 10, color: noteValid || !noteText ? "var(--foundry-text-muted)" : "var(--tekori-amber-light)" }}>
                         Minimum 3 characters. Saved notes are audit logged.
                     </div>
                     <button
@@ -1929,7 +1929,7 @@ function formatVentureMode(value: string | null | undefined) {
 
 function accessAccent(value: string | null | undefined) {
     if (value === "active") return "var(--foundry-green)";
-    if (value === "suspended") return "var(--foundry-amber)";
+    if (value === "suspended") return "var(--tekori-amber-light)";
     if (value === "revoked") return "var(--foundry-red)";
     return "var(--foundry-text-muted)";
 }
@@ -1937,7 +1937,7 @@ function accessAccent(value: string | null | undefined) {
 function subscriptionAccent(value: string | null | undefined) {
     if (value === "active" || value === "trialing" || value === "comped" || value === "gifted") return "var(--foundry-green)";
     if (value === "trial") return "var(--foundry-blue)";
-    if (value === "past_due" || value === "unpaid") return "var(--foundry-amber)";
+    if (value === "past_due" || value === "unpaid") return "var(--tekori-amber-light)";
     if (value === "canceled" || value === "incomplete_expired") return "var(--foundry-red)";
     return "var(--foundry-text-muted)";
 }
@@ -1957,7 +1957,7 @@ function formatAcademyAssessmentStatus(value: AdminAcademyProgressLesson["latest
 
 function academyStatusAccent(value: AdminAcademyProgressLesson["normalized_status"]) {
     if (value === "completed") return "var(--foundry-green)";
-    if (value === "completed_pending_assessment") return "var(--foundry-amber)";
+    if (value === "completed_pending_assessment") return "var(--tekori-amber-light)";
     if (value === "in_progress") return "var(--foundry-blue)";
     return "var(--foundry-text-muted)";
 }
@@ -1988,7 +1988,7 @@ function TabButton({ label, active, onClick }: { label: string; active: boolean;
                 color: active ? "var(--foundry-text-primary)" : "var(--foundry-text-muted)",
                 background: "transparent",
                 border: "none",
-                borderBottom: active ? "2px solid var(--foundry-orange)" : "2px solid transparent",
+                borderBottom: active ? "2px solid var(--tekori-gold)" : "2px solid transparent",
                 cursor: "pointer",
                 transition: "color 0.15s",
                 flexShrink: 0,
@@ -2072,7 +2072,7 @@ function AuditLogPanel() {
         <div className="foundry-app-page__content" style={{ flex: 1, overflowY: "auto", padding: "20px 16px 32px" }}>
             <div style={{ maxWidth: 1180, margin: "0 auto", display: "grid", gap: 16 }}>
                 <div className="foundry-command-panel foundry-panel-in" style={{ padding: 20 }}>
-                    <div className="foundry-label" style={{ color: "var(--foundry-orange)", marginBottom: 9 }}>Forensics</div>
+                    <div className="foundry-label" style={{ color: "var(--tekori-gold)", marginBottom: 9 }}>Forensics</div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
                         <div style={{ minWidth: 260, maxWidth: 720 }}>
                             <div style={{ fontSize: 26, lineHeight: 1.1, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, marginBottom: 8 }}>
@@ -2270,11 +2270,11 @@ function auditCategory(item: AdminAuditLogEntry) {
 }
 
 function auditCategoryAccent(category: string) {
-    if (category === "academy") return "var(--foundry-orange)";
+    if (category === "academy") return "var(--tekori-gold)";
     if (category === "feedback") return "var(--foundry-blue)";
     if (category === "access") return "var(--foundry-red)";
     if (category === "notification") return "var(--foundry-green)";
-    if (category === "notes") return "var(--foundry-amber)";
+    if (category === "notes") return "var(--tekori-amber-light)";
     return "var(--foundry-text-muted)";
 }
 
@@ -2335,7 +2335,7 @@ function FeedbackInboxPanel() {
             <div className="foundry-app-page__content" style={{ flex: 1, overflowY: "auto", padding: "20px 16px 32px" }}>
                 <div style={{ maxWidth: 1180, margin: "0 auto", display: "grid", gap: 16 }}>
                     <div className="foundry-command-panel foundry-panel-in" style={{ padding: 20 }}>
-                        <div className="foundry-label" style={{ color: "var(--foundry-orange)", marginBottom: 9 }}>Review</div>
+                        <div className="foundry-label" style={{ color: "var(--tekori-gold)", marginBottom: 9 }}>Review</div>
                         <div style={{ fontSize: 26, lineHeight: 1.1, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, marginBottom: 8 }}>
                             Message Feedback Inbox
                         </div>
@@ -2442,7 +2442,7 @@ function FeedbackListItem({ item, onSelect }: { item: AdminFeedbackItem; onSelec
                 {item.message_text ? item.message_text.slice(0, 120) : "—"}
             </div>
             <div style={{ display: "flex", alignItems: "center" }}>
-                <span style={{ fontSize: 10, color: "var(--foundry-text-muted)", background: "rgba(7,26,47,0.05)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 4, padding: "3px 6px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>
+                <span style={{ fontSize: 10, color: "var(--color-pill-text)", background: "rgba(7,26,47,0.05)", border: "1px solid rgba(7,26,47,0.08)", borderRadius: 4, padding: "3px 6px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>
                     {item.surface || "—"}
                 </span>
             </div>

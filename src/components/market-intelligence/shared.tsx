@@ -115,7 +115,7 @@ export function ReportSection({ content }: { content: string }) {
 
         if (line.startsWith("## ")) {
             elements.push(
-                <div key={i} style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--tekori-muted-text)", fontWeight: 700, marginTop: i > 0 ? 26 : 0, marginBottom: 8, paddingBottom: 5, borderBottom: "1px solid rgba(142,160,181,0.14)", fontFamily: "var(--tekori-font-ui)" }}>
+                <div key={i} style={{ fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--tekori-muted-text)", fontWeight: 700, marginTop: i > 0 ? 26 : 0, marginBottom: 8, paddingBottom: 5, borderBottom: "1px solid rgba(48,70,95,0.14)", fontFamily: "var(--tekori-font-ui)" }}>
                     {line.slice(3)}
                 </div>,
             );

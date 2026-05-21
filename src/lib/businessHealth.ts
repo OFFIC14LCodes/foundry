@@ -120,7 +120,7 @@ export function getBusinessHealth(
                 key: "clarity",
                 label: "Clarity",
                 value: Math.round(clarityScore),
-                color: "var(--tekori-amber)",
+                color: "var(--tekori-gold)",
                 note: "How clearly the business direction and decisions are defined.",
             },
             {

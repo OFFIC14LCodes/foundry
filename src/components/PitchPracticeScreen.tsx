@@ -63,7 +63,7 @@ const SCENARIO_CONTEXT: Record<Scenario, { persona: string; tips: string[]; colo
     elevator: {
         persona: "A seasoned entrepreneur with about 60 seconds before the elevator arrives.",
         tips: ["One sentence on what you do", "One sentence on who it's for", "One clear call to action"],
-        color: "var(--tekori-amber)",
+        color: "var(--tekori-gold)",
     },
     partner: {
         persona: "A potential business partner evaluating whether this is worth their time.",
@@ -354,8 +354,8 @@ function PitchMessageBubble({ msg }: { msg: PitchMessage }) {
             <div style={{
                 padding: "10px 12px",
                 borderRadius: 10,
-                background: "rgba(76,175,138,0.08)",
-                border: "1px solid rgba(76,175,138,0.2)",
+                background: "rgba(115,135,123,0.10)",
+                border: "1px solid rgba(115,135,123,0.22)",
                 color: "rgba(16,32,51,0.75)",
                 fontSize: 13,
                 lineHeight: 1.65,
@@ -942,7 +942,7 @@ export default function PitchPracticeScreen({
                             </span>
                             <button
                                 onClick={() => setForgeVoiceOn(v => !v)}
-                                style={{ background: forgeVoiceOn ? "rgba(216,155,43,0.18)" : "rgba(7,26,47,0.06)", border: "none", borderRadius: 20, padding: "4px 14px", color: forgeVoiceOn ? "var(--tekori-gold)" : "var(--color-text-muted)", fontSize: 11, cursor: "pointer", fontWeight: 600 }}
+                                style={{ background: forgeVoiceOn ? "rgba(216,155,43,0.18)" : "rgba(7,26,47,0.06)", border: "none", borderRadius: 20, padding: "4px 14px", color: forgeVoiceOn ? "var(--tekori-gold)" : "var(--color-pill-text)", fontSize: 11, cursor: "pointer", fontWeight: 600 }}
                             >
                                 {forgeVoiceOn ? "On" : "Off"}
                             </button>
@@ -989,7 +989,7 @@ export default function PitchPracticeScreen({
                                     return (
                                         <div key={id} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 10, padding: "7px 0", borderTop: "1px solid rgba(7,26,47,0.04)" }}>
                                             <div style={{ fontSize: 12, color: "rgba(16,32,51,0.65)", fontFamily: "var(--tekori-font-ui)" }}>{scenarioLabelFor(id)}</div>
-                                            <div style={{ fontSize: 12, color: best ? "var(--tekori-amber)" : "rgba(7,26,47,0.45)", fontFamily: "var(--tekori-font-ui)" }}>
+                                            <div style={{ fontSize: 12, color: best ? "var(--tekori-gold)" : "rgba(7,26,47,0.45)", fontFamily: "var(--tekori-font-ui)" }}>
                                                 {best && bestAverage !== null ? `★ ${bestAverage.toFixed(1)} overall   ${formatSessionDate(best.createdAt)}` : "★ —  No sessions yet"}
                                             </div>
                                         </div>
@@ -1084,7 +1084,7 @@ export default function PitchPracticeScreen({
                             <div style={{ marginBottom: 20, animation: "fadeSlideUp 0.4s ease both", textAlign: "left" }}>
                                 <div style={{ fontSize: 22, fontFamily: "var(--tekori-font-brand)", fontWeight: 700, marginBottom: 4 }}>Coaching Feedback</div>
                                 <div style={{ fontSize: 12, color: "var(--foundry-text-muted)" }}>From your {scenarioLabel.toLowerCase()} · {formatTime(sessionTime)}</div>
-                                <div style={{ fontSize: 11, color: archiveSaved ? "var(--color-success)" : archiveSaving ? "var(--tekori-amber)" : "var(--color-text-muted)", marginTop: 8, lineHeight: 1.6 }}>
+                                <div style={{ fontSize: 11, color: archiveSaved ? "var(--color-success)" : archiveSaving ? "var(--tekori-gold)" : "var(--color-text-muted)", marginTop: 8, lineHeight: 1.6 }}>
                                     {archiveSaved
                                         ? "Saved to Archive. You can recap it with Navi, rename it, or delete it from the Archive."
                                         : archiveSaving
@@ -1125,7 +1125,7 @@ export default function PitchPracticeScreen({
                                 <button
                                     onClick={saveFeedbackToJournal}
                                     disabled={!feedback || journalSaved}
-                                    style={{ padding: "12px", background: journalSaved ? "rgba(76,175,138,0.12)" : "rgba(7,26,47,0.04)", border: journalSaved ? "1px solid rgba(76,175,138,0.25)" : "1px solid rgba(7,26,47,0.08)", borderRadius: 12, color: journalSaved ? "var(--color-success)" : "var(--color-text-soft)", fontSize: 12, cursor: journalSaved ? "default" : "pointer", fontWeight: 600 }}
+                                    style={{ padding: "12px", background: journalSaved ? "rgba(115,135,123,0.14)" : "rgba(7,26,47,0.04)", border: journalSaved ? "1px solid rgba(115,135,123,0.26)" : "1px solid rgba(7,26,47,0.08)", borderRadius: 12, color: journalSaved ? "var(--color-success)" : "var(--color-text-soft)", fontSize: 12, cursor: journalSaved ? "default" : "pointer", fontWeight: 600 }}
                                 >
                                     {journalSaved ? "Saved to Journal ✓" : "Save to Journal"}
                                 </button>
@@ -1262,7 +1262,7 @@ export default function PitchPracticeScreen({
             {/* Voice status bar */}
             {mode === "voice" && (
                 <div style={{ padding: "7px 16px", background: "rgba(216,155,43,0.07)", borderTop: "1px solid rgba(216,155,43,0.12)", display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                    <div style={{ width: listening ? 8 : speaking ? 18 : 7, height: 7, borderRadius: listening ? "50%" : speaking ? 999 : "50%", background: listening ? "#D8563A" : speaking ? "var(--tekori-gold)" : "rgba(7,26,47,0.45)", animation: listening || speaking ? "forgePulse 1s infinite" : "none" }} />
+                    <div style={{ width: listening ? 8 : speaking ? 18 : 7, height: 7, borderRadius: listening ? "50%" : speaking ? 999 : "50%", background: listening ? "var(--color-danger)" : speaking ? "var(--tekori-gold)" : "rgba(7,26,47,0.45)", animation: listening || speaking ? "forgePulse 1s infinite" : "none" }} />
                     <span style={{ fontSize: 13, color: "var(--foundry-text-muted)", fontFamily: "var(--tekori-font-ui)" }}>
                         {listening ? "Listening... speak now" : speaking ? "Navi is responding..." : "Tap to speak"}
                     </span>
@@ -1293,7 +1293,7 @@ export default function PitchPracticeScreen({
                                     height: 48,
                                     borderRadius: 14,
                                     border: listening ? "2px solid var(--color-success)" : "1px solid rgba(216,155,43,0.3)",
-                                    background: listening ? "rgba(76,175,138,0.15)" : loading || speaking ? "rgba(7,26,47,0.04)" : "rgba(216,155,43,0.1)",
+                                    background: listening ? "rgba(115,135,123,0.16)" : loading || speaking ? "rgba(7,26,47,0.04)" : "rgba(216,155,43,0.1)",
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",

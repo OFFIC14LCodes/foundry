@@ -15,10 +15,10 @@ export const GLOSSARY: Record<
 export const AUTO_DETECT_TERMS = new Set(Object.keys(GLOSSARY));
 
 export const STAGE_COLORS = {
-    1: "#E4AA3A",
-    2: "#8EA0B5",
-    3: "#C98924",
-    4: "#2F8F68",
-    5: "#C98924",
-    6: "#E4AA3A",
+    1: "var(--tekori-gold)",
+    2: "var(--tekori-slate)",
+    3: "var(--tekori-midnight)",
+    4: "var(--tekori-sage)",
+    5: "var(--tekori-gold)",
+    6: "var(--tekori-amber-light)",
 } as const;

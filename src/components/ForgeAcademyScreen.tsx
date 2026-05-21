@@ -851,7 +851,7 @@ export default function ForgeAcademyScreen({
                 <CertificateCard certificate={activeStageCertificate} />
             )}
             {actionNotice && (
-                <div style={{ maxWidth: 1180, margin: "0 auto 8px", padding: "10px 12px", borderRadius: 10, background: "rgba(76,175,138,0.08)", border: "1px solid rgba(76,175,138,0.2)", color: "var(--color-success)", fontSize: 12 }}>
+                <div style={{ maxWidth: 1180, margin: "0 auto 8px", padding: "10px 12px", borderRadius: 10, background: "rgba(115,135,123,0.10)", border: "1px solid rgba(115,135,123,0.22)", color: "var(--color-success)", fontSize: 12 }}>
                     {actionNotice}
                 </div>
             )}
@@ -1185,8 +1185,8 @@ export default function ForgeAcademyScreen({
                             ) : (
                                 <div style={{ display: "grid", gap: 10 }}>
                                     {nextSeriesUp.map(({ series, nextItem }) => (
-                                        <button key={series.id} onClick={() => void openSeries(series)} style={{ background: "linear-gradient(135deg, rgba(142,160,181,0.10), rgba(7,26,47,0.03))", border, borderRadius: 16, padding: 14, textAlign: "left", cursor: "pointer", display: "grid", gap: 6 }}>
-                                            <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "var(--tekori-muted-text)", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>{series.title}</div>
+                                        <button key={series.id} onClick={() => void openSeries(series)} style={{ background: "linear-gradient(135deg, rgba(48,70,95,0.10), rgba(7,26,47,0.03))", border, borderRadius: 16, padding: 14, textAlign: "left", cursor: "pointer", display: "grid", gap: 6 }}>
+                                            <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "var(--color-pill-text)", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>{series.title}</div>
                                             <div style={{ fontSize: 14, color: "var(--color-text)", fontWeight: 700 }}>Continue with {getSeriesItemTitle(nextItem!)}</div>
                                             <div style={{ fontSize: "var(--foundry-academy-md-font)", color: "var(--color-text-muted)", lineHeight: 1.7 }}>Lesson {nextItem?.position} of {series.items.length}</div>
                                         </button>
@@ -1339,8 +1339,8 @@ function AcademyPanel({
             borderColor: "rgba(216,155,43,0.16)",
         },
         success: {
-            background: "linear-gradient(180deg, rgba(76,175,138,0.06), rgba(7,26,47,0.018))",
-            borderColor: "rgba(76,175,138,0.16)",
+            background: "linear-gradient(180deg, rgba(115,135,123,0.08), rgba(7,26,47,0.018))",
+            borderColor: "rgba(115,135,123,0.16)",
         },
         muted: {
             background: "rgba(7,26,47,0.016)",
@@ -1638,7 +1638,7 @@ function CertificateCard({ certificate }: { certificate: StageCertificate }) {
     return (
         <div style={{ maxWidth: 1180, margin: "0 auto 8px", background: "linear-gradient(135deg, rgba(200,169,110,0.16), rgba(216,155,43,0.08), rgba(7,26,47,0.03))", border: "1px solid rgba(200,169,110,0.24)", borderRadius: 20, padding: "16px 18px", display: "flex", justifyContent: "space-between", gap: 14, flexWrap: "wrap", alignItems: "center" }}>
             <div style={{ display: "grid", gap: 4 }}>
-                <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "var(--tekori-amber)", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700 }}>Certificate earned</div>
+                <div style={{ fontSize: "var(--foundry-academy-xs-font)", color: "var(--tekori-gold)", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700 }}>Certificate earned</div>
                 <div style={{ fontSize: 20, color: "var(--color-text)", fontFamily: "var(--tekori-font-brand)", fontWeight: 700 }}>{certificate.founderName} completed {certificate.stageName}</div>
             </div>
             <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
@@ -2183,9 +2183,9 @@ function CompletionBadge({ label }: { label: string }) {
         <div style={{
             padding: "5px 10px",
             borderRadius: 999,
-            background: "rgba(76,175,138,0.12)",
-            border: "1px solid rgba(76,175,138,0.22)",
-            color: "#8FD0B5",
+            background: "rgba(115,135,123,0.14)",
+            border: "1px solid rgba(115,135,123,0.24)",
+            color: "var(--tekori-sage)",
             fontSize: 11,
             fontWeight: 700,
             letterSpacing: "0.04em",
@@ -2326,7 +2326,7 @@ function GlossaryView({ terms, loading }: { terms: GlossaryTerm[]; loading: bool
                         </div>
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12 }}>
                             {categoryTerms.map((t) => {
-                                const stageColor = STAGE_COLORS[t.stage_unlock as keyof typeof STAGE_COLORS] ?? "var(--tekori-amber)";
+                                const stageColor = STAGE_COLORS[t.stage_unlock as keyof typeof STAGE_COLORS] ?? "var(--tekori-gold)";
                                 return (
                                     <div key={t.id} style={{ background: "rgba(7,26,47,0.024)", border: "1px solid rgba(7,26,47,0.06)", borderRadius: 14, padding: 16, display: "grid", gap: 10 }}>
                                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
@@ -2439,20 +2439,20 @@ function AcademySection({
             borderColor: "rgba(216,155,43,0.11)",
         },
         glow: {
-            panel: "linear-gradient(180deg, rgba(142,160,181,0.055), rgba(7,26,47,0.018))",
-            borderColor: "rgba(142,160,181,0.12)",
+            panel: "linear-gradient(180deg, rgba(48,70,95,0.055), rgba(7,26,47,0.018))",
+            borderColor: "rgba(48,70,95,0.12)",
         },
         blue: {
-            panel: "linear-gradient(180deg, rgba(142,160,181,0.06), rgba(7,26,47,0.018))",
-            borderColor: "rgba(142,160,181,0.12)",
+            panel: "linear-gradient(180deg, rgba(48,70,95,0.06), rgba(7,26,47,0.018))",
+            borderColor: "rgba(48,70,95,0.12)",
         },
         stone: {
-            panel: "linear-gradient(180deg, rgba(217,177,93,0.05), rgba(7,26,47,0.018))",
-            borderColor: "rgba(217,177,93,0.12)",
+            panel: "linear-gradient(180deg, rgba(244,199,106,0.07), rgba(7,26,47,0.018))",
+            borderColor: "rgba(244,199,106,0.16)",
         },
         mindset: {
-            panel: "linear-gradient(180deg, rgba(217,106,85,0.06), rgba(7,26,47,0.018))",
-            borderColor: "rgba(217,106,85,0.12)",
+            panel: "linear-gradient(180deg, rgba(184,92,75,0.08), rgba(7,26,47,0.018))",
+            borderColor: "rgba(184,92,75,0.12)",
         },
     } as const;
     const style = sectionStyles[tone];
@@ -2502,17 +2502,17 @@ function ContentCard({
         <div
             style={{
                 background: emphasis === "mindset"
-                    ? "linear-gradient(180deg, rgba(217,106,85,0.055), rgba(7,26,47,0.02))"
+                    ? "linear-gradient(180deg, rgba(184,92,75,0.065), rgba(7,26,47,0.02))"
                     : "linear-gradient(180deg, rgba(7,26,47,0.032), rgba(7,26,47,0.017))",
-                border: isContinueLearning ? "1px solid rgba(142,160,181,0.18)" : "1px solid rgba(7,26,47,0.062)",
-                borderLeft: isContinueLearning ? "2px solid rgba(142,160,181,0.34)" : undefined,
+                border: isContinueLearning ? "1px solid rgba(48,70,95,0.18)" : "1px solid rgba(7,26,47,0.062)",
+                borderLeft: isContinueLearning ? "2px solid rgba(48,70,95,0.30)" : undefined,
                 borderRadius: 14,
                 padding: 18,
                 display: "flex",
                 flexDirection: "column",
                 gap: 14,
                 minHeight: 262,
-                boxShadow: "0 10px 24px rgba(0,0,0,0.12)",
+                boxShadow: "0 10px 24px rgba(7,26,47,0.12)",
             }}
         >
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center", alignItems: "center" }}>
@@ -2531,7 +2531,7 @@ function ContentCard({
                     background: thumbnailUrl
                             ? `linear-gradient(180deg, rgba(7,26,47,0.18), rgba(7,26,47,0.62)), url(${thumbnailUrl}) center/cover`
                         : emphasis === "mindset"
-                            ? "linear-gradient(135deg, rgba(217,106,85,0.10), rgba(201,137,36,0.14))"
+                            ? "linear-gradient(135deg, rgba(184,92,75,0.10), rgba(201,137,36,0.14))"
                             : "linear-gradient(135deg, rgba(7,26,47,0.06), rgba(216,155,43,0.12))",
                     display: "flex",
                     alignItems: "center",
@@ -2553,12 +2553,12 @@ function ContentCard({
             <div style={{ display: "grid", gap: 8 }}>
                 {content.whyThisMatters && (
                     <div style={{ fontSize: "var(--foundry-academy-md-font)", color: "var(--color-text-soft)", lineHeight: 1.7, textAlign: "left" }}>
-                        <span style={{ color: "var(--tekori-amber)", fontWeight: 700 }}>Why this matters:</span> {content.whyThisMatters}
+                        <span style={{ color: "var(--tekori-gold)", fontWeight: 700 }}>Why this matters:</span> {content.whyThisMatters}
                     </div>
                 )}
                 {content.commonMistake && (
                     <div style={{ fontSize: "var(--foundry-academy-md-font)", color: "var(--color-text-soft)", lineHeight: 1.7, textAlign: "left" }}>
-                        <span style={{ color: "var(--tekori-amber)", fontWeight: 700 }}>Common mistake:</span> {content.commonMistake}
+                        <span style={{ color: "var(--tekori-gold)", fontWeight: 700 }}>Common mistake:</span> {content.commonMistake}
                     </div>
                 )}
                 {stageLabels.length > 0 && (
@@ -2621,7 +2621,7 @@ function SeriesCard({
             type="button"
             onClick={onOpen}
             style={{
-                background: "linear-gradient(180deg, rgba(142,160,181,0.06), rgba(7,26,47,0.018))",
+                background: "linear-gradient(180deg, rgba(48,70,95,0.06), rgba(7,26,47,0.018))",
                 border,
                 borderRadius: 14,
                 padding: 18,
@@ -2630,7 +2630,7 @@ function SeriesCard({
                 display: "grid",
                 gap: 14,
                 minHeight: 240,
-                boxShadow: "0 10px 24px rgba(0,0,0,0.12)",
+                boxShadow: "0 10px 24px rgba(7,26,47,0.12)",
             }}
         >
             <div style={{ display: "grid", justifyItems: "center", gap: 10 }}>
@@ -2684,10 +2684,10 @@ function AsideCard({
     const cardStyles = {
         neutral: { background: surface, borderColor: "rgba(7,26,47,0.08)" },
         ember: { background: "linear-gradient(180deg, rgba(216,155,43,0.045), rgba(7,26,47,0.018))", borderColor: "rgba(216,155,43,0.11)" },
-        glow: { background: "linear-gradient(180deg, rgba(142,160,181,0.055), rgba(7,26,47,0.018))", borderColor: "rgba(142,160,181,0.12)" },
-        blue: { background: "linear-gradient(180deg, rgba(142,160,181,0.06), rgba(7,26,47,0.018))", borderColor: "rgba(142,160,181,0.12)" },
-        stone: { background: "linear-gradient(180deg, rgba(217,177,93,0.05), rgba(7,26,47,0.018))", borderColor: "rgba(217,177,93,0.12)" },
-        mindset: { background: "linear-gradient(180deg, rgba(217,106,85,0.06), rgba(7,26,47,0.018))", borderColor: "rgba(217,106,85,0.12)" },
+        glow: { background: "linear-gradient(180deg, rgba(48,70,95,0.055), rgba(7,26,47,0.018))", borderColor: "rgba(48,70,95,0.12)" },
+        blue: { background: "linear-gradient(180deg, rgba(48,70,95,0.06), rgba(7,26,47,0.018))", borderColor: "rgba(48,70,95,0.12)" },
+        stone: { background: "linear-gradient(180deg, rgba(244,199,106,0.07), rgba(7,26,47,0.018))", borderColor: "rgba(244,199,106,0.16)" },
+        mindset: { background: "linear-gradient(180deg, rgba(184,92,75,0.08), rgba(7,26,47,0.018))", borderColor: "rgba(184,92,75,0.12)" },
     } as const;
     const style = cardStyles[tone];
 
@@ -3030,7 +3030,7 @@ function ContentDetailModal({
                                             padding: "16px 18px",
                                         }}
                                     >
-                                        <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "var(--tekori-amber)", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 8 }}>
+                                        <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "var(--tekori-gold)", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 8 }}>
                                             Guided lesson
                                         </div>
                                         <div style={{ fontSize: 13, color: "#D4D0CB", lineHeight: 1.8, maxWidth: 640 }}>
@@ -3140,7 +3140,7 @@ function ApplyLessonCard({
 }) {
     const suggestion = suggestActionFromAcademyLesson(content);
     return (
-        <div style={{ background: "rgba(142,160,181,0.055)", border: "1px solid rgba(142,160,181,0.16)", borderRadius: 14, padding: 18, display: "grid", gap: 10 }}>
+        <div style={{ background: "rgba(48,70,95,0.055)", border: "1px solid rgba(48,70,95,0.16)", borderRadius: 14, padding: 18, display: "grid", gap: 10 }}>
             <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "var(--tekori-slate-navy)", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700 }}>Dive Deeper</div>
             <div style={{ fontSize: 18, color: "var(--color-text)", fontWeight: 700 }}>Take "{content.title}" into a real Navi conversation</div>
             <div style={{ fontSize: 13, color: "var(--color-text-soft)", lineHeight: 1.8 }}>
@@ -3206,8 +3206,8 @@ function SeriesDetailModal({
                 )}
 
                 {nextItem && (
-                    <div style={{ background: "rgba(142,160,181,0.055)", border: "1px solid rgba(142,160,181,0.16)", borderRadius: 14, padding: 16, display: "grid", gap: 6 }}>
-                        <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "var(--tekori-muted-text)", letterSpacing: "0.14em", textTransform: "uppercase" }}>
+                    <div style={{ background: "rgba(48,70,95,0.055)", border: "1px solid rgba(48,70,95,0.16)", borderRadius: 14, padding: 16, display: "grid", gap: 6 }}>
+                        <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "var(--color-pill-text)", letterSpacing: "0.14em", textTransform: "uppercase" }}>
                             Recommended next step
                         </div>
                         <div style={{ fontSize: 18, color: "var(--color-text)", fontWeight: 700 }}>
@@ -3225,7 +3225,7 @@ function SeriesDetailModal({
                         const completed = status === "completed";
                         const isNext = nextItem?.id === item.id;
                         return (
-                            <div key={item.id} style={{ background: isNext ? "rgba(142,160,181,0.055)" : "rgba(7,26,47,0.024)", border: isNext ? "1px solid rgba(142,160,181,0.16)" : "1px solid rgba(7,26,47,0.06)", borderRadius: 14, padding: 16, display: "grid", gap: 12 }}>
+                            <div key={item.id} style={{ background: isNext ? "rgba(48,70,95,0.055)" : "rgba(7,26,47,0.024)", border: isNext ? "1px solid rgba(48,70,95,0.16)" : "1px solid rgba(7,26,47,0.06)", borderRadius: 14, padding: 16, display: "grid", gap: 12 }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
                                     <div>
                                         <div style={{ fontSize: "var(--foundry-academy-sm-font)", color: "var(--tekori-gold)", letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 8 }}>
@@ -3282,7 +3282,7 @@ function DetailPanel({ title, body }: { title: string; body: string }) {
 
 function HeroPill({ label }: { label: string }) {
     return (
-        <div style={{ padding: "8px 12px", borderRadius: 999, background: "rgba(7,26,47,0.06)", border, fontSize: "var(--foundry-academy-sm-font)", color: "#DDD6CF", letterSpacing: "0.02em", width: "fit-content", flex: "0 0 auto", alignSelf: "center" }}>
+        <div style={{ padding: "8px 12px", borderRadius: 999, background: "rgba(7,26,47,0.06)", border, fontSize: "var(--foundry-academy-sm-font)", color: "var(--color-pill-text)", letterSpacing: "0.02em", width: "fit-content", flex: "0 0 auto", alignSelf: "center" }}>
             {label}
         </div>
     );
@@ -3336,8 +3336,8 @@ function Pill({
     const tones: Record<string, { background: string; borderColor: string; color: string }> = {
         neutral: { background: "rgba(7,26,47,0.05)", borderColor: "rgba(7,26,47,0.08)", color: "var(--color-text-soft)" },
         gold: { background: "rgba(216,155,43,0.14)", borderColor: "rgba(216,155,43,0.24)", color: "var(--tekori-gold)" },
-        blue: { background: "rgba(142,160,181,0.14)", borderColor: "rgba(142,160,181,0.24)", color: "var(--tekori-muted-text)" },
-        success: { background: "rgba(76,175,138,0.14)", borderColor: "rgba(76,175,138,0.24)", color: "var(--color-success)" },
+        blue: { background: "rgba(48,70,95,0.14)", borderColor: "rgba(48,70,95,0.24)", color: "var(--color-pill-text)" },
+        success: { background: "rgba(115,135,123,0.14)", borderColor: "rgba(115,135,123,0.26)", color: "var(--color-success)" },
         warm: { background: "rgba(199,107,75,0.16)", borderColor: "rgba(199,107,75,0.26)", color: "#E0B09E" },
     };
     const theme = tones[tone];
@@ -3415,13 +3415,13 @@ function InlineButton({
             color: "var(--color-primary)",
         },
         blue: {
-            background: "rgba(142,160,181,0.14)",
-            border: "1px solid rgba(142,160,181,0.24)",
+            background: "rgba(48,70,95,0.14)",
+            border: "1px solid rgba(48,70,95,0.24)",
             color: "var(--tekori-slate-navy)",
         },
         success: {
-            background: "rgba(76,175,138,0.14)",
-            border: "1px solid rgba(76,175,138,0.24)",
+            background: "rgba(115,135,123,0.14)",
+            border: "1px solid rgba(115,135,123,0.26)",
             color: "var(--color-success)",
         },
         muted: {

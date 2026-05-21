@@ -16,7 +16,7 @@ export default function ExtractionDebugPreview({
     if (!preview) return null;
 
     const lowQuality = preview.quality.score < 70;
-    const scoreColor = preview.quality.score >= 85 ? "var(--color-success)" : preview.quality.score >= 70 ? "var(--tekori-amber)" : "var(--tekori-gold)";
+    const scoreColor = preview.quality.score >= 85 ? "var(--color-success)" : preview.quality.score >= 70 ? "var(--tekori-gold)" : "var(--tekori-gold)";
 
     return (
         <details style={{ marginBottom: 12, background: "rgba(7,26,47,0.02)", border: "1px solid rgba(7,26,47,0.06)", borderRadius: 12, padding: "12px 14px" }}>
@@ -30,7 +30,7 @@ export default function ExtractionDebugPreview({
                         <span style={{ fontSize: 16, fontWeight: 700, color: scoreColor }}>{preview.quality.score}/100</span>
                     </div>
                     {lowQuality && (
-                        <div style={{ fontSize: 11, color: "var(--tekori-amber)", lineHeight: 1.6 }}>
+                        <div style={{ fontSize: 11, color: "var(--tekori-gold)", lineHeight: 1.6 }}>
                             Low-confidence extraction. Review carefully before saving structured rows.
                         </div>
                     )}
@@ -50,12 +50,12 @@ export default function ExtractionDebugPreview({
                     ))}
                 </div>
 
-                <div style={{ fontSize: 11, color: preview.rawJsonValid ? "var(--color-success)" : "var(--tekori-amber)" }}>
+                <div style={{ fontSize: 11, color: preview.rawJsonValid ? "var(--color-success)" : "var(--tekori-gold)" }}>
                     {preview.rawJsonValid ? "Raw Navi output parsed as JSON." : "Raw Navi output did not parse as valid JSON."}
                 </div>
 
                 {preview.warnings.length > 0 && (
-                    <div style={{ fontSize: 11, color: "var(--tekori-amber)", lineHeight: 1.6 }}>
+                    <div style={{ fontSize: 11, color: "var(--tekori-gold)", lineHeight: 1.6 }}>
                         {preview.warnings.map((warning, index) => (
                             <div key={`${warning}-${index}`}>{warning}</div>
                         ))}
@@ -71,7 +71,7 @@ export default function ExtractionDebugPreview({
                 )}
 
                 {preview.quality.issues.length > 0 && (
-                    <div style={{ fontSize: 11, color: "var(--tekori-amber)", lineHeight: 1.6 }}>
+                    <div style={{ fontSize: 11, color: "var(--tekori-gold)", lineHeight: 1.6 }}>
                         {preview.quality.issues.map((issue, index) => (
                             <div key={`${issue}-${index}`}>{issue}</div>
                         ))}
@@ -97,8 +97,8 @@ export default function ExtractionDebugPreview({
                         onClick={onSave}
                         disabled={savingExtractedInsights || analyzingReport}
                         style={{
-                            background: (savingExtractedInsights || analyzingReport) ? "rgba(7,26,47,0.06)" : "rgba(76,175,138,0.12)",
-                            border: (savingExtractedInsights || analyzingReport) ? "1px solid rgba(7,26,47,0.08)" : "1px solid rgba(76,175,138,0.24)",
+                            background: (savingExtractedInsights || analyzingReport) ? "rgba(7,26,47,0.06)" : "rgba(115,135,123,0.14)",
+                            border: (savingExtractedInsights || analyzingReport) ? "1px solid rgba(7,26,47,0.08)" : "1px solid rgba(115,135,123,0.26)",
                             borderRadius: 10,
                             padding: "8px 14px",
                             color: (savingExtractedInsights || analyzingReport) ? "var(--color-text-muted)" : "var(--color-success)",

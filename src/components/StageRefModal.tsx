@@ -188,7 +188,7 @@ export default function StageRefModal({ stageId, messages, profile, onClose }) {
                                                     ? "var(--tekori-font-ui)"
                                                     : "var(--tekori-font-ui)",
                                                 lineHeight: 1.7,
-                                                color: isForge ? "var(--color-text-soft)" : "#fff",
+                                                color: isForge ? "var(--color-text-soft)" : "var(--tekori-white)",
                                             }}
                                         >
                                             <div style={{ whiteSpace: "pre-wrap" }}>

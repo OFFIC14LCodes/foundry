@@ -752,13 +752,13 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
                     width: BUBBLE_SIZE,
                     height: BUBBLE_SIZE,
                     borderRadius: "50%",
-                    background: "#ffffff",
+                    background: "var(--tekori-white)",
                     border: `1.5px solid ${dragging ? "rgba(216,155,43,0.8)" : open ? "rgba(216,155,43,0.6)" : "rgba(216,155,43,0.35)"}`,
                     boxShadow: dragging
-                        ? "0 8px 32px rgba(216,155,43,0.55), 0 4px 12px rgba(0,0,0,0.6)"
+                        ? "0 8px 32px rgba(216,155,43,0.55), 0 4px 12px rgba(7,26,47,0.42)"
                         : open
                         ? "0 4px 24px rgba(216,155,43,0.35), 0 2px 8px rgba(7,26,47,0.34)"
-                        : "0 4px 20px rgba(216,155,43,0.22), 0 2px 8px rgba(0,0,0,0.4)",
+                        : "0 4px 20px rgba(216,155,43,0.22), 0 2px 8px rgba(7,26,47,0.28)",
                     cursor: dragging ? "grabbing" : "grab",
                     display: "flex",
                     alignItems: "center",
@@ -777,7 +777,7 @@ ${bookContext.context ? `\n\n${bookContext.context}` : ""}
                     if (dragging) return;
                     e.currentTarget.style.boxShadow = open
                         ? "0 4px 24px rgba(216,155,43,0.35), 0 2px 8px rgba(7,26,47,0.34)"
-                        : "0 4px 20px rgba(216,155,43,0.22), 0 2px 8px rgba(0,0,0,0.4)";
+                        : "0 4px 20px rgba(216,155,43,0.22), 0 2px 8px rgba(7,26,47,0.28)";
                     e.currentTarget.style.transform = "scale(1)";
                 }}
             >

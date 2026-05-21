@@ -219,7 +219,7 @@ export function AnimatedChatText({ text, createdAt }: { text: string; createdAt?
                     0% {
                         color: #102033;
                         opacity: 0.68;
-                        text-shadow: 0 0 10px rgba(201,137,36,0.50), 0 0 4px rgba(244,182,66,0.24);
+                        text-shadow: 0 0 10px rgba(201,137,36,0.50), 0 0 4px rgba(244,199,106,0.24);
                     }
                     60% {
                         opacity: 1;
@@ -404,7 +404,7 @@ export function MessageActions({
                 </>
             )}
             {feedbackFailed && (
-                <span style={{ marginLeft: 4, fontSize: 10, color: "#D96A55", fontFamily: "var(--tekori-font-ui)" }}>
+                <span style={{ marginLeft: 4, fontSize: 10, color: "var(--color-danger)", fontFamily: "var(--tekori-font-ui)" }}>
                     Feedback email failed
                 </span>
             )}

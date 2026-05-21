@@ -8,7 +8,7 @@ export default function ForgeAvatar({ size = 32 }) {
                 height: size,
                 borderRadius: "50%",
                 flexShrink: 0,
-                background: "#ffffff",
+                background: "var(--tekori-white)",
                 border: "1px solid var(--tekori-subtle-line)",
                 display: "flex",
                 alignItems: "center",

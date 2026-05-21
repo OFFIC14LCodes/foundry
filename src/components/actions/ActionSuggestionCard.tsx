@@ -20,15 +20,15 @@ type Props = {
 
 const priorityColors = {
     low: "var(--color-text-muted)",
-    medium: "var(--tekori-amber)",
-    high: "var(--tekori-amber)",
-    critical: "#F05D5E",
+    medium: "var(--tekori-gold)",
+    high: "var(--tekori-gold)",
+    critical: "var(--color-danger)",
 } as const;
 
 const outcomeColors: Record<FoundryActionOutcomeType, string> = {
     success: "var(--color-success)",
-    partial: "var(--tekori-amber)",
-    failed: "#F05D5E",
+    partial: "var(--tekori-gold)",
+    failed: "var(--color-danger)",
     unknown: "var(--color-text-muted)",
 };
 
@@ -83,7 +83,7 @@ export default function ActionSuggestionCard({
             </div>
 
             <div style={{ display: "flex", flexWrap: "wrap", gap: 7, alignItems: "center" }}>
-                <Badge label={`From ${formatActionModule(action.sourceModule)}`} color="var(--tekori-amber)" />
+                <Badge label={`From ${formatActionModule(action.sourceModule)}`} color="var(--tekori-gold)" />
                 <Badge label={formatActionSourceType(action.sourceType)} color="var(--color-text-muted)" />
                 <Badge label={formatActionType(action.actionType)} color="var(--color-text-muted)" />
                 {action.dueDate && <Badge label={`Due ${action.dueDate}`} color="var(--color-success)" />}
@@ -91,7 +91,7 @@ export default function ActionSuggestionCard({
             </div>
 
             {outcomeNotes && (
-                <div style={{ borderLeft: "2px solid rgba(76,175,138,0.45)", paddingLeft: 10, color: "var(--color-text-muted)", fontSize: 12, lineHeight: 1.55 }}>
+                <div style={{ borderLeft: "2px solid rgba(115,135,123,0.45)", paddingLeft: 10, color: "var(--color-text-muted)", fontSize: 12, lineHeight: 1.55 }}>
                     {outcomeNotes}
                 </div>
             )}
@@ -141,8 +141,8 @@ function Badge({ label, color }: { label: string; color: string }) {
 function buttonStyle(tone: "gold" | "blue" | "muted") {
     const styles = {
         gold: { background: "rgba(216,155,43,0.12)", border: "1px solid rgba(216,155,43,0.28)", color: "var(--tekori-gold)" },
-        blue: { background: "rgba(142,160,181,0.10)", border: "1px solid rgba(142,160,181,0.22)", color: "var(--tekori-slate-navy)" },
-        muted: { background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)", color: "var(--color-text-muted)" },
+        blue: { background: "rgba(48,70,95,0.10)", border: "1px solid rgba(48,70,95,0.22)", color: "var(--tekori-slate-navy)" },
+        muted: { background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)", color: "var(--color-pill-text)" },
     } as const;
     return {
         ...styles[tone],
