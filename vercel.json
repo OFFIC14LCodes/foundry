@@ -5,6 +5,14 @@
       "destination": "/api/tts"
     },
     {
+      "source": "/api/admin/(.*)",
+      "destination": "/api/admin?path=$1"
+    },
+    {
+      "source": "/api/admin",
+      "destination": "/api/admin"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/$1"
     },

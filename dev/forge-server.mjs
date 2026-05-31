@@ -6,7 +6,7 @@ import { getElevenLabsUsage, synthesizeSpeech, verifyAdminRequest } from "../api
 import settingsFeedbackHandler from "../api/settings-feedback.js";
 import cofounderInviteHandler from "../api/cofounder-invite.js";
 import messageFeedbackHandler from "../api/message-feedback.js";
-import adminHandler from "../api/admin/[[...path]].js";
+import adminHandler from "../api/admin.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
