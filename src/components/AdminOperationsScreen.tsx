@@ -1213,7 +1213,7 @@ function AcademyRepairModal({
     onSubmit: () => void;
 }) {
     const isReset = pendingRepair.action.kind === "reset_assessment";
-    const reasonValid = reason.trim().length >= 8;
+    const reasonValid = reason.trim().length > 0;
     const confirmationValid = !isReset || confirmation === "RESET ASSESSMENT";
     const hasContentId = Boolean(pendingRepair.lesson.content_id);
     const disabledReason = getAcademyRepairDisabledReason(pendingRepair.lesson, pendingRepair.action);
@@ -1477,7 +1477,7 @@ function AccessActionModal({
                         rows={3}
                         style={{ ...inputStyle, minWidth: 0, resize: "vertical", lineHeight: 1.45 }}
                     />
-                    <span style={{ fontSize: 10, color: reasonValid ? "var(--foundry-text-muted)" : "var(--tekori-amber-light)" }}>Minimum 8 characters.</span>
+                    <span style={{ fontSize: 10, color: reasonValid ? "var(--foundry-text-muted)" : "var(--tekori-amber-light)" }}>Reason required.</span>
                 </label>
 
                 {isRevoke && (

@@ -267,8 +267,8 @@ function UserDetailPanel({
     };
 
     const doAction = async (action: string) => {
-        if (actionInput.trim().length < 8) {
-            setActionMsg('A reason of at least 8 characters is required. For full controls, use Admin Operations.');
+        if (!actionInput.trim()) {
+            setActionMsg('A reason is required. For full controls, use Admin Operations.');
             return;
         }
         setActionLoading(true);
@@ -332,8 +332,8 @@ function UserDetailPanel({
 
     return (
         <div style={{
-            position: 'fixed', inset: 0, background: 'var(--tekori-deep-navy)', zIndex: 110,
-            fontFamily: "var(--tekori-font-ui)", color: 'var(--color-text)',
+            position: 'fixed', inset: 0, background: 'var(--foundry-bg-app)', zIndex: 110,
+            fontFamily: "var(--tekori-font-ui)", color: 'var(--foundry-text-primary)',
             display: 'flex', flexDirection: 'column', animation: 'fadeIn 0.2s ease',
         }}>
             {/* Header */}
@@ -742,8 +742,8 @@ export default function AdminDashboard({ userId, onBack }: Props) {
 
     return (
         <div style={{
-            position: 'fixed', inset: 0, background: 'var(--tekori-deep-navy)', zIndex: 100,
-            fontFamily: "var(--tekori-font-ui)", color: 'var(--color-text)',
+            position: 'fixed', inset: 0, background: 'var(--foundry-bg-app)', zIndex: 100,
+            fontFamily: "var(--tekori-font-ui)", color: 'var(--foundry-text-primary)',
             display: 'flex', flexDirection: 'column',
         }}>
             {/* Header */}
@@ -774,7 +774,7 @@ export default function AdminDashboard({ userId, onBack }: Props) {
             {/* Filter + search */}
             <div style={{
                 padding: '10px 16px 0', borderBottom: '1px solid rgba(7,26,47,0.06)',
-                flexShrink: 0, background: 'var(--tekori-deep-navy)',
+                flexShrink: 0, background: 'rgba(255,252,246,0.97)', backdropFilter: 'blur(12px)',
             }}>
                 <input
                     value={search}
