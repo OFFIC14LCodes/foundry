@@ -33,7 +33,7 @@ export default async function handler(req, res) {
     const billing = await loadBilling(serviceClient, targetUserId);
 
     if (action === "grant-comp") {
-      const reason = validateAdminReason(body.reason, { required: true, minLength: 8 });
+      const reason = validateAdminReason(body.reason, { required: true, minLength: 1 });
       const compType = body.compType || body.comp_type || body.type || "gifted";
       const normalizedCompType = requireEnum(compType, "compType", COMP_TYPES);
       const expiresAt = normalizeOptionalDate(body.expiresAt || body.expires_at);
@@ -59,7 +59,7 @@ export default async function handler(req, res) {
     }
 
     if (action === "remove-comp") {
-      const reason = validateAdminReason(body.reason, { required: true, minLength: 8 });
+      const reason = validateAdminReason(body.reason, { required: true, minLength: 1 });
       const updates = buildRemoveCompUpdates(beforeAccess, billing);
       const afterAccess = await upsertAccess(serviceClient, targetUserId, updates);
       await writeAccessAudit(serviceClient, req, user.id, targetUserId, "admin.access.remove_comp", reason, beforeAccess, afterAccess, {
@@ -71,7 +71,7 @@ export default async function handler(req, res) {
     }
 
     if (action === "suspend") {
-      const reason = validateAdminReason(body.reason, { required: true, minLength: 8 });
+      const reason = validateAdminReason(body.reason, { required: true, minLength: 1 });
       const afterAccess = await upsertAccess(serviceClient, targetUserId, {
         access_status: "suspended",
         suspended_at: new Date().toISOString(),
@@ -85,7 +85,7 @@ export default async function handler(req, res) {
     }
 
     if (action === "reactivate") {
-      const reason = validateAdminReason(body.reason, { required: true, minLength: 8 });
+      const reason = validateAdminReason(body.reason, { required: true, minLength: 1 });
       const afterAccess = await upsertAccess(serviceClient, targetUserId, {
         access_status: "active",
         suspended_at: null,
@@ -99,7 +99,7 @@ export default async function handler(req, res) {
     }
 
     if (action === "revoke") {
-      const reason = validateAdminReason(body.reason, { required: true, minLength: 8 });
+      const reason = validateAdminReason(body.reason, { required: true, minLength: 1 });
       const confirmation = requireString(body.confirmation, "confirmation", { maxLength: 80 });
       if (confirmation !== "REVOKE ACCESS") {
         res.status(400).json({ error: 'confirmation must equal "REVOKE ACCESS"' });
