@@ -3,12 +3,16 @@ import { supabase } from "./supabase";
 import Logo from "./components/Logo";
 
 function getAuthRedirectUrl() {
+    const configuredUrl = import.meta.env.VITE_APP_URL?.trim();
+    if (configuredUrl) {
+        return configuredUrl.replace(/\/+$/, "");
+    }
+
     if (typeof window !== "undefined" && window.location?.origin) {
         return window.location.origin.replace(/\/+$/, "");
     }
 
-    const configuredUrl = import.meta.env.VITE_APP_URL?.trim();
-    return (configuredUrl || "").replace(/\/+$/, "");
+    return "";
 }
 
 type AuthMode = "login" | "signup" | "forgot" | "reset";

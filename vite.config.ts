@@ -6,7 +6,8 @@ const forgePort = Number(process.env.FORGE_PORT || 3001)
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 5177,
+    port: 5173,
+    strictPort: true,
     host: true, // enables --host automatically
     proxy: {
       // Local dev only — proxied to the Node API server in dev/forge-server.mjs
