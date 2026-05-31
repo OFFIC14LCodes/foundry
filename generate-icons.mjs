@@ -3,7 +3,6 @@ import { writeFile } from 'node:fs/promises';
 
 const INPUT = 'public/Tekori.svg';
 const CANVAS = 1024;
-const RADIUS = 264;
 
 const SIZES = [
   { name: 'favicon-32x32.png',    size: 32  },
@@ -17,33 +16,15 @@ const base = await sharp({
     width: CANVAS,
     height: CANVAS,
     channels: 4,
-    background: { r: 10, g: 29, b: 54, alpha: 255 },
+    background: { r: 255, g: 255, b: 255, alpha: 0 },
   },
 })
   .composite([
     {
       input: Buffer.from(`
         <svg width="${CANVAS}" height="${CANVAS}" viewBox="0 0 ${CANVAS} ${CANVAS}" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <radialGradient id="glow" cx="50%" cy="18%" r="46%">
-              <stop offset="0%" stop-color="#f7d98b" stop-opacity="0.22" />
-              <stop offset="52%" stop-color="#d89b2b" stop-opacity="0.08" />
-              <stop offset="100%" stop-color="#061832" stop-opacity="0" />
-            </radialGradient>
-            <linearGradient id="panel" x1="50%" y1="0%" x2="50%" y2="100%">
-              <stop offset="0%" stop-color="#102944" />
-              <stop offset="100%" stop-color="#061832" />
-            </linearGradient>
-            <linearGradient id="rim" x1="50%" y1="0%" x2="50%" y2="100%">
-              <stop offset="0%" stop-color="rgba(216,155,43,0.20)" />
-              <stop offset="38%" stop-color="rgba(216,155,43,0.05)" />
-              <stop offset="100%" stop-color="rgba(216,155,43,0)" />
-            </linearGradient>
-          </defs>
-          <rect width="${CANVAS}" height="${CANVAS}" rx="${RADIUS}" fill="url(#panel)" />
-          <rect width="${CANVAS}" height="${CANVAS}" rx="${RADIUS}" fill="url(#glow)" />
-          <rect width="${CANVAS}" height="${CANVAS}" rx="${RADIUS}" fill="url(#rim)" />
-          <rect x="0.5" y="0.5" width="${CANVAS - 1}" height="${CANVAS - 1}" rx="${RADIUS - 0.5}" fill="none" stroke="rgba(216,155,43,0.22)" />
+          <circle cx="${CANVAS / 2}" cy="${CANVAS / 2}" r="${CANVAS / 2 - 12}" fill="#ffffff" />
+          <circle cx="${CANVAS / 2}" cy="${CANVAS / 2}" r="${CANVAS / 2 - 12.5}" fill="none" stroke="#d7dde6" stroke-width="3" />
         </svg>
       `),
     },
@@ -51,44 +32,34 @@ const base = await sharp({
   .png()
   .toBuffer();
 
-const renderedLogo = await sharp(INPUT, { density: 240 })
-  .resize({ width: 640, height: 640, fit: 'contain' })
+const renderedLogo = await sharp(INPUT, { density: 1200 })
+  .resize({ width: 760, height: 760, fit: 'contain' })
   .toBuffer();
 
 const logo = await sharp(renderedLogo)
   .trim({ background: { r: 0, g: 0, b: 0, alpha: 255 } })
-  .trim()
   .toBuffer();
 
 const { width, height } = await sharp(logo).metadata();
 
 const left = Math.round((CANVAS - width) / 2);
-const top = Math.round((CANVAS - height) / 2) + 6;
-
-const shadow = await sharp({
-  create: {
-    width: CANVAS,
-    height: CANVAS,
-    channels: 4,
-    background: { r: 0, g: 0, b: 0, alpha: 0 },
-  },
-})
-  .composite([{ input: logo, top: top + 20, left, blend: 'screen' }])
-  .blur(16)
-  .png()
-  .toBuffer();
+const top = Math.round((CANVAS - height) / 2) + 8;
 
 const centered = await sharp(base)
   .composite([
-    { input: shadow },
-    { input: logo, top, left, blend: 'screen' },
+    { input: logo, top, left },
   ])
   .png()
   .toBuffer();
 
 for (const { name, size } of SIZES) {
+  const mask = Buffer.from(
+    `<svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg"><circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" fill="#fff"/></svg>`
+  );
+
   await sharp(centered)
     .resize(size, size)
+    .composite([{ input: mask, blend: 'dest-in' }])
     .png()
     .toFile(`public/${name}`);
 
@@ -100,20 +71,13 @@ await writeFile(
   `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <radialGradient id="glow" cx="50%" cy="18%" r="46%">
-      <stop offset="0%" stop-color="#f7d98b" stop-opacity="0.22" />
-      <stop offset="52%" stop-color="#d89b2b" stop-opacity="0.08" />
-      <stop offset="100%" stop-color="#061832" stop-opacity="0" />
-    </radialGradient>
-    <linearGradient id="panel" x1="50%" y1="0%" x2="50%" y2="100%">
-      <stop offset="0%" stop-color="#102944" />
-      <stop offset="100%" stop-color="#061832" />
-    </linearGradient>
+    <clipPath id="clip">
+      <circle cx="256" cy="256" r="250" />
+    </clipPath>
   </defs>
-  <rect width="512" height="512" rx="132" fill="url(#panel)" />
-  <rect width="512" height="512" rx="132" fill="url(#glow)" />
-  <rect x="0.5" y="0.5" width="511" height="511" rx="131.5" fill="none" stroke="rgba(216,155,43,0.22)" />
-  <image href="/Tekori.svg" x="76" y="70" width="360" height="360" preserveAspectRatio="xMidYMid meet" />
+  <circle cx="256" cy="256" r="244" fill="#ffffff" />
+  <circle cx="256" cy="256" r="243" fill="none" stroke="#d7dde6" stroke-width="2" />
+  <image href="data:image/png;base64,${centered.toString('base64')}" x="0" y="0" width="512" height="512" clip-path="url(#clip)" />
 </svg>
 `
 );
