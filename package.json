@@ -9,6 +9,7 @@
     "dev:forge": "node dev/forge-server.mjs",
     "smoke:admin-operations": "node dev/admin-operations-smoke.mjs",
     "build": "vite build",
+    "test:academy-completion": "node --experimental-strip-types tests/academy-completion-retry.test.ts",
     "lint": "eslint .",
     "preview": "vite preview"
   },

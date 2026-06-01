@@ -1032,11 +1032,6 @@ Start by making the trend real and concrete for them. No vague advice — be dir
         const completedAt = options.completedAt ?? new Date().toISOString();
         const completedEntry = markAcademyEntryComplete(entry, completedAt);
 
-        setTestingMode(false);
-        setAcademyLessonCompleted(true);
-        setActiveAcademyEntry((current) => current?.id === entry.id ? markAcademyEntryComplete(current, completedAt) : current);
-        cacheAcademyCompletion(entry.id, completedAt);
-
         if (academyCompletionInFlightRef.current === entry.id) return;
         academyCompletionInFlightRef.current = entry.id;
 
@@ -1047,11 +1042,17 @@ Start by making the trend real and concrete for them. No vague advice — be dir
                 lastCheckFeedback: options.feedback,
             }));
 
+            setTestingMode(false);
+            setAcademyLessonCompleted(true);
+            setActiveAcademyEntry((current) => current?.id === entry.id ? markAcademyEntryComplete(current, completedAt) : current);
+            cacheAcademyCompletion(entry.id, completedAt);
+
             if (options.sendCompletionMessage !== false) {
                 void sendLessonCompletionMessage(completedEntry);
             }
         } catch (error) {
             console.error("academy lesson completion error:", error);
+            setTestingMode(false);
             clearCachedAcademyCompletion(entry.id);
             setAcademyLessonCompleted(false);
             setActiveAcademyEntry((current) => current?.id === entry.id
@@ -1061,7 +1062,7 @@ Start by making the trend real and concrete for them. No vague advice — be dir
             setMessages((prev) => [...prev, {
                 id: `f-${Date.now()}`,
                 role: "forge",
-                text: "I recognized mastery, but I could not save the lesson completion cleanly. Keep this chat open and try Test to Complete again in a moment so Academy progress can persist.",
+                text: "I recognized mastery, but Academy hit an internal save error and could not finalize the lesson completion automatically. I logged the failure for recovery.",
                 createdAt: new Date().toISOString(),
             }]);
         } finally {

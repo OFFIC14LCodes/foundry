@@ -47,6 +47,7 @@ type SettingsScreenProps = {
         weeklyHoursAvailable: number | null;
         targetMonthlyIncome: number | null;
     }) => Promise<void>;
+    onResetAccount: () => Promise<void>;
     onLogout: () => void;
 };
 
@@ -69,6 +70,7 @@ export default function SettingsScreen({
     billingActionMessage,
     billingPortalLoading,
     onProfileSave,
+    onResetAccount,
     onLogout,
 }: SettingsScreenProps) {
     const email = authEmail ?? profile?.email ?? "Not available";
@@ -88,6 +90,9 @@ export default function SettingsScreen({
     const [suggestionMessage, setSuggestionMessage] = useState("");
     const [suggestionSubmitting, setSuggestionSubmitting] = useState(false);
     const [suggestionStatus, setSuggestionStatus] = useState<string | null>(null);
+    const [resetConfirmation, setResetConfirmation] = useState("");
+    const [resettingAccount, setResettingAccount] = useState(false);
+    const [resetStatus, setResetStatus] = useState<string | null>(null);
 
     const handleProfileSave = async () => {
         setProfileSaving(true);
@@ -145,6 +150,18 @@ export default function SettingsScreen({
             setSuggestionStatus(error instanceof Error ? error.message : "Unable to send suggestion.");
         } finally {
             setSuggestionSubmitting(false);
+        }
+    };
+
+    const handleResetAccount = async () => {
+        if (resettingAccount || resetConfirmation.trim().toUpperCase() !== "RESET") return;
+        setResettingAccount(true);
+        setResetStatus(null);
+        try {
+            await onResetAccount();
+        } catch (error) {
+            setResetStatus(error instanceof Error ? error.message : "Unable to reset this account right now.");
+            setResettingAccount(false);
         }
     };
 
@@ -591,6 +608,56 @@ export default function SettingsScreen({
                                 Signing out clears local Tekori state for this session and routes you back to the sign-in screen.
                             </div>
                             <SettingsButton onClick={onLogout} tone="danger">Log Out</SettingsButton>
+                        </div>
+                    </SettingsCard>
+                </SettingsSection>
+
+                <SettingsSection title="Start Over" description="Reset this account back to onboarding while keeping the same login and access level.">
+                    <SettingsCard>
+                        <div style={{ display: "grid", gap: 14, textAlign: "left" }}>
+                            <div style={{ fontSize: 13, color: "var(--color-text-muted)", lineHeight: 1.7, maxWidth: 700 }}>
+                                This wipes your onboarding progress, chat history, archives, Academy progress, business data, workspace memory, documents, and saved venture context so you can start a new business from scratch. Billing and account access stay in place.
+                            </div>
+                            <div style={{ fontSize: 12, color: "var(--color-danger)", lineHeight: 1.7, fontWeight: 600 }}>
+                                This cannot be undone.
+                            </div>
+                            <div style={{ display: "grid", gap: 8, maxWidth: 320 }}>
+                                <div style={{ fontSize: 11, color: "var(--foundry-text-secondary)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                                    Type RESET to confirm
+                                </div>
+                                <input
+                                    value={resetConfirmation}
+                                    onChange={(event) => setResetConfirmation(event.target.value)}
+                                    placeholder="RESET"
+                                    autoCapitalize="characters"
+                                    spellCheck={false}
+                                    style={{
+                                        background: "rgba(7,26,47,0.04)",
+                                        border: "1px solid rgba(7,26,47,0.1)",
+                                        borderRadius: 8,
+                                        color: "var(--color-text)",
+                                        fontSize: 13,
+                                        padding: "10px 12px",
+                                        outline: "none",
+                                        width: "100%",
+                                        boxSizing: "border-box",
+                                    }}
+                                />
+                            </div>
+                            <div className="foundry-inline-actions">
+                                <SettingsButton
+                                    onClick={handleResetAccount}
+                                    tone="danger"
+                                    disabled={resettingAccount || resetConfirmation.trim().toUpperCase() !== "RESET"}
+                                >
+                                    {resettingAccount ? "Resetting..." : "Reset Account"}
+                                </SettingsButton>
+                                {resetStatus && (
+                                    <span style={{ fontSize: 12, color: "var(--color-danger)" }}>
+                                        {resetStatus}
+                                    </span>
+                                )}
+                            </div>
                         </div>
                     </SettingsCard>
                 </SettingsSection>

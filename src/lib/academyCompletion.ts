@@ -1,7 +1,12 @@
 import { supabase } from "../supabase";
 import { callForgeAPI } from "./forgeApi";
-import { recordAcademyHistory, upsertAcademyContentProgress } from "./academyDb";
+import { upsertAcademyContentProgress } from "./academyDb";
 import type { AcademyContent, AcademySessionMode, AcademyTopicLaunch, AcademyUserContentProgress, AssessmentAttempt } from "./academy";
+import {
+    buildAcademyCompletionEventKey,
+    persistAcademyCompletionWithRetry,
+    type AcademyCompletionVerificationState,
+} from "./academyCompletionRetry";
 
 export type KnowledgeCheckTrackStatus = "passed" | "on_track" | "off_track";
 export type AcademyUnderstandingLevel = "incorrect" | "partially_correct" | "mostly_correct" | "fully_correct";
@@ -30,6 +35,10 @@ export type CompletedAcademyLessonResult = {
         last_check_feedback: string | null;
         updated_at: string | null;
     };
+    eventKey: string;
+    attempts: number;
+    verification: AcademyCompletionVerificationState;
+    historyInserted: boolean;
 };
 
 export async function completeAcademyLesson({
@@ -57,56 +66,193 @@ export async function completeAcademyLesson({
 }): Promise<CompletedAcademyLessonResult> {
     const completedTimestamp = completedAt ?? new Date().toISOString();
     const fullyComplete = assessmentPassed;
-    const contentProgress = await upsertAcademyContentProgress(userId, contentId, fullyComplete, {
-        knowledgeCheckedAt: completedTimestamp,
-        lastCheckResponse: response ?? null,
-        lastCheckFeedback: feedback ?? null,
-    });
-
-    if (fullyComplete) {
-        await recordAcademyHistory(userId, "completed", {
-            contentId,
-            metadata: {
-                title: contentTitle ?? null,
-                source,
-                correctCount,
-                attemptedCount,
-            },
+    if (!fullyComplete) {
+        const contentProgress = await upsertAcademyContentProgress(userId, contentId, false, {
+            knowledgeCheckedAt: completedTimestamp,
+            lastCheckResponse: response ?? null,
+            lastCheckFeedback: feedback ?? null,
         });
+
+        const { data, error } = await supabase
+            .from("user_lesson_progress")
+            .upsert({
+                user_id: userId,
+                content_id: contentId,
+                status: "in_progress",
+                started_at: completedTimestamp,
+                completed_at: null,
+                knowledge_checked_at: completedTimestamp,
+                last_check_response: response ?? null,
+                last_check_feedback: feedback ?? null,
+                updated_at: completedTimestamp,
+            }, { onConflict: "user_id,content_id" })
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        return {
+            contentProgress,
+            lessonProgress: {
+                id: data.id,
+                user_id: data.user_id,
+                content_id: data.content_id,
+                status: data.status,
+                started_at: data.started_at ?? null,
+                completed_at: data.completed_at ?? null,
+                knowledge_checked_at: data.knowledge_checked_at ?? null,
+                last_check_response: data.last_check_response ?? null,
+                last_check_feedback: data.last_check_feedback ?? null,
+                updated_at: data.updated_at ?? null,
+            },
+            eventKey: buildAcademyCompletionEventKey(userId, contentId),
+            attempts: 1,
+            verification: {
+                contentProgressCompleted: false,
+                lessonProgressCompleted: false,
+                contentProgressUpdatedAt: contentProgress.updatedAt ?? null,
+                lessonProgressUpdatedAt: data.updated_at ?? null,
+            },
+            historyInserted: false,
+        };
     }
 
-    const { data, error } = await supabase
-        .from("user_lesson_progress")
-        .upsert({
-            user_id: userId,
-            content_id: contentId,
-            status: fullyComplete ? "completed" : "in_progress",
-            started_at: completedTimestamp,
-            completed_at: fullyComplete ? completedTimestamp : null,
-            knowledge_checked_at: completedTimestamp,
-            last_check_response: response ?? null,
-            last_check_feedback: feedback ?? null,
-            updated_at: completedTimestamp,
-        }, { onConflict: "user_id,content_id" })
-        .select()
-        .single();
-
-    if (error) throw error;
+    const result = await persistAcademyCompletionWithRetry({
+        lessonId: contentId,
+        userId,
+        masteryResult: "passed",
+        eventKey: buildAcademyCompletionEventKey(userId, contentId),
+        persistOnce: async (_attempt, eventKey) => {
+            const { data, error } = await supabase.rpc("complete_academy_lesson", {
+                p_content_id: contentId,
+                p_completed_at: completedTimestamp,
+                p_knowledge_checked_at: completedTimestamp,
+                p_last_check_response: response ?? null,
+                p_last_check_feedback: feedback ?? null,
+                p_source: source,
+                p_correct_count: correctCount,
+                p_attempted_count: attemptedCount,
+                p_event_key: eventKey,
+            });
+            if (error) throw error;
+            return normalizeCompletionRpcResult(data);
+        },
+        verifyOnce: async () => verifyAcademyLessonCompletion(userId, contentId),
+        onDiagnostics: (event) => {
+            const payload = {
+                ...event,
+                contentTitle: contentTitle ?? null,
+            };
+            if (event.persistenceResult === "failed") {
+                console.error("academy lesson completion diagnostics:", payload);
+                return;
+            }
+            if (event.persistenceResult === "retrying") {
+                console.warn("academy lesson completion diagnostics:", payload);
+                return;
+            }
+            console.info("academy lesson completion diagnostics:", payload);
+        },
+    });
 
     return {
-        contentProgress,
-        lessonProgress: {
-            id: data.id,
-            user_id: data.user_id,
-            content_id: data.content_id,
-            status: data.status,
-            started_at: data.started_at ?? null,
-            completed_at: data.completed_at ?? null,
-            knowledge_checked_at: data.knowledge_checked_at ?? null,
-            last_check_response: data.last_check_response ?? null,
-            last_check_feedback: data.last_check_feedback ?? null,
-            updated_at: data.updated_at ?? null,
+        contentProgress: result.persisted.contentProgress,
+        lessonProgress: result.persisted.lessonProgress,
+        eventKey: result.eventKey,
+        attempts: result.attempts,
+        verification: result.verification,
+        historyInserted: result.persisted.historyInserted,
+    };
+}
+
+type CompletionRpcRow = {
+    content_progress?: {
+        user_id: string;
+        content_id: string;
+        status: AcademyUserContentProgress["status"];
+        completed_at: string | null;
+        knowledge_checked_at?: string | null;
+        last_check_response?: string | null;
+        last_check_feedback?: string | null;
+        last_opened_at: string | null;
+        last_forge_opened_at: string | null;
+        updated_at: string | null;
+    } | null;
+    lesson_progress?: {
+        id: string;
+        user_id: string;
+        content_id: string;
+        status: "not_started" | "in_progress" | "completed";
+        started_at: string | null;
+        completed_at: string | null;
+        knowledge_checked_at: string | null;
+        last_check_response: string | null;
+        last_check_feedback: string | null;
+        updated_at: string | null;
+    } | null;
+    history_inserted?: boolean;
+};
+
+function normalizeCompletionRpcResult(raw: unknown) {
+    const parsed = (raw ?? {}) as CompletionRpcRow;
+    const contentProgress = parsed.content_progress;
+    const lessonProgress = parsed.lesson_progress;
+    if (!contentProgress || !lessonProgress) {
+        throw new Error("Academy completion RPC returned incomplete data");
+    }
+    return {
+        contentProgress: {
+            userId: contentProgress.user_id,
+            contentId: contentProgress.content_id,
+            status: contentProgress.status,
+            completedAt: contentProgress.completed_at ?? null,
+            knowledgeCheckedAt: contentProgress.knowledge_checked_at ?? null,
+            lastCheckResponse: contentProgress.last_check_response ?? null,
+            lastCheckFeedback: contentProgress.last_check_feedback ?? null,
+            lastOpenedAt: contentProgress.last_opened_at ?? null,
+            lastForgeOpenedAt: contentProgress.last_forge_opened_at ?? null,
+            updatedAt: contentProgress.updated_at ?? new Date().toISOString(),
         },
+        lessonProgress: {
+            id: lessonProgress.id,
+            user_id: lessonProgress.user_id,
+            content_id: lessonProgress.content_id,
+            status: lessonProgress.status,
+            started_at: lessonProgress.started_at ?? null,
+            completed_at: lessonProgress.completed_at ?? null,
+            knowledge_checked_at: lessonProgress.knowledge_checked_at ?? null,
+            last_check_response: lessonProgress.last_check_response ?? null,
+            last_check_feedback: lessonProgress.last_check_feedback ?? null,
+            updated_at: lessonProgress.updated_at ?? null,
+        },
+        historyInserted: Boolean(parsed.history_inserted),
+    };
+}
+
+async function verifyAcademyLessonCompletion(userId: string, contentId: string): Promise<AcademyCompletionVerificationState> {
+    const [contentProgressRes, lessonProgressRes] = await Promise.all([
+        supabase
+            .from("academy_user_content_progress")
+            .select("status,completed_at,updated_at")
+            .eq("user_id", userId)
+            .eq("content_id", contentId)
+            .maybeSingle(),
+        supabase
+            .from("user_lesson_progress")
+            .select("status,completed_at,updated_at")
+            .eq("user_id", userId)
+            .eq("content_id", contentId)
+            .maybeSingle(),
+    ]);
+
+    if (contentProgressRes.error) throw contentProgressRes.error;
+    if (lessonProgressRes.error) throw lessonProgressRes.error;
+
+    return {
+        contentProgressCompleted: contentProgressRes.data?.status === "completed" || Boolean(contentProgressRes.data?.completed_at),
+        lessonProgressCompleted: lessonProgressRes.data?.status === "completed" || Boolean(lessonProgressRes.data?.completed_at),
+        contentProgressUpdatedAt: contentProgressRes.data?.updated_at ?? null,
+        lessonProgressUpdatedAt: lessonProgressRes.data?.updated_at ?? null,
     };
 }
 

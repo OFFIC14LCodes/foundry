@@ -86,6 +86,7 @@ import {
   type ActiveForgeContext,
 } from "./lib/forgeMemory";
 import { completeAcademyLesson } from "./lib/academyCompletion";
+import { buildAcademyCompletionOverrideState } from "./lib/academyCompletionRetry";
 import {
   getFounderSessionState,
   type FounderSessionState,
@@ -224,6 +225,11 @@ async function generateStageSummary(
   } catch {
     return null;
   }
+}
+
+function isMissingResetRelationError(error: any, relationName: string) {
+  const message = String(error?.message ?? "").toLowerCase();
+  return error?.code === "PGRST205" || message.includes(relationName.toLowerCase()) || message.includes("could not find the table");
 }
 
 function formatMemoryDate(value: string | null | undefined) {
@@ -3893,33 +3899,107 @@ export default function FoundryApp() {
   };
 
   const handleReset = async () => {
-    // Clear Supabase data for this user
-    if (user) {
-      await deleteDocumentVaultStorageForUser(user.id);
-      await Promise.all([
-        supabase.from("profiles").delete().eq("id", user.id),
-        supabase.from("stage_progress").delete().eq("user_id", user.id),
-        supabase.from("foundry_actions").delete().eq("user_id", user.id),
-        supabase.from("messages").delete().eq("user_id", user.id),
-        supabase.from("founder_financial_accounts").delete().eq("user_id", user.id),
-        supabase.from("founder_expenses").delete().eq("user_id", user.id),
-        supabase.from("founder_revenue").delete().eq("user_id", user.id),
-        supabase.from("founder_financial_settings").delete().eq("user_id", user.id),
-        supabase.from("founder_profit_buckets").delete().eq("user_id", user.id),
-        supabase.from("business_model_canvas").delete().eq("user_id", user.id),
-        supabase.from("plaid_items").delete().eq("user_id", user.id),
-        supabase.from("plaid_transactions").delete().eq("user_id", user.id),
-        supabase.from("document_signature_events").delete().eq("user_id", user.id),
-        supabase.from("document_signature_requests").delete().eq("user_id", user.id),
-        supabase.from("document_files").delete().eq("user_id", user.id),
-        supabase.from("document_versions").delete().eq("user_id", user.id),
-        supabase.from("documents").delete().eq("user_id", user.id),
-        supabase.from("document_folders").delete().eq("user_id", user.id),
-        supabase.from("product_usage_events").delete().eq("user_id", user.id),
-        supabase.from("produced_documents").delete().eq("user_id", user.id),
-      ]);
+    if (!user?.id) return;
+
+    const userId = user.id;
+    const resetFailures: string[] = [];
+    const deleteByUserId = async (table: string, column = "user_id") => {
+      const { error } = await supabase.from(table).delete().eq(column, userId);
+      if (error && !isMissingResetRelationError(error, table)) {
+        throw new Error(`${table}: ${error.message}`);
+      }
+    };
+
+    const deleteOwnedTeams = async () => {
+      const { data: ownedTeams, error } = await supabase
+        .from("cofounder_teams")
+        .select("id")
+        .eq("owner_id", userId);
+      if (error && !isMissingResetRelationError(error, "cofounder_teams")) {
+        throw new Error(`cofounder_teams lookup: ${error.message}`);
+      }
+      for (const team of ownedTeams ?? []) {
+        const { error: deleteError } = await supabase.from("cofounder_teams").delete().eq("id", team.id);
+        if (deleteError && !isMissingResetRelationError(deleteError, "cofounder_teams")) {
+          throw new Error(`cofounder_teams delete: ${deleteError.message}`);
+        }
+      }
+    };
+
+    try {
+      await deleteDocumentVaultStorageForUser(userId);
+    } catch (error) {
+      resetFailures.push(error instanceof Error ? `document vault: ${error.message}` : "document vault cleanup failed");
     }
-    // Clear localStorage
+
+    const resetOperations: Array<() => Promise<void>> = [
+      () => deleteByUserId("message_attachments"),
+      () => deleteByUserId("conversation_messages"),
+      () => deleteByUserId("conversation_threads"),
+      () => deleteByUserId("messages"),
+      () => deleteByUserId("stage_progress"),
+      () => deleteByUserId("foundry_actions"),
+      () => deleteByUserId("journal_entries"),
+      () => deleteByUserId("briefings"),
+      () => deleteByUserId("daily_chat_summaries"),
+      () => deleteByUserId("notifications"),
+      () => deleteByUserId("user_notification_preferences"),
+      () => deleteByUserId("founder_decisions"),
+      () => deleteByUserId("founder_nudges"),
+      () => deleteByUserId("founder_session_state"),
+      () => deleteByUserId("forge_memory_items"),
+      () => deleteByUserId("market_reports"),
+      () => deleteByUserId("academy_user_history"),
+      () => deleteByUserId("academy_user_series_item_progress"),
+      () => deleteByUserId("academy_user_content_progress"),
+      () => deleteByUserId("assessment_attempts"),
+      () => deleteByUserId("stage_certificates"),
+      () => deleteByUserId("user_lesson_progress"),
+      () => deleteByUserId("founder_books"),
+      () => deleteByUserId("founder_financial_accounts"),
+      () => deleteByUserId("founder_expenses"),
+      () => deleteByUserId("founder_revenue"),
+      () => deleteByUserId("founder_financial_settings"),
+      () => deleteByUserId("founder_profit_buckets"),
+      () => deleteByUserId("ledger_entries"),
+      () => deleteByUserId("business_model_canvas"),
+      () => deleteByUserId("plaid_transactions"),
+      () => deleteByUserId("plaid_items"),
+      () => deleteByUserId("pitch_sessions"),
+      () => deleteByUserId("document_signature_events"),
+      () => deleteByUserId("document_signature_requests"),
+      () => deleteByUserId("document_files"),
+      () => deleteByUserId("document_versions"),
+      () => deleteByUserId("documents"),
+      () => deleteByUserId("document_folders"),
+      () => deleteByUserId("product_usage_events"),
+      () => deleteByUserId("produced_documents"),
+      () => deleteByUserId("cofounder_messages"),
+      () => deleteByUserId("cofounder_invites", "created_by"),
+      () => deleteByUserId("cofounder_email_invites", "invited_by"),
+      () => deleteByUserId("cofounder_tasks", "created_by"),
+      () => deleteByUserId("cofounder_task_comments"),
+      () => deleteByUserId("cofounder_decisions", "created_by"),
+      () => deleteByUserId("cofounder_file_links"),
+      () => deleteByUserId("cofounder_members"),
+      () => deleteByUserId("profiles", "id"),
+      () => deleteOwnedTeams(),
+    ];
+
+    for (const resetOperation of resetOperations) {
+      try {
+        await resetOperation();
+      } catch (error) {
+        resetFailures.push(error instanceof Error ? error.message : "unknown reset error");
+      }
+    }
+
+    if (resetFailures.length > 0) {
+      console.error("account reset failed:", { userId, resetFailures });
+      throw new Error("Some account data could not be cleared. Nothing else needs to be retried manually, but the reset did not finish cleanly.");
+    }
+
+    resetClientSessionState();
     clearFoundryClientStorage();
     window.location.reload();
   };
@@ -4233,10 +4313,9 @@ Start a focused conversation that helps them understand what is actually unresol
     const completedAt = completed.lessonProgress.completed_at ?? options?.knowledgeCheckedAt ?? new Date().toISOString();
     setAcademyCompletionOverrides((prev) => ({
       ...prev,
-      [contentId]: {
+      [contentId]: buildAcademyCompletionOverrideState({
         userId: activeUserId,
         contentId,
-        status: "completed",
         completedAt,
         knowledgeCheckedAt: completed.lessonProgress.knowledge_checked_at ?? completedAt,
         lastCheckResponse: completed.lessonProgress.last_check_response ?? options?.lastCheckResponse ?? null,
@@ -4244,8 +4323,19 @@ Start a focused conversation that helps them understand what is actually unresol
         lastOpenedAt: completed.contentProgress?.lastOpenedAt ?? completedAt,
         lastForgeOpenedAt: completed.contentProgress?.lastForgeOpenedAt ?? completedAt,
         updatedAt: completed.lessonProgress.updated_at ?? completedAt,
-      },
+      }),
     }));
+    console.info("academy lesson completion frontend update:", {
+      lessonId: contentId,
+      userId: activeUserId,
+      masteryResult: "passed",
+      completionEventFired: true,
+      persistenceResult: "verified",
+      frontendUpdateResult: "applied",
+      eventKey: completed.eventKey,
+      attempts: completed.attempts,
+      verification: completed.verification,
+    });
     setAcademyConversationEntry((entry) => entry?.id === contentId
       ? { ...entry, progressStatus: "completed", completedAt: completed.lessonProgress.completed_at }
       : entry
@@ -5007,6 +5097,7 @@ Start a focused conversation that helps them understand what is actually unresol
               billingActionMessage={billingMessage}
               billingPortalLoading={billingPortalLoading}
               onProfileSave={handleProfileSave}
+              onResetAccount={handleReset}
               onLogout={handleLogout}
             />
           </Suspense>
