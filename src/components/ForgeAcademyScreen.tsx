@@ -2357,27 +2357,29 @@ function GlossaryView({ terms, loading }: { terms: GlossaryTerm[]; loading: bool
 function AcademyShell({ children, onBack, onOpenNav, onOpenArchive }: { children: ReactNode; onBack: () => void; onOpenNav?: () => void; onOpenArchive?: () => void }) {
     return (
         <div style={{ position: "fixed", inset: 0, zIndex: 110, background: "var(--foundry-bg-app)", color: "var(--foundry-text-primary)", display: "flex", flexDirection: "column", fontFamily: "var(--tekori-font-ui)" }}>
-            <div style={{ padding: "max(14px, calc(10px + env(safe-area-inset-top))) 18px 12px", borderBottom: border, background: "rgba(255,252,246,0.94)", backdropFilter: "blur(16px)", display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
-                <button className="foundry-btn foundry-btn--ghost" onClick={onOpenNav ?? onBack} style={{ padding: "var(--foundry-app-header-button-padding)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg>
-                </button>
-                <div style={{ width: 34, height: 34, borderRadius: 12, background: "rgba(216,155,43,0.12)", border: "1px solid rgba(216,155,43,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <Logo variant="forge" style={{ width: "var(--foundry-app-header-icon-size)", height: "var(--foundry-app-header-icon-size)", objectFit: "contain" }} />
-                </div>
-                <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: "var(--foundry-app-header-title-font)", fontWeight: 600 }}>Navi Academy</div>
-                    <div style={{ fontSize: "var(--foundry-app-header-meta-font)", color: "var(--color-text-muted)" }}>Curated founder education</div>
-                </div>
-                {onOpenArchive && (
-                    <button
-                        className="foundry-btn foundry-btn--primary"
-                        onClick={onOpenArchive}
-                        style={{ padding: "var(--foundry-app-header-button-padding)", fontSize: "var(--foundry-app-header-button-font)", display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}
-                    >
-                        <Archive size={"var(--foundry-app-header-icon-size)"} />
-                        Archive
+            <div className="foundry-mobile-header-scroll" style={{ padding: "max(14px, calc(10px + env(safe-area-inset-top))) 18px 12px", borderBottom: border, background: "rgba(255,252,246,0.94)", backdropFilter: "blur(16px)", flexShrink: 0 }}>
+                <div style={{ minWidth: "max-content", width: "100%", display: "flex", alignItems: "center", gap: 12 }}>
+                    <button className="foundry-btn foundry-btn--ghost" onClick={onOpenNav ?? onBack} style={{ padding: "var(--foundry-app-header-button-padding)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg>
                     </button>
-                )}
+                    <div style={{ width: 34, height: 34, borderRadius: 12, background: "rgba(216,155,43,0.12)", border: "1px solid rgba(216,155,43,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <Logo variant="forge" style={{ width: "var(--foundry-app-header-icon-size)", height: "var(--foundry-app-header-icon-size)", objectFit: "contain" }} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: "var(--foundry-app-header-title-font)", fontWeight: 600, whiteSpace: "nowrap" }}>Navi Academy</div>
+                        <div style={{ fontSize: "var(--foundry-app-header-meta-font)", color: "var(--color-text-muted)", whiteSpace: "nowrap" }}>Curated founder education</div>
+                    </div>
+                    {onOpenArchive && (
+                        <button
+                            className="foundry-btn foundry-btn--primary"
+                            onClick={onOpenArchive}
+                            style={{ padding: "var(--foundry-app-header-button-padding)", fontSize: "var(--foundry-app-header-button-font)", display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}
+                        >
+                            <Archive size={"var(--foundry-app-header-icon-size)"} />
+                            Archive
+                        </button>
+                    )}
+                </div>
             </div>
             <div className="foundry-app-page__content" style={{ flex: 1, overflowY: "auto", padding: "22px 18px 36px" }}>
                 {children}
@@ -3059,7 +3061,7 @@ function ContentDetailModal({
                             {activeSlide.bullets && activeSlide.bullets.length > 0 && (
                                 <div style={{ display: "grid", gap: 10 }}>
                                     {activeSlide.bullets.map((bullet) => (
-                                        <div key={bullet} style={{ background: "rgba(7,26,47,0.03)", border: "1px solid rgba(7,26,47,0.06)", borderRadius: 12, padding: "12px 14px", fontSize: 13, color: "#D7D1CA", lineHeight: 1.8 }}>
+                                        <div key={bullet} style={{ background: "rgba(7,26,47,0.03)", border: "1px solid rgba(7,26,47,0.06)", borderRadius: 12, padding: "12px 14px", fontSize: 13, color: "var(--color-text-soft)", lineHeight: 1.8 }}>
                                             {renderSlideBullet(bullet)}
                                         </div>
                                     ))}
@@ -3067,7 +3069,7 @@ function ContentDetailModal({
                             )}
 
                             {activeSlide.note && (
-                                <div style={{ background: "rgba(216,155,43,0.055)", border: "1px solid rgba(216,155,43,0.14)", borderRadius: 12, padding: "12px 14px", fontSize: 13, color: "#E7D5CA", lineHeight: 1.8 }}>
+                                <div style={{ background: "rgba(216,155,43,0.055)", border: "1px solid rgba(216,155,43,0.14)", borderRadius: 12, padding: "12px 14px", fontSize: 13, color: "var(--color-text)", lineHeight: 1.8 }}>
                                     {activeSlide.note}
                                 </div>
                             )}

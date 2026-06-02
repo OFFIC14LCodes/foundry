@@ -228,7 +228,7 @@ export default function ChatInput({
                             ? "linear-gradient(135deg, var(--tekori-gold), var(--tekori-soft-gold))"
                             : "rgba(7,26,47,0.05)",
                         border: "none",
-                        color: canSend ? "var(--color-primary)" : "var(--color-text-muted)",
+                        color: canSend ? "rgba(255,252,246,0.98)" : "var(--color-text-muted)",
                         fontSize: 14,
                         opacity: canSend ? 1 : 0.4,
                         cursor: canSend ? "pointer" : "default",
@@ -238,7 +238,9 @@ export default function ChatInput({
                         transition: "all 0.15s",
                     }}
                 >
-                    ↑
+                    <svg width="15" height="15" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                        <path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
                 </button>
             </div>
             {notice && (

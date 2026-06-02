@@ -137,6 +137,12 @@ export const DOC_CATEGORIES: DocCategory[] = [
                 whenToUse: "When you are forming a Corporation (C-Corp or S-Corp) rather than an LLC. Required if you plan to raise venture capital, issue stock to employees, or need the specific tax treatment a corporation provides. Navi will ask whether you need C-Corp or S-Corp structure and generate accordingly for your state.",
             },
             {
+                id: "articles-of-amendment",
+                name: "Articles of Amendment",
+                isStateAware: true,
+                whenToUse: "When an existing LLC or corporation needs to formally amend information already filed with the state, such as the legal business name, management structure, registered agent, principal office, share structure, or other core formation details. This is not for starting a new business. It is for updating the state's official record after the business already exists, and Navi should tailor the filing language to the business entity type and the state's amendment requirements.",
+            },
+            {
                 id: "operating-agreement",
                 name: "Operating Agreement",
                 isStateAware: true,

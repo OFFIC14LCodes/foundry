@@ -150,7 +150,7 @@ import { buildForgePromptForAction, buildRecentActionOutcomesContext, createFoun
 import { clearFoundryClientStorage, createEmptyMessagesByStage, createEmptyStageProgress } from "./lib/session";
 import type { DocumentScreenContext } from "./components/DocumentProductionScreen";
 import type { AcademyScreenContext } from "./components/ForgeAcademyScreen";
-import { updateFounderBookFromArchive } from "./lib/founderBooks";
+import { removeFounderBookNotesForArchive, updateFounderBookFromArchive } from "./lib/founderBooks";
 import type { ConversationWorkspaceSnapshot } from "./lib/conversationWorkspace";
 import { buildVentureModeContext, getBuilderNoun, getVentureModeLabel, getVentureNoun, isSideHustleMode, normalizeVentureMode } from "./lib/ventureMode";
 
@@ -1677,6 +1677,11 @@ Where do you want to start?`;
     setArchiveMenuOpenId(null);
     setDeletingSummaryId(entry.id);
     try {
+      await removeFounderBookNotesForArchive({
+        userId,
+        archiveId: entry.id,
+        archiveTitle: entry.title || "Archived conversation",
+      });
       const ok = await deleteConversationSummary(userId, entry.id);
       if (!ok) return;
       removeArchiveEntryFromState(entry);
@@ -2239,16 +2244,15 @@ ${forgeReply}`;
       />
 
       <div
+        className="foundry-mobile-header-scroll"
         style={{
           padding: "max(11px, calc(6px + env(safe-area-inset-top))) 12px 11px",
           borderBottom: "1px solid rgba(7,26,47,0.06)",
           background: "rgba(255,252,246,0.94)",
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
           flexShrink: 0,
         }}
       >
+        <div style={{ minWidth: "max-content", width: "100%", display: "flex", alignItems: "center", gap: 8 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
           <button
             onClick={onBack}
@@ -2455,8 +2459,6 @@ ${forgeReply}`;
             marginLeft: "auto",
             maxWidth: "40vw",
             overflowX: "auto",
-            scrollbarWidth: "none",
-            msOverflowStyle: "none",
           }}
         >
           <div className="forge-context-indicator" title="Current Navi memory context">
@@ -2519,6 +2521,7 @@ ${forgeReply}`;
               {tab.label}
             </button>
           ))}
+        </div>
         </div>
       </div>
 

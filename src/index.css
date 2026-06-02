@@ -207,7 +207,7 @@ body,
 .forge-chat-room__messages,
 .forge-chat-room__workspace-column,
 .forge-conversation-workspace {
-  scrollbar-color: rgba(216, 155, 43, 0.36) rgba(7, 26, 47, 0.04);
+  scrollbar-color: rgba(16, 32, 51, 0.82) rgba(7, 26, 47, 0.08);
   scrollbar-width: thin;
 }
 
@@ -225,7 +225,7 @@ body::-webkit-scrollbar-track,
 .forge-chat-room__messages::-webkit-scrollbar-track,
 .forge-chat-room__workspace-column::-webkit-scrollbar-track,
 .forge-conversation-workspace::-webkit-scrollbar-track {
-  background: rgba(7, 26, 47, 0.04);
+  background: rgba(7, 26, 47, 0.08);
 }
 
 body::-webkit-scrollbar-thumb,
@@ -233,8 +233,8 @@ body::-webkit-scrollbar-thumb,
 .forge-chat-room__messages::-webkit-scrollbar-thumb,
 .forge-chat-room__workspace-column::-webkit-scrollbar-thumb,
 .forge-conversation-workspace::-webkit-scrollbar-thumb {
-  background: rgba(216, 155, 43, 0.32);
-  border: 3px solid var(--color-bg-soft);
+  background: linear-gradient(180deg, rgba(16, 32, 51, 0.95), rgba(7, 26, 47, 0.92));
+  border: 2px solid var(--color-bg-soft);
   border-radius: 999px;
 }
 
@@ -243,7 +243,7 @@ body::-webkit-scrollbar-thumb:hover,
 .forge-chat-room__messages::-webkit-scrollbar-thumb:hover,
 .forge-chat-room__workspace-column::-webkit-scrollbar-thumb:hover,
 .forge-conversation-workspace::-webkit-scrollbar-thumb:hover {
-  background: rgba(216, 155, 43, 0.42);
+  background: linear-gradient(180deg, rgba(7, 26, 47, 1), rgba(0, 0, 0, 0.94));
 }
 
 #root {
@@ -1163,6 +1163,19 @@ select:focus-visible,
   animation: forgeWorkspaceSpin 0.9s linear infinite;
 }
 
+.forge-conversation-workspace__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid rgba(7, 26, 47, 0.08);
+  background: rgba(7, 26, 47, 0.04);
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
 .forge-conversation-workspace__body {
   min-height: 0;
   overflow: visible;
@@ -1406,6 +1419,16 @@ select:focus-visible,
   /* The toggle button is visible on narrow screens */
   .forge-workspace-toggle-btn {
     display: flex !important;
+    position: fixed;
+    right: 12px;
+    top: 46%;
+    transform: translateY(-50%);
+    z-index: 130;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    padding: 12px 8px !important;
+    min-height: 92px;
+    box-shadow: 0 16px 30px rgba(16, 32, 51, 0.16);
   }
 
   /* Workspace column is hidden by default on narrow screens */
@@ -1430,13 +1453,21 @@ select:focus-visible,
 
   /* Workspace panel inside the drawer */
   .forge-chat-room__workspace-column--open .forge-conversation-workspace {
-    width: min(440px, 94vw);
+    width: min(520px, 88vw);
     height: 100%;
-    border-radius: 0;
+    border-radius: 20px 0 0 20px;
     border-right: none;
     border-top: none;
     border-bottom: none;
     border-left: 1px solid rgba(7, 26, 47, 0.08);
+  }
+}
+
+@media (max-width: 860px) {
+  .foundry-mobile-header-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-gutter: auto;
   }
 }
 

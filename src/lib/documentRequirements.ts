@@ -227,6 +227,19 @@ const DOCUMENT_OVERRIDES: Record<string, DocumentFieldGroup[]> = {
             ],
         },
     ],
+    "articles-of-amendment": [
+        {
+            id: "amendment-specific",
+            title: "Amendment details",
+            fields: [
+                { id: "entityType", label: "Entity type", type: "select", required: true, options: ["LLC", "Corporation", "Nonprofit", "Not sure"] },
+                { id: "amendmentEffectiveDate", label: "Effective date", type: "date", help: "Leave blank if the amendment should be effective when filed." },
+                { id: "amendmentChanges", label: "What is changing?", type: "list", required: true, placeholder: "Legal name, registered agent, principal address, share structure, management, other filed details" },
+                { id: "amendmentReason", label: "Reason for amendment", type: "textarea", rows: 3, placeholder: "Describe why the business is filing this amendment and what the state record needs to reflect." },
+                { id: "priorFiledName", label: "Current legal name on file", type: "text", required: true },
+            ],
+        },
+    ],
     "operating-agreement": [
         {
             id: "agreement-specific",

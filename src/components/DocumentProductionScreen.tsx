@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import {
     ChartLineUp, Gavel, CurrencyDollar, Bank, ShieldCheck, Handshake,
     Users, TrendUp, Buildings, Shield, Megaphone, Door,
-    ArrowLeft, Star, MapPin,
+    ArrowLeft, Star, MapPin, MagnifyingGlass,
 } from "@phosphor-icons/react";
 import { callForgeAPI, streamForgeAPI } from "../lib/forgeApi";
 import { buildDocSystemPrompt, buildDocRequest, buildRefinementRequest } from "../constants/docPrompt";
@@ -337,46 +337,48 @@ function ScreenHeader({
     right?: React.ReactNode;
 }) {
     return (
-        <div style={{
+        <div className="foundry-mobile-header-scroll" style={{
             padding: "max(14px, calc(8px + env(safe-area-inset-top))) 16px 14px",
             borderBottom: "1px solid rgba(7,26,47,0.05)",
-            display: "flex", alignItems: "center", justifyContent: "space-between",
             position: "sticky", top: 0,
             background: "rgba(255,252,246,0.94)", backdropFilter: "blur(12px)", zIndex: 10,
         }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                {onOpenNav ? (
+            <div style={{ minWidth: "max-content", width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    {onOpenNav ? (
+                        <button
+                            onClick={onOpenNav}
+                            style={{
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                                background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)",
+                                borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "var(--color-text-muted)", cursor: "pointer",
+                            }}
+                        >
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg>
+                        </button>
+                    ) : (
                     <button
-                        onClick={onOpenNav}
+                        onClick={onBack}
                         style={{
-                            display: "flex", alignItems: "center", justifyContent: "center",
+                            display: "flex", alignItems: "center", gap: 5,
                             background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)",
-                            borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "var(--color-text-muted)", cursor: "pointer",
+                            borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "var(--color-text-muted)", fontSize: "var(--foundry-app-header-button-font)", cursor: "pointer",
+                            fontFamily: "var(--tekori-font-ui)",
+                            flexShrink: 0,
                         }}
                     >
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3.5" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="7.25" width="14" height="1.5" rx="0.75" fill="currentColor"/><rect x="1" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/></svg>
+                        <ArrowLeft size={"var(--foundry-app-header-icon-size)"} /> {backLabel}
                     </button>
-                ) : (
-                <button
-                    onClick={onBack}
-                    style={{
-                        display: "flex", alignItems: "center", gap: 5,
-                        background: "rgba(7,26,47,0.04)", border: "1px solid rgba(7,26,47,0.08)",
-                        borderRadius: 8, padding: "var(--foundry-app-header-button-padding)", color: "var(--color-text-muted)", fontSize: "var(--foundry-app-header-button-font)", cursor: "pointer",
-                        fontFamily: "var(--tekori-font-ui)",
-                    }}
-                >
-                    <ArrowLeft size={"var(--foundry-app-header-icon-size)"} /> {backLabel}
-                </button>
-                )}
-                <div>
-                    <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                        <div style={{ fontSize: "var(--foundry-app-header-title-font)", fontFamily: "var(--tekori-font-brand)", fontWeight: 700, lineHeight: 1.2 }}>{title}</div>
-                        {subtitle && <HelpTooltip content={subtitle} side="bottom" />}
+                    )}
+                    <div>
+                        <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                            <div style={{ fontSize: "var(--foundry-app-header-title-font)", fontFamily: "var(--tekori-font-brand)", fontWeight: 700, lineHeight: 1.2, whiteSpace: "nowrap" }}>{title}</div>
+                            {subtitle && <HelpTooltip content={subtitle} side="bottom" />}
+                        </div>
                     </div>
                 </div>
+                {right}
             </div>
-            {right}
         </div>
     );
 }
@@ -483,6 +485,7 @@ export default function DocumentProductionScreen({
     const [vaultStatusFilter, setVaultStatusFilter] = useState<VaultStatusFilter>("active");
     const [vaultStageFilter, setVaultStageFilter] = useState<StageFilter>("all");
     const [vaultCategoryFilter, setVaultCategoryFilter] = useState("all");
+    const [catalogSearch, setCatalogSearch] = useState("");
     const [selectedVaultDocumentId, setSelectedVaultDocumentId] = useState<string | null>(null);
     const [selectedVaultDocument, setSelectedVaultDocument] = useState<VaultDocument | null>(null);
     const [vaultDetailLoading, setVaultDetailLoading] = useState(false);
@@ -550,6 +553,23 @@ export default function DocumentProductionScreen({
     const currentDocumentIdRef = useRef<string | null>(null);
     const vaultFileInputRef = useRef<HTMLInputElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
+
+    const catalogMatches = catalogSearch.trim()
+        ? DOC_CATEGORIES.flatMap((category) => (
+            category.documents
+                .filter((document) => {
+                    const query = catalogSearch.trim().toLowerCase();
+                    const haystack = [
+                        category.name,
+                        category.description,
+                        document.name,
+                        document.whenToUse,
+                    ].join(" ").toLowerCase();
+                    return haystack.includes(query);
+                })
+                .map((document) => ({ category, document }))
+        ))
+        : [];
 
     useEffect(() => {
         previewRef.current?.scrollTo({ top: 0, behavior: "smooth" });
@@ -1416,18 +1436,20 @@ export default function DocumentProductionScreen({
     };
 
     // ── Navigate to a document's config ─────────────────────
-    const selectDoc = (doc: DocItem) => {
+    const selectDoc = (doc: DocItem, categoryOverride?: DocCategory | null) => {
+        const activeCategory = categoryOverride ?? selectedCategory;
         setSelectedDoc(doc);
         setDocType(doc.name);
         setRequest("");
         setDocState("");
-        if (selectedCategory) {
-            const suggested = getSuggestedDocumentSettings(doc, selectedCategory);
+        if (activeCategory) {
+            if (categoryOverride) setSelectedCategory(activeCategory);
+            const suggested = getSuggestedDocumentSettings(doc, activeCategory);
             const template = findStructuredDocumentTemplate(doc.name, documentTemplates);
-            const requirement = mergeDocumentTemplateIntoRequirement(getDocumentRequirement(doc, selectedCategory), template);
+            const requirement = mergeDocumentTemplateIntoRequirement(getDocumentRequirement(doc, activeCategory), template);
             setAudience(suggested.audience);
             setTone(suggested.tone);
-            setDocInputs(applyDocumentRequirementDefaults(requirement, createDocumentInputDefaults(doc, selectedCategory, profile)));
+            setDocInputs(applyDocumentRequirementDefaults(requirement, createDocumentInputDefaults(doc, activeCategory, profile)));
         }
         setAutoFillCurrentDate(true);
         setShowValidation(false);
@@ -2127,6 +2149,62 @@ export default function DocumentProductionScreen({
                         </div>
                     </div>
 
+                    <div style={{ marginBottom: 22, animation: "fadeSlideUp 0.4s ease 0.01s both" }}>
+                        <div style={{ position: "relative" }}>
+                            <MagnifyingGlass size={16} color="var(--color-text-muted)" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }} />
+                            <input
+                                value={catalogSearch}
+                                onChange={(event) => setCatalogSearch(event.target.value)}
+                                placeholder="Look up a document by name, category, or use case"
+                                style={{
+                                    width: "100%",
+                                    background: "rgba(7,26,47,0.03)",
+                                    border: "1px solid rgba(7,26,47,0.08)",
+                                    borderRadius: 12,
+                                    padding: "12px 14px 12px 38px",
+                                    color: "var(--color-text)",
+                                    fontSize: 13,
+                                    fontFamily: "var(--tekori-font-ui)",
+                                }}
+                            />
+                        </div>
+                        {catalogSearch.trim() && (
+                            <div style={{ marginTop: 12, display: "grid", gap: 8 }}>
+                                {catalogMatches.length > 0 ? catalogMatches.slice(0, 8).map(({ category, document }) => (
+                                    <button
+                                        key={`${category.id}:${document.id}`}
+                                        onClick={() => {
+                                            setCatalogSearch("");
+                                            selectDoc(document, category);
+                                        }}
+                                        style={{
+                                            width: "100%",
+                                            textAlign: "left",
+                                            padding: "12px 14px",
+                                            borderRadius: 12,
+                                            border: "1px solid rgba(7,26,47,0.07)",
+                                            background: "rgba(7,26,47,0.022)",
+                                            cursor: "pointer",
+                                            fontFamily: "var(--tekori-font-ui)",
+                                        }}
+                                    >
+                                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 4 }}>
+                                            <span style={{ fontSize: 14, color: "var(--color-text)", fontWeight: 600 }}>{document.name}</span>
+                                            <span style={{ fontSize: 11, color: "var(--foundry-text-muted)", whiteSpace: "nowrap" }}>{category.name}</span>
+                                        </div>
+                                        <div style={{ fontSize: 12, color: "var(--foundry-text-secondary)", lineHeight: 1.6 }}>
+                                            {document.whenToUse}
+                                        </div>
+                                    </button>
+                                )) : (
+                                    <div style={{ padding: "12px 14px", borderRadius: 12, background: "rgba(7,26,47,0.022)", border: "1px solid rgba(7,26,47,0.06)", fontSize: 12, color: "var(--foundry-text-secondary)" }}>
+                                        No documents match that search yet.
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
                     {/* Recent documents */}
                     {(documents.length > 0 || documentsLoading) && (
                         <div style={{ marginBottom: 28, animation: "fadeSlideUp 0.4s ease 0.02s both" }}>
@@ -2249,6 +2327,27 @@ export default function DocumentProductionScreen({
                         </div>
                     </div>
 
+                    <div style={{ marginBottom: 16, animation: "fadeSlideUp 0.3s ease 0.03s both" }}>
+                        <div style={{ position: "relative" }}>
+                            <MagnifyingGlass size={16} color="var(--color-text-muted)" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }} />
+                            <input
+                                value={catalogSearch}
+                                onChange={(event) => setCatalogSearch(event.target.value)}
+                                placeholder={`Search ${selectedCategory.name.toLowerCase()} documents`}
+                                style={{
+                                    width: "100%",
+                                    background: "rgba(7,26,47,0.03)",
+                                    border: "1px solid rgba(7,26,47,0.08)",
+                                    borderRadius: 12,
+                                    padding: "12px 14px 12px 38px",
+                                    color: "var(--color-text)",
+                                    fontSize: 13,
+                                    fontFamily: "var(--tekori-font-ui)",
+                                }}
+                            />
+                        </div>
+                    </div>
+
                     {/* State-aware notice */}
                     {selectedCategory.isStateAware && (
                         <div style={{ marginBottom: 16, padding: "10px 14px", borderRadius: 10, background: "rgba(234,179,8,0.05)", border: "1px solid rgba(234,179,8,0.15)", animation: "fadeSlideUp 0.3s ease 0.05s both" }}>
@@ -2258,7 +2357,13 @@ export default function DocumentProductionScreen({
 
                     {/* Document list */}
                     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                        {selectedCategory.documents.map((doc, index) => (
+                        {selectedCategory.documents
+                            .filter((doc) => {
+                                const query = catalogSearch.trim().toLowerCase();
+                                if (!query) return true;
+                                return [doc.name, doc.whenToUse].join(" ").toLowerCase().includes(query);
+                            })
+                            .map((doc, index) => (
                             <button
                                 key={doc.id}
                                 onClick={() => selectDoc(doc)}
@@ -2284,6 +2389,15 @@ export default function DocumentProductionScreen({
                                 <HelpTooltip content={doc.whenToUse} />
                             </button>
                         ))}
+                        {selectedCategory.documents.filter((doc) => {
+                            const query = catalogSearch.trim().toLowerCase();
+                            if (!query) return true;
+                            return [doc.name, doc.whenToUse].join(" ").toLowerCase().includes(query);
+                        }).length === 0 && (
+                            <div style={{ padding: "14px 16px", borderRadius: 12, border: "1px solid rgba(7,26,47,0.06)", background: "rgba(7,26,47,0.022)", fontSize: 12, color: "var(--foundry-text-secondary)" }}>
+                                No documents in this category match that search.
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

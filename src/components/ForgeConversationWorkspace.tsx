@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { BookOpen, CheckCircle2, ClipboardList, HelpCircle, ListChecks, Plus, RefreshCw, Target, Trash2 } from "lucide-react";
+import { BookOpen, CheckCircle2, ClipboardList, HelpCircle, ListChecks, PanelRightClose, Plus, RefreshCw, Target, Trash2 } from "lucide-react";
 import { callForgeAPI } from "../lib/forgeApi";
 import type { AcademyTopicLaunch } from "../lib/academy";
 import {
@@ -31,6 +31,7 @@ type ForgeConversationWorkspaceProps = {
     workspace?: ConversationWorkspaceSnapshot | null;
     onWorkspaceChange?: (workspace: ConversationWorkspaceSnapshot) => void;
     className?: string;
+    onClose?: () => void;
 };
 
 function getMessageText(message: ForgeWorkspaceMessage) {
@@ -151,6 +152,7 @@ export default function ForgeConversationWorkspace({
     workspace,
     onWorkspaceChange,
     className,
+    onClose,
 }: ForgeConversationWorkspaceProps) {
     const [internalWorkspace, setInternalWorkspace] = useState(() => createConversationWorkspaceSnapshot(source));
     const [draftNote, setDraftNote] = useState("");
@@ -296,8 +298,20 @@ Return strict JSON only with this shape:
                     <h2>{title}</h2>
                     <p>{subtitle}</p>
                 </div>
-                <div className={`forge-conversation-workspace__status ${updating ? "is-updating" : ""}`} title={updating ? "Navi is updating the workspace" : "Workspace current"}>
-                    {updating ? <RefreshCw size={14} /> : <CheckCircle2 size={14} />}
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div className={`forge-conversation-workspace__status ${updating ? "is-updating" : ""}`} title={updating ? "Navi is updating the workspace" : "Workspace current"}>
+                        {updating ? <RefreshCw size={14} /> : <CheckCircle2 size={14} />}
+                    </div>
+                    {onClose && (
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="forge-conversation-workspace__close"
+                            aria-label="Close notes panel"
+                        >
+                            <PanelRightClose size={15} />
+                        </button>
+                    )}
                 </div>
             </div>
 

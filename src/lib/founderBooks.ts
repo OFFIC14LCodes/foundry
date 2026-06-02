@@ -1,9 +1,12 @@
 import { callForgeAPI } from "./forgeApi";
 import { getArchiveDisplaySummary } from "./archiveSummary";
 import {
+    deleteFounderBook,
+    deleteFounderBookSourcesByArchiveSummary,
     loadFounderBooks,
     recordFounderBookSource,
     upsertFounderBook,
+    loadFounderBookSources,
     type FounderBook,
     type FounderBookType,
 } from "../db";
@@ -164,5 +167,78 @@ export async function updateFounderBookFromArchive(input: UpdateInput): Promise<
     } catch (error) {
         console.error("updateFounderBookFromArchive error:", error);
         return null;
+    }
+}
+
+export async function removeFounderBookNotesForArchive(input: {
+    userId: string;
+    archiveId: string;
+    archiveTitle: string;
+}): Promise<void> {
+    const books = await loadFounderBooks(input.userId);
+
+    for (const book of books) {
+        const sources = await loadFounderBookSources(input.userId, book.id);
+        const impactedSources = sources.filter((source) => source.archiveSummaryId === input.archiveId);
+        if (impactedSources.length === 0) continue;
+
+        const remainingSources = sources.filter((source) => source.archiveSummaryId !== input.archiveId);
+        const deleted = await deleteFounderBookSourcesByArchiveSummary(input.userId, book.id, input.archiveId);
+        if (!deleted) {
+            throw new Error(`Unable to remove book source links for ${book.title}.`);
+        }
+
+        if (remainingSources.length === 0) {
+            const removedBook = await deleteFounderBook(input.userId, book.id);
+            if (!removedBook) {
+                throw new Error(`Unable to remove ${book.title} after deleting its last archive source.`);
+            }
+            continue;
+        }
+
+        const labelsToRemove = impactedSources
+            .map((source) => source.sourceTitle || source.sourceRefId || input.archiveTitle)
+            .filter(Boolean)
+            .join(", ");
+
+        const cleanedContent = await callForgeAPI(
+            [{
+                role: "user",
+                content: `Clean this founder reference book after an archive deletion.
+
+Book title: ${book.title}
+Deleted archive title: ${input.archiveTitle}
+Source labels to remove: ${labelsToRemove || input.archiveTitle}
+
+Instructions:
+- Remove notes, summaries, and references that came from the deleted archive.
+- Preserve notes that still make sense from other remaining archives.
+- Keep the document readable and structurally clean.
+- If a section only existed because of the deleted archive, remove that section.
+- Return markdown only.
+
+Current book content:
+${book.content || "(empty book)"}`,
+            }],
+            "You maintain private founder books. Remove deleted-archive material while preserving the rest of the book. Return only markdown.",
+            1600
+        );
+
+        const saved = await upsertFounderBook(
+            input.userId,
+            book.bookType,
+            book.title,
+            cleanedContent,
+            {
+                ...book.metadata,
+                lastRemovedArchiveId: input.archiveId,
+                lastRemovedArchiveTitle: input.archiveTitle,
+                lastUpdatedByForgeAt: new Date().toISOString(),
+            }
+        );
+
+        if (!saved) {
+            throw new Error(`Unable to update ${book.title} after archive deletion.`);
+        }
     }
 }

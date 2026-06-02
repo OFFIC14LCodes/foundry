@@ -71,9 +71,9 @@ export const GLOBAL_STYLES = `
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html { height: -webkit-fill-available; }
   body { min-height: 100vh; min-height: -webkit-fill-available; overscroll-behavior: none; font-family: var(--tekori-font-ui); }
-  ::-webkit-scrollbar { width: 3px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: rgba(7,26,47,0.1); border-radius: 2px; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: rgba(7,26,47,0.08); }
+  ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, rgba(16,32,51,0.95), rgba(7,26,47,0.92)); border-radius: 999px; border: 2px solid rgba(255,252,246,0.96); }
   textarea { resize: none; outline: none; font: inherit; }
   input { outline: none; font: inherit; }
   button { outline: none; -webkit-tap-highlight-color: transparent; font: inherit; }

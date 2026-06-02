@@ -16,6 +16,7 @@ import {
     getArchiveDisplaySummary,
     getArchivePreviewText,
 } from "../lib/archiveSummary";
+import { removeFounderBookNotesForArchive } from "../lib/founderBooks";
 import HelpTooltip from "./HelpTooltip";
 
 // ─────────────────────────────────────────────────────────────
@@ -293,12 +294,22 @@ export default function ArchivePanel({
         if (deletingId) return;
         setConfirmDeleteId(null);
         setDeletingId(entry.id);
-        const ok = await deleteConversationSummary(userId, entry.id);
-        if (ok) {
-            setEntries((prev) => prev.filter((e) => e.id !== entry.id));
-            if (selectedEntry?.id === entry.id) setSelectedEntry(null);
+        try {
+            await removeFounderBookNotesForArchive({
+                userId,
+                archiveId: entry.id,
+                archiveTitle: entry.title || "Archived conversation",
+            });
+            const ok = await deleteConversationSummary(userId, entry.id);
+            if (ok) {
+                setEntries((prev) => prev.filter((e) => e.id !== entry.id));
+                if (selectedEntry?.id === entry.id) setSelectedEntry(null);
+            }
+        } catch (error) {
+            console.error("archive delete error:", error);
+        } finally {
+            setDeletingId(null);
         }
-        setDeletingId(null);
     };
 
     const handleSaveTitle = async () => {

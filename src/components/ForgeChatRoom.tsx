@@ -1835,7 +1835,7 @@ Re-teach only the most critical missing piece. Validate any correct part first. 
                                 background: (input.trim() || attachedFiles.length > 0) && !loading
                                     ? "linear-gradient(135deg, var(--color-primary), var(--color-primary-hover))"
                                     : "rgba(7,26,47,0.06)",
-                                color: (input.trim() || attachedFiles.length > 0) && !loading ? "var(--color-primary)" : "var(--color-text-muted)",
+                                color: (input.trim() || attachedFiles.length > 0) && !loading ? "rgba(255,252,246,0.98)" : "var(--color-text-muted)",
                                 cursor: (input.trim() || attachedFiles.length > 0) && !loading ? "pointer" : "default",
                                 display: "flex",
                                 alignItems: "center",
@@ -1876,6 +1876,7 @@ Re-teach only the most critical missing piece. Validate any correct part first. 
                         source={workspaceSource}
                         workspace={workspace}
                         onWorkspaceChange={setWorkspace}
+                        onClose={() => setWorkspaceOpen(false)}
                     />
                 </div>
             </div>

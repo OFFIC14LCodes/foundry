@@ -983,6 +983,33 @@ export async function loadFounderBookSources(userId: string, bookId: string): Pr
     return (data ?? []).map(mapFounderBookSource);
 }
 
+export async function deleteFounderBook(userId: string, bookId: string): Promise<boolean> {
+    const { error } = await supabase
+        .from("founder_books")
+        .delete()
+        .eq("user_id", userId)
+        .eq("id", bookId);
+    if (error) {
+        console.error("deleteFounderBook error:", error.message);
+        return false;
+    }
+    return true;
+}
+
+export async function deleteFounderBookSourcesByArchiveSummary(userId: string, bookId: string, archiveSummaryId: string): Promise<boolean> {
+    const { error } = await supabase
+        .from("founder_book_sources")
+        .delete()
+        .eq("user_id", userId)
+        .eq("book_id", bookId)
+        .eq("archive_summary_id", archiveSummaryId);
+    if (error) {
+        console.error("deleteFounderBookSourcesByArchiveSummary error:", error.message);
+        return false;
+    }
+    return true;
+}
+
 export async function upsertFounderBook(
     userId: string,
     bookType: FounderBookType,
